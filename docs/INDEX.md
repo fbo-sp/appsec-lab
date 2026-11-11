@@ -30,6 +30,13 @@
 | ADR/ADR-002-isolation.md | Proposta, PoC pendente |
 | ADR/ADR-003-validation.md | Proposta, PoC pendente |
 | ADR/ADR-004-on-premises-hosting.md | Decisão de produto on-prem; topologia em avaliação |
+| 22_PROJECT_INITIAL_ASSESSMENT.md | Novo (2026-11-11): diagnóstico, lacunas G-01–G-19, riscos |
+| 23_IMPLEMENTATION_PLAN.md | Novo: fases F0–F6, vertical slice, estratégias local/on-prem |
+| 24_IMPLEMENTATION_BACKLOG.md | Novo: backlog executável IMP-xxx |
+| 25_DEVELOPMENT_STATUS.md | Novo: status para continuidade entre sessões de IA |
+| ADR/ADR-005-academic-model.md | Proposto: LabAttempt/StepSubmission/ValidationRun |
+| ADR/ADR-006-manifest-contract-v1alpha1.md | Proposto, implementado na 1ª fatia |
+| ADR/ADR-007-postgres-job-queue.md | Proposto, implementado na 1ª fatia |
 
 ## Ordem recomendada para trabalho com agentes
 
