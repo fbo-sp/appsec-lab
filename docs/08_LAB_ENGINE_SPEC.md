@@ -93,6 +93,8 @@ TTL sugerido para PoC: 45 min, sem extensão automática por navegador aberto; p
 
 ```python
 from typing import Protocol
+
+
 class RuntimePort(Protocol):
     async def provision(self, session_id: str, manifest_digest: str, policy: dict) -> str: ...
     async def inspect(self, runtime_ref: str) -> dict: ...

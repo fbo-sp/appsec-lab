@@ -1,0 +1,55 @@
+[project]
+name = "cecyber-appsec-labs"
+version = "0.1.0"
+description = "CECyber AppSec Labs - workspace raiz (plano de controle e contratos)"
+requires-python = ">=3.12"
+dependencies = [
+    "cecyber-contracts",
+    "cecyber-backend",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3",
+    "httpx>=0.27",
+    "ruff>=0.6",
+    "mypy>=1.11",
+    "types-PyYAML>=6.0",
+]
+
+[tool.uv]
+package = false
+
+[tool.uv.workspace]
+members = ["packages/contracts", "apps/backend"]
+
+[tool.uv.sources]
+cecyber-contracts = { workspace = true }
+cecyber-backend = { workspace = true }
+
+[tool.ruff]
+line-length = 110
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "S", "N", "SIM", "RUF"]
+ignore = ["S101", "RUF012"]
+
+[tool.ruff.lint.per-file-ignores]
+"**/tests/**" = ["S", "B017"]
+"apps/backend/migrations/**" = ["E501"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+plugins = ["pydantic.mypy"]
+mypy_path = ["packages/contracts/src", "apps/backend"]
+explicit_package_bases = true
+exclude = ["migrations/", "tests/"]
+
+[tool.pytest.ini_options]
+testpaths = ["packages/contracts/tests", "apps/backend/tests"]
+markers = [
+    "integration: requer PostgreSQL real (TEST_DATABASE_URL)",
+]
+addopts = "-ra"

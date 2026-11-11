@@ -1,0 +1,16 @@
+[project]
+name = "cecyber-contracts"
+version = "0.1.0"
+description = "Contratos versionados do CECyber AppSec Labs (manifesto AppSecLab v1alpha1)"
+requires-python = ">=3.12"
+dependencies = [
+    "pydantic>=2.8,<3",
+    "PyYAML>=6.0",
+]
+
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/cecyber_contracts"]
