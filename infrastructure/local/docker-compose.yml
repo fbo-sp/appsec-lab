@@ -1,7 +1,8 @@
 # Ambiente LOCAL de teste do plano de controle (1ª fatia do motor).
 #   docker compose -f infrastructure/local/docker-compose.yml up --build
-# Contém apenas componentes CONFIÁVEIS (PostgreSQL, API, worker). O runtime de laboratórios é o
-# FakeRuntimeAdapter: nenhum laboratório/contêiner de aluno é executado. Docker Compose NÃO é
+# Contém apenas componentes CONFIÁVEIS (PostgreSQL, API + portal, worker, gateway). Por padrão o runtime
+# é o FakeRuntimeAdapter (nada é executado); laboratórios reais exigem o override
+# docker-compose.docker-runtime.yml (ADR-008). Docker Compose NÃO é
 # fronteira de isolamento para código hostil (docs/07, ADR-002) e não deve ser usado para isso.
 # Portas publicadas somente em 127.0.0.1. A senha padrão é exclusiva de desenvolvimento local;
 # sobrescreva com a variável POSTGRES_PASSWORD se desejar.
@@ -14,6 +15,11 @@ x-backend-env: &backend-env
   DATABASE_URL: postgresql+psycopg://appsec:${POSTGRES_PASSWORD:-local-dev-only}@postgres:5432/appsec_labs
   WORKER_POLL_SECONDS: "0.5"
   RECONCILE_INTERVAL_SECONDS: "5"
+  # Segredo de assinatura dos tickets do gateway: valor exclusivo de desenvolvimento local.
+  GATEWAY_TICKET_SECRET: ${GATEWAY_TICKET_SECRET:-local-dev-only-gateway-ticket-secret-0001}
+  GATEWAY_WORKSPACE_URL: http://127.0.0.1:8001
+  GATEWAY_PREVIEW_URL: http://127.0.0.1:8002
+  PORTAL_ORIGIN: http://127.0.0.1:8000
 
 services:
   postgres:
@@ -63,6 +69,25 @@ services:
       migrate: { condition: service_completed_successfully }
     # Um único worker: o FakeRuntimeAdapter guarda estado em memória do processo.
     deploy: { replicas: 1 }
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+
+  gateway:
+    image: cecyber-appsec-labs/backend:local
+    # Nome fixo: o worker conecta este contêiner às redes internas das sessões (ADR-008/009).
+    container_name: cecyber-appsec-labs-gateway
+    environment: *backend-env
+    command: ["python", "-m", "app.gateway.run"]
+    ports:
+      - "127.0.0.1:8001:8001"
+      - "127.0.0.1:8002:8002"
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8001/healthz')"]
+      interval: 5s
+      retries: 20
     read_only: true
     cap_drop: [ALL]
     security_opt: ["no-new-privileges:true"]

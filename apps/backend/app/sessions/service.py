@@ -238,3 +238,85 @@ def session_view(db: Session, s: LabSession) -> dict[str, Any]:
         "lastErrorCode": s.last_error_code,
         "statusUrl": f"/api/v1/sessions/{s.id}",
     }
+
+
+GATEWAY_STATUSES = frozenset({SessionStatus.READY, SessionStatus.ACTIVE})
+TICKET_TTL_SECONDS = 60
+
+
+def issue_gateway_ticket(
+    db: Session, *, principal: Principal, session_id: uuid.UUID, purpose: str, secret: str, now: datetime
+) -> tuple[str, LabSession]:
+    """Ticket curto e de uso único para o gateway (docs/13 §2). Só o DONO recebe (nem admin)."""
+    from app.gateway.tickets import Audience, Purpose, issue
+
+    s = db.get(LabSession, session_id)
+    if s is None or s.user_id != principal.user_id:
+        raise not_found("Sessão")
+    db.refresh(s, with_for_update=True)
+    status = SessionStatus(s.status)
+    if status not in GATEWAY_STATUSES or s.expires_at <= now:
+        db.rollback()
+        raise ApiError(409, "SESSION_NOT_READY", "Sessão não está pronta para conexão.", {"status": s.status})
+    if status is SessionStatus.READY:
+        apply_event(db, s, SessionEvent.FIRST_CONNECTION, now=now, actor_id=str(principal.user_id))
+    pur = Purpose(purpose)
+    token, claims = issue(
+        secret,
+        sid=str(s.id),
+        sub=str(principal.user_id),
+        purpose=pur,
+        aud=Audience.TICKET,
+        now=now,
+        ttl_seconds=TICKET_TTL_SECONDS,
+    )
+    # Auditoria sem o token (docs/13 §2: tokens não devem ser logados).
+    audit.record(
+        db,
+        now=now,
+        actor_id=str(principal.user_id),
+        action="session.gateway_ticket_issued",
+        resource_kind="lab_session",
+        resource_id=str(s.id),
+        metadata={"purpose": pur.value, "jti": claims.jti},
+    )
+    db.commit()
+    return token, s
+
+
+def list_own_sessions(db: Session, principal: Principal) -> list[LabSession]:
+    rows = db.execute(
+        select(LabSession)
+        .where(LabSession.user_id == principal.user_id, LabSession.status.in_([x.value for x in ACTIVE]))
+        .order_by(LabSession.created_at.desc())
+    ).scalars()
+    return list(rows)
+
+
+def steps_view(db: Session, s: LabSession) -> list[dict[str, Any]]:
+    """Etapas da sessão (docs/13 §3, docs/21). Desbloqueio é decidido aqui, nunca pelo frontend.
+
+    Enquanto a validação (IMP-401) não existe, apenas a primeira etapa fica disponível; etapas
+    bloqueadas expõem só metadados (sem instruções, dicas ou referências de validador).
+    """
+    release = db.get(LabRelease, s.release_id)
+    assert release is not None
+    out: list[dict[str, Any]] = []
+    for step in sorted(release.manifest["steps"], key=lambda x: x["order"]):
+        unlocked = step["order"] == 1
+        item: dict[str, Any] = {
+            "id": step["id"],
+            "order": step["order"],
+            "title": step["title"],
+            "points": step["points"],
+            "status": "AVAILABLE" if unlocked else "LOCKED",
+        }
+        if unlocked:
+            item.update(
+                explanation=step["explanation"],
+                task=step["task"],
+                concept=step["concept"],
+                hintsAvailable=len(step.get("hints", [])),
+            )
+        out.append(item)
+    return out

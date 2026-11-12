@@ -45,6 +45,24 @@ if [ "$DOCKER_RT" = 1 ]; then
   [ -z "$(docker port "$C")" ] || { echo "laboratório publicou portas no host" >&2; exit 1; }
   docker exec "$C" python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/', timeout=3)"
   echo "contêiner do laboratório OK: $C"
+  # Gateway: ticket de uso único -> cookie -> preview e API de arquivos via agente.
+  JAR=$(mktemp)
+  ticket_url() {
+    curl -sf -H "X-Dev-User: smoke" -H "Content-Type: application/json" -d "{\"purpose\":\"$1\"}" \
+      "$API/api/v1/sessions/$SID/gateway-ticket" | json '["url"]'
+  }
+  PV=$(ticket_url preview)
+  [ "$(curl -s -o /dev/null -w "%{http_code}" -c "$JAR" "$PV")" = "303" ]
+  [ "$(curl -s -o /dev/null -w "%{http_code}" "$PV")" = "401" ] || { echo "ticket reutilizável" >&2; exit 1; }
+  for _ in $(seq 1 20); do curl -sf -b "$JAR" http://127.0.0.1:8002/ | grep -q "LAB-000" && break; sleep 0.5; done
+  curl -sf -b "$JAR" http://127.0.0.1:8002/ | grep -q "LAB-000"
+  WSU=$(ticket_url workspace)
+  [ "$(curl -s -o /dev/null -w "%{http_code}" -c "$JAR" "$WSU")" = "303" ]
+  curl -sf -b "$JAR" -H "X-Cecyber-Workspace: 1" \
+    "http://127.0.0.1:8001/s/$SID/__cecyber/api/files?path=" | grep -q index.html
+  [ "$(curl -s -o /dev/null -w "%{http_code}" -H "X-Dev-User: intruso" -H "Content-Type: application/json" \
+    -d '{"purpose":"preview"}' "$API/api/v1/sessions/$SID/gateway-ticket")" = "404" ]
+  echo "gateway OK: preview e arquivos acessíveis só com ticket do dono"
 fi
 [ "$(curl -s -o /dev/null -w "%{http_code}" -H "X-Dev-User: intruso" "$API/api/v1/sessions/$SID")" = "404" ]
 curl -sf -X DELETE -H "X-Dev-User: smoke" "$API/api/v1/sessions/$SID" >/dev/null
@@ -54,6 +72,9 @@ if [ "$DOCKER_RT" = 1 ]; then
     || { echo "contêiner do laboratório não foi removido" >&2; exit 1; }
   ! docker network inspect "cecyber-lab-$SID-net" >/dev/null 2>&1 || { echo "rede não removida" >&2; exit 1; }
   ! docker volume inspect "cecyber-lab-$SID-ws" >/dev/null 2>&1 || { echo "volume não removido" >&2; exit 1; }
+  [ "$(curl -s -o /dev/null -w "%{http_code}" -b "$JAR" http://127.0.0.1:8002/)" = "403" ] \
+    || { echo "gateway não revogou o acesso após o término" >&2; exit 1; }
+  rm -f "$JAR"
 fi
 [ "$("${COMPOSE[@]}" exec -T api id -u)" = "10001" ]
 echo "SMOKE OK"

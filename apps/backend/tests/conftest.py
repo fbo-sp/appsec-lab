@@ -37,6 +37,9 @@ TABLES = (
 )
 
 
+GATEWAY_SECRET = "test-only-gateway-secret-0123456789abcdef"
+
+
 class FakeClock:
     def __init__(self) -> None:
         self.current = datetime(2026, 11, 11, 12, 0, tzinfo=UTC)
@@ -87,6 +90,7 @@ def settings() -> Settings:
         job_max_attempts=3,
         provision_timeout_seconds=120,
         reconcile_interval_seconds=1,
+        gateway_ticket_secret=GATEWAY_SECRET,
     )
     s.check()
     return s

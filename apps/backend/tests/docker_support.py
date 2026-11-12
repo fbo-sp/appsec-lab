@@ -8,7 +8,9 @@ from pathlib import Path
 
 import pytest
 
-LAB000_RUNTIME = Path(__file__).resolve().parents[3] / "laboratories" / "LAB-000-hello-benign" / "runtime"
+LABS = Path(__file__).resolve().parents[3] / "laboratories"
+LAB000_RUNTIME = LABS / "LAB-000-hello-benign" / "runtime"
+BASE_PYTHON = LABS / "_base" / "python"
 LOCAL_TAG = "cecyber-labs/lab-000-hello:local"
 
 
@@ -21,6 +23,9 @@ def _build() -> str:
     import docker
 
     client = docker.from_env()
+    # SKIP_BASE_BUILD=1 reaproveita a base já construída (ex.: ambientes atrás de proxy com CA própria).
+    if os.environ.get("SKIP_BASE_BUILD") != "1":
+        client.images.build(path=str(BASE_PYTHON), tag="cecyber-labs/base-python:local", rm=True)
     image, _ = client.images.build(path=str(LAB000_RUNTIME), tag=LOCAL_TAG, rm=True)
     return f"local/labs/lab-000-hello@{image.id}"
 

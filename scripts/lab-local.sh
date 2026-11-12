@@ -5,6 +5,10 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 API="${1:-http://127.0.0.1:8000}"
 LAB="$ROOT/laboratories/LAB-000-hello-benign"
+# Base com o agente de workspace (arquivos + terminal). SKIP_BASE_BUILD=1 reaproveita uma base existente.
+if [ "${SKIP_BASE_BUILD:-0}" != 1 ]; then
+  docker build -q -t cecyber-labs/base-python:local "$ROOT/laboratories/_base/python" >/dev/null
+fi
 docker build -q -t cecyber-labs/lab-000-hello:local "$LAB/runtime" >/dev/null
 ID=$(docker image inspect --format '{{.Id}}' cecyber-labs/lab-000-hello:local)
 echo "imagem local: $ID"

@@ -37,6 +37,12 @@ class Settings:
     reconcile_interval_seconds: float
     docker_attach_container: str | None = None
     docker_allow_pull: bool = False
+    # Gateway de workspace (IMP-302). Sem segredo configurado, a emissão de tickets fica indisponível.
+    gateway_ticket_secret: str | None = None
+    gateway_workspace_url: str = "http://127.0.0.1:8001"
+    gateway_preview_url: str = "http://127.0.0.1:8002"
+    portal_origin: str = "http://127.0.0.1:8000"
+    web_dist_dir: str | None = None
 
     @staticmethod
     def from_env(env: dict[str, str] | None = None) -> Settings:
@@ -55,6 +61,11 @@ class Settings:
                 reconcile_interval_seconds=float(e.get("RECONCILE_INTERVAL_SECONDS", "15")),
                 docker_attach_container=e.get("DOCKER_ATTACH_CONTAINER") or None,
                 docker_allow_pull=e.get("DOCKER_ALLOW_PULL", "false").lower() == "true",
+                gateway_ticket_secret=e.get("GATEWAY_TICKET_SECRET") or None,
+                gateway_workspace_url=e.get("GATEWAY_WORKSPACE_URL", "http://127.0.0.1:8001").rstrip("/"),
+                gateway_preview_url=e.get("GATEWAY_PREVIEW_URL", "http://127.0.0.1:8002").rstrip("/"),
+                portal_origin=e.get("PORTAL_ORIGIN", "http://127.0.0.1:8000").rstrip("/"),
+                web_dist_dir=e.get("WEB_DIST_DIR") or None,
             )
         except KeyError as exc:
             raise ConfigError(f"Variável de ambiente obrigatória ausente: {exc.args[0]}") from exc
@@ -75,5 +86,7 @@ class Settings:
         if self.app_env not in (AppEnv.LOCAL, AppEnv.TEST):
             # Nenhum adapter atual é aprovado para staging/produção (ADR-001/002/008).
             raise ConfigError(f"Runtime adapter {self.runtime_adapter!r} só é permitido em local/test.")
+        if self.gateway_ticket_secret is not None and len(self.gateway_ticket_secret) < 32:
+            raise ConfigError("GATEWAY_TICKET_SECRET deve ter pelo menos 32 caracteres.")
         if self.worker_lease_seconds <= 0 or self.job_max_attempts <= 0:
             raise ConfigError("Lease e tentativas devem ser positivos.")
