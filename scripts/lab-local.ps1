@@ -11,7 +11,7 @@ docker build -q -t cecyber-labs/lab-000-hello:local (Join-Path $Lab "runtime") |
 if ($LASTEXITCODE -ne 0) { throw "docker build falhou" }
 $Id = (docker image inspect --format "{{.Id}}" cecyber-labs/lab-000-hello:local).Trim()
 Write-Host "imagem local: $Id"
-$Manifest = Get-Content -Raw (Join-Path $Lab "manifest.yaml")
+$Manifest = Get-Content -Raw -Encoding UTF8 (Join-Path $Lab "manifest.yaml")
 $Manifest = [regex]::Replace($Manifest, "(?m)^(    image: ).*@sha256:[0-9a-f]{64}", "`${1}local/labs/lab-000-hello@$Id")
 $Headers = @{ "X-Dev-User" = "admin"; "X-Dev-Roles" = "admin" }
 try {
