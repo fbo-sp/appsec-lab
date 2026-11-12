@@ -47,9 +47,9 @@
 | 26 | IMP-I03 | Segmentação de rede e egress deny | F2-infra | Blocked (IMP-I01) |
 | 27 | IMP-301 | KubernetesRuntimeAdapter | F3 | Blocked (ADR-001/002) |
 | 27a | IMP-301L | DockerRuntimeAdapter **somente local/test** (ADR-008) | F3 | Done (2026-11-12) |
-| 28 | IMP-302 | Workspace gateway e tickets | F3 | Ready para local (IMP-301L); produção Blocked (IMP-301) |
-| 29 | IMP-303 | Frontend: catálogo e introdução do lab | F3 | Ready |
-| 30 | IMP-304 | Frontend: workspace (editor, terminal, preview) | F3 | Blocked (IMP-302) |
+| 28 | IMP-302 | Workspace gateway e tickets | F3 | Done local (ADR-009, 2026-11-12); produção Blocked (IMP-301) |
+| 29 | IMP-303 | Frontend: catálogo e introdução do lab | F3 | Done local (2026-11-12; login OIDC pendente IMP-202) |
+| 30 | IMP-304 | Frontend: workspace (editor, terminal, preview) | F3 | Done local (2026-11-12; CodeMirror 6 no lugar de Monaco, ADR-009) |
 | 31 | IMP-305 | Ação build/run por perfil aprovado | F3 | Blocked (IMP-301) |
 | 32 | IMP-401 | Modelo acadêmico LabAttempt/StepProgress | F4 | Ready (ADR-005 aprovado) |
 | 33 | IMP-402 | Snapshot de workspace | F4 | Blocked (ADR-003) |

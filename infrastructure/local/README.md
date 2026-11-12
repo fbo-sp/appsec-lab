@@ -25,21 +25,31 @@ powershell -ExecutionPolicy Bypass -File scripts\demo-local.ps1
 Registra o LAB-000, cria a sessão (com replay idempotente), aguarda `READY`, verifica que outro usuário
 recebe 404 e encerra até `TERMINATED`.
 
-## Runtime Docker local (laboratórios como contêineres reais — ADR-008)
+## Teste visual: laboratório no navegador (runtime Docker local — ADR-008/009)
 
-Por padrão o worker usa o runtime *fake* (nada é executado). Para executar o LAB-000 de verdade:
+Por padrão o worker usa o runtime *fake* (nada é executado). Para abrir o LAB-000 de verdade no navegador:
 
 ```powershell
+# na raiz do repositório (PowerShell)
+docker compose -f infrastructure/local/docker-compose.yml down -v      # se já subiu antes: recomeça limpo
 docker compose -f infrastructure/local/docker-compose.yml -f infrastructure/local/docker-compose.docker-runtime.yml up --build -d
-.\scripts\lab-local.ps1     # constrói a imagem do LAB-000 e registra a release com o ID local
+.\scripts\lab-local.ps1     # constrói as imagens do LAB-000 e registra a release
 ```
 
+Depois abra **http://127.0.0.1:8000** (use `127.0.0.1`, não `localhost`), entre com um usuário de teste
+(ex.: `aluno1`), abra o LAB-000 e clique em **Iniciar laboratório**. Em alguns segundos aparecem:
+etapas à esquerda, editor de arquivos e terminal no centro, e a aplicação do laboratório embaixo.
+Edite `index.html`, salve com Ctrl+S e clique em **recarregar** para ver a mudança.
+
+Portas (todas só em 127.0.0.1): 8000 portal + API, 8001 workspace (editor/terminal), 8002 aplicação do lab.
+
 - O socket Docker é montado **somente no worker**; laboratórios rodam em rede interna própria, sem
-  portas no host, como usuário não-root e com raiz somente leitura.
+  portas no host, como usuário não-root e com raiz somente leitura. O gateway é o único outro participante
+  dessa rede e exige ticket de uso único emitido ao dono da sessão.
 - Uso exclusivo na máquina do desenvolvedor. **Não** é isolamento para código hostil nem configuração de
   piloto/produção. Não use em máquina compartilhada (acesso ao socket equivale a root).
 - Contêineres de sessão: `docker ps --filter label=io.cecyber.appsec-labs.platform=appsec-labs-local`.
-- Ainda não há gateway: a aplicação do laboratório não é acessível pelo navegador nesta etapa.
+- Se a sessão ficar em "Preparando ambiente" e falhar, veja `docker compose ... logs worker`.
 
 ## Logs, parada e limpeza
 

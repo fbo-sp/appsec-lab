@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy import Engine, text
 from sqlalchemy.orm import Session, sessionmaker
 
@@ -52,7 +55,31 @@ def create_app(
             db.execute(text("SELECT 1"))
         return {"status": "ok"}
 
+    if settings.web_dist_dir:
+        _mount_portal(app, settings)
     return app
+
+
+def _mount_portal(app: FastAPI, settings: Settings) -> None:
+    """Serve o portal (SPA estática) na mesma origem da API. Laboratórios ficam em outras origens."""
+    dist = Path(settings.web_dist_dir or "")
+    index = dist / "index.html"
+    if not index.is_file():
+        return
+    headers = {
+        "Content-Security-Policy": (
+            "default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; "
+            f"frame-src {settings.gateway_workspace_url} {settings.gateway_preview_url}; "
+            "frame-ancestors 'none'; base-uri 'none'; form-action 'self'"
+        ),
+        "X-Content-Type-Options": "nosniff",
+        "Referrer-Policy": "no-referrer",
+    }
+    app.mount("/__static", StaticFiles(directory=dist), name="static")
+
+    @app.get("/", include_in_schema=False)
+    def portal_index() -> FileResponse:
+        return FileResponse(index, headers=headers)
 
 
 def app_factory() -> FastAPI:  # uvicorn --factory app.main:app_factory

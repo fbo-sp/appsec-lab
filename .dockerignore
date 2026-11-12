@@ -7,3 +7,5 @@
 **/.ruff_cache
 docs
 .env
+**/node_modules
+apps/web/dist

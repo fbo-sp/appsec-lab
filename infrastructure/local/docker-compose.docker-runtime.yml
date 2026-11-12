@@ -13,6 +13,8 @@ services:
     environment:
       RUNTIME_ADAPTER: docker
       DOCKER_ALLOW_PULL: "false"
+      # O worker conecta o gateway à rede interna de cada sessão (único participante além do lab).
+      DOCKER_ATTACH_CONTAINER: cecyber-appsec-labs-gateway
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     # O worker roda como uid 10001; precisa do grupo dono do socket (0 no Docker Desktop;

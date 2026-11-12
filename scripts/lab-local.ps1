@@ -5,6 +5,8 @@ param([string]$Api = "http://127.0.0.1:8000")
 $ErrorActionPreference = "Stop"
 $Root = Split-Path -Parent $PSScriptRoot
 $Lab = Join-Path $Root "laboratories\LAB-000-hello-benign"
+docker build -q -t cecyber-labs/base-python:local (Join-Path $Root "laboratories\_base\python") | Out-Null
+if ($LASTEXITCODE -ne 0) { throw "docker build da base falhou" }
 docker build -q -t cecyber-labs/lab-000-hello:local (Join-Path $Lab "runtime") | Out-Null
 if ($LASTEXITCODE -ne 0) { throw "docker build falhou" }
 $Id = (docker image inspect --format "{{.Id}}" cecyber-labs/lab-000-hello:local).Trim()

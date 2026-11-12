@@ -11,6 +11,7 @@ dependencies = [
     "psycopg[binary]>=3.2,<4",
     "alembic>=1.13,<2",
     "PyYAML>=6.0",
+    "aiohttp>=3.12,<4",
 ]
 
 [project.optional-dependencies]

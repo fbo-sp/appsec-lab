@@ -5,9 +5,9 @@
 | Campo | Valor |
 |---|---|
 | Atualizado em | 2026-11-12 |
-| Fase atual | F1 concluída; **F3 local** iniciada rumo ao primeiro laboratório visual (ADR-008) |
+| Fase atual | F1 concluída; **F3 local**: primeira interface visual testável (ADR-008/009) |
 | Branch | `claude/project-thread-arhml7` |
-| Última entrega concluída | IMP-301L — runtime Docker local: LAB-000 executa como contêiner real e é removido ao encerrar |
+| Última entrega concluída | IMP-302/303/304 local — gateway com tickets, portal e workspace (editor, terminal, preview) com o LAB-000 |
 
 ## 1. Funcionalidades implementadas (com escopo real)
 
@@ -27,6 +27,8 @@
 | IMP-113 Auditoria | `audit_events` na mesma transação, ordem total por `seq` | Imutabilidade por permissão de BD |
 | Ambiente local Docker | `apps/backend/Dockerfile` (non-root, uid 10001), `infrastructure/local/docker-compose.yml` (PostgreSQL + migrate + API + worker, portas só em 127.0.0.1), `scripts/demo-local.ps1` (Windows), `scripts/smoke-compose.sh` (também no CI) | Execução no Docker Desktop do PO (Windows) |
 | IMP-301L Runtime Docker local (ADR-008) | `DockerRuntimeAdapter` restrito a `APP_ENV=local\|test`: rede `internal` por sessão, não-root obrigatório, raiz somente leitura, `cap_drop=ALL`, limites, sem portas no host; endpoint interno persistido (migração `0002`); imagem do LAB-000 em `laboratories/LAB-000-hello-benign/runtime/`; `scripts/lab-local.sh`/`.ps1`; override `docker-compose.docker-runtime.yml` (socket só no worker) | **Não** é isolamento para código hostil; `reset` não suportado; sem gateway ainda (aplicação não acessível pelo navegador) |
+| IMP-302 Gateway local (ADR-009) | `app/gateway`: tickets HMAC de uso único (60 s, só o dono, READY/ACTIVE → ACTIVE), grant em cookie HttpOnly/SameSite=Strict escopado, revalidação no banco a cada requisição, origens separadas para workspace (:8001) e preview (:8002), proteção CSRF por cabeçalho próprio e `Origin` no WebSocket; agente de workspace no contêiner (`laboratories/_base/python`) | Mesmo *site* entre portas (ver limitações do ADR-009); registro de tickets usados em memória; sem TLS; sem rate limit |
+| IMP-303/304 Interface local | `apps/web` (React + Vite + TS): login de desenvolvimento, catálogo, introdução, sessão com estados e timer, etapas (só a 1ª liberada), editor CodeMirror, terminal xterm.js, preview em iframe; servida pela API (portal) e pelo gateway (workspace) | Sem OIDC (IMP-202); sem validação de etapas (IMP-401); acessibilidade não auditada |
 | IMP-114 CI | `.github/workflows/ci.yml` (ruff, mypy, validação do LAB-000, pytest com PostgreSQL 16); `main` criada no baseline `aad8812` | Executado no PR #1: job `backend` verde (run 43128706201) |
 
 Laboratório usado: `laboratories/LAB-000-hello-benign` — **benigno, sem vulnerabilidade**. O digest de imagem é uma fixture de teste (não existe imagem publicada); aceitável apenas com o adapter fake.
@@ -47,9 +49,11 @@ Ambiente: contêiner Linux de desenvolvimento, PostgreSQL 16 local descartável 
 |---|---|
 | `uv run ruff check .` / `ruff format --check .` | Sem problemas |
 | `uv run mypy packages/contracts/src apps/backend/app` (strict) | `Success: no issues found in 41 source files` |
-| `DOCKER_CONTRACT_TESTS=1 scripts/test.sh` (2026-11-12, Python 3.12, Docker 29 Linux) | **189 passed** (inclui suíte de contrato e controles com Docker real) |
+| `DOCKER_CONTRACT_TESTS=1 scripts/test.sh` (2026-11-12, Python 3.12, Docker 29 Linux) | **217 passed** (inclui suíte de contrato e controles com Docker real, gateway e tickets) |
+| `npm run build` em `apps/web` (tsc + vite) | OK |
+| Playwright (Chromium) no portal em 127.0.0.1:8000 com runtime Docker (2026-11-12) | login → catálogo → introdução → iniciar → READY/ACTIVE → árvore de arquivos, editor, terminal (`ls`, `whoami` = `lab`) → editar `index.html` e salvar → preview mostra a alteração → encerrar → "Sessão finalizada"; sem erros no console |
 | `uv run alembic upgrade head` → `downgrade base` → `upgrade head` (0001+0002) | OK |
-| `scripts/smoke-compose.sh --no-build --docker-runtime` (2026-11-12) | LAB-000 registrado com ID local da imagem; READY; contêiner uid 10001, raiz somente leitura, rede interna, sem portas no host, app responde dentro da sessão; TERMINATED; contêiner, rede e volume removidos |
+| `scripts/smoke-compose.sh --no-build --docker-runtime` (2026-11-12) | LAB-000 registrado com ID local da imagem; READY; contêiner uid 10001, raiz somente leitura, rede interna, sem portas no host; gateway: ticket de preview vira cookie, reuso do ticket = 401, preview e API de arquivos respondem, intruso recebe 404 no ticket; TERMINATED; contêiner, rede e volume removidos; preview passa a 403 |
 | `scripts/smoke-compose.sh --no-build` (Docker 29, Linux) | Pilha sobe saudável; registro 201; READY; intruso 404; TERMINATED; API roda como uid 10001 |
 | `scripts/demo-slice.sh` (uvicorn + worker reais) | Registro 201; criação 202; replay com a mesma chave retorna a mesma sessão; READY; outro aluno recebe 404; DELETE 202 → TERMINATED; logs JSON com `correlation_id` |
 
@@ -64,7 +68,7 @@ Cenários cobertos (rastreio): ENG-01 (20 requisições concorrentes com mesma c
 1. Documentos importados sem alteração da cópia local, pois o repositório GitHub estava vazio.
 2. ADR-005 (modelo acadêmico), ADR-006 (contrato v1alpha1) e ADR-007 (fila em PostgreSQL) **aprovados pelo PO** em 2026-11-11; 006 e 007 implementados, 005 previsto em IMP-401.
 3. Premissas não bloqueantes: TTL conta a partir da solicitação e limita a vida total da sessão; `VALIDATING` não é persistido; sessão ativa duplicada → `409 SESSION_ALREADY_ACTIVE`; não-donos recebem `404`; registro de release publica diretamente (sem draft) e é restrito a admin; operações síncronas (SQLAlchemy sync + threadpool do FastAPI) em vez da assinatura `async` ilustrativa de `08 §7`.
-4. ADR-008 (runtime Docker só local/test) aprovado pelo PO em 2026-11-12.
+4. ADR-008 (runtime Docker só local/test) aprovado pelo PO em 2026-11-12. ADR-009 (gateway e interface locais) proposto e implementado só para local/test. OPEN-04: dicas sem penalidade e tentativas livres (PO, 2026-11-12).
 5. Autenticação por cabeçalho apenas em `APP_ENV=local|test`; `AUTH_MODE=oidc` e qualquer adapter que não seja `fake` fazem a aplicação recusar o início (fail closed).
 
 ## 5. Pendências
@@ -79,13 +83,10 @@ Cenários cobertos (rastreio): ENG-01 (20 requisições concorrentes com mesma c
 | OPEN-01 IdP OIDC | IMP-202 | PO / Arquitetura |
 | Inventário on-prem e acesso à infraestrutura | IMP-I01–I03, adapter real, todo código não confiável | PO / Operação |
 | ADR-001/002/003 sem PoC | F3, F4 | Plataforma / Segurança |
-| OPEN-04 (nota, tentativas, dicas) | F4 (validação e progresso) | PO / Acadêmico |
 
 ## 7. Próxima tarefa recomendada
 
-Rumo ao primeiro laboratório visual (preferência do PO: testar manualmente só com interface):
-1. **IMP-302 local** — gateway de workspace com tickets (preview HTTP, arquivos, terminal), conectado só às redes das sessões.
-2. **IMP-303–305** — interface React: catálogo, introdução, etapas, editor, terminal, preview.
-3. **IMP-401–405** — validação, progresso e dicas (depende de OPEN-04: penalidade de dicas e tentativas).
-4. **IMP-501** — LAB-001 SQL Injection (somente local).
+1. **Teste manual do PO** com o LAB-000 (roteiro em `infrastructure/local/README.md`).
+2. **IMP-401–405** — validação, progresso e dicas. OPEN-04 decidido pelo PO em 2026-11-12: dicas sem penalidade, tentativas livres, tudo registrado.
+3. **IMP-501** — LAB-001 SQL Injection (somente local).
 Em paralelo: IMP-I01 (inventário on-prem).
