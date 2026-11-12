@@ -6,6 +6,31 @@ import { ErrorBox, StatusChip, go } from "./App";
 const LIVE = new Set(["READY", "ACTIVE"]);
 const ENDED = new Set(["TERMINATED", "EXPIRED", "FAILED", "COMPLETED"]);
 const PREPARING = ["REQUESTED", "PROVISIONING", "READY"];
+const STAGE: Record<string, { title: string; detail: string }> = {
+  REQUESTED: { title: "Solicitação registrada", detail: "Sua sessão entrou na fila de preparação." },
+  PROVISIONING: {
+    title: "Criando ambiente isolado",
+    detail: "Montando um contêiner exclusivo, com rede própria e seus arquivos de trabalho. Aguarde…",
+  },
+  READY: { title: "Pronto", detail: "" },
+};
+const TIPS = [
+  "Seu ambiente é exclusivo e temporário: nada do que você fizer afeta outros alunos.",
+  "As dicas não descontam pontos. Use quando travar.",
+  "Você pode validar cada etapa quantas vezes precisar.",
+  "A validação testa uma cópia da sua aplicação, fora do seu editor.",
+];
+
+function useElapsed(active: boolean) {
+  const [start] = useState(Date.now());
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => {
+    if (!active) return;
+    const t = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, [active]);
+  return Math.max(0, Math.floor((now - start) / 1000));
+}
 
 function useCountdown(expiresAt?: string) {
   const [now, setNow] = useState(Date.now());
@@ -26,6 +51,7 @@ export function SessionView({ id }: { id: string }) {
   const [ending, setEnding] = useState(false);
   const fetchingTickets = useRef(false);
   const left = useCountdown(session?.expiresAt);
+  const waited = useElapsed(!session || !LIVE.has(session.status));
 
   // Acompanha o estado da sessão (o backend é a fonte de verdade).
   useEffect(() => {
@@ -66,6 +92,15 @@ export function SessionView({ id }: { id: string }) {
       }
     })();
   }, [session, frames, id]);
+
+  async function finishAndExit() {
+    try {
+      await api.terminate(id);
+    } catch {
+      /* a sessão expira sozinha; voltar ao painel não depende disso */
+    }
+    go("/");
+  }
 
   async function terminate() {
     if (!confirm("Encerrar a sessão? O ambiente e os arquivos editados serão descartados.")) return;
@@ -120,13 +155,30 @@ export function SessionView({ id }: { id: string }) {
           <div className="card preparing">
             <h2>Preparando seu ambiente</h2>
             <ol className="progress">
-              {PREPARING.map((p, i) => (
-                <li key={p} className={PREPARING.indexOf(status) >= i ? "done" : ""}>
-                  {{ REQUESTED: "Solicitação registrada", PROVISIONING: "Criando ambiente isolado", READY: "Pronto" }[p]}
-                </li>
-              ))}
+              {PREPARING.map((p, i) => {
+                // A solicitação já está registrada quando esta tela aparece; o tempo é gasto na criação.
+                const at = status === "READY" ? 3 : 1;
+                const state = i < at ? "done" : i === at ? "active" : "";
+                return (
+                  <li key={p} className={state}>
+                    <span className="progress-icon" aria-hidden="true">
+                      {state === "done" ? "✓" : state === "active" ? <span className="spinner" /> : "○"}
+                    </span>
+                    <span>
+                      {STAGE[p].title}
+                      {state === "active" && <span className="stage-detail">{STAGE[p].detail}</span>}
+                    </span>
+                  </li>
+                );
+              })}
             </ol>
-            <p className="muted small">Isso costuma levar alguns segundos.</p>
+            <div className="indeterminate" aria-hidden="true">
+              <span />
+            </div>
+            <p className="muted small" aria-live="polite">
+              Tempo decorrido: {waited}s. Na primeira sessão pode levar até um minuto; não feche esta página.
+            </p>
+            <p className="tip small">💡 {TIPS[Math.floor(waited / 6) % TIPS.length]}</p>
           </div>
         </main>
       )}
@@ -152,12 +204,11 @@ export function SessionView({ id }: { id: string }) {
       {LIVE.has(status) && (
         <div className="workbench">
           <aside className="steps">
-            <StepPanel sessionId={id} />
+            <StepPanel sessionId={id} onExit={finishAndExit} />
           </aside>
           <section className="panes">
             {frames ? (
               <>
-                <iframe className="pane-workspace" title="Editor e terminal" src={frames.workspace} />
                 <div className="pane-preview">
                   <div className="preview-bar">
                     <span>Aplicação do laboratório</span>
@@ -177,6 +228,7 @@ export function SessionView({ id }: { id: string }) {
                     sandbox="allow-scripts allow-forms allow-same-origin allow-popups"
                   />
                 </div>
+                <iframe className="pane-workspace" title="Editor e terminal" src={frames.workspace} />
               </>
             ) : (
               <div className="muted pad">Conectando ao ambiente…</div>

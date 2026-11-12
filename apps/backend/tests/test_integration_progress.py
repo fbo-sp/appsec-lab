@@ -197,7 +197,8 @@ def test_hints_revealed_in_order_without_penalty(
     item = _steps(client, sid)["items"][0]
     assert [h["level"] for h in item["hints"]["revealed"]] == [1, 2]
     _pass_explore(client, sid)
-    assert _steps(client, sid)["attempt"]["score"] == 40  # sem desconto
+    att = _steps(client, sid)["attempt"]
+    assert att["score"] == 40 and att["hintsUsed"] == 2  # sem desconto, mas registrado
     with session_factory() as db:
         n = db.execute(select(AuditEvent).where(AuditEvent.action == "hint.revealed")).scalars().all()
     assert len(n) == 2
@@ -228,7 +229,10 @@ def test_http_step_passes_via_worker_and_completes_attempt(
     req = evaluator.calls[0]
     assert req.workspace_path and req.app_port == 8080 and req.runtime_ref
     body = _steps(client, sid)
-    assert body["attempt"]["status"] == "COMPLETED" and body["attempt"]["score"] == 100
+    att = body["attempt"]
+    assert att["status"] == "COMPLETED" and att["score"] == 100 and att["maxScore"] == 100
+    assert att["completedAt"] and att["startedAt"] <= att["completedAt"]
+    assert att["hintsUsed"] == 0 and att["submissions"] == 2
 
 
 def test_http_step_failure_reports_criteria(

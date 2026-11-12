@@ -16,15 +16,20 @@ function message(e: unknown): string {
   return e instanceof Error ? e.message : String(e);
 }
 
-export function StepPanel({ sessionId }: { sessionId: string }) {
+export function StepPanel({ sessionId, onExit }: { sessionId: string; onExit: () => void }) {
   const [progress, setProgress] = useState<Progress>();
+  const [summaryOpen, setSummaryOpen] = useState(false);
   const [selected, setSelected] = useState<string>();
   const [error, setError] = useState<string>();
 
   const reload = useCallback(async (selectNext = false) => {
     try {
       const p = await api.steps(sessionId);
-      setProgress(p);
+      setProgress((prev) => {
+        // Abre o resumo ao concluir (ou ao reabrir uma sessão de tentativa já concluída).
+        if (p.attempt.status === "COMPLETED" && prev?.attempt.status !== "COMPLETED") setSummaryOpen(true);
+        return p;
+      });
       setError(undefined);
       const current = p.items.find((s) => s.status === "AVAILABLE");
       setSelected((old) => (selectNext || !old ? (current ?? p.items[p.items.length - 1])?.id : old));
@@ -55,7 +60,12 @@ export function StepPanel({ sessionId }: { sessionId: string }) {
           <span style={{ width: `${pct}%` }} />
         </div>
         {attempt.status === "COMPLETED" && (
-          <div className="completed">🎉 Laboratório concluído! Todas as etapas foram validadas.</div>
+          <div className="completed">
+            🎉 Laboratório concluído!{" "}
+            <button className="link" onClick={() => setSummaryOpen(true)}>
+              ver resumo
+            </button>
+          </div>
         )}
       </div>
       <h2>Etapas</h2>
@@ -85,6 +95,9 @@ export function StepPanel({ sessionId }: { sessionId: string }) {
       {error && <div className="error">{error}</div>}
       {step && step.status !== "LOCKED" && (
         <StepDetail key={step.id} sessionId={sessionId} step={step} onChanged={reload} />
+      )}
+      {summaryOpen && attempt.status === "COMPLETED" && (
+        <Summary progress={progress} onClose={() => setSummaryOpen(false)} onExit={onExit} />
       )}
     </>
   );
@@ -233,6 +246,125 @@ function StepDetail({
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+function duration(fromIso: string, toIso: string): string {
+  const total = Math.max(0, Math.round((Date.parse(toIso) - Date.parse(fromIso)) / 1000));
+  const h = Math.floor(total / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  const sec = total % 60;
+  if (h) return `${h} h ${m} min`;
+  if (m) return `${m} min ${sec} s`;
+  return `${sec} s`;
+}
+
+function Summary({ progress, onClose, onExit }: { progress: Progress; onClose: () => void; onExit: () => void }) {
+  const { attempt, items } = progress;
+  const [leaving, setLeaving] = useState(false);
+  const elapsedSec = (Date.parse(attempt.completedAt ?? attempt.startedAt) - Date.parse(attempt.startedAt)) / 1000;
+  const firstTry = items.filter((s) => s.submissions === 1).length;
+  const badges = [
+    attempt.hintsUsed === 0 && { icon: "🧠", title: "Sem dicas", text: "Concluiu sem revelar nenhuma dica." },
+    firstTry === items.length && { icon: "🎯", title: "Precisão", text: "Todas as etapas validadas na primeira tentativa." },
+    elapsedSec < 10 * 60 && { icon: "⚡", title: "Rápido", text: "Concluiu em menos de 10 minutos." },
+    attempt.hintsUsed > 0 && { icon: "🔎", title: "Investigador", text: "Usou dicas para destravar o caminho." },
+  ].filter(Boolean) as { icon: string; title: string; text: string }[];
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  return (
+    <div className="overlay" role="dialog" aria-modal="true" aria-labelledby="summary-title">
+      <div className="summary card">
+        <div className="summary-hero">
+          <div className="trophy" aria-hidden="true">🏆</div>
+          <h2 id="summary-title">Laboratório concluído!</h2>
+          <p className="muted">Você completou todas as etapas. Veja como foi:</p>
+        </div>
+        <div className="stats">
+          <div className="stat">
+            <span className="stat-value">
+              {attempt.score}
+              <small>/{attempt.maxScore}</small>
+            </span>
+            <span className="stat-label">pontos</span>
+          </div>
+          <div className="stat">
+            <span className="stat-value">{duration(attempt.startedAt, attempt.completedAt ?? attempt.startedAt)}</span>
+            <span className="stat-label">tempo total</span>
+          </div>
+          <div className="stat">
+            <span className="stat-value">{attempt.hintsUsed}</span>
+            <span className="stat-label">{attempt.hintsUsed === 1 ? "dica usada" : "dicas usadas"}</span>
+          </div>
+          <div className="stat">
+            <span className="stat-value">{attempt.submissions}</span>
+            <span className="stat-label">{attempt.submissions === 1 ? "validação" : "validações"}</span>
+          </div>
+        </div>
+        {badges.length > 0 && (
+          <div className="badges">
+            {badges.map((b) => (
+              <div key={b.title} className="badge" title={b.text}>
+                <span aria-hidden="true">{b.icon}</span>
+                <span>
+                  <strong>{b.title}</strong>
+                  <span className="muted small">{b.text}</span>
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+        <table className="summary-table">
+          <thead>
+            <tr>
+              <th>Etapa</th>
+              <th>Pontos</th>
+              <th>Tentativas</th>
+              <th>Dicas</th>
+            </tr>
+          </thead>
+          <tbody>
+            {items.map((s) => (
+              <tr key={s.id}>
+                <td>
+                  <span className="ok">✓</span> {s.title}
+                </td>
+                <td>
+                  {s.pointsAwarded}/{s.points}
+                </td>
+                <td>{s.submissions}</td>
+                <td>{s.hints?.revealed.length ?? 0}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <p className="muted small">
+          Ao voltar ao painel, este ambiente é encerrado e os arquivos temporários são descartados. Seu resultado
+          continua registrado.
+        </p>
+        <div className="summary-actions">
+          <button className="link" onClick={onClose}>
+            Continuar explorando
+          </button>
+          <button
+            className="primary"
+            disabled={leaving}
+            onClick={() => {
+              setLeaving(true);
+              onExit();
+            }}
+            autoFocus
+          >
+            {leaving ? "Encerrando…" : "Voltar ao painel"}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

@@ -55,7 +55,17 @@ export type Step = {
 
 export type Progress = {
   sessionId: string;
-  attempt: { id: string; status: "IN_PROGRESS" | "COMPLETED"; score: number; passingScore: number };
+  attempt: {
+    id: string;
+    status: "IN_PROGRESS" | "COMPLETED";
+    score: number;
+    maxScore: number;
+    passingScore: number;
+    startedAt: string;
+    completedAt: string | null;
+    hintsUsed: number;
+    submissions: number;
+  };
   items: Step[];
 };
 

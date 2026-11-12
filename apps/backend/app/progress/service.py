@@ -186,7 +186,12 @@ def progress_view(db: Session, s: LabSession, now: datetime) -> dict[str, Any]:
             "id": str(att.id),
             "status": att.status,
             "score": att.score,
+            "maxScore": sum(st.max_points for st in _steps(db, s.release_id)),
             "passingScore": release.manifest.get("policy", {}).get("finalPassingScore", 100),
+            "startedAt": att.started_at.isoformat(),
+            "completedAt": att.completed_at.isoformat() if att.completed_at else None,
+            "hintsUsed": sum(len(v) for v in revealed.values()),
+            "submissions": sum(p.submissions for p in rows.values()),
         },
         "items": items,
     }
