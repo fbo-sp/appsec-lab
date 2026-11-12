@@ -25,7 +25,7 @@
 | IMP-111 Consulta/encerramento | `GET`/`DELETE /api/v1/sessions/{id}` com ownership (`404` para não-donos, admin auditado); `TERMINATED` só após confirmar ausência | Revogação de gateway (não existe gateway) |
 | IMP-112 Reconciliador | TTL → `EXPIRED` → limpeza; órfãos removidos; jobs TERMINATE mortos re-enfileirados | SLA de cleanup (NFR-007 indefinido) |
 | IMP-113 Auditoria | `audit_events` na mesma transação, ordem total por `seq` | Imutabilidade por permissão de BD |
-| IMP-114 CI | `.github/workflows/ci.yml` (ruff, mypy, validação do LAB-000, pytest com PostgreSQL 16) | **Ainda não executado no GitHub** |
+| IMP-114 CI | `.github/workflows/ci.yml` (ruff, mypy, validação do LAB-000, pytest com PostgreSQL 16); `main` criada no baseline `aad8812` | Executado no PR #1: job `backend` verde (run 43128706201) |
 
 Laboratório usado: `laboratories/LAB-000-hello-benign` — **benigno, sem vulnerabilidade**. O digest de imagem é uma fixture de teste (não existe imagem publicada); aceitável apenas com o adapter fake.
 
@@ -54,7 +54,7 @@ Distribuição: 39 contrato de manifesto; 78 máquina de estados (todas as combi
 
 Cenários cobertos (rastreio): ENG-01 (20 requisições concorrentes com mesma chave → 1 sessão e 1 job; 10 chaves distintas → 1 sessão e 9 × `409`), ENG-02 (worker morto: lease recapturado sem provisionamento duplicado), ENG-03/SEC-01 **somente na API REST**, ENG-06 (expiração → limpeza), ENG-07 (nova versão não altera sessão), ENG-08 (suíte de contrato, apenas com o fake), falhas transitórias/permanentes, timeout de readiness, encerramento antes/durante o provisionamento, órfãos e job de término esgotado.
 
-**Não executados:** CI no GitHub; testes contra adapter real; SEC-02–14; carga; E2E com navegador; ENG-04/05 (reconexão de workspace, reset).
+**Não executados:** testes contra adapter real; SEC-02–14; carga; E2E com navegador; ENG-04/05 (reconexão de workspace, reset).
 
 ## 4. Decisões tomadas nesta sessão (todas reversíveis e registradas)
 
@@ -66,7 +66,6 @@ Cenários cobertos (rastreio): ENG-01 (20 requisições concorrentes com mesma c
 ## 5. Pendências
 
 - Revisão e aprovação de `22`–`24` e ADR-005/006/007 pelo PO.
-- Primeira execução do CI no GitHub (o repositório ainda não tem branch padrão, ver bloqueadores).
 - `outbox_events` e dispatcher de eventos de domínio (ADR-007).
 - Ajuste editorial sugerido em `12_DATA_MODEL.md` (G-02/G-10) após decisão do ADR-005.
 
@@ -74,7 +73,6 @@ Cenários cobertos (rastreio): ENG-01 (20 requisições concorrentes com mesma c
 
 | Bloqueador | Bloqueia | Responsável |
 |---|---|---|
-| Repositório sem branch padrão (`main`) | Abrir PR e executar CI | PO (criar `main` a partir do commit de baseline `aad8812` ou autorizar) |
 | OPEN-01 IdP OIDC | IMP-202 | PO / Arquitetura |
 | Inventário on-prem e acesso à infraestrutura | IMP-I01–I03, adapter real, todo código não confiável | PO / Operação |
 | ADR-001/002/003 sem PoC | F3, F4 | Plataforma / Segurança |
@@ -82,7 +80,6 @@ Cenários cobertos (rastreio): ENG-01 (20 requisições concorrentes com mesma c
 
 ## 7. Próxima tarefa recomendada
 
-1. **IMP-114** — executar o CI no GitHub assim que houver branch padrão.
-2. **IMP-201** — OpenAPI 3.1 com teste de drift (não depende de decisões).
-3. **IMP-203/204/205** — RBAC completo, turmas/atribuições e quotas, com testes negativos.
-4. Em paralelo, iniciar **IMP-I01** (inventário on-prem) com o responsável de infraestrutura.
+1. **IMP-201** — OpenAPI 3.1 com teste de drift (não depende de decisões).
+2. **IMP-203/204/205** — RBAC completo, turmas/atribuições e quotas, com testes negativos.
+3. Em paralelo, iniciar **IMP-I01** (inventário on-prem) com o responsável de infraestrutura.

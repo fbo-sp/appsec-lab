@@ -32,7 +32,7 @@
 | 11 | IMP-111 | Consulta e encerramento de sessão | F1 | Done |
 | 12 | IMP-112 | Reconciliador: TTL e órfãos | F1 | Done |
 | 13 | IMP-113 | Auditoria append-only | F1 | Done |
-| 14 | IMP-114 | Pipeline de CI | F1 | Implementado; aguardando 1ª execução no GitHub |
+| 14 | IMP-114 | Pipeline de CI | F1 | Done |
 | 15 | IMP-201 | OpenAPI 3.1 e testes de contrato | F2 | Ready |
 | 16 | IMP-202 | Autenticação OIDC | F2 | Blocked (OPEN-01) |
 | 17 | IMP-203 | RBAC, role assignments e ownership | F2 | Ready |
