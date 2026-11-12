@@ -11,6 +11,7 @@ from fastapi.staticfiles import StaticFiles
 from sqlalchemy import Engine, text
 from sqlalchemy.orm import Session, sessionmaker
 
+from app.admin.router import router as admin_router
 from app.catalog.router import router as catalog_router
 from app.config import AuthMode, Settings
 from app.db.engine import make_engine, make_session_factory
@@ -48,6 +49,7 @@ def create_app(
     install_error_handlers(app)
     app.include_router(catalog_router)
     app.include_router(sessions_router)
+    app.include_router(admin_router)
 
     @app.get("/healthz", tags=["ops"])
     def healthz() -> dict[str, Any]:

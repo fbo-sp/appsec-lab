@@ -106,6 +106,7 @@ def register_release(
                 image_digest=v.image,
                 runtime_profile=v.runtime_profile,
                 ttl_minutes=v.session.ttl_minutes,
+                max_renewals=v.session.max_renewals,
             )
         )
     for s in manifest.steps:
@@ -178,6 +179,7 @@ def public_release_view(db: Session, release: LabRelease) -> dict[str, Any]:
                 "language": v.language,
                 "framework": v.framework,
                 "ttlMinutes": v.ttl_minutes,
+                "maxRenewals": v.max_renewals,
             }
             for v in variants
         ],

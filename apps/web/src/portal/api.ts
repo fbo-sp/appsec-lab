@@ -24,6 +24,10 @@ export type LabSession = {
   variantId: string;
   expiresAt: string;
   lastErrorCode: string | null;
+  ttlMinutes: number;
+  renewals: number;
+  maxRenewals: number;
+  renewableAt: string | null;
 };
 
 export type Criterion = { id: string; description: string; passed: boolean };
@@ -137,6 +141,7 @@ export const api = {
       headers: { "Idempotency-Key": `ui-${crypto.randomUUID()}` },
       body: JSON.stringify({ labId, version, variantId }),
     }),
+  renew: (id: string) => call<LabSession>(`/api/v1/sessions/${id}/renewals`, { method: "POST" }),
   terminate: (id: string) => call<LabSession>(`/api/v1/sessions/${id}`, { method: "DELETE" }),
   ticket: (id: string, purpose: "workspace" | "preview") =>
     call<{ url: string }>(`/api/v1/sessions/${id}/gateway-ticket`, {

@@ -181,6 +181,18 @@ def reveal_hint(
     )
 
 
+@router.post("/{session_id}/renewals")
+def renew_session(
+    session_id: uuid.UUID,
+    principal: Annotated[Principal, Depends(get_principal)],
+    db: Annotated[Session, Depends(get_db)],
+    clock: Annotated[Clock, Depends(get_clock)],
+) -> dict[str, Any]:
+    """Renova o prazo da sessão (ADR-011): só o dono, perto do fim e até ``maxRenewals`` vezes."""
+    s = service.renew_session(db, principal=principal, session_id=session_id, now=clock.now())
+    return service.session_view(db, s)
+
+
 @router.delete("/{session_id}", status_code=202)
 def terminate_session(
     session_id: uuid.UUID,

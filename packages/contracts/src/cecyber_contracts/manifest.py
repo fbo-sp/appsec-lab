@@ -100,6 +100,8 @@ class Resources(_Strict):
 
 class SessionPolicy(_Strict):
     ttl_minutes: int = Field(alias="ttlMinutes", ge=5)
+    # Renovações do prazo pelo aluno (ADR-011): cada uma reinicia o prazo de ``ttlMinutes``.
+    max_renewals: int = Field(default=2, alias="maxRenewals", ge=0, le=10)
 
 
 class Network(_Strict):

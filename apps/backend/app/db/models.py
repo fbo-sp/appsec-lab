@@ -78,6 +78,7 @@ class LabVariant(Base):
     image_digest: Mapped[str] = mapped_column(String(255))
     runtime_profile: Mapped[str] = mapped_column(String(63))
     ttl_minutes: Mapped[int] = mapped_column(Integer)
+    max_renewals: Mapped[int] = mapped_column(Integer, default=2, server_default="2")
 
 
 class LabStep(Base):
@@ -125,6 +126,7 @@ class LabSession(Base):
         ),
         Index("ix_lab_sessions_user_status", "user_id", "status"),
         Index("ix_lab_sessions_expires_status", "expires_at", "status"),
+        Index("ix_lab_sessions_ready_at", "ready_at"),
     )
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"))
@@ -141,6 +143,10 @@ class LabSession(Base):
     version_num: Mapped[int] = mapped_column(Integer, default=1)
     # Tentativa acadêmica dona do progresso (ADR-005); a sessão é só o runtime efêmero.
     attempt_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("lab_attempts.id"))
+    # Indicadores (ADR-011): quando ficou pronta e quanto levou desde a solicitação; renovações feitas.
+    ready_at: Mapped[datetime | None] = mapped_column(TZ)
+    provision_ms: Mapped[int | None] = mapped_column(Integer)
+    renewals: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
 
     __mapper_args__ = {"version_id_col": version_num}
 

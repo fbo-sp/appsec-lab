@@ -202,13 +202,19 @@ def _provision(ctx: WorkerContext, job: ClaimedJob) -> None:
             # Encerrada durante o provisionamento: o job TERMINATE (ou o reconciliador) remove o runtime.
             queue.complete(db, job.id, ctx.worker_id, now)
         elif phase is RuntimePhase.READY:
+            provision_ms = max(0, int((now - s.created_at).total_seconds() * 1000))
+            s.ready_at, s.provision_ms = now, provision_ms
             apply_event(
                 db,
                 s,
                 SessionEvent.RUNTIME_READY,
                 now=now,
                 actor_id=SYSTEM_ACTOR,
-                metadata={"provider": ctx.runtime.provider},
+                metadata={"provider": ctx.runtime.provider, "provision_ms": provision_ms},
+            )
+            _log.info(
+                "session_ready",
+                extra={"event": "session.ready", "session_id": str(s.id), "provision_ms": provision_ms},
             )
             queue.complete(db, job.id, ctx.worker_id, now)
         elif phase is RuntimePhase.FAILED:

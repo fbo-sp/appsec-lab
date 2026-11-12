@@ -32,16 +32,21 @@ function useElapsed(active: boolean) {
   return Math.max(0, Math.floor((now - start) / 1000));
 }
 
-function useCountdown(expiresAt?: string) {
+function useNow() {
   const [now, setNow] = useState(Date.now());
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(t);
   }, []);
-  if (!expiresAt) return "";
-  const left = Math.max(0, Math.floor((Date.parse(expiresAt) - now) / 1000));
+  return now;
+}
+
+function mmss(totalSeconds: number) {
+  const left = Math.max(0, Math.floor(totalSeconds));
   return `${Math.floor(left / 60)}:${String(left % 60).padStart(2, "0")}`;
 }
+
+const WARN_SECONDS = 5 * 60;
 
 export function SessionView({ id }: { id: string }) {
   const [session, setSession] = useState<LabSession>();
@@ -50,7 +55,11 @@ export function SessionView({ id }: { id: string }) {
   const [previewKey, setPreviewKey] = useState(0);
   const [ending, setEnding] = useState(false);
   const fetchingTickets = useRef(false);
-  const left = useCountdown(session?.expiresAt);
+  const now = useNow();
+  const secondsLeft = session ? (Date.parse(session.expiresAt) - now) / 1000 : 0;
+  const left = mmss(secondsLeft);
+  const [renewDismissedFor, setRenewDismissedFor] = useState<string>();
+  const [renewing, setRenewing] = useState(false);
   const waited = useElapsed(!session || !LIVE.has(session.status));
 
   // Acompanha o estado da sessão (o backend é a fonte de verdade).
@@ -70,9 +79,19 @@ export function SessionView({ id }: { id: string }) {
       }
     };
     tick();
+    // Ao voltar para a aba (ou acordar da suspensão), revalida já: o servidor é a fonte de verdade.
+    const revalidate = () => {
+      if (document.visibilityState !== "visible") return;
+      clearTimeout(timer);
+      tick();
+    };
+    document.addEventListener("visibilitychange", revalidate);
+    window.addEventListener("focus", revalidate);
     return () => {
       stop = true;
       clearTimeout(timer);
+      document.removeEventListener("visibilitychange", revalidate);
+      window.removeEventListener("focus", revalidate);
     };
   }, [id]);
 
@@ -100,6 +119,18 @@ export function SessionView({ id }: { id: string }) {
       /* a sessão expira sozinha; voltar ao painel não depende disso */
     }
     go("/");
+  }
+
+  async function renew() {
+    setRenewing(true);
+    try {
+      setSession(await api.renew(id));
+      setError(undefined);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setRenewing(false);
+    }
   }
 
   async function terminate() {
@@ -137,7 +168,10 @@ export function SessionView({ id }: { id: string }) {
         </div>
         <div className="session-actions">
           {LIVE.has(status) && (
-            <span className="timer" title="Tempo restante da sessão">
+            <span
+              className={`timer ${secondsLeft <= WARN_SECONDS ? "timer-warn" : ""}`}
+              title={`Tempo restante da sessão. Renovações: ${session.renewals}/${session.maxRenewals}`}
+            >
               ⏱ {left}
             </span>
           )}
@@ -149,6 +183,38 @@ export function SessionView({ id }: { id: string }) {
         </div>
       </div>
       {error && <ErrorBox message={error} />}
+      {LIVE.has(status) && secondsLeft <= WARN_SECONDS && secondsLeft > 0 && (
+        session.renewableAt && now >= Date.parse(session.renewableAt) ? (
+          renewDismissedFor !== session.expiresAt && (
+            <div className="overlay" role="alertdialog" aria-modal="true" aria-labelledby="renew-title">
+              <div className="card renew">
+                <div className="renew-clock" aria-hidden="true">⏳</div>
+                <h2 id="renew-title">Sua sessão termina em {left}</h2>
+                <p className="muted">
+                  Quer continuar? Renovando, o prazo volta a {session.ttlMinutes} minutos. Restam{" "}
+                  {session.maxRenewals - session.renewals} de {session.maxRenewals} renovações.
+                </p>
+                <p className="muted small">Se o prazo acabar, o ambiente é removido, mas seu progresso fica salvo.</p>
+                <div className="summary-actions">
+                  <button className="link" onClick={() => setRenewDismissedFor(session.expiresAt)}>
+                    Agora não
+                  </button>
+                  <button className="primary" onClick={renew} disabled={renewing} autoFocus>
+                    {renewing ? "Renovando…" : `Renovar por ${session.ttlMinutes} min`}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )
+        ) : (
+          !session.renewableAt && (
+            <div className="banner-warn" role="status">
+              ⏳ Sua sessão termina em {left} e não há mais renovações. Seu progresso fica salvo; para continuar
+              depois, inicie uma nova sessão.
+            </div>
+          )
+        )
+      )}
 
       {!LIVE.has(status) && !ENDED.has(status) && status !== "TERMINATING" && (
         <main className="page narrow">

@@ -194,3 +194,11 @@ label { font-weight: 600; font-size: 0.9rem; }
 @keyframes pop { 0% { transform: scale(0.4); } 70% { transform: scale(1.15); } 100% { transform: scale(1); } }
 @media (max-width: 560px) { .stats { grid-template-columns: repeat(2, 1fr); } }
 @media (prefers-reduced-motion: reduce) { .overlay, .trophy { animation: none; } }
+
+/* Prazo da sessão e renovação (ADR-011) */
+.timer-warn { color: var(--warn); font-weight: 700; }
+.renew { width: min(440px, 100%); text-align: center; padding: 1.4rem; }
+.renew h2 { margin: 0.2rem 0 0.4rem; font-variant-numeric: tabular-nums; }
+.renew .summary-actions { justify-content: center; margin-top: 0.8rem; }
+.renew-clock { font-size: 2.4rem; }
+.banner-warn { background: color-mix(in srgb, var(--warn) 14%, var(--surface)); color: var(--text); border-bottom: 1px solid var(--border); padding: 0.5rem 1.2rem; font-size: 0.9rem; }

@@ -227,6 +227,56 @@ def request_termination(
     return s
 
 
+# -- renovação do prazo (ADR-011) ---------------------------------------------------------------------
+def renew_window(variant: LabVariant) -> timedelta:
+    """Renovar só perto do fim: evita "renovação automática" por aba aberta e mantém o limite útil."""
+    return timedelta(minutes=min(5, max(1, variant.ttl_minutes // 3)))
+
+
+def renew_session(db: Session, *, principal: Principal, session_id: uuid.UUID, now: datetime) -> LabSession:
+    s = get_visible_session(db, principal, session_id)
+    if s.user_id != principal.user_id:
+        raise not_found("Sessão")  # só o dono renova (admin apenas consulta/encerra)
+    db.refresh(s, with_for_update=True)
+    variant = db.get(LabVariant, s.variant_id)
+    assert variant is not None
+    if SessionStatus(s.status) not in GATEWAY_STATUSES or s.expires_at <= now:
+        raise ApiError(409, "SESSION_NOT_READY", "A sessão não está ativa.", {"status": s.status})
+    if s.renewals >= variant.max_renewals:
+        raise ApiError(
+            409,
+            "RENEWAL_LIMIT_REACHED",
+            "O limite de renovações desta sessão foi atingido.",
+            {"maxRenewals": variant.max_renewals},
+        )
+    if s.expires_at - now > renew_window(variant):
+        raise ApiError(
+            409,
+            "RENEWAL_TOO_EARLY",
+            "A renovação fica disponível nos últimos minutos da sessão.",
+            {"renewableAt": (s.expires_at - renew_window(variant)).isoformat()},
+        )
+    previous = s.expires_at
+    s.expires_at = now + timedelta(minutes=variant.ttl_minutes)
+    s.renewals += 1
+    s.updated_at = now
+    audit.record(
+        db,
+        now=now,
+        actor_id=str(principal.user_id),
+        action="session.renewed",
+        resource_kind="lab_session",
+        resource_id=str(s.id),
+        metadata={
+            "previous_expires_at": previous.isoformat(),
+            "expires_at": s.expires_at.isoformat(),
+            "renewals": s.renewals,
+        },
+    )
+    db.commit()
+    return s
+
+
 def session_view(db: Session, s: LabSession) -> dict[str, Any]:
     release = db.get(LabRelease, s.release_id)
     variant = db.get(LabVariant, s.variant_id)
@@ -238,6 +288,13 @@ def session_view(db: Session, s: LabSession) -> dict[str, Any]:
         "version": release.version,
         "variantId": variant.variant_key,
         "expiresAt": s.expires_at.isoformat(),
+        "ttlMinutes": variant.ttl_minutes,
+        "renewals": s.renewals,
+        "maxRenewals": variant.max_renewals,
+        # Instante a partir do qual a renovação é aceita; None = sem renovações restantes.
+        "renewableAt": None
+        if s.renewals >= variant.max_renewals
+        else (s.expires_at - renew_window(variant)).isoformat(),
         "createdAt": s.created_at.isoformat(),
         "updatedAt": s.updated_at.isoformat(),
         "lastErrorCode": s.last_error_code,
