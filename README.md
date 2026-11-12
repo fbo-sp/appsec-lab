@@ -2,7 +2,7 @@
 
 Repositório de especificação **inicial** para desenvolvimento assistido por Codex e Claude Code de uma plataforma própria de laboratórios práticos de segurança de aplicações.
 
-> **Estado:** planejamento, versão documental 0.3. Este repositório não contém uma implementação executável. As escolhas técnicas são propostas e precisam passar por PoCs e ADRs. Não declarar requisitos ou funcionalidades como implementados sem evidência.
+> **Estado:** documentação v0.3 + **primeira fatia técnica do motor** (plano de controle com runtime simulado). Ainda não há sandbox real, autenticação OIDC, workspace, validação nem laboratórios vulneráveis. Status verificável em [`docs/25_DEVELOPMENT_STATUS.md`](docs/25_DEVELOPMENT_STATUS.md). As escolhas técnicas continuam propostas até PoCs e ADRs.
 
 ## Onde começar
 
@@ -36,3 +36,16 @@ Consulte [`docs/INDEX.md`](docs/INDEX.md) para status de elaboração e ordem su
 - Especificações de manifesto, dados, API e escopo detalhadas em `docs/11` a `docs/14`.
 - Requisitos pedagógicos acrescentados ao PRD e backlog US-031 a US-039.
 - Pacote contém **apenas documentos Markdown**, ainda não código-fonte de aplicação ou migrações executáveis.
+
+## Desenvolvimento (1ª fatia)
+
+Pré-requisitos: Python 3.12+, [uv](https://docs.astral.sh/uv/) e PostgreSQL 16 (local ou `infrastructure/local`).
+
+```bash
+scripts/test.sh            # lint, tipagem e testes (sobe PostgreSQL local descartável)
+scripts/demo-slice.sh      # API + worker reais: registrar LAB-000, criar, consultar e encerrar sessão
+```
+
+Estrutura: `apps/backend` (FastAPI + workers), `packages/contracts` (manifesto v1alpha1 + JSON Schema),
+`laboratories/` (manifestos), `infrastructure/` (local e on-prem), `services/` e `apps/frontend` (planejados).
+Leia `docs/22`–`25` antes de continuar o desenvolvimento.

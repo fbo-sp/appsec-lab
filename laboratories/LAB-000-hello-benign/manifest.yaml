@@ -1,0 +1,64 @@
+# LAB-000 — laboratório BENIGNO de teste do motor (sem vulnerabilidade intencional).
+# Finalidade: exercitar contrato de manifesto, registro, sessão e ciclo de vida do runtime.
+# NÃO é conteúdo pedagógico do MVP e não deve ser publicado para alunos.
+#
+# ATENÇÃO: o digest abaixo é uma FIXTURE de teste (sha256 de um texto fixo), não uma imagem
+# publicada. Só é aceitável com o FakeRuntimeAdapter, que não faz pull de imagens. O pipeline de
+# publicação (IMP-028/US-028) deverá verificar a existência do digest no registry.
+apiVersion: labs.cecyber.io/v1alpha1
+kind: AppSecLab
+metadata:
+  id: LAB-000
+  version: 0.1.0
+  title: Laboratório benigno de verificação do motor
+  # O contrato exige uma CWE principal. CWE-1000 é a raiz da visão "Research Concepts" do MITRE,
+  # usada aqui apenas como marcador neutro: este laboratório NÃO contém vulnerabilidade.
+  primaryCwe: CWE-1000
+  secondaryCwes: []
+learning:
+  singleVulnerability: true
+  estimatedMinutes: 5
+  difficulty: beginner
+  objectives:
+    - Verificar que a plataforma provisiona, consulta e encerra uma sessão de laboratório
+  story:
+    role: Engenheiro(a) de plataforma
+    application: Serviço "hello" fictício que apenas responde a uma verificação de saúde
+    context: Homologação técnica do motor de laboratórios antes de qualquer conteúdo vulnerável
+    mission: Iniciar a sessão, observar o estado READY e encerrá-la
+variants:
+  - id: python-http
+    language: python
+    framework: stdlib
+    image: registry.local/labs/lab-000-hello@sha256:9b80e32c25ae1954058eb513d96cac3ae4ba525cf0d1bb641b7b980c6cb857fb
+    runtimeProfile: benign-test
+    workspacePath: /workspace
+    startup:
+      command: ["python", "-m", "http.server", "8080", "--bind", "0.0.0.0"]
+      port: 8080
+    resources:
+      cpuMillicores: 100
+      memoryMiB: 128
+      storageMiB: 64
+      pidsMax: 32
+    session:
+      ttlMinutes: 15
+    interfaces: [editor, terminal, web]
+steps:
+  - id: observe-ready
+    order: 1
+    title: Observar a sessão pronta
+    explanation: A plataforma provisiona um ambiente efêmero exclusivo para a sessão.
+    task: Aguarde o estado READY da sessão.
+    concept: Ciclo de vida de sessões efêmeras
+    validatorRef: benign/python-http/session-ready-v1
+    hints:
+      - level: 1
+        text: Consulte o estado da sessão pela API.
+    points: 100
+policy:
+  sequentialUnlock: true
+  allowStepRetry: true
+  persistProgressAcrossReset: true
+  allowSolutionReveal: false
+  finalPassingScore: 100

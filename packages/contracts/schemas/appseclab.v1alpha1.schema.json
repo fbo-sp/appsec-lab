@@ -1,0 +1,563 @@
+{
+  "$defs": {
+    "Build": {
+      "additionalProperties": false,
+      "properties": {
+        "command": {
+          "items": {
+            "maxLength": 512,
+            "minLength": 1,
+            "type": "string"
+          },
+          "maxItems": 32,
+          "minItems": 1,
+          "title": "Command",
+          "type": "array"
+        },
+        "timeoutSeconds": {
+          "maximum": 300,
+          "minimum": 1,
+          "title": "Timeoutseconds",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "command",
+        "timeoutSeconds"
+      ],
+      "title": "Build",
+      "type": "object"
+    },
+    "Difficulty": {
+      "enum": [
+        "beginner",
+        "intermediate",
+        "advanced"
+      ],
+      "title": "Difficulty",
+      "type": "string"
+    },
+    "Hint": {
+      "additionalProperties": false,
+      "properties": {
+        "level": {
+          "maximum": 3,
+          "minimum": 1,
+          "title": "Level",
+          "type": "integer"
+        },
+        "text": {
+          "maxLength": 4000,
+          "minLength": 1,
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "level",
+        "text"
+      ],
+      "title": "Hint",
+      "type": "object"
+    },
+    "Interface": {
+      "enum": [
+        "editor",
+        "terminal",
+        "web"
+      ],
+      "title": "Interface",
+      "type": "string"
+    },
+    "LabStep": {
+      "additionalProperties": false,
+      "properties": {
+        "concept": {
+          "anyOf": [
+            {
+              "maxLength": 4000,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Concept"
+        },
+        "expectedOutcome": {
+          "anyOf": [
+            {
+              "maxLength": 4000,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Expectedoutcome"
+        },
+        "explanation": {
+          "maxLength": 4000,
+          "minLength": 1,
+          "title": "Explanation",
+          "type": "string"
+        },
+        "hints": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/Hint"
+          },
+          "maxItems": 3,
+          "title": "Hints",
+          "type": "array"
+        },
+        "id": {
+          "maxLength": 63,
+          "pattern": "^[a-z][a-z0-9]*(-[a-z0-9]+)*$",
+          "title": "Id",
+          "type": "string"
+        },
+        "order": {
+          "maximum": 50,
+          "minimum": 1,
+          "title": "Order",
+          "type": "integer"
+        },
+        "points": {
+          "maximum": 100,
+          "minimum": 0,
+          "title": "Points",
+          "type": "integer"
+        },
+        "task": {
+          "maxLength": 4000,
+          "minLength": 1,
+          "title": "Task",
+          "type": "string"
+        },
+        "title": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        },
+        "unlockOnPass": {
+          "default": true,
+          "title": "Unlockonpass",
+          "type": "boolean"
+        },
+        "validatorRef": {
+          "maxLength": 200,
+          "pattern": "^[a-z0-9-]+(/[a-z0-9-]+)+-v[0-9]+$",
+          "title": "Validatorref",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "order",
+        "title",
+        "explanation",
+        "task",
+        "validatorRef",
+        "points"
+      ],
+      "title": "LabStep",
+      "type": "object"
+    },
+    "LabVariant": {
+      "additionalProperties": false,
+      "properties": {
+        "build": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Build"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "framework": {
+          "maxLength": 63,
+          "pattern": "^[a-z][a-z0-9]*(-[a-z0-9]+)*$",
+          "title": "Framework",
+          "type": "string"
+        },
+        "id": {
+          "maxLength": 63,
+          "pattern": "^[a-z][a-z0-9]*(-[a-z0-9]+)*$",
+          "title": "Id",
+          "type": "string"
+        },
+        "image": {
+          "maxLength": 255,
+          "pattern": "^[a-z0-9]+([._-][a-z0-9]+)*(:[0-9]+)?(/[a-z0-9]+([._-][a-z0-9]+)*)+@sha256:[a-f0-9]{64}$",
+          "title": "Image",
+          "type": "string"
+        },
+        "interfaces": {
+          "items": {
+            "$ref": "#/$defs/Interface"
+          },
+          "maxItems": 3,
+          "minItems": 1,
+          "title": "Interfaces",
+          "type": "array"
+        },
+        "language": {
+          "maxLength": 63,
+          "pattern": "^[a-z][a-z0-9]*(-[a-z0-9]+)*$",
+          "title": "Language",
+          "type": "string"
+        },
+        "network": {
+          "$ref": "#/$defs/Network",
+          "default": {
+            "egressProfile": "deny-all"
+          }
+        },
+        "resources": {
+          "$ref": "#/$defs/Resources"
+        },
+        "runtimeProfile": {
+          "maxLength": 63,
+          "pattern": "^[a-z][a-z0-9]*(-[a-z0-9]+)*$",
+          "title": "Runtimeprofile",
+          "type": "string"
+        },
+        "session": {
+          "$ref": "#/$defs/SessionPolicy"
+        },
+        "startup": {
+          "$ref": "#/$defs/Startup"
+        },
+        "workspacePath": {
+          "pattern": "^/workspace(/[A-Za-z0-9._-]+)*$",
+          "title": "Workspacepath",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "language",
+        "framework",
+        "image",
+        "runtimeProfile",
+        "workspacePath",
+        "startup",
+        "resources",
+        "session",
+        "interfaces"
+      ],
+      "title": "LabVariant",
+      "type": "object"
+    },
+    "Learning": {
+      "additionalProperties": false,
+      "properties": {
+        "difficulty": {
+          "$ref": "#/$defs/Difficulty"
+        },
+        "estimatedMinutes": {
+          "maximum": 240,
+          "minimum": 5,
+          "title": "Estimatedminutes",
+          "type": "integer"
+        },
+        "objectives": {
+          "items": {
+            "maxLength": 4000,
+            "minLength": 1,
+            "type": "string"
+          },
+          "maxItems": 10,
+          "minItems": 1,
+          "title": "Objectives",
+          "type": "array"
+        },
+        "singleVulnerability": {
+          "const": true,
+          "title": "Singlevulnerability",
+          "type": "boolean"
+        },
+        "story": {
+          "$ref": "#/$defs/Story"
+        }
+      },
+      "required": [
+        "singleVulnerability",
+        "estimatedMinutes",
+        "difficulty",
+        "objectives",
+        "story"
+      ],
+      "title": "Learning",
+      "type": "object"
+    },
+    "Metadata": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^LAB-[0-9]{3}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "primaryCwe": {
+          "pattern": "^CWE-[1-9][0-9]{0,4}$",
+          "title": "Primarycwe",
+          "type": "string"
+        },
+        "secondaryCwes": {
+          "default": [],
+          "items": {
+            "pattern": "^CWE-[1-9][0-9]{0,4}$",
+            "type": "string"
+          },
+          "maxItems": 5,
+          "title": "Secondarycwes",
+          "type": "array"
+        },
+        "title": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        },
+        "version": {
+          "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "version",
+        "title",
+        "primaryCwe"
+      ],
+      "title": "Metadata",
+      "type": "object"
+    },
+    "Network": {
+      "additionalProperties": false,
+      "properties": {
+        "egressProfile": {
+          "const": "deny-all",
+          "default": "deny-all",
+          "title": "Egressprofile",
+          "type": "string"
+        }
+      },
+      "title": "Network",
+      "type": "object"
+    },
+    "Policy": {
+      "additionalProperties": false,
+      "properties": {
+        "allowSolutionReveal": {
+          "title": "Allowsolutionreveal",
+          "type": "boolean"
+        },
+        "allowStepRetry": {
+          "title": "Allowstepretry",
+          "type": "boolean"
+        },
+        "finalPassingScore": {
+          "maximum": 100,
+          "minimum": 0,
+          "title": "Finalpassingscore",
+          "type": "integer"
+        },
+        "persistProgressAcrossReset": {
+          "title": "Persistprogressacrossreset",
+          "type": "boolean"
+        },
+        "sequentialUnlock": {
+          "title": "Sequentialunlock",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "sequentialUnlock",
+        "allowStepRetry",
+        "persistProgressAcrossReset",
+        "allowSolutionReveal",
+        "finalPassingScore"
+      ],
+      "title": "Policy",
+      "type": "object"
+    },
+    "Resources": {
+      "additionalProperties": false,
+      "properties": {
+        "cpuMillicores": {
+          "minimum": 50,
+          "title": "Cpumillicores",
+          "type": "integer"
+        },
+        "memoryMiB": {
+          "minimum": 32,
+          "title": "Memorymib",
+          "type": "integer"
+        },
+        "pidsMax": {
+          "default": 64,
+          "minimum": 8,
+          "title": "Pidsmax",
+          "type": "integer"
+        },
+        "storageMiB": {
+          "minimum": 16,
+          "title": "Storagemib",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "cpuMillicores",
+        "memoryMiB",
+        "storageMiB"
+      ],
+      "title": "Resources",
+      "type": "object"
+    },
+    "SessionPolicy": {
+      "additionalProperties": false,
+      "properties": {
+        "ttlMinutes": {
+          "minimum": 5,
+          "title": "Ttlminutes",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "ttlMinutes"
+      ],
+      "title": "SessionPolicy",
+      "type": "object"
+    },
+    "Startup": {
+      "additionalProperties": false,
+      "properties": {
+        "command": {
+          "items": {
+            "maxLength": 512,
+            "minLength": 1,
+            "type": "string"
+          },
+          "maxItems": 32,
+          "minItems": 1,
+          "title": "Command",
+          "type": "array"
+        },
+        "port": {
+          "maximum": 65535,
+          "minimum": 1024,
+          "title": "Port",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "command",
+        "port"
+      ],
+      "title": "Startup",
+      "type": "object"
+    },
+    "Story": {
+      "additionalProperties": false,
+      "properties": {
+        "application": {
+          "maxLength": 4000,
+          "minLength": 1,
+          "title": "Application",
+          "type": "string"
+        },
+        "context": {
+          "maxLength": 4000,
+          "minLength": 1,
+          "title": "Context",
+          "type": "string"
+        },
+        "mission": {
+          "maxLength": 4000,
+          "minLength": 1,
+          "title": "Mission",
+          "type": "string"
+        },
+        "role": {
+          "maxLength": 4000,
+          "minLength": 1,
+          "title": "Role",
+          "type": "string"
+        }
+      },
+      "required": [
+        "role",
+        "application",
+        "context",
+        "mission"
+      ],
+      "title": "Story",
+      "type": "object"
+    }
+  },
+  "$id": "https://labs.cecyber.io/schemas/appseclab.v1alpha1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "apiVersion": {
+      "const": "labs.cecyber.io/v1alpha1",
+      "title": "Apiversion",
+      "type": "string"
+    },
+    "kind": {
+      "const": "AppSecLab",
+      "title": "Kind",
+      "type": "string"
+    },
+    "learning": {
+      "$ref": "#/$defs/Learning"
+    },
+    "metadata": {
+      "$ref": "#/$defs/Metadata"
+    },
+    "policy": {
+      "$ref": "#/$defs/Policy"
+    },
+    "steps": {
+      "items": {
+        "$ref": "#/$defs/LabStep"
+      },
+      "maxItems": 50,
+      "minItems": 1,
+      "title": "Steps",
+      "type": "array"
+    },
+    "variants": {
+      "items": {
+        "$ref": "#/$defs/LabVariant"
+      },
+      "maxItems": 10,
+      "minItems": 1,
+      "title": "Variants",
+      "type": "array"
+    }
+  },
+  "required": [
+    "apiVersion",
+    "kind",
+    "metadata",
+    "learning",
+    "variants",
+    "steps",
+    "policy"
+  ],
+  "title": "AppSecLab",
+  "type": "object"
+}
