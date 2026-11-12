@@ -25,6 +25,7 @@
 | IMP-111 Consulta/encerramento | `GET`/`DELETE /api/v1/sessions/{id}` com ownership (`404` para não-donos, admin auditado); `TERMINATED` só após confirmar ausência | Revogação de gateway (não existe gateway) |
 | IMP-112 Reconciliador | TTL → `EXPIRED` → limpeza; órfãos removidos; jobs TERMINATE mortos re-enfileirados | SLA de cleanup (NFR-007 indefinido) |
 | IMP-113 Auditoria | `audit_events` na mesma transação, ordem total por `seq` | Imutabilidade por permissão de BD |
+| Ambiente local Docker | `apps/backend/Dockerfile` (non-root, uid 10001), `infrastructure/local/docker-compose.yml` (PostgreSQL + migrate + API + worker, portas só em 127.0.0.1), `scripts/demo-local.ps1` (Windows), `scripts/smoke-compose.sh` (também no CI) | Execução no Docker Desktop do PO (Windows) |
 | IMP-114 CI | `.github/workflows/ci.yml` (ruff, mypy, validação do LAB-000, pytest com PostgreSQL 16); `main` criada no baseline `aad8812` | Executado no PR #1: job `backend` verde (run 43128706201) |
 
 Laboratório usado: `laboratories/LAB-000-hello-benign` — **benigno, sem vulnerabilidade**. O digest de imagem é uma fixture de teste (não existe imagem publicada); aceitável apenas com o adapter fake.
@@ -48,6 +49,7 @@ Ambiente: contêiner Linux de desenvolvimento, PostgreSQL 16 local descartável 
 | `scripts/test.sh` (Python 3.13) | **173 passed** |
 | `uv run --python 3.12 pytest` | **173 passed** |
 | `uv run alembic upgrade head` → `downgrade base` → `upgrade head` | OK |
+| `scripts/smoke-compose.sh --no-build` (Docker 29, Linux) | Pilha sobe saudável; registro 201; READY; intruso 404; TERMINATED; API roda como uid 10001 |
 | `scripts/demo-slice.sh` (uvicorn + worker reais) | Registro 201; criação 202; replay com a mesma chave retorna a mesma sessão; READY; outro aluno recebe 404; DELETE 202 → TERMINATED; logs JSON com `correlation_id` |
 
 Distribuição: 39 contrato de manifesto; 78 máquina de estados (todas as combinações estado×evento); 9 config/logs; 6 contrato do RuntimePort; 11 integração de catálogo; 30 integração de sessões.

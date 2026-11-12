@@ -31,3 +31,9 @@ jobs:
       - run: uv run mypy packages/contracts/src apps/backend/app
       - run: uv run python -m cecyber_contracts validate laboratories/LAB-000-hello-benign/manifest.yaml
       - run: uv run pytest
+
+  compose-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: scripts/smoke-compose.sh
