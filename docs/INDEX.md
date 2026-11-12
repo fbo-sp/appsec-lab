@@ -37,6 +37,7 @@
 | ADR/ADR-005-academic-model.md | Aprovado (2026-11-11): LabAttempt/StepSubmission/ValidationRun |
 | ADR/ADR-006-manifest-contract-v1alpha1.md | Aprovado (2026-11-11), implementado |
 | ADR/ADR-007-postgres-job-queue.md | Aprovado (2026-11-11), implementado |
+| ADR/ADR-008-local-docker-runtime.md | Aprovado (2026-11-12), implementado (somente local/test) |
 
 ## Ordem recomendada para trabalho com agentes
 

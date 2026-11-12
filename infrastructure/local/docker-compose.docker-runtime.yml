@@ -1,0 +1,21 @@
+# Override LOCAL: executa os laboratórios como contêineres reais no Docker da máquina (ADR-008).
+#   docker compose -f infrastructure/local/docker-compose.yml \
+#                  -f infrastructure/local/docker-compose.docker-runtime.yml up -d --build
+#
+# Somente para desenvolvimento/teste local com laboratórios BENIGNOS ou de conteúdo próprio.
+# NÃO é fronteira de isolamento para código hostil nem configuração de piloto/produção.
+#
+# O socket Docker é montado APENAS no worker (plano de controle confiável). Ele nunca é montado em
+# contêineres de laboratório; o adapter recusa montagens do host e cria cada sessão em rede interna.
+# Acesso ao socket equivale a root na máquina: não use este override em máquina compartilhada.
+services:
+  worker:
+    environment:
+      RUNTIME_ADAPTER: docker
+      DOCKER_ALLOW_PULL: "false"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    # O worker roda como uid 10001; precisa do grupo dono do socket (0 no Docker Desktop;
+    # no Linux, exporte DOCKER_SOCKET_GID=$(stat -c %g /var/run/docker.sock)).
+    group_add:
+      - "${DOCKER_SOCKET_GID:-0}"

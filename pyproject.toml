@@ -48,6 +48,11 @@ mypy_path = ["packages/contracts/src", "apps/backend"]
 explicit_package_bases = true
 exclude = ["migrations/", "tests/"]
 
+[[tool.mypy.overrides]]
+# docker-py não publica tipos; o adapter isola o uso em app/runtime/docker_local.py.
+module = ["docker", "docker.*"]
+ignore_missing_imports = true
+
 [tool.pytest.ini_options]
 testpaths = ["packages/contracts/tests", "apps/backend/tests"]
 markers = [

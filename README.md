@@ -46,6 +46,9 @@ scripts/test.sh            # lint, tipagem e testes (sobe PostgreSQL local desca
 scripts/demo-slice.sh      # API + worker reais: registrar LAB-000, criar, consultar e encerrar sessão
 ```
 
+No Windows com Docker Desktop: `docker compose -f infrastructure/local/docker-compose.yml up --build -d` e
+`powershell -ExecutionPolicy Bypass -File scripts\demo-local.ps1` (detalhes em `infrastructure/local/README.md`).
+
 Estrutura: `apps/backend` (FastAPI + workers), `packages/contracts` (manifesto v1alpha1 + JSON Schema),
 `laboratories/` (manifestos), `infrastructure/` (local e on-prem), `services/` e `apps/frontend` (planejados).
 Leia `docs/22`–`25` antes de continuar o desenvolvimento.

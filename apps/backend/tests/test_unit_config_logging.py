@@ -17,7 +17,8 @@ BASE = {"DATABASE_URL": "postgresql+psycopg://x@localhost/db"}
         {"APP_ENV": "production", "AUTH_MODE": "dev"},
         {"APP_ENV": "staging", "AUTH_MODE": "dev"},
         {"APP_ENV": "local", "AUTH_MODE": "oidc"},
-        {"APP_ENV": "local", "RUNTIME_ADAPTER": "docker"},
+        {"APP_ENV": "local", "RUNTIME_ADAPTER": "kubernetes"},
+        {"APP_ENV": "production", "AUTH_MODE": "oidc", "RUNTIME_ADAPTER": "docker"},
         {"APP_ENV": "local", "JOB_MAX_ATTEMPTS": "0"},
         {"APP_ENV": "nope"},
     ],
@@ -35,6 +36,12 @@ def test_missing_database_url() -> None:
 def test_local_dev_config_is_accepted() -> None:
     s = Settings.from_env({**BASE, "APP_ENV": "local", "AUTH_MODE": "dev"})
     assert s.runtime_adapter == "fake"
+
+
+def test_docker_adapter_is_accepted_only_locally() -> None:
+    s = Settings.from_env({**BASE, "APP_ENV": "local", "RUNTIME_ADAPTER": "docker"})
+    assert s.runtime_adapter == "docker"
+    assert s.docker_allow_pull is False
 
 
 def test_json_log_has_correlation_and_redacts_secrets() -> None:

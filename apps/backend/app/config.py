@@ -35,6 +35,8 @@ class Settings:
     job_max_attempts: int
     provision_timeout_seconds: int
     reconcile_interval_seconds: float
+    docker_attach_container: str | None = None
+    docker_allow_pull: bool = False
 
     @staticmethod
     def from_env(env: dict[str, str] | None = None) -> Settings:
@@ -51,6 +53,8 @@ class Settings:
                 job_max_attempts=int(e.get("JOB_MAX_ATTEMPTS", "5")),
                 provision_timeout_seconds=int(e.get("PROVISION_TIMEOUT_SECONDS", "120")),
                 reconcile_interval_seconds=float(e.get("RECONCILE_INTERVAL_SECONDS", "15")),
+                docker_attach_container=e.get("DOCKER_ATTACH_CONTAINER") or None,
+                docker_allow_pull=e.get("DOCKER_ALLOW_PULL", "false").lower() == "true",
             )
         except KeyError as exc:
             raise ConfigError(f"Variável de ambiente obrigatória ausente: {exc.args[0]}") from exc
@@ -64,9 +68,12 @@ class Settings:
             raise ConfigError("AUTH_MODE=dev só é permitido com APP_ENV=local ou test.")
         if self.auth_mode is AuthMode.OIDC:
             raise ConfigError("AUTH_MODE=oidc ainda não implementado (IMP-202, OPEN-01).")
-        if self.runtime_adapter != "fake":
-            raise ConfigError(f"Runtime adapter não suportado: {self.runtime_adapter!r} (apenas 'fake').")
-        if self.runtime_adapter == "fake" and self.app_env not in (AppEnv.LOCAL, AppEnv.TEST):
-            raise ConfigError("FakeRuntimeAdapter não pode ser usado fora de local/test.")
+        if self.runtime_adapter not in ("fake", "docker"):
+            raise ConfigError(
+                f"Runtime adapter não suportado: {self.runtime_adapter!r} (use 'fake' ou 'docker')."
+            )
+        if self.app_env not in (AppEnv.LOCAL, AppEnv.TEST):
+            # Nenhum adapter atual é aprovado para staging/produção (ADR-001/002/008).
+            raise ConfigError(f"Runtime adapter {self.runtime_adapter!r} só é permitido em local/test.")
         if self.worker_lease_seconds <= 0 or self.job_max_attempts <= 0:
             raise ConfigError("Lease e tentativas devem ser positivos.")

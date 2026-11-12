@@ -1,0 +1,59 @@
+#!/usr/bin/env bash
+# Smoke test do ambiente Docker Compose local: sobe a pilha, executa o ciclo da sessão e derruba.
+# Uso: scripts/smoke-compose.sh [--no-build] [--docker-runtime]
+#   --docker-runtime: usa o runtime Docker LOCAL (ADR-008) e o LAB-000 como contêiner real.
+set -euo pipefail
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+COMPOSE=(docker compose -f "$ROOT/infrastructure/local/docker-compose.yml")
+BUILD=(--build); DOCKER_RT=0
+for arg in "$@"; do
+  case "$arg" in
+    --no-build) BUILD=(--no-build);;
+    --docker-runtime) DOCKER_RT=1;;
+    *) echo "argumento desconhecido: $arg" >&2; exit 2;;
+  esac
+done
+if [ "$DOCKER_RT" = 1 ]; then
+  COMPOSE+=(-f "$ROOT/infrastructure/local/docker-compose.docker-runtime.yml")
+  export DOCKER_SOCKET_GID="${DOCKER_SOCKET_GID:-$(stat -c %g /var/run/docker.sock)}"
+fi
+API=http://127.0.0.1:8000
+trap '"${COMPOSE[@]}" logs --no-color api worker | tail -40; "${COMPOSE[@]}" down -v >/dev/null 2>&1 || true' EXIT
+"${COMPOSE[@]}" up -d --wait "${BUILD[@]}"
+json() { python3 -c "import json,sys; print(json.load(sys.stdin)$1)"; }
+wait_status() {
+  for _ in $(seq 1 40); do
+    st=$(curl -sf -H "X-Dev-User: smoke" "$API/api/v1/sessions/$1" | json '["status"]')
+    [ "$st" = "$2" ] && { echo "$st"; return 0; }; sleep 0.5
+  done; echo "esperado $2, obtido $st" >&2; return 1
+}
+if [ "$DOCKER_RT" = 1 ]; then
+  "$ROOT/scripts/lab-local.sh" "$API"
+else
+  code=$(curl -s -o /dev/null -w "%{http_code}" -H "X-Dev-User: admin" -H "X-Dev-Roles: admin" \
+    -H "Content-Type: application/yaml" --data-binary @"$ROOT/laboratories/LAB-000-hello-benign/manifest.yaml" \
+    "$API/api/v1/admin/lab-releases")
+  [ "$code" = "201" ] || { echo "registro falhou: $code" >&2; exit 1; }
+fi
+SID=$(curl -sf -H "X-Dev-User: smoke" -H "Idempotency-Key: smoke-key-0001" -H "Content-Type: application/json" \
+  -d '{"labId":"LAB-000","version":"0.1.0","variantId":"python-http"}' "$API/api/v1/sessions" | json '["sessionId"]')
+wait_status "$SID" READY
+if [ "$DOCKER_RT" = 1 ]; then
+  C="cecyber-lab-$SID"
+  [ "$(docker inspect -f '{{.Config.User}} {{.HostConfig.ReadonlyRootfs}}' "$C")" = "10001 true" ]
+  [ "$(docker network inspect -f '{{.Internal}}' "$C-net")" = "true" ]
+  [ -z "$(docker port "$C")" ] || { echo "laboratório publicou portas no host" >&2; exit 1; }
+  docker exec "$C" python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/', timeout=3)"
+  echo "contêiner do laboratório OK: $C"
+fi
+[ "$(curl -s -o /dev/null -w "%{http_code}" -H "X-Dev-User: intruso" "$API/api/v1/sessions/$SID")" = "404" ]
+curl -sf -X DELETE -H "X-Dev-User: smoke" "$API/api/v1/sessions/$SID" >/dev/null
+wait_status "$SID" TERMINATED
+if [ "$DOCKER_RT" = 1 ]; then
+  [ -z "$(docker ps -aq --filter label=io.cecyber.appsec-labs.session-id="$SID")" ] \
+    || { echo "contêiner do laboratório não foi removido" >&2; exit 1; }
+  ! docker network inspect "cecyber-lab-$SID-net" >/dev/null 2>&1 || { echo "rede não removida" >&2; exit 1; }
+  ! docker volume inspect "cecyber-lab-$SID-ws" >/dev/null 2>&1 || { echo "volume não removido" >&2; exit 1; }
+fi
+[ "$("${COMPOSE[@]}" exec -T api id -u)" = "10001" ]
+echo "SMOKE OK"

@@ -153,6 +153,9 @@ class RuntimeInstance(Base):
     status: Mapped[str] = mapped_column(String(16))
     created_at: Mapped[datetime] = mapped_column(TZ)
     terminated_at: Mapped[datetime | None] = mapped_column(TZ)
+    # Destino interno da aplicação (rede da sessão). Só o gateway consome; nunca vai ao navegador.
+    endpoint_host: Mapped[str | None] = mapped_column(String(255))
+    endpoint_port: Mapped[int | None] = mapped_column(Integer)
 
 
 class Job(Base):

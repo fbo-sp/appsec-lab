@@ -1,0 +1,9 @@
+.git
+.venv
+.local-pg
+**/__pycache__
+**/.pytest_cache
+**/.mypy_cache
+**/.ruff_cache
+docs
+.env

@@ -1,8 +1,13 @@
-"""Suíte de contrato do RuntimePort (ENG-08). Todo adapter real deve passar por ela."""
+"""Suíte de contrato do RuntimePort (ENG-08). Todo adapter real deve passar por ela.
+
+O adapter Docker local (ADR-008) só roda com ``DOCKER_CONTRACT_TESTS=1`` e Docker acessível;
+caso contrário é marcado como *skip* (nunca como sucesso).
+"""
 
 from __future__ import annotations
 
-from collections.abc import Callable
+import time
+from collections.abc import Iterator
 from dataclasses import replace
 from datetime import UTC, datetime
 
@@ -16,7 +21,10 @@ from app.runtime.port import (
     RuntimePort,
 )
 
-ADAPTERS: list[Callable[[], RuntimePort]] = [FakeRuntimeAdapter]
+from tests.docker_support import docker_lab_image
+
+FAKE_IMAGE = "registry.local/labs/x@sha256:" + "ab" * 32
+_IMAGE: dict[str, str] = {}
 
 
 def _request(session_id: str = "11111111-1111-1111-1111-111111111111") -> ProvisionRequest:
@@ -24,19 +32,43 @@ def _request(session_id: str = "11111111-1111-1111-1111-111111111111") -> Provis
         session_id=session_id,
         lab_release="LAB-000@0.1.0",
         variant_id="python-http",
-        image_digest="registry.local/labs/x@sha256:" + "ab" * 32,
+        image_digest=_IMAGE.get("current", FAKE_IMAGE),
         runtime_profile="benign-test",
         resources=ResourceLimits(100, 128, 64, 32),
         egress_profile="deny-all",
         exposed_port=8080,
         expires_at=datetime(2026, 11, 11, 13, tzinfo=UTC),
+        startup_command=("python", "-m", "http.server", "8080", "--bind", "0.0.0.0"),
+        workspace_path="/workspace",
     )
 
 
-@pytest.fixture(params=ADAPTERS, ids=lambda f: getattr(f, "__name__", str(f)))
-def adapter(request: pytest.FixtureRequest) -> RuntimePort:
-    factory: Callable[[], RuntimePort] = request.param
-    return factory()
+@pytest.fixture(params=["fake", "docker"])
+def adapter(request: pytest.FixtureRequest) -> Iterator[RuntimePort]:
+    if request.param == "fake":
+        _IMAGE.pop("current", None)
+        yield FakeRuntimeAdapter()
+        return
+    image = docker_lab_image()
+    from app.runtime.docker_local import DockerRuntimeAdapter
+
+    _IMAGE["current"] = image
+    rt = DockerRuntimeAdapter()
+    try:
+        yield rt
+    finally:
+        for owned in rt.list_owned():
+            rt.terminate(owned.runtime_ref)
+        _IMAGE.pop("current", None)
+
+
+def _wait_ready(adapter: RuntimePort, ref: str, timeout: float = 60) -> RuntimePhase:
+    deadline = time.monotonic() + timeout
+    phase = adapter.inspect(ref).phase
+    while phase is RuntimePhase.PENDING and time.monotonic() < deadline:
+        time.sleep(0.5)
+        phase = adapter.inspect(ref).phase
+    return phase
 
 
 def test_provision_is_idempotent_and_deterministic(adapter: RuntimePort) -> None:
@@ -76,5 +108,4 @@ def test_sessions_are_independent(adapter: RuntimePort) -> None:
 
 def test_becomes_ready(adapter: RuntimePort) -> None:
     ref = adapter.provision(_request())
-    phases = {adapter.inspect(ref).phase for _ in range(5)}
-    assert RuntimePhase.READY in phases
+    assert _wait_ready(adapter, ref) is RuntimePhase.READY

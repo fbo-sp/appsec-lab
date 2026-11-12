@@ -25,9 +25,19 @@ jobs:
       - uses: astral-sh/setup-uv@v6
         with:
           python-version: "3.12"
-      - run: uv sync --frozen
+      - run: uv sync --frozen --all-packages --all-extras
       - run: uv run ruff check .
       - run: uv run ruff format --check .
       - run: uv run mypy packages/contracts/src apps/backend/app
       - run: uv run python -m cecyber_contracts validate laboratories/LAB-000-hello-benign/manifest.yaml
       - run: uv run pytest
+        env:
+          # Suíte de contrato e controles do runtime Docker LOCAL (ADR-008) contra o Docker do runner.
+          DOCKER_CONTRACT_TESTS: "1"
+
+  compose-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: scripts/smoke-compose.sh
+      - run: scripts/smoke-compose.sh --no-build --docker-runtime

@@ -1,19 +1,71 @@
-# Componentes CONFIÁVEIS de desenvolvimento local. Não execute laboratórios vulneráveis aqui:
-# Docker Compose não é fronteira de isolamento para código hostil (ver docs/07, ADR-002).
+# Ambiente LOCAL de teste do plano de controle (1ª fatia do motor).
+#   docker compose -f infrastructure/local/docker-compose.yml up --build
+# Contém apenas componentes CONFIÁVEIS (PostgreSQL, API, worker). O runtime de laboratórios é o
+# FakeRuntimeAdapter: nenhum laboratório/contêiner de aluno é executado. Docker Compose NÃO é
+# fronteira de isolamento para código hostil (docs/07, ADR-002) e não deve ser usado para isso.
+# Portas publicadas somente em 127.0.0.1. A senha padrão é exclusiva de desenvolvimento local;
+# sobrescreva com a variável POSTGRES_PASSWORD se desejar.
+name: cecyber-appsec-labs
+x-backend-env: &backend-env
+  APP_ENV: local
+  AUTH_MODE: dev
+  RUNTIME_ADAPTER: fake
+  LOG_LEVEL: INFO
+  DATABASE_URL: postgresql+psycopg://appsec:${POSTGRES_PASSWORD:-local-dev-only}@postgres:5432/appsec_labs
+  WORKER_POLL_SECONDS: "0.5"
+  RECONCILE_INTERVAL_SECONDS: "5"
+
 services:
   postgres:
     image: postgres:16
     environment:
       POSTGRES_USER: appsec
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?defina POSTGRES_PASSWORD no ambiente}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-local-dev-only}
       POSTGRES_DB: appsec_labs
     ports:
       - "127.0.0.1:5432:5432"
     volumes:
       - appsec-pg:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U appsec"]
+      test: ["CMD-SHELL", "pg_isready -U appsec -d appsec_labs"]
+      interval: 3s
+      retries: 20
+
+  migrate:
+    build: { context: ../.., dockerfile: apps/backend/Dockerfile }
+    image: cecyber-appsec-labs/backend:local
+    environment: *backend-env
+    command: ["alembic", "upgrade", "head"]
+    depends_on:
+      postgres: { condition: service_healthy }
+    restart: "no"
+
+  api:
+    image: cecyber-appsec-labs/backend:local
+    environment: *backend-env
+    ports:
+      - "127.0.0.1:8000:8000"
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/healthz')"]
       interval: 5s
-      retries: 10
+      retries: 20
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+
+  worker:
+    image: cecyber-appsec-labs/backend:local
+    environment: *backend-env
+    command: ["python", "-m", "app.workers.run"]
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+    # Um único worker: o FakeRuntimeAdapter guarda estado em memória do processo.
+    deploy: { replicas: 1 }
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+
 volumes:
   appsec-pg:

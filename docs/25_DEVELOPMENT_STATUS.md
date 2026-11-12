@@ -4,10 +4,10 @@
 
 | Campo | Valor |
 |---|---|
-| Atualizado em | 2026-11-11 |
-| Fase atual | **F1 — Motor mínimo (1ª fatia)** concluída tecnicamente; F0 aprovada pelo PO (2026-11-11) |
+| Atualizado em | 2026-11-12 |
+| Fase atual | F1 concluída; **F3 local** iniciada rumo ao primeiro laboratório visual (ADR-008) |
 | Branch | `claude/project-thread-arhml7` |
-| Última entrega concluída | M1 — manifesto → registro → sessão → runtime fake → estado → encerramento/limpeza |
+| Última entrega concluída | IMP-301L — runtime Docker local: LAB-000 executa como contêiner real e é removido ao encerrar |
 
 ## 1. Funcionalidades implementadas (com escopo real)
 
@@ -25,6 +25,8 @@
 | IMP-111 Consulta/encerramento | `GET`/`DELETE /api/v1/sessions/{id}` com ownership (`404` para não-donos, admin auditado); `TERMINATED` só após confirmar ausência | Revogação de gateway (não existe gateway) |
 | IMP-112 Reconciliador | TTL → `EXPIRED` → limpeza; órfãos removidos; jobs TERMINATE mortos re-enfileirados | SLA de cleanup (NFR-007 indefinido) |
 | IMP-113 Auditoria | `audit_events` na mesma transação, ordem total por `seq` | Imutabilidade por permissão de BD |
+| Ambiente local Docker | `apps/backend/Dockerfile` (non-root, uid 10001), `infrastructure/local/docker-compose.yml` (PostgreSQL + migrate + API + worker, portas só em 127.0.0.1), `scripts/demo-local.ps1` (Windows), `scripts/smoke-compose.sh` (também no CI) | Execução no Docker Desktop do PO (Windows) |
+| IMP-301L Runtime Docker local (ADR-008) | `DockerRuntimeAdapter` restrito a `APP_ENV=local\|test`: rede `internal` por sessão, não-root obrigatório, raiz somente leitura, `cap_drop=ALL`, limites, sem portas no host; endpoint interno persistido (migração `0002`); imagem do LAB-000 em `laboratories/LAB-000-hello-benign/runtime/`; `scripts/lab-local.sh`/`.ps1`; override `docker-compose.docker-runtime.yml` (socket só no worker) | **Não** é isolamento para código hostil; `reset` não suportado; sem gateway ainda (aplicação não acessível pelo navegador) |
 | IMP-114 CI | `.github/workflows/ci.yml` (ruff, mypy, validação do LAB-000, pytest com PostgreSQL 16); `main` criada no baseline `aad8812` | Executado no PR #1: job `backend` verde (run 43128706201) |
 
 Laboratório usado: `laboratories/LAB-000-hello-benign` — **benigno, sem vulnerabilidade**. O digest de imagem é uma fixture de teste (não existe imagem publicada); aceitável apenas com o adapter fake.
@@ -44,24 +46,26 @@ Ambiente: contêiner Linux de desenvolvimento, PostgreSQL 16 local descartável 
 | Comando | Resultado |
 |---|---|
 | `uv run ruff check .` / `ruff format --check .` | Sem problemas |
-| `uv run mypy packages/contracts/src apps/backend/app` (strict) | `Success: no issues found in 40 source files` |
-| `scripts/test.sh` (Python 3.13) | **173 passed** |
-| `uv run --python 3.12 pytest` | **173 passed** |
-| `uv run alembic upgrade head` → `downgrade base` → `upgrade head` | OK |
+| `uv run mypy packages/contracts/src apps/backend/app` (strict) | `Success: no issues found in 41 source files` |
+| `DOCKER_CONTRACT_TESTS=1 scripts/test.sh` (2026-11-12, Python 3.12, Docker 29 Linux) | **189 passed** (inclui suíte de contrato e controles com Docker real) |
+| `uv run alembic upgrade head` → `downgrade base` → `upgrade head` (0001+0002) | OK |
+| `scripts/smoke-compose.sh --no-build --docker-runtime` (2026-11-12) | LAB-000 registrado com ID local da imagem; READY; contêiner uid 10001, raiz somente leitura, rede interna, sem portas no host, app responde dentro da sessão; TERMINATED; contêiner, rede e volume removidos |
+| `scripts/smoke-compose.sh --no-build` (Docker 29, Linux) | Pilha sobe saudável; registro 201; READY; intruso 404; TERMINATED; API roda como uid 10001 |
 | `scripts/demo-slice.sh` (uvicorn + worker reais) | Registro 201; criação 202; replay com a mesma chave retorna a mesma sessão; READY; outro aluno recebe 404; DELETE 202 → TERMINATED; logs JSON com `correlation_id` |
 
-Distribuição: 39 contrato de manifesto; 78 máquina de estados (todas as combinações estado×evento); 9 config/logs; 6 contrato do RuntimePort; 11 integração de catálogo; 30 integração de sessões.
+Distribuição: 39 contrato de manifesto; 78 máquina de estados; 12 config/logs; 12 contrato do RuntimePort (6 fake + 6 Docker); 7 controles do adapter Docker (endurecimento, sem egresso, sem alcance entre sessões, workspace gravável/raiz não, imagem root recusada, imagem desconhecida, contêiner alheio intocado); 11 integração de catálogo; 31 integração de sessões. Sem `DOCKER_CONTRACT_TESTS=1` os testes Docker aparecem como *skipped*. O teste de "sem egresso" no contêiner de desenvolvimento tem valor limitado porque esse ambiente já restringe a rede; no CI (runner com Internet) ele é significativo.
 
 Cenários cobertos (rastreio): ENG-01 (20 requisições concorrentes com mesma chave → 1 sessão e 1 job; 10 chaves distintas → 1 sessão e 9 × `409`), ENG-02 (worker morto: lease recapturado sem provisionamento duplicado), ENG-03/SEC-01 **somente na API REST**, ENG-06 (expiração → limpeza), ENG-07 (nova versão não altera sessão), ENG-08 (suíte de contrato, apenas com o fake), falhas transitórias/permanentes, timeout de readiness, encerramento antes/durante o provisionamento, órfãos e job de término esgotado.
 
-**Não executados:** testes contra adapter real; SEC-02–14; carga; E2E com navegador; ENG-04/05 (reconexão de workspace, reset).
+**Não executados:** adapter de produção (ADR-001/002); SEC-02–14; carga; E2E com navegador; ENG-04/05 (reconexão de workspace, reset).
 
 ## 4. Decisões tomadas nesta sessão (todas reversíveis e registradas)
 
 1. Documentos importados sem alteração da cópia local, pois o repositório GitHub estava vazio.
 2. ADR-005 (modelo acadêmico), ADR-006 (contrato v1alpha1) e ADR-007 (fila em PostgreSQL) **aprovados pelo PO** em 2026-11-11; 006 e 007 implementados, 005 previsto em IMP-401.
 3. Premissas não bloqueantes: TTL conta a partir da solicitação e limita a vida total da sessão; `VALIDATING` não é persistido; sessão ativa duplicada → `409 SESSION_ALREADY_ACTIVE`; não-donos recebem `404`; registro de release publica diretamente (sem draft) e é restrito a admin; operações síncronas (SQLAlchemy sync + threadpool do FastAPI) em vez da assinatura `async` ilustrativa de `08 §7`.
-4. Autenticação por cabeçalho apenas em `APP_ENV=local|test`; `AUTH_MODE=oidc` e qualquer adapter que não seja `fake` fazem a aplicação recusar o início (fail closed).
+4. ADR-008 (runtime Docker só local/test) aprovado pelo PO em 2026-11-12.
+5. Autenticação por cabeçalho apenas em `APP_ENV=local|test`; `AUTH_MODE=oidc` e qualquer adapter que não seja `fake` fazem a aplicação recusar o início (fail closed).
 
 ## 5. Pendências
 
@@ -79,6 +83,9 @@ Cenários cobertos (rastreio): ENG-01 (20 requisições concorrentes com mesma c
 
 ## 7. Próxima tarefa recomendada
 
-1. **IMP-201** — OpenAPI 3.1 com teste de drift (não depende de decisões).
-2. **IMP-203/204/205** — RBAC completo, turmas/atribuições e quotas, com testes negativos.
-3. Em paralelo, iniciar **IMP-I01** (inventário on-prem) com o responsável de infraestrutura.
+Rumo ao primeiro laboratório visual (preferência do PO: testar manualmente só com interface):
+1. **IMP-302 local** — gateway de workspace com tickets (preview HTTP, arquivos, terminal), conectado só às redes das sessões.
+2. **IMP-303–305** — interface React: catálogo, introdução, etapas, editor, terminal, preview.
+3. **IMP-401–405** — validação, progresso e dicas (depende de OPEN-04: penalidade de dicas e tentativas).
+4. **IMP-501** — LAB-001 SQL Injection (somente local).
+Em paralelo: IMP-I01 (inventário on-prem).

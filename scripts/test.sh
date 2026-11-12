@@ -3,7 +3,7 @@
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
-uv sync --frozen 2>/dev/null || uv sync
+uv sync --frozen --all-packages --all-extras 2>/dev/null || uv sync --all-packages --all-extras
 uv run ruff check .
 uv run ruff format --check .
 uv run mypy packages/contracts/src apps/backend/app
