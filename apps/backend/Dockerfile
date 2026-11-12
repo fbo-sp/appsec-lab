@@ -10,7 +10,7 @@ COPY packages/contracts/pyproject.toml packages/contracts/pyproject.toml
 COPY apps/backend/pyproject.toml apps/backend/pyproject.toml
 COPY packages/contracts/src packages/contracts/src
 COPY apps/backend/app apps/backend/app
-RUN uv sync --frozen --no-dev --no-editable
+RUN uv sync --frozen --no-dev --no-editable --all-packages --all-extras
 COPY apps/backend/alembic.ini apps/backend/alembic.ini
 COPY apps/backend/migrations apps/backend/migrations
 COPY laboratories laboratories

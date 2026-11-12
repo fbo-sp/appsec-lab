@@ -67,6 +67,8 @@ def build_request(db: Session, s: LabSession) -> ProvisionRequest:
         egress_profile=spec.get("network", {}).get("egressProfile", "deny-all"),
         exposed_port=spec["startup"]["port"],
         expires_at=s.expires_at,
+        startup_command=tuple(spec["startup"]["command"]),
+        workspace_path=spec["workspacePath"],
     )
 
 
@@ -139,6 +141,7 @@ def _provision(ctx: WorkerContext, job: ClaimedJob) -> None:
     try:
         ref = ctx.runtime.provision(request)
         phase = ctx.runtime.inspect(ref).phase
+        endpoint = ctx.runtime.endpoint(ref) if phase is RuntimePhase.READY else None
     except RuntimeTransientError as exc:
         with ctx.session_factory() as db:
             retry = queue.fail(db, job, ctx.worker_id, ctx.clock.now(), str(exc))
@@ -173,20 +176,22 @@ def _provision(ctx: WorkerContext, job: ClaimedJob) -> None:
     now = ctx.clock.now()
     with ctx.session_factory() as db:
         s = _lock_session(db, job.session_id)
-        if (
-            db.execute(select(RuntimeInstance).where(RuntimeInstance.session_id == s.id)).scalar_one_or_none()
-            is None
-        ):
-            db.add(
-                RuntimeInstance(
-                    id=uuid.uuid4(),
-                    session_id=s.id,
-                    provider=ctx.runtime.provider,
-                    external_ref=ref,
-                    status=phase.value,
-                    created_at=now,
-                )
+        inst = db.execute(
+            select(RuntimeInstance).where(RuntimeInstance.session_id == s.id)
+        ).scalar_one_or_none()
+        if inst is None:
+            inst = RuntimeInstance(
+                id=uuid.uuid4(),
+                session_id=s.id,
+                provider=ctx.runtime.provider,
+                external_ref=ref,
+                status=phase.value,
+                created_at=now,
             )
+            db.add(inst)
+        inst.status = phase.value
+        if endpoint is not None:
+            inst.endpoint_host, inst.endpoint_port = endpoint.host, endpoint.port
         if SessionStatus(s.status) is not SessionStatus.PROVISIONING:
             # Encerrada durante o provisionamento: o job TERMINATE (ou o reconciliador) remove o runtime.
             queue.complete(db, job.id, ctx.worker_id, now)

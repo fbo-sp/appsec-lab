@@ -25,6 +25,22 @@ powershell -ExecutionPolicy Bypass -File scripts\demo-local.ps1
 Registra o LAB-000, cria a sessão (com replay idempotente), aguarda `READY`, verifica que outro usuário
 recebe 404 e encerra até `TERMINATED`.
 
+## Runtime Docker local (laboratórios como contêineres reais — ADR-008)
+
+Por padrão o worker usa o runtime *fake* (nada é executado). Para executar o LAB-000 de verdade:
+
+```powershell
+docker compose -f infrastructure/local/docker-compose.yml -f infrastructure/local/docker-compose.docker-runtime.yml up --build -d
+.\scripts\lab-local.ps1     # constrói a imagem do LAB-000 e registra a release com o ID local
+```
+
+- O socket Docker é montado **somente no worker**; laboratórios rodam em rede interna própria, sem
+  portas no host, como usuário não-root e com raiz somente leitura.
+- Uso exclusivo na máquina do desenvolvedor. **Não** é isolamento para código hostil nem configuração de
+  piloto/produção. Não use em máquina compartilhada (acesso ao socket equivale a root).
+- Contêineres de sessão: `docker ps --filter label=io.cecyber.appsec-labs.platform=appsec-labs-local`.
+- Ainda não há gateway: a aplicação do laboratório não é acessível pelo navegador nesta etapa.
+
 ## Logs, parada e limpeza
 
 ```powershell

@@ -15,6 +15,7 @@ from app.runtime.port import (
     OwnedRuntime,
     ProvisionRequest,
     RuntimeConflictError,
+    RuntimeEndpoint,
     RuntimePermanentError,
     RuntimePhase,
     RuntimeStatus,
@@ -109,6 +110,10 @@ class FakeRuntimeAdapter:
     def list_owned(self) -> list[OwnedRuntime]:
         with self._lock:
             return [OwnedRuntime(ref, inst.request.session_id) for ref, inst in self._instances.items()]
+
+    def endpoint(self, runtime_ref: str) -> RuntimeEndpoint | None:
+        # O fake não executa nada: não há destino real para o gateway.
+        return None
 
     # Utilitário de teste: cria um runtime sem sessão correspondente (órfão).
     def inject_orphan(self, request: ProvisionRequest) -> str:

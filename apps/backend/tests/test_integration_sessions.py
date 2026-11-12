@@ -482,3 +482,26 @@ def test_eng07_new_version_does_not_change_existing_session(
     assert client.post("/api/v1/admin/lab-releases", json=v2, headers=ADMIN).status_code == 201
     body = client.get(f"/api/v1/sessions/{sid}", headers=ALICE).json()
     assert body["version"] == "0.1.0"
+
+
+def test_ready_persists_internal_endpoint_but_api_never_exposes_it(
+    client: TestClient,
+    registered: dict[str, Any],
+    worker: WorkerContext,
+    runtime: FakeRuntimeAdapter,
+    session_factory: sessionmaker[Session],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from app.runtime.port import RuntimeEndpoint
+
+    monkeypatch.setattr(runtime, "endpoint", lambda ref: RuntimeEndpoint("10.89.0.7", 8080))
+    sid = create_session(client, ALICE).json()["sessionId"]
+    drain(worker)
+    assert status_of(client, sid) == "READY"
+    with session_factory() as db:
+        inst = db.execute(
+            select(RuntimeInstance).where(RuntimeInstance.session_id == uuid.UUID(sid))
+        ).scalar_one()
+        assert (inst.endpoint_host, inst.endpoint_port, inst.status) == ("10.89.0.7", 8080, "READY")
+    body = client.get(f"/api/v1/sessions/{sid}", headers=ALICE).text
+    assert "10.89.0.7" not in body

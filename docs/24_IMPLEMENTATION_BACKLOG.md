@@ -46,7 +46,8 @@
 | 25 | IMP-I02 | PoC de isolamento comparativa | F2-infra | Blocked (IMP-I01) |
 | 26 | IMP-I03 | Segmentação de rede e egress deny | F2-infra | Blocked (IMP-I01) |
 | 27 | IMP-301 | KubernetesRuntimeAdapter | F3 | Blocked (ADR-001/002) |
-| 28 | IMP-302 | Workspace gateway e tickets | F3 | Blocked (IMP-301) |
+| 27a | IMP-301L | DockerRuntimeAdapter **somente local/test** (ADR-008) | F3 | Done (2026-11-12) |
+| 28 | IMP-302 | Workspace gateway e tickets | F3 | Ready para local (IMP-301L); produção Blocked (IMP-301) |
 | 29 | IMP-303 | Frontend: catálogo e introdução do lab | F3 | Ready |
 | 30 | IMP-304 | Frontend: workspace (editor, terminal, preview) | F3 | Blocked (IMP-302) |
 | 31 | IMP-305 | Ação build/run por perfil aprovado | F3 | Blocked (IMP-301) |
@@ -216,6 +217,9 @@
 - **Aceite:** SEC-06 (RFC1918, metadata, lateral) bloqueado. **Testes:** SEC-06. **DoD:** evidência registrada.
 
 ## Épico EP-WS — Workspace (F3)
+
+### IMP-301L — DockerRuntimeAdapter local (ADR-008)
+- **Descrição:** adapter `docker-local` do `RuntimePort` restrito a `APP_ENV=local|test`; rede interna por sessão, não-root, raiz somente leitura, limites, endpoint interno persistido (`0002`) para o gateway. **Aceite:** suíte de contrato + `test_docker_local_isolation.py` com Docker real; `smoke-compose.sh --docker-runtime`. **Não** comprova isolamento para código hostil.
 
 ### IMP-301 — KubernetesRuntimeAdapter
 - **Descrição:** adapter real satisfazendo a suíte de contrato de IMP-108; Pod/NetworkPolicy/RuntimeClass por sessão, nomes determinísticos, labels de ownership. **Req.:** `09 §3–4`, ENG-08, PRV-01–05 · **Dep.:** ADR-001/002 · **P0**

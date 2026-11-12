@@ -48,6 +48,8 @@ class ProvisionRequest:
     egress_profile: str
     exposed_port: int
     expires_at: datetime
+    startup_command: tuple[str, ...] = ()
+    workspace_path: str = "/workspace"
 
 
 @dataclass(frozen=True, slots=True)
@@ -55,6 +57,14 @@ class RuntimeStatus:
     runtime_ref: str
     phase: RuntimePhase
     reason: str | None = None  # motivo sanitizado, sem detalhes internos
+
+
+@dataclass(frozen=True, slots=True)
+class RuntimeEndpoint:
+    """Destino interno da aplicação da sessão; só o gateway o recebe, nunca o navegador."""
+
+    host: str
+    port: int
 
 
 @dataclass(frozen=True, slots=True)
@@ -93,3 +103,5 @@ class RuntimePort(Protocol):
     def list_owned(self) -> list[OwnedRuntime]: ...
 
     def ref_for(self, session_id: str) -> str: ...
+
+    def endpoint(self, runtime_ref: str) -> RuntimeEndpoint | None: ...
