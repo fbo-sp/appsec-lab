@@ -34,9 +34,9 @@
 | 23_IMPLEMENTATION_PLAN.md | Novo: fases F0–F6, vertical slice, estratégias local/on-prem |
 | 24_IMPLEMENTATION_BACKLOG.md | Novo: backlog executável IMP-xxx |
 | 25_DEVELOPMENT_STATUS.md | Novo: status para continuidade entre sessões de IA |
-| ADR/ADR-005-academic-model.md | Proposto: LabAttempt/StepSubmission/ValidationRun |
-| ADR/ADR-006-manifest-contract-v1alpha1.md | Proposto, implementado na 1ª fatia |
-| ADR/ADR-007-postgres-job-queue.md | Proposto, implementado na 1ª fatia |
+| ADR/ADR-005-academic-model.md | Aprovado (2026-11-11): LabAttempt/StepSubmission/ValidationRun |
+| ADR/ADR-006-manifest-contract-v1alpha1.md | Aprovado (2026-11-11), implementado |
+| ADR/ADR-007-postgres-job-queue.md | Aprovado (2026-11-11), implementado |
 
 ## Ordem recomendada para trabalho com agentes
 

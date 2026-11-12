@@ -5,7 +5,7 @@
 | Campo | Valor |
 |---|---|
 | Atualizado em | 2026-11-11 |
-| Fase atual | **F1 — Motor mínimo (1ª fatia)** concluída tecnicamente; F0 aguardando revisão do PO |
+| Fase atual | **F1 — Motor mínimo (1ª fatia)** concluída tecnicamente; F0 aprovada pelo PO (2026-11-11) |
 | Branch | `claude/project-thread-arhml7` |
 | Última entrega concluída | M1 — manifesto → registro → sessão → runtime fake → estado → encerramento/limpeza |
 
@@ -59,13 +59,12 @@ Cenários cobertos (rastreio): ENG-01 (20 requisições concorrentes com mesma c
 ## 4. Decisões tomadas nesta sessão (todas reversíveis e registradas)
 
 1. Documentos importados sem alteração da cópia local, pois o repositório GitHub estava vazio.
-2. ADR-006 (contrato v1alpha1) e ADR-007 (fila em PostgreSQL) **propostos e implementados**; ADR-005 (modelo acadêmico) **proposto, não implementado**.
+2. ADR-005 (modelo acadêmico), ADR-006 (contrato v1alpha1) e ADR-007 (fila em PostgreSQL) **aprovados pelo PO** em 2026-11-11; 006 e 007 implementados, 005 previsto em IMP-401.
 3. Premissas não bloqueantes: TTL conta a partir da solicitação e limita a vida total da sessão; `VALIDATING` não é persistido; sessão ativa duplicada → `409 SESSION_ALREADY_ACTIVE`; não-donos recebem `404`; registro de release publica diretamente (sem draft) e é restrito a admin; operações síncronas (SQLAlchemy sync + threadpool do FastAPI) em vez da assinatura `async` ilustrativa de `08 §7`.
 4. Autenticação por cabeçalho apenas em `APP_ENV=local|test`; `AUTH_MODE=oidc` e qualquer adapter que não seja `fake` fazem a aplicação recusar o início (fail closed).
 
 ## 5. Pendências
 
-- Revisão e aprovação de `22`–`24` e ADR-005/006/007 pelo PO.
 - `outbox_events` e dispatcher de eventos de domínio (ADR-007).
 - Ajuste editorial sugerido em `12_DATA_MODEL.md` (G-02/G-10) após decisão do ADR-005.
 
@@ -76,7 +75,7 @@ Cenários cobertos (rastreio): ENG-01 (20 requisições concorrentes com mesma c
 | OPEN-01 IdP OIDC | IMP-202 | PO / Arquitetura |
 | Inventário on-prem e acesso à infraestrutura | IMP-I01–I03, adapter real, todo código não confiável | PO / Operação |
 | ADR-001/002/003 sem PoC | F3, F4 | Plataforma / Segurança |
-| ADR-005 e OPEN-04 | F4 (validação e progresso) | PO / Acadêmico |
+| OPEN-04 (nota, tentativas, dicas) | F4 (validação e progresso) | PO / Acadêmico |
 
 ## 7. Próxima tarefa recomendada
 

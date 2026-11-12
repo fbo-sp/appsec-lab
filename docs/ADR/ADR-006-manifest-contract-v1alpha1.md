@@ -1,6 +1,6 @@
 # ADR-006: Contrato implementado do manifesto AppSecLab v1alpha1
 
-- **Status:** Proposto, **implementado na 1ª fatia** (reversível)
+- **Status:** **Aprovado** pelo Product Owner em 2026-11-11 (PR #1); implementado na 1ª fatia
 - **Data:** 2026-11-11
 - **Contexto de origem:** `11_LAB_MANIFEST_SPEC.md`; `22` G-08, G-19
 

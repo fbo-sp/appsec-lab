@@ -50,7 +50,7 @@
 | 29 | IMP-303 | Frontend: catálogo e introdução do lab | F3 | Ready |
 | 30 | IMP-304 | Frontend: workspace (editor, terminal, preview) | F3 | Blocked (IMP-302) |
 | 31 | IMP-305 | Ação build/run por perfil aprovado | F3 | Blocked (IMP-301) |
-| 32 | IMP-401 | Modelo acadêmico LabAttempt/StepProgress | F4 | Blocked (ADR-005) |
+| 32 | IMP-401 | Modelo acadêmico LabAttempt/StepProgress | F4 | Ready (ADR-005 aprovado) |
 | 33 | IMP-402 | Snapshot de workspace | F4 | Blocked (ADR-003) |
 | 34 | IMP-403 | Validation controller e envelope autenticado | F4 | Blocked (ADR-003) |
 | 35 | IMP-404 | Avaliação por etapa e desbloqueio transacional | F4 | Blocked (IMP-401/403) |

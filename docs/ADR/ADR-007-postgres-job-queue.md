@@ -1,6 +1,6 @@
 # ADR-007: Fila de jobs e outbox no PostgreSQL no MVP
 
-- **Status:** Proposto, **implementado na 1ª fatia** (reversível)
+- **Status:** **Aprovado** pelo Product Owner em 2026-11-11 (PR #1); implementado na 1ª fatia
 - **Data:** 2026-11-11
 - **Contexto de origem:** `06 §3` (Redis sugerido sem ADR); `22` G-11
 

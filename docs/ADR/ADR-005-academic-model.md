@@ -1,6 +1,6 @@
 # ADR-005: Modelo acadêmico — LabAttempt, StepSubmission e ValidationRun
 
-- **Status:** Proposto, **aguardando decisão do PO/Acadêmico**
+- **Status:** **Aprovado** pelo Product Owner em 2026-11-11 (PR #1); implementação prevista em IMP-401
 - **Data:** 2026-11-11
 - **Contexto de origem:** `22_PROJECT_INITIAL_ASSESSMENT.md` G-02
 
