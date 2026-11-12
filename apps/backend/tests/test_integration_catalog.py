@@ -30,7 +30,8 @@ def test_register_publishes_release_without_engine_changes(
     assert body["labId"] == "LAB-000" and body["status"] == "published"
     assert body["manifestDigest"].startswith("sha256:")
     with session_factory() as db:
-        assert db.execute(select(LabStep.validator_ref)).scalar_one() == "benign/python-http/session-ready-v1"
+        refs = db.execute(select(LabStep.validator_ref).order_by(LabStep.position)).scalars().all()
+        assert refs == ["benign/answer/whoami-v1", "benign/python-http/edit-page-v1"]
         actions = db.execute(select(AuditEvent.action)).scalars().all()
     assert "lab_release.published" in actions
 
@@ -83,18 +84,26 @@ def test_unsupported_media_type(client: TestClient) -> None:
 def test_public_view_hides_protected_data(client: TestClient, registered: dict[str, object]) -> None:
     for r in (
         client.get("/api/v1/labs", headers=ALICE),
-        client.get("/api/v1/labs/LAB-000/releases/0.1.0", headers=ALICE),
+        client.get("/api/v1/labs/LAB-000/releases/0.2.0", headers=ALICE),
     ):
         assert r.status_code == 200
         text = r.text
-        assert "validatorRef" not in text and "session-ready-v1" not in text
-        assert "Consulte o estado" not in text  # texto de dica
+        assert "validatorRef" not in text and "whoami-v1" not in text
+        assert "whoami mostra" not in text  # texto de dica
     assert client.get("/api/v1/labs/LAB-000/releases/9.9.9", headers=ALICE).status_code == 404
 
 
 def test_new_version_coexists(client: TestClient, registered: dict[str, object]) -> None:
     v2 = copy.deepcopy(benign_manifest())
-    v2["metadata"]["version"] = "0.2.0"
+    v2["metadata"]["version"] = "0.3.0"
     assert client.post("/api/v1/admin/lab-releases", json=v2, headers=ADMIN).status_code == 201
     versions = sorted(i["version"] for i in client.get("/api/v1/labs", headers=ALICE).json()["items"])
-    assert versions == ["0.1.0", "0.2.0"]
+    assert versions == ["0.2.0", "0.3.0"]
+
+
+def test_unknown_validator_is_rejected(client: TestClient) -> None:
+    m = copy.deepcopy(benign_manifest())
+    m["steps"][0]["validatorRef"] = "benign/answer/does-not-exist-v1"
+    r = client.post("/api/v1/admin/lab-releases", json=m, headers=ADMIN)
+    assert r.status_code == 400
+    assert r.json()["error"]["details"]["issues"][0]["code"] == "UNKNOWN_VALIDATOR"

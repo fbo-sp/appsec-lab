@@ -5,13 +5,14 @@ import uuid
 from datetime import timedelta
 from typing import Annotated, Any, Literal
 
-from fastapi import APIRouter, Depends, Header, Response
+from fastapi import APIRouter, Depends, Header, Path, Response
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.orm import Session
 
 from app.config import Settings
 from app.deps import get_clock, get_db, get_settings
 from app.identity.principal import Principal, get_principal
+from app.progress import service as progress
 from app.sessions import service
 from app.shared.clock import Clock
 from app.shared.errors import ApiError
@@ -116,9 +117,68 @@ def get_steps(
     session_id: uuid.UUID,
     principal: Annotated[Principal, Depends(get_principal)],
     db: Annotated[Session, Depends(get_db)],
+    clock: Annotated[Clock, Depends(get_clock)],
 ) -> dict[str, Any]:
+    """Etapas com progresso da tentativa. Etapas bloqueadas expõem só metadados (docs/13 §3)."""
     s = service.get_visible_session(db, principal, session_id)
-    return {"sessionId": str(s.id), "items": service.steps_view(db, s)}
+    return progress.progress_view(db, s, clock.now())
+
+
+class EvaluationBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    answer: str | None = Field(default=None, max_length=500)
+
+
+@router.post("/{session_id}/steps/{step_id}/evaluations", status_code=202)
+def evaluate_step(
+    session_id: uuid.UUID,
+    step_id: Annotated[str, Path(pattern=r"^[a-z][a-z0-9-]{0,62}$")],
+    body: EvaluationBody,
+    response: Response,
+    principal: Annotated[Principal, Depends(get_principal)],
+    db: Annotated[Session, Depends(get_db)],
+    clock: Annotated[Clock, Depends(get_clock)],
+    settings: Annotated[Settings, Depends(get_settings)],
+    idempotency_key: Annotated[str | None, Header(alias="Idempotency-Key")] = None,
+) -> dict[str, Any]:
+    sub, created = progress.submit(
+        db,
+        principal=principal,
+        session_id=session_id,
+        step_key=step_id,
+        answer=body.answer,
+        idempotency_key=_key(idempotency_key),
+        now=clock.now(),
+        max_attempts=settings.job_max_attempts,
+    )
+    response.headers["Location"] = f"/api/v1/sessions/{session_id}/evaluations/{sub.id}"
+    if not created:
+        response.headers["Idempotent-Replayed"] = "true"
+    return progress.submission_view(sub)
+
+
+@router.get("/{session_id}/evaluations/{evaluation_id}")
+def get_evaluation(
+    session_id: uuid.UUID,
+    evaluation_id: uuid.UUID,
+    principal: Annotated[Principal, Depends(get_principal)],
+    db: Annotated[Session, Depends(get_db)],
+) -> dict[str, Any]:
+    return progress.submission_view(progress.get_submission(db, principal, session_id, evaluation_id))
+
+
+@router.post("/{session_id}/steps/{step_id}/hints/{level}/reveal")
+def reveal_hint(
+    session_id: uuid.UUID,
+    step_id: Annotated[str, Path(pattern=r"^[a-z][a-z0-9-]{0,62}$")],
+    level: Annotated[int, Path(ge=1, le=10)],
+    principal: Annotated[Principal, Depends(get_principal)],
+    db: Annotated[Session, Depends(get_db)],
+    clock: Annotated[Clock, Depends(get_clock)],
+) -> dict[str, Any]:
+    return progress.reveal_hint(
+        db, principal=principal, session_id=session_id, step_key=step_id, level=level, now=clock.now()
+    )
 
 
 @router.delete("/{session_id}", status_code=202)

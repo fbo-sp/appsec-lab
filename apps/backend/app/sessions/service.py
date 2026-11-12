@@ -17,6 +17,7 @@ from app.audit import service as audit
 from app.db.models import LabRelease, LabSession, LabVariant
 from app.identity.principal import Principal, Role
 from app.jobs.queue import JobKind, enqueue
+from app.progress.service import ensure_attempt
 from app.sessions.state_machine import (
     ACTIVE,
     InvalidTransitionError,
@@ -158,6 +159,10 @@ def create_session(
             {"sessionId": str(active.id)} if active else {},
         )
 
+    created_session = db.get(LabSession, session_id)
+    assert created_session is not None
+    # Progresso acadêmico pertence à tentativa (ADR-005): a nova sessão continua a tentativa aberta.
+    ensure_attempt(db, created_session, now)
     enqueue(
         db,
         kind=JobKind.PROVISION,
@@ -291,32 +296,3 @@ def list_own_sessions(db: Session, principal: Principal) -> list[LabSession]:
         .order_by(LabSession.created_at.desc())
     ).scalars()
     return list(rows)
-
-
-def steps_view(db: Session, s: LabSession) -> list[dict[str, Any]]:
-    """Etapas da sessão (docs/13 §3, docs/21). Desbloqueio é decidido aqui, nunca pelo frontend.
-
-    Enquanto a validação (IMP-401) não existe, apenas a primeira etapa fica disponível; etapas
-    bloqueadas expõem só metadados (sem instruções, dicas ou referências de validador).
-    """
-    release = db.get(LabRelease, s.release_id)
-    assert release is not None
-    out: list[dict[str, Any]] = []
-    for step in sorted(release.manifest["steps"], key=lambda x: x["order"]):
-        unlocked = step["order"] == 1
-        item: dict[str, Any] = {
-            "id": step["id"],
-            "order": step["order"],
-            "title": step["title"],
-            "points": step["points"],
-            "status": "AVAILABLE" if unlocked else "LOCKED",
-        }
-        if unlocked:
-            item.update(
-                explanation=step["explanation"],
-                task=step["task"],
-                concept=step["concept"],
-                hintsAvailable=len(step.get("hints", [])),
-            )
-        out.append(item)
-    return out

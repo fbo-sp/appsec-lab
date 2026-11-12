@@ -5,16 +5,16 @@
 | Campo | Valor |
 |---|---|
 | Atualizado em | 2026-11-12 |
-| Fase atual | F1 concluída; **F3 local**: primeira interface visual testável (ADR-008/009) |
+| Fase atual | F1 concluída; **F3/F4 local**: interface visual com validação de etapas, progresso e dicas (ADR-008/009/010) |
 | Branch | `claude/project-thread-arhml7` |
-| Última entrega concluída | IMP-302/303/304 local — gateway com tickets, portal e workspace (editor, terminal, preview) com o LAB-000 |
+| Última entrega concluída | IMP-401–405 local: validação de etapas fora do workspace, progresso, pontuação e dicas (LAB-000 0.2.0) |
 
 ## 1. Funcionalidades implementadas (com escopo real)
 
 | Item | O que funciona | O que **não** está validado |
 |---|---|---|
 | IMP-101 Estrutura | Workspace uv (`packages/contracts`, `apps/backend`), ruff, mypy strict, pytest, scripts | — |
-| IMP-102/103 Manifesto | Modelo `AppSecLab v1alpha1`, JSON Schema exportado, validação estrutural e semântica (ADR-006) | Regra 6 de `11 §3` (validatorRef existir no registro protegido) |
+| IMP-102/103 Manifesto | Modelo `AppSecLab v1alpha1`, JSON Schema exportado, validação estrutural e semântica (ADR-006); regra 6 (`validatorRef` registrado) aplicada no catálogo | — |
 | IMP-104 API base | FastAPI, envelope de erro `13 §5`, `X-Request-Id`, logs JSON com redaction, `/healthz` | OpenAPI formal (IMP-201) |
 | IMP-105 Persistência | PostgreSQL + Alembic `0001_engine_core` (upgrade/downgrade testados) | Papéis de BD de menor privilégio; retenção |
 | IMP-106 Catálogo | `POST /api/v1/admin/lab-releases` (JSON/YAML, idempotente por digest, imutável), `GET /api/v1/labs`, `GET /api/v1/labs/{id}/releases/{v}` sem dados protegidos | Ciclo draft/retired (IMP-208); filtro por atribuição (IMP-204) |
@@ -28,7 +28,8 @@
 | Ambiente local Docker | `apps/backend/Dockerfile` (non-root, uid 10001), `infrastructure/local/docker-compose.yml` (PostgreSQL + migrate + API + worker, portas só em 127.0.0.1), `scripts/demo-local.ps1` (Windows), `scripts/smoke-compose.sh` (também no CI) | Execução no Docker Desktop do PO (Windows) |
 | IMP-301L Runtime Docker local (ADR-008) | `DockerRuntimeAdapter` restrito a `APP_ENV=local\|test`: rede `internal` por sessão, não-root obrigatório, raiz somente leitura, `cap_drop=ALL`, limites, sem portas no host; endpoint interno persistido (migração `0002`); imagem do LAB-000 em `laboratories/LAB-000-hello-benign/runtime/`; `scripts/lab-local.sh`/`.ps1`; override `docker-compose.docker-runtime.yml` (socket só no worker) | **Não** é isolamento para código hostil; `reset` não suportado; sem gateway ainda (aplicação não acessível pelo navegador) |
 | IMP-302 Gateway local (ADR-009) | `app/gateway`: tickets HMAC de uso único (60 s, só o dono, READY/ACTIVE → ACTIVE), grant em cookie HttpOnly/SameSite=Strict escopado, revalidação no banco a cada requisição, origens separadas para workspace (:8001) e preview (:8002), proteção CSRF por cabeçalho próprio e `Origin` no WebSocket; agente de workspace no contêiner (`laboratories/_base/python`) | Mesmo *site* entre portas (ver limitações do ADR-009); registro de tickets usados em memória; sem TLS; sem rate limit |
-| IMP-303/304 Interface local | `apps/web` (React + Vite + TS): login de desenvolvimento, catálogo, introdução, sessão com estados e timer, etapas (só a 1ª liberada), editor CodeMirror, terminal xterm.js, preview em iframe; servida pela API (portal) e pelo gateway (workspace) | Sem OIDC (IMP-202); sem validação de etapas (IMP-401); acessibilidade não auditada |
+| IMP-303/304 Interface local | `apps/web` (React + Vite + TS): login de desenvolvimento, catálogo, introdução, sessão com estados e timer, etapas (só a 1ª liberada), editor CodeMirror, terminal xterm.js, preview em iframe; servida pela API (portal) e pelo gateway (workspace) | Sem OIDC (IMP-202); acessibilidade não auditada |
+| IMP-401–405 Validação e progresso (ADR-005/010) | Migração `0003` (tentativas, progresso, submissões, dicas); registro protegido de validadores; etapa `answer` checada na API; etapa `http` avaliada pelo worker num snapshot do workspace, em contêiner novo e rede interna, por um probe confiável; desbloqueio, pontos e conclusão na mesma transação; dicas em ordem sem penalidade; tentativas livres; `ERROR` técnico nunca aprova; UI com botão Validar, critérios, dicas e pontuação | Runner de produção e envelope assinado (ADR-003); rate limit de submissões; suítes caixa-preta podem ser "enganadas" por respostas fixas |
 | IMP-114 CI | `.github/workflows/ci.yml` (ruff, mypy, validação do LAB-000, pytest com PostgreSQL 16); `main` criada no baseline `aad8812` | Executado no PR #1: job `backend` verde (run 43128706201) |
 
 Laboratório usado: `laboratories/LAB-000-hello-benign` — **benigno, sem vulnerabilidade**. O digest de imagem é uma fixture de teste (não existe imagem publicada); aceitável apenas com o adapter fake.
@@ -50,6 +51,9 @@ Ambiente: contêiner Linux de desenvolvimento, PostgreSQL 16 local descartável 
 | `uv run ruff check .` / `ruff format --check .` | Sem problemas |
 | `uv run mypy packages/contracts/src apps/backend/app` (strict) | `Success: no issues found in 41 source files` |
 | `DOCKER_CONTRACT_TESTS=1 scripts/test.sh` (2026-11-12, Python 3.12, Docker 29 Linux) | **217 passed** (inclui suíte de contrato e controles com Docker real, gateway e tickets) |
+| `DOCKER_CONTRACT_TESTS=1 pytest` com validação (2026-11-12, Docker 29 Linux) | **241 passed** (inclui 19 de progresso e 4 do avaliador Docker real) |
+| `scripts/smoke-compose.sh --no-build --docker-runtime` com validação (2026-11-12) | resposta `lab` aprovada; avaliação http executada pelo worker termina FAILED (workspace não editado), sem recursos de avaliação remanescentes |
+| Playwright validação (2026-11-12, runtime Docker) | resposta errada → "Ainda não" com critério ✗; dica 1 revelada; resposta `lab` → 40 pts e etapa 2 liberada; Validar sem editar → falha com critério "Olá, CECyber" ✗ e "HTTP 200" ✓; editar `index.html` e Validar → 100/100 e "Laboratório concluído" |
 | `npm run build` em `apps/web` (tsc + vite) | OK |
 | Playwright (Chromium) no portal em 127.0.0.1:8000 com runtime Docker (2026-11-12) | login → catálogo → introdução → iniciar → READY/ACTIVE → árvore de arquivos, editor, terminal (`ls`, `whoami` = `lab`) → editar `index.html` e salvar → preview mostra a alteração → encerrar → "Sessão finalizada"; sem erros no console |
 | `uv run alembic upgrade head` → `downgrade base` → `upgrade head` (0001+0002) | OK |
@@ -68,7 +72,7 @@ Cenários cobertos (rastreio): ENG-01 (20 requisições concorrentes com mesma c
 1. Documentos importados sem alteração da cópia local, pois o repositório GitHub estava vazio.
 2. ADR-005 (modelo acadêmico), ADR-006 (contrato v1alpha1) e ADR-007 (fila em PostgreSQL) **aprovados pelo PO** em 2026-11-11; 006 e 007 implementados, 005 previsto em IMP-401.
 3. Premissas não bloqueantes: TTL conta a partir da solicitação e limita a vida total da sessão; `VALIDATING` não é persistido; sessão ativa duplicada → `409 SESSION_ALREADY_ACTIVE`; não-donos recebem `404`; registro de release publica diretamente (sem draft) e é restrito a admin; operações síncronas (SQLAlchemy sync + threadpool do FastAPI) em vez da assinatura `async` ilustrativa de `08 §7`.
-4. ADR-008 (runtime Docker só local/test) aprovado pelo PO em 2026-11-12. ADR-009 (gateway e interface locais) proposto e implementado só para local/test. OPEN-04: dicas sem penalidade e tentativas livres (PO, 2026-11-12).
+4. ADR-008 (runtime Docker só local/test) aprovado pelo PO em 2026-11-12. ADR-009 (gateway e interface locais) e ADR-010 (avaliação fora do workspace) propostos e implementados só para local/test. OPEN-04: dicas sem penalidade e tentativas livres (PO, 2026-11-12).
 5. Autenticação por cabeçalho apenas em `APP_ENV=local|test`; `AUTH_MODE=oidc` e qualquer adapter que não seja `fake` fazem a aplicação recusar o início (fail closed).
 
 ## 5. Pendências
@@ -86,7 +90,6 @@ Cenários cobertos (rastreio): ENG-01 (20 requisições concorrentes com mesma c
 
 ## 7. Próxima tarefa recomendada
 
-1. **Teste manual do PO** com o LAB-000 (roteiro em `infrastructure/local/README.md`).
-2. **IMP-401–405** — validação, progresso e dicas. OPEN-04 decidido pelo PO em 2026-11-12: dicas sem penalidade, tentativas livres, tudo registrado.
-3. **IMP-501** — LAB-001 SQL Injection (somente local).
+1. **Teste manual do PO** com o LAB-000 0.2.0 (roteiro em `infrastructure/local/README.md`): validação, dicas e pontuação.
+2. **IMP-501**: LAB-001 SQL Injection, somente local.
 Em paralelo: IMP-I01 (inventário on-prem).

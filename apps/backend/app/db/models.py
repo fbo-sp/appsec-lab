@@ -139,6 +139,8 @@ class LabSession(Base):
     created_at: Mapped[datetime] = mapped_column(TZ)
     updated_at: Mapped[datetime] = mapped_column(TZ)
     version_num: Mapped[int] = mapped_column(Integer, default=1)
+    # Tentativa acadêmica dona do progresso (ADR-005); a sessão é só o runtime efêmero.
+    attempt_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("lab_attempts.id"))
 
     __mapper_args__ = {"version_id_col": version_num}
 
@@ -163,7 +165,7 @@ class Job(Base):
 
     __tablename__ = "jobs"
     __table_args__ = (
-        CheckConstraint("kind IN ('PROVISION','TERMINATE')", name="kind"),
+        CheckConstraint("kind IN ('PROVISION','TERMINATE','EVALUATE')", name="kind"),
         CheckConstraint("status IN ('queued','running','succeeded','dead')", name="status"),
         # Deduplicação: no máximo um job pendente por (tipo, sessão).
         Index(
@@ -190,6 +192,99 @@ class Job(Base):
     correlation_id: Mapped[str | None] = mapped_column(String(64))
     created_at: Mapped[datetime] = mapped_column(TZ)
     updated_at: Mapped[datetime] = mapped_column(TZ)
+
+
+class LabAttempt(Base):
+    """Tentativa de resolução do laboratório (ADR-005): durável e dona do progresso."""
+
+    __tablename__ = "lab_attempts"
+    __table_args__ = (
+        CheckConstraint("status IN ('IN_PROGRESS','COMPLETED')", name="status"),
+        Index(
+            "uq_lab_attempts_one_open",
+            "user_id",
+            "release_id",
+            "variant_id",
+            unique=True,
+            postgresql_where=text("status = 'IN_PROGRESS'"),
+            sqlite_where=text("status = 'IN_PROGRESS'"),
+        ),
+    )
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"))
+    release_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("lab_releases.id"))
+    variant_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("lab_variants.id"))
+    status: Mapped[str] = mapped_column(String(16))
+    score: Mapped[int] = mapped_column(Integer, default=0)
+    started_at: Mapped[datetime] = mapped_column(TZ)
+    completed_at: Mapped[datetime | None] = mapped_column(TZ)
+
+
+class StepProgress(Base):
+    __tablename__ = "step_progress"
+    __table_args__ = (
+        UniqueConstraint("attempt_id", "step_id", name="uq_step_progress_attempt_step"),
+        CheckConstraint("status IN ('LOCKED','AVAILABLE','PASSED')", name="status"),
+    )
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    attempt_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("lab_attempts.id"))
+    step_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("lab_steps.id"))
+    status: Mapped[str] = mapped_column(String(16))
+    points_awarded: Mapped[int] = mapped_column(Integer, default=0)
+    submissions: Mapped[int] = mapped_column(Integer, default=0)
+    passed_at: Mapped[datetime | None] = mapped_column(TZ)
+    updated_at: Mapped[datetime] = mapped_column(TZ)
+
+
+class StepSubmission(Base):
+    """Submissão imutável de etapa + execução da validação (ADR-005: step_submissions/validation_runs)."""
+
+    __tablename__ = "step_submissions"
+    __table_args__ = (
+        UniqueConstraint("session_id", "idempotency_key", name="uq_step_submissions_session_idem"),
+        CheckConstraint("status IN ('QUEUED','RUNNING','PASSED','FAILED','ERROR')", name="status"),
+        # No máximo uma avaliação pendente por sessão (docs/10 §4, serialização do MVP).
+        Index(
+            "uq_step_submissions_one_pending",
+            "session_id",
+            unique=True,
+            postgresql_where=text("status IN ('QUEUED','RUNNING')"),
+            sqlite_where=text("status IN ('QUEUED','RUNNING')"),
+        ),
+    )
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    attempt_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("lab_attempts.id"))
+    session_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("lab_sessions.id"))
+    step_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("lab_steps.id"))
+    idempotency_key: Mapped[str] = mapped_column(String(128))
+    request_fingerprint: Mapped[str] = mapped_column(String(80))
+    validator_ref: Mapped[str] = mapped_column(String(200))
+    suite_digest: Mapped[str] = mapped_column(String(80))
+    # Resposta textual do aluno (quando a etapa pede), já normalizada e truncada; nunca segredo.
+    answer: Mapped[str | None] = mapped_column(String(500))
+    snapshot_digest: Mapped[str | None] = mapped_column(String(80))
+    status: Mapped[str] = mapped_column(String(16))
+    # Resultado por critério (`criterion_results`), só com o que pode ser divulgado ao aluno.
+    criteria: Mapped[list[dict[str, Any]]] = mapped_column(JsonType, default=list)
+    feedback: Mapped[str | None] = mapped_column(Text)
+    error_code: Mapped[str | None] = mapped_column(String(64))
+    created_at: Mapped[datetime] = mapped_column(TZ)
+    started_at: Mapped[datetime | None] = mapped_column(TZ)
+    finished_at: Mapped[datetime | None] = mapped_column(TZ)
+
+
+class HintUsage(Base):
+    """Uso de dicas, append-only. OPEN-04 (PO, 2026-11-12): sem penalidade; registrado para relatórios."""
+
+    __tablename__ = "hint_usages"
+    __table_args__ = (
+        UniqueConstraint("attempt_id", "step_id", "level", name="uq_hint_usages_attempt_step_level"),
+    )
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    attempt_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("lab_attempts.id"))
+    step_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("lab_steps.id"))
+    level: Mapped[int] = mapped_column(Integer)
+    revealed_at: Mapped[datetime] = mapped_column(TZ)
 
 
 class AuditEvent(Base):

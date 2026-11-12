@@ -36,7 +36,7 @@ else
   [ "$code" = "201" ] || { echo "registro falhou: $code" >&2; exit 1; }
 fi
 SID=$(curl -sf -H "X-Dev-User: smoke" -H "Idempotency-Key: smoke-key-0001" -H "Content-Type: application/json" \
-  -d '{"labId":"LAB-000","version":"0.1.0","variantId":"python-http"}' "$API/api/v1/sessions" | json '["sessionId"]')
+  -d '{"labId":"LAB-000","version":"0.2.0","variantId":"python-http"}' "$API/api/v1/sessions" | json '["sessionId"]')
 wait_status "$SID" READY
 if [ "$DOCKER_RT" = 1 ]; then
   C="cecyber-lab-$SID"
@@ -63,6 +63,22 @@ if [ "$DOCKER_RT" = 1 ]; then
   [ "$(curl -s -o /dev/null -w "%{http_code}" -H "X-Dev-User: intruso" -H "Content-Type: application/json" \
     -d '{"purpose":"preview"}' "$API/api/v1/sessions/$SID/gateway-ticket")" = "404" ]
   echo "gateway OK: preview e arquivos acessíveis só com ticket do dono"
+  # Validação (ADR-010): etapa de resposta na API; etapa http avaliada pelo worker numa cópia isolada.
+  evaluate() {
+    curl -sf -H "X-Dev-User: smoke" -H "Idempotency-Key: $3" -H "Content-Type: application/json" \
+      -d "$2" "$API/api/v1/sessions/$SID/steps/$1/evaluations"
+  }
+  [ "$(evaluate explore '{"answer":"lab"}' smoke-eval-0001 | json '["status"]')" = "PASSED" ]
+  EV=$(evaluate edit-page '{}' smoke-eval-0002 | json '["evaluationId"]')
+  for _ in $(seq 1 90); do
+    EVST=$(curl -sf -H "X-Dev-User: smoke" "$API/api/v1/sessions/$SID/evaluations/$EV" | json '["status"]')
+    case "$EVST" in QUEUED|RUNNING) sleep 1;; *) break;; esac
+  done
+  # Workspace não editado: a verificação de conteúdo falha, a de disponibilidade passa (nunca ERROR).
+  [ "$EVST" = "FAILED" ] || { echo "avaliação http terminou em $EVST" >&2; exit 1; }
+  [ -z "$(docker ps -aq --filter label=io.cecyber.appsec-labs.evaluation-id)" ] \
+    || { echo "recursos de avaliação não foram removidos" >&2; exit 1; }
+  echo "validação OK: resposta aprovada; avaliação http executada fora do workspace e limpa"
 fi
 [ "$(curl -s -o /dev/null -w "%{http_code}" -H "X-Dev-User: intruso" "$API/api/v1/sessions/$SID")" = "404" ]
 curl -sf -X DELETE -H "X-Dev-User: smoke" "$API/api/v1/sessions/$SID" >/dev/null

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { api, type LabSession, type Step } from "./api";
+import { api, type LabSession } from "./api";
+import { StepPanel } from "./StepPanel";
 import { ErrorBox, StatusChip, go } from "./App";
 
 const LIVE = new Set(["READY", "ACTIVE"]);
@@ -19,7 +20,6 @@ function useCountdown(expiresAt?: string) {
 
 export function SessionView({ id }: { id: string }) {
   const [session, setSession] = useState<LabSession>();
-  const [steps, setSteps] = useState<Step[]>([]);
   const [error, setError] = useState<string>();
   const [frames, setFrames] = useState<{ workspace: string; preview: string; previewOrigin: string }>();
   const [previewKey, setPreviewKey] = useState(0);
@@ -50,14 +50,13 @@ export function SessionView({ id }: { id: string }) {
     };
   }, [id]);
 
-  // Ao ficar pronta: etapas + tickets de uso único para workspace e preview.
+  // Ao ficar pronta: tickets de uso único para workspace e preview.
   useEffect(() => {
     if (!session || !LIVE.has(session.status) || frames || fetchingTickets.current) return;
     fetchingTickets.current = true;
     (async () => {
       try {
-        const [st, ws, pv] = await Promise.all([api.steps(id), api.ticket(id, "workspace"), api.ticket(id, "preview")]);
-        setSteps(st.items);
+        const [ws, pv] = await Promise.all([api.ticket(id, "workspace"), api.ticket(id, "preview")]);
         setFrames({ workspace: ws.url, preview: pv.url, previewOrigin: new URL(pv.url).origin });
         setSession(await api.session(id)); // READY -> ACTIVE na primeira conexão
       } catch (e) {
@@ -90,7 +89,6 @@ export function SessionView({ id }: { id: string }) {
   if (!session) return <main className="page muted">{error ? <ErrorBox message={error} /> : "Carregando sessão…"}</main>;
 
   const status = session.status;
-  const current = steps.find((s) => s.status === "AVAILABLE");
 
   return (
     <div className="session">
@@ -154,32 +152,7 @@ export function SessionView({ id }: { id: string }) {
       {LIVE.has(status) && (
         <div className="workbench">
           <aside className="steps">
-            <h2>Etapas</h2>
-            <ol>
-              {steps.map((s) => (
-                <li key={s.id} className={`step step-${s.status.toLowerCase()}`}>
-                  <span className="step-n">{s.order}</span>
-                  <span>
-                    {s.title}
-                    <span className="muted small"> · {s.points} pts</span>
-                  </span>
-                  {s.status === "LOCKED" && <span className="lock" title="Conclua a etapa anterior">🔒</span>}
-                </li>
-              ))}
-            </ol>
-            {current && (
-              <div className="step-detail">
-                <h3>{current.title}</h3>
-                <p>{current.explanation}</p>
-                <h4>Tarefa</h4>
-                <p>{current.task}</p>
-                <h4>Conceito</h4>
-                <p>{current.concept}</p>
-                <div className="pending-validation muted small">
-                  A validação automática das etapas será adicionada na próxima entrega.
-                </div>
-              </div>
-            )}
+            <StepPanel sessionId={id} />
           </aside>
           <section className="panes">
             {frames ? (

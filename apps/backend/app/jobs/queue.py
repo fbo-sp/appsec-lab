@@ -19,6 +19,7 @@ from app.db.models import Job
 class JobKind(StrEnum):
     PROVISION = "PROVISION"
     TERMINATE = "TERMINATE"
+    EVALUATE = "EVALUATE"
 
 
 @dataclass(frozen=True, slots=True)

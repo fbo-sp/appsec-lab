@@ -18,9 +18,10 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.audit.service import SYSTEM_ACTOR
-from app.db.models import LabRelease, LabSession, LabVariant, RuntimeInstance
+from app.db.models import LabRelease, LabSession, LabVariant, RuntimeInstance, StepSubmission
 from app.jobs import queue
 from app.jobs.queue import ClaimedJob, JobKind
+from app.progress.service import finalize
 from app.runtime.port import (
     ProvisionRequest,
     ResourceLimits,
@@ -33,6 +34,8 @@ from app.sessions.service import apply_event
 from app.sessions.state_machine import SessionEvent, SessionStatus
 from app.shared.clock import Clock
 from app.shared.logging import correlation_id_var
+from app.validation.port import EvaluationOutcome, EvaluationRequest, EvaluatorPort
+from app.validation.suites import HttpSuite, get_suite
 
 _log = logging.getLogger("app.worker")
 READINESS_POLL = timedelta(seconds=1)
@@ -46,6 +49,7 @@ class WorkerContext:
     worker_id: str
     lease: timedelta
     job_max_attempts: int
+    evaluator: EvaluatorPort | None = None
 
 
 def build_request(db: Session, s: LabSession) -> ProvisionRequest:
@@ -92,6 +96,8 @@ def run_once(ctx: WorkerContext) -> bool:
         )
         if job.kind is JobKind.PROVISION:
             _provision(ctx, job)
+        elif job.kind is JobKind.EVALUATE:
+            _evaluate(ctx, job)
         else:
             _terminate(ctx, job)
     finally:
@@ -258,4 +264,126 @@ def _terminate(ctx: WorkerContext, job: ClaimedJob) -> None:
             queue.complete(db, job.id, ctx.worker_id, now)
         else:
             queue.reschedule(db, job.id, ctx.worker_id, now, READINESS_POLL)
+        db.commit()
+
+
+TECH_ERROR_FEEDBACK = (
+    "Não foi possível concluir a validação por uma falha técnica. "
+    "Isso não conta contra você; tente novamente."
+)
+
+
+def _evaluate(ctx: WorkerContext, job: ClaimedJob) -> None:
+    """Avaliação comportamental (ADR-010) fora do workspace. Falha técnica => ERROR, nunca aprovação."""
+    now = ctx.clock.now()
+    with ctx.session_factory() as db:
+        sub = db.execute(
+            select(StepSubmission)
+            .where(
+                StepSubmission.session_id == job.session_id, StepSubmission.status.in_(("QUEUED", "RUNNING"))
+            )
+            .with_for_update()
+        ).scalar_one_or_none()
+        if sub is None:
+            queue.complete(db, job.id, ctx.worker_id, now)
+            db.commit()
+            return
+        s = db.get(LabSession, job.session_id)
+        assert s is not None
+        suite = get_suite(sub.validator_ref)
+        ref = ctx.runtime.ref_for(str(s.id))
+        if SessionStatus(s.status) not in (SessionStatus.READY, SessionStatus.ACTIVE) or not isinstance(
+            suite, HttpSuite
+        ):
+            finalize(
+                db,
+                sub,
+                passed=None,
+                criteria=[],
+                feedback=TECH_ERROR_FEEDBACK,
+                now=now,
+                error_code="SESSION_NOT_READY",
+            )
+            queue.complete(db, job.id, ctx.worker_id, now)
+            db.commit()
+            return
+        base = build_request(db, s)
+        sub.status, sub.started_at = "RUNNING", now
+        request = EvaluationRequest(
+            submission_id=str(sub.id),
+            runtime_ref=ref,
+            image_digest=base.image_digest,
+            workspace_path=base.workspace_path,
+            startup_command=base.startup_command,
+            app_port=base.exposed_port,
+            checks=[
+                {
+                    "id": c.id,
+                    "path": c.path,
+                    "method": c.method,
+                    "form": c.form,
+                    "expect_status": c.expect_status,
+                    "contains": list(c.contains),
+                    "not_contains": list(c.not_contains),
+                }
+                for c in suite.checks
+            ],
+            cpu_millicores=base.resources.cpu_millicores,
+            memory_mib=base.resources.memory_mib,
+            pids_max=base.resources.pids_max,
+            timeout_seconds=suite.timeout_seconds,
+        )
+        sub_id = sub.id
+        db.commit()  # RUNNING persistido antes do efeito externo
+
+    outcome: EvaluationOutcome | None = None
+    if ctx.evaluator is not None:
+        try:
+            outcome = ctx.evaluator.evaluate(request)
+        except Exception as exc:  # falha técnica nunca aprova nem reprova (fail closed => ERROR)
+            outcome = EvaluationOutcome(None, {}, f"{type(exc).__name__}")
+    now = ctx.clock.now()
+    with ctx.session_factory() as db:
+        sub = db.execute(
+            select(StepSubmission).where(StepSubmission.id == sub_id).with_for_update()
+        ).scalar_one()
+        if sub.status != "RUNNING":
+            queue.complete(db, job.id, ctx.worker_id, now)
+            db.commit()
+            return
+        if outcome is None or outcome.error:
+            sub.snapshot_digest = outcome.snapshot_digest if outcome else None
+            finalize(
+                db,
+                sub,
+                passed=None,
+                criteria=[],
+                feedback=TECH_ERROR_FEEDBACK,
+                now=now,
+                error_code="EVALUATION_ERROR",
+            )
+            _log.warning(
+                "evaluation_error",
+                extra={
+                    "event": "evaluation.error",
+                    "submission_id": str(sub_id),
+                    "error": outcome.error if outcome else "sem avaliador",
+                },
+            )
+        else:
+            criteria = [
+                {"id": c.id, "description": c.description, "passed": bool(outcome.results.get(c.id, False))}
+                for c in suite.checks
+            ]
+            passed = all(c["passed"] for c in criteria)
+            sub.snapshot_digest = outcome.snapshot_digest
+            finalize(
+                db,
+                sub,
+                passed=passed,
+                criteria=criteria,
+                feedback=suite.success_feedback if passed else suite.failure_feedback,
+                now=now,
+            )
+        queue.complete(db, job.id, ctx.worker_id, now)
         db.commit()

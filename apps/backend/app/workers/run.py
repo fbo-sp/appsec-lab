@@ -16,7 +16,7 @@ from types import FrameType
 
 from app.config import Settings
 from app.db.engine import make_engine, make_session_factory
-from app.runtime.factory import build_runtime
+from app.runtime.factory import build_evaluator, build_runtime
 from app.shared.clock import SystemClock
 from app.shared.logging import configure_logging
 from app.workers.provisioner import WorkerContext, run_once
@@ -36,6 +36,7 @@ def main() -> None:
         worker_id=f"{socket.gethostname()}-{os.getpid()}",
         lease=timedelta(seconds=settings.worker_lease_seconds),
         job_max_attempts=settings.job_max_attempts,
+        evaluator=build_evaluator(settings),
     )
     stopping = False
 

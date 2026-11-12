@@ -21,7 +21,7 @@ try {
 } catch {
   $code = $_.Exception.Response.StatusCode.value__
   if ($code -eq 409) {
-    Write-Host "A release LAB-000@0.1.0 já existe com outra imagem. Recrie o banco local:"
+    Write-Host "A release LAB-000@0.2.0 já existe com outra imagem. Recrie o banco local:"
     Write-Host "  docker compose -f infrastructure/local/docker-compose.yml down -v"
   }
   throw

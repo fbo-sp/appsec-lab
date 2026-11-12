@@ -9,7 +9,7 @@ apiVersion: labs.cecyber.io/v1alpha1
 kind: AppSecLab
 metadata:
   id: LAB-000
-  version: 0.1.0
+  version: 0.2.0
   title: Laboratório benigno de verificação do motor
   # O contrato exige uma CWE principal. CWE-1000 é a raiz da visão "Research Concepts" do MITRE,
   # usada aqui apenas como marcador neutro: este laboratório NÃO contém vulnerabilidade.
@@ -21,11 +21,12 @@ learning:
   difficulty: beginner
   objectives:
     - Verificar que a plataforma provisiona, consulta e encerra uma sessão de laboratório
+    - Experimentar o fluxo de etapas com validação automática fora do workspace
   story:
     role: Engenheiro(a) de plataforma
     application: Serviço "hello" fictício que apenas responde a uma verificação de saúde
     context: Homologação técnica do motor de laboratórios antes de qualquer conteúdo vulnerável
-    mission: Iniciar a sessão, observar o estado READY e encerrá-la
+    mission: Explorar o ambiente, alterar a página e validar cada etapa
 variants:
   - id: python-http
     language: python
@@ -45,17 +46,34 @@ variants:
       ttlMinutes: 15
     interfaces: [editor, terminal, web]
 steps:
-  - id: observe-ready
+  - id: explore
     order: 1
-    title: Observar a sessão pronta
-    explanation: A plataforma provisiona um ambiente efêmero exclusivo para a sessão.
-    task: Aguarde o estado READY da sessão.
-    concept: Ciclo de vida de sessões efêmeras
-    validatorRef: benign/python-http/session-ready-v1
+    title: Explorar o ambiente
+    explanation: Seu laboratório roda em um contêiner exclusivo e temporário, com um usuário sem privilégios.
+    task: No terminal, descubra com qual usuário seus comandos são executados e informe-o abaixo.
+    concept: Princípio do menor privilégio
+    validatorRef: benign/answer/whoami-v1
     hints:
       - level: 1
-        text: Consulte o estado da sessão pela API.
-    points: 100
+        text: O terminal fica logo abaixo do editor de arquivos.
+      - level: 2
+        text: O comando whoami mostra o nome do usuário atual.
+    points: 40
+  - id: edit-page
+    order: 2
+    title: Alterar a aplicação
+    explanation: >-
+      A validação não confia no seu ambiente: ela copia o workspace, sobe uma instância isolada da
+      aplicação e testa o comportamento a partir de fora.
+    task: Edite index.html para que a página inicial exiba o texto “Olá, CECyber”, salve e clique em Validar.
+    concept: Validação comportamental fora do workspace
+    validatorRef: benign/python-http/edit-page-v1
+    hints:
+      - level: 1
+        text: Abra o arquivo index.html na lista de arquivos.
+      - level: 2
+        text: Inclua, por exemplo, <p>Olá, CECyber</p> dentro de <body> e salve com Ctrl+S.
+    points: 60
 policy:
   sequentialUnlock: true
   allowStepRetry: true
