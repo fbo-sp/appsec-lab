@@ -94,9 +94,12 @@ def run(scenario: Scenario) -> None:
         # access_log=None como em app.gateway.run (o log padrão do aiohttp incluiria a query string).
         # Sem cookie jar: cada requisição do teste declara explicitamente os cookies que envia.
         jar1, jar2 = DummyCookieJar(), DummyCookieJar()
+        ws_srv, pv_srv = TestServer(ws_app), TestServer(pv_app)
+        await ws_srv.start_server(access_log=None)
+        await pv_srv.start_server(access_log=None)
         async with (
-            TestClient(TestServer(ws_app, access_log=None), cookie_jar=jar1) as ws,
-            TestClient(TestServer(pv_app, access_log=None), cookie_jar=jar2) as pv,
+            TestClient(ws_srv, cookie_jar=jar1) as ws,
+            TestClient(pv_srv, cookie_jar=jar2) as pv,
         ):
             await scenario(ws, pv, resolver, upstream)
         await up.close()
