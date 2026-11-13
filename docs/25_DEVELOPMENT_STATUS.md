@@ -96,6 +96,7 @@ Cenários cobertos (rastreio): ENG-01 (20 requisições concorrentes com mesma c
 
 ## 7. Próxima tarefa recomendada
 
-1. **Teste manual do PO** com o LAB-001 (roteiro em `infrastructure/local/README.md`).
-2. Ajustes de conteúdo do LAB-001 a partir do teste; depois IMP-502 (LAB-002 IDOR), somente local.
+1. LAB-001 1.0.1 aprovado pelo PO (2026-11-13) e adotado como modelo de formato (IMP-505).
+2. IMP-502 (LAB-002 IDOR), somente local, com cenário de setor de cliente CECyber.
+3. Replicação dos labs em outras linguagens (IMP-506) só após os 4 labs do MVP.
 Em paralelo: IMP-I01 (inventário on-prem).
