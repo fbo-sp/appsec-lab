@@ -259,6 +259,20 @@ def test_http_step_failure_reports_criteria(
     assert _drain_eval(client, sid, wk, key="eval-http-0002")["status"] == "PASSED"
 
 
+def test_app_that_does_not_start_gets_single_clear_message(
+    client: TestClient, registered: dict[str, Any], wk: WorkerContext, evaluator: FakeEvaluator
+) -> None:
+    sid = _ready(client, wk)
+    _pass_explore(client, sid)
+    evaluator.not_started_log = '  File "app.py", line 3\nSyntaxError: invalid syntax'
+    res = _drain_eval(client, sid, wk)
+    assert res["status"] == "FAILED"  # reprova (não é falha técnica), mas sem N falhas de segurança
+    assert [c["id"] for c in res["criteria"]] == ["app-starts"]
+    assert "não iniciou" in res["feedback"] and "SyntaxError" in res["feedback"]
+    evaluator.not_started_log = None
+    assert _drain_eval(client, sid, wk, key="eval-http-0002")["status"] == "PASSED"
+
+
 def test_only_one_pending_evaluation_per_session(
     client: TestClient, registered: dict[str, Any], wk: WorkerContext
 ) -> None:

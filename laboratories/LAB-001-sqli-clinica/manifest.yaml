@@ -8,7 +8,7 @@ apiVersion: labs.cecyber.io/v1alpha1
 kind: AppSecLab
 metadata:
   id: LAB-001
-  version: 1.0.0
+  version: 1.0.1
   title: "SQL Injection: a busca que expõe pacientes"
   primaryCwe: CWE-89
   secondaryCwes: []
@@ -52,7 +52,8 @@ variants:
     runtimeProfile: web-basic
     workspacePath: /workspace
     startup:
-      command: ["python", "-m", "flask", "--app", "app", "run", "--host", "0.0.0.0", "--port", "8080", "--reload", "--no-debugger"]
+      # A saída do processo (inclusive erros de importação, como IndentationError) também vai para /tmp/app.log.
+      command: ["sh", "-c", "python -u -m flask --app app run --host 0.0.0.0 --port 8080 --reload --no-debugger 2>&1 | tee -a /tmp/app.log"]
       port: 8080
     resources:
       cpuMillicores: 500
@@ -204,19 +205,27 @@ steps:
 
       **Por que não basta remover as aspas?** Bloquear ou escapar caracteres à mão quebra nomes legítimos, como o da Dra. Joana D'Ávila, e costuma deixar brechas, porque cada banco tem regras próprias. O parâmetro resolve o problema na origem.
     task: |
-      Abra `repositories/medico_repository.py` na aba **Código** e, no método `buscar_por_nome`, troque estas duas linhas:
+      Abra `repositories/medico_repository.py` na aba **Código**. O método `buscar_por_nome` está assim:
 
       ```python
-      sql = f"SELECT id, nome, especialidade, crm FROM medicos WHERE nome LIKE '%{termo}%'"
-      linhas = self._conexao.execute(sql).fetchall()
+          def buscar_por_nome(self, termo: str) -> list[Medico]:
+              """Retorna os médicos cujo nome contém ``termo``."""
+              sql = f"SELECT id, nome, especialidade, crm FROM medicos WHERE nome LIKE '%{termo}%'"
+              linhas = self._conexao.execute(sql).fetchall()
+              return [Medico(*linha) for linha in linhas]
       ```
 
-      por estas:
+      Troque as duas linhas do meio (`sql = ...` e `linhas = ...`) para que o método fique assim:
 
       ```python
-      sql = "SELECT id, nome, especialidade, crm FROM medicos WHERE nome LIKE ?"
-      linhas = self._conexao.execute(sql, (f"%{termo}%",)).fetchall()
+          def buscar_por_nome(self, termo: str) -> list[Medico]:
+              """Retorna os médicos cujo nome contém ``termo``."""
+              sql = "SELECT id, nome, especialidade, crm FROM medicos WHERE nome LIKE ?"
+              linhas = self._conexao.execute(sql, (f"%{termo}%",)).fetchall()
+              return [Medico(*linha) for linha in linhas]
       ```
+
+      **Cuidado com o recuo.** Em Python, a indentação faz parte do código: as linhas de dentro do método começam com **8 espaços**, alinhadas com o `return`. Se você copiar daqui, selecione as linhas **inteiras**, desde o início, e cole no início da linha no editor. Se depois de salvar a aplicação mostrar *Internal Server Error*, rode `tail -n 20 /tmp/app.log` no **Terminal**: um `IndentationError` ou `SyntaxError` indica a linha a corrigir.
 
       Repare em dois detalhes:
 

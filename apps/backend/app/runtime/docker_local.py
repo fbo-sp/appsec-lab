@@ -21,6 +21,7 @@ import contextlib
 import hashlib
 import json
 from dataclasses import asdict
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import docker
@@ -39,6 +40,25 @@ from app.runtime.port import (
 
 PLATFORM_LABEL = "io.cecyber.appsec-labs.platform"
 SESSION_LABEL = "io.cecyber.appsec-labs.session-id"
+# Recursos de avaliação (ADR-010) se limpam sozinhos; só viram órfãos se sobrarem por muito tempo
+# (ex.: worker interrompido no meio de uma avaliação).
+EVAL_LABEL = "io.cecyber.appsec-labs.evaluation-id"
+EVAL_STALE_AFTER = timedelta(minutes=10)
+
+
+def _recent_evaluation(labels: dict[str, str], created: str | None) -> bool:
+    if EVAL_LABEL not in labels:
+        return False
+    if not created:
+        return True
+    try:
+        # Docker usa RFC 3339 com nanossegundos; basta a precisão de segundos.
+        when = datetime.fromisoformat(created[:19]).replace(tzinfo=UTC)
+    except ValueError:
+        return True
+    return datetime.now(UTC) - when < EVAL_STALE_AFTER
+
+
 POLICY_LABEL = "io.cecyber.appsec-labs.policy-hash"
 PORT_LABEL = "io.cecyber.appsec-labs.app-port"
 PLATFORM_VALUE = "appsec-labs-local"
@@ -196,12 +216,18 @@ class DockerRuntimeAdapter:
             flt = {"label": f"{PLATFORM_LABEL}={PLATFORM_VALUE}"}
             found: dict[str, OwnedRuntime] = {}
             for c in self._client.containers.list(all=True, filters=flt):
+                if _recent_evaluation(c.labels, c.attrs.get("Created")):
+                    continue  # avaliação em andamento (ADR-010) limpa os próprios recursos
                 found[c.name] = OwnedRuntime(c.name, c.labels.get(SESSION_LABEL, ""))
             # Redes/volumes sem contêiner (criação parcial) também são recursos da plataforma.
             for n in self._client.networks.list(filters=flt):
+                if _recent_evaluation(n.attrs.get("Labels") or {}, n.attrs.get("Created")):
+                    continue
                 ref = n.name.removesuffix("-net")
                 found.setdefault(ref, OwnedRuntime(ref, (n.attrs.get("Labels") or {}).get(SESSION_LABEL, "")))
             for v in self._client.volumes.list(filters=flt):
+                if _recent_evaluation(v.attrs.get("Labels") or {}, v.attrs.get("CreatedAt")):
+                    continue
                 ref = v.name.removesuffix("-ws")
                 found.setdefault(ref, OwnedRuntime(ref, (v.attrs.get("Labels") or {}).get(SESSION_LABEL, "")))
             return list(found.values())

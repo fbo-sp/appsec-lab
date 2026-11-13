@@ -313,7 +313,7 @@ function StepDetail({
               ))}
             </ul>
           )}
-          {evaluation.feedback && <p>{evaluation.feedback}</p>}
+          {evaluation.feedback && <p className="feedback">{evaluation.feedback}</p>}
           {onShowLog && !PENDING.has(evaluation.status) && (
             <button className="link result-link" onClick={onShowLog}>
               ver histórico na aba Validação

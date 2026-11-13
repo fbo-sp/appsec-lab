@@ -277,6 +277,12 @@ TECH_ERROR_FEEDBACK = (
     "Não foi possível concluir a validação por uma falha técnica. "
     "Isso não conta contra você; tente novamente."
 )
+APP_STARTS_CRITERION = "A aplicação inicia com o código salvo."
+APP_NOT_STARTED_FEEDBACK = (
+    "Sua aplicação não iniciou com o código salvo (não respondeu em até 30 segundos), então as "
+    "verificações de segurança não puderam rodar. Confira o arquivo alterado (por exemplo, erro de "
+    "sintaxe ou de indentação), salve e valide de novo."
+)
 
 
 def _evaluate(ctx: WorkerContext, job: ClaimedJob) -> None:
@@ -375,6 +381,20 @@ def _evaluate(ctx: WorkerContext, job: ClaimedJob) -> None:
                     "submission_id": str(sub_id),
                     "error": outcome.error if outcome else "sem avaliador",
                 },
+            )
+        elif not outcome.app_started:
+            # Código salvo não sobe (ex.: erro de sintaxe): mensagem clara em vez de N falhas.
+            sub.snapshot_digest = outcome.snapshot_digest
+            feedback = APP_NOT_STARTED_FEEDBACK
+            if outcome.app_log_tail and outcome.app_log_tail.strip():
+                feedback += "\n\nÚltimas linhas da saída da aplicação:\n" + outcome.app_log_tail.strip()
+            finalize(
+                db,
+                sub,
+                passed=False,
+                criteria=[{"id": "app-starts", "description": APP_STARTS_CRITERION, "passed": False}],
+                feedback=feedback,
+                now=now,
             )
         else:
             criteria = [

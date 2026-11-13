@@ -31,20 +31,25 @@ def _request(base: str, check: dict[str, object]) -> tuple[int, str]:
         return exc.code, exc.read(MAX_BODY).decode("utf-8", "replace")
 
 
-def run(spec: dict[str, object]) -> dict[str, bool]:
+def run(spec: dict[str, object]) -> tuple[bool, dict[str, bool]]:
     base = str(spec["base"])
     checks = spec["checks"]
     assert isinstance(checks, list)
     # Aguarda a aplicação subir (a cópia acabou de iniciar).
     deadline = time.monotonic() + float(spec.get("wait_seconds", 30))  # type: ignore[arg-type]
+    started = False
     while time.monotonic() < deadline:
         try:
             urllib.request.urlopen(base + "/", timeout=2).close()  # noqa: S310
+            started = True
             break
         except urllib.error.HTTPError:
+            started = True  # respondeu (mesmo com erro HTTP): a aplicação está no ar
             break
         except OSError:
             time.sleep(0.5)
+    if not started:
+        return False, {}
     results: dict[str, bool] = {}
     for check in checks:
         try:
@@ -56,9 +61,10 @@ def run(spec: dict[str, object]) -> dict[str, bool]:
         ok = ok and all(s in body for s in check.get("contains", []))
         ok = ok and not any(s in body for s in check.get("not_contains", []))
         results[check["id"]] = bool(ok)
-    return results
+    return True, results
 
 
 if __name__ == "__main__":
     with open(sys.argv[1] if len(sys.argv) > 1 else "/probe/spec.json", encoding="utf-8") as fh:
-        print(json.dumps({"results": run(json.load(fh))}))
+        started, results = run(json.load(fh))
+        print(json.dumps({"started": started, "results": results}))

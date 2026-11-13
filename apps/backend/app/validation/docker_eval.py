@@ -24,11 +24,12 @@ import docker
 from docker.errors import DockerException, NotFound
 from docker.types import Mount
 
-from app.runtime.docker_local import PLATFORM_LABEL, PLATFORM_VALUE
+from app.runtime.docker_local import EVAL_LABEL, PLATFORM_LABEL, PLATFORM_VALUE
 from app.validation.port import EvaluationOutcome, EvaluationRequest
 
 MAX_SNAPSHOT = 20 * 1024 * 1024
-EVAL_LABEL = "io.cecyber.appsec-labs.evaluation-id"
+LOG_TAIL_LINES = 15
+LOG_TAIL_CHARS = 2000
 
 
 def _strip_top_dir(raw: bytes) -> bytes:
@@ -148,6 +149,9 @@ class DockerEvaluator:
             if status.get("StatusCode") != 0 or not out:
                 return EvaluationOutcome(digest, {}, "probe de validação falhou")
             parsed = json.loads(out[-1])
+            if parsed.get("started") is False:
+                tail = app.logs(stdout=True, stderr=True, tail=LOG_TAIL_LINES).decode("utf-8", "replace")
+                return EvaluationOutcome(digest, {}, app_started=False, app_log_tail=tail[-LOG_TAIL_CHARS:])
             results = {str(k): bool(v) for k, v in parsed.get("results", {}).items()}
             return EvaluationOutcome(digest, results)
         except (DockerException, ValueError, KeyError, tarfile.TarError) as exc:

@@ -17,18 +17,21 @@ from controllers.medicos_controller import medicos_bp
 from database.seed import criar_banco
 
 
-def configurar_logs(arquivo: str) -> None:
-    """Envia os logs para o terminal do contêiner e para um arquivo que você pode ler."""
-    formato = logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s")
+def configurar_logs() -> None:
+    """Envia os logs para a saída de erro do processo.
+
+    O comando que inicia a aplicação copia essa saída para ``Config.ARQUIVO_LOG`` (/tmp/app.log), então
+    erros que acontecem antes desta função rodar, como um ``IndentationError``, também aparecem lá.
+    """
+    destino = logging.StreamHandler()
+    destino.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s"))
     raiz = logging.getLogger()
     raiz.setLevel(logging.INFO)
-    for destino in (logging.StreamHandler(), logging.FileHandler(arquivo, encoding="utf-8")):
-        destino.setFormatter(formato)
-        raiz.addHandler(destino)
+    raiz.addHandler(destino)
 
 
 def criar_app() -> Flask:
-    configurar_logs(Config.ARQUIVO_LOG)
+    configurar_logs()
     criar_banco(Config.CAMINHO_BANCO)
 
     app = Flask(__name__)

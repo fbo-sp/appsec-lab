@@ -13,17 +13,20 @@ from datetime import UTC, datetime
 from typing import Any
 
 import pytest
+import yaml
 from app.runtime.port import ProvisionRequest, ResourceLimits, RuntimePhase
 from app.validation.port import EvaluationRequest
 from app.validation.suites import AnswerSuite, HttpSuite, get_suite, normalize_answer
 
-from tests.docker_support import lab001_image
+from tests.docker_support import LABS, lab001_image
 
 SUITE_REF = "sqli/python-flask/parameterized-search-v1"
-CMD = (
-    "python", "-m", "flask", "--app", "app", "run", "--host", "0.0.0.0", "--port", "8080",
-    "--reload", "--no-debugger",
-)  # fmt: skip
+# Mesmo comando do manifesto: a saída do processo também vai para /tmp/app.log.
+CMD = tuple(
+    yaml.safe_load((LABS / "LAB-001-sqli-clinica" / "manifest.yaml").read_text(encoding="utf-8"))["variants"][
+        0
+    ]["startup"]["command"]
+)
 REPO = "/workspace/repositories/medico_repository.py"
 VULNERABLE = (
     "        sql = f\"SELECT id, nome, especialidade, crm FROM medicos WHERE nome LIKE '%{termo}%'\"\n"
@@ -42,6 +45,11 @@ FIXES = {
         '        termo = termo.replace("\'", "")\n'
         "        sql = f\"SELECT id, nome, especialidade, crm FROM medicos WHERE nome LIKE '%{termo}%'\"\n"
         "        linhas = self._conexao.execute(sql).fetchall()\n"
+    ),
+    # Colagem sem recuo (caso real de teste do PO): a 2ª linha cai na coluna 0 e o método termina antes.
+    "recuo-quebrado": (
+        '        sql = "SELECT id, nome, especialidade, crm FROM medicos WHERE nome LIKE ?"\n'
+        'linhas = self._conexao.execute(sql, (f"%{termo}%",)).fetchall()\n'
     ),
     "bloqueia-aspas": (
         '        if "\'" in termo:\n'
@@ -70,7 +78,7 @@ def _provision(rt: Any, image: str) -> tuple[Any, str]:
     ref = rt.provision(
         ProvisionRequest(
             session_id=str(uuid.uuid4()),
-            lab_release="LAB-001@1.0.0",
+            lab_release="LAB-001@1.0.1",
             variant_id="python-flask",
             image_digest=image,
             runtime_profile="web-basic",
@@ -90,6 +98,13 @@ def _provision(rt: Any, image: str) -> tuple[Any, str]:
 
 
 def _evaluate(ev: Any, ref: str, image: str) -> dict[str, bool]:
+    out = _outcome(ev, ref, image)
+    assert out.app_started, out.app_log_tail
+    results: dict[str, bool] = out.results
+    return results
+
+
+def _outcome(ev: Any, ref: str, image: str) -> Any:
     suite = get_suite(SUITE_REF)
     assert isinstance(suite, HttpSuite)
     req = EvaluationRequest(
@@ -118,8 +133,7 @@ def _evaluate(ev: Any, ref: str, image: str) -> dict[str, bool]:
     )
     out = ev.evaluate(req)
     assert out.error is None, out.error
-    results: dict[str, bool] = out.results
-    return results
+    return out
 
 
 def _apply(box: Any, replacement: str) -> None:
@@ -169,3 +183,22 @@ def test_answer_suites_accept_documented_answers() -> None:
         suite = get_suite(ref)
         assert isinstance(suite, AnswerSuite)
         assert normalize_answer(answer) in {normalize_answer(a) for a in suite.accepted}
+
+
+def test_code_that_does_not_start_reports_the_error(env: tuple[Any, Any, str]) -> None:
+    """Recuo quebrado: em vez de 7 falhas de segurança, a avaliação diz que a aplicação não subiu e por quê.
+
+    O mesmo erro também vai para /tmp/app.log da sessão, que o aluno lê pelo terminal.
+    """
+    rt, ev, image = env
+    box, ref = _provision(rt, image)
+    _apply(box, FIXES["recuo-quebrado"])
+    out = _outcome(ev, ref, image)
+    assert not out.app_started and not out.results
+    assert "IndentationError" in (out.app_log_tail or "")
+    deadline = time.monotonic() + 15
+    log = ""
+    while "IndentationError" not in log and time.monotonic() < deadline:
+        time.sleep(1)
+        log = box.exec_run(["tail", "-n", "30", "/tmp/app.log"]).output.decode()
+    assert "IndentationError" in log

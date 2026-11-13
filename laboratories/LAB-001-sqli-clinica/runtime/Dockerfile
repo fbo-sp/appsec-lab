@@ -14,4 +14,5 @@ EXPOSE 8080
 HEALTHCHECK --interval=3s --timeout=10s --start-period=3s --retries=20 \
   CMD ["python", "-c", "import urllib.request as u; u.urlopen('http://127.0.0.1:8080/medicos', timeout=2); u.urlopen('http://127.0.0.1:7681/healthz', timeout=2)"]
 # Recarrega ao salvar; o depurador interativo do Werkzeug fica DESLIGADO (é um console de execução).
-CMD ["python", "-m", "flask", "--app", "app", "run", "--host", "0.0.0.0", "--port", "8080", "--reload", "--no-debugger"]
+# A saída do processo (inclusive erros de importação após salvar) também vai para /tmp/app.log.
+CMD ["sh", "-c", "python -u -m flask --app app run --host 0.0.0.0 --port 8080 --reload --no-debugger 2>&1 | tee -a /tmp/app.log"]
