@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy import Float, case, cast, func, select
 from sqlalchemy.orm import Session
 
-from app.db.models import LabRelease, LabSession, LabVariant
+from app.db.models import AttemptActivity, LabAttempt, LabRelease, LabSession, LabVariant
 from app.deps import get_clock, get_db
 from app.identity.principal import Principal, require_admin
 from app.shared.clock import Clock
@@ -30,6 +30,9 @@ def provisioning_metrics(
     """
     since = clock.now() - timedelta(days=days)
     seconds = cast(LabSession.provision_ms, Float) / 1000.0
+    # Tempo de uso (ADR-014): de pronta até o fim, só para sessões já encerradas; inclui tempo ocioso,
+    # porque o ambiente ocupa recursos do mesmo jeito (base para capacidade).
+    usage = func.extract("epoch", LabSession.ended_at - LabSession.ready_at) / 60.0
     rows = db.execute(
         select(
             LabRelease.lab_id,
@@ -43,6 +46,13 @@ def provisioning_metrics(
             func.percentile_cont(0.95).within_group(seconds),
             func.max(seconds),
             func.sum(LabSession.renewals),
+            func.count(usage),
+            func.avg(usage),
+            func.percentile_cont(0.5).within_group(usage),
+            func.percentile_cont(0.95).within_group(usage),
+            func.max(usage),
+            func.sum(case((LabSession.end_reason == "expire", 1), else_=0)),
+            func.sum(case((LabSession.end_reason == "request_termination", 1), else_=0)),
         )
         .join(LabRelease, LabRelease.id == LabSession.release_id)
         .join(LabVariant, LabVariant.id == LabSession.variant_id)
@@ -67,7 +77,107 @@ def provisioning_metrics(
                 "failed": int(failed or 0),
                 "provisionSeconds": {"avg": r(avg), "p50": r(p50), "p95": r(p95), "max": r(mx)},
                 "renewals": int(renewals or 0),
+                "usageMinutes": {
+                    "ended": n_used,
+                    "avg": r(u_avg),
+                    "p50": r(u_p50),
+                    "p95": r(u_p95),
+                    "max": r(u_max),
+                },
+                "endReasons": {"expired": int(n_exp or 0), "terminated": int(n_term or 0)},
             }
-            for lab_id, version, variant, total, n_ready, failed, avg, p50, p95, mx, renewals in rows
+            for (
+                lab_id,
+                version,
+                variant,
+                total,
+                n_ready,
+                failed,
+                avg,
+                p50,
+                p95,
+                mx,
+                renewals,
+                n_used,
+                u_avg,
+                u_p50,
+                u_p95,
+                u_max,
+                n_exp,
+                n_term,
+            ) in rows
+        ],
+    }
+
+
+@router.get("/resolution")
+def resolution_metrics(
+    _admin: Annotated[Principal, Depends(require_admin)],
+    db: Annotated[Session, Depends(get_db)],
+    clock: Annotated[Clock, Depends(get_clock)],
+    days: Annotated[int, Query(ge=1, le=365)] = 30,
+) -> dict[str, Any]:
+    """Tempo de resolução das tentativas concluídas (ADR-014), por laboratório e versão.
+
+    ``activeMinutes`` conta só minutos com atividade do aluno, somando todas as sessões (base para
+    dimensionar o curso); ``calendarMinutes`` (início até conclusão) é só informativo.
+    """
+    since = clock.now() - timedelta(days=days)
+    active = (
+        select(func.count())
+        .select_from(AttemptActivity)
+        .where(AttemptActivity.attempt_id == LabAttempt.id, AttemptActivity.minute <= LabAttempt.completed_at)
+        .correlate(LabAttempt)
+        .scalar_subquery()
+    )
+    n_sessions = (
+        select(func.count())
+        .select_from(LabSession)
+        .where(LabSession.attempt_id == LabAttempt.id)
+        .correlate(LabAttempt)
+        .scalar_subquery()
+    )
+    per_attempt = (
+        select(
+            LabAttempt.release_id.label("release_id"),
+            cast(active, Float).label("active"),
+            (func.extract("epoch", LabAttempt.completed_at - LabAttempt.started_at) / 60.0).label("calendar"),
+            cast(n_sessions, Float).label("sessions"),
+        )
+        .where(LabAttempt.status == "COMPLETED", LabAttempt.completed_at >= since)
+        .subquery()
+    )
+    rows = db.execute(
+        select(
+            LabRelease.lab_id,
+            LabRelease.version,
+            func.count(),
+            func.avg(per_attempt.c.active),
+            func.percentile_cont(0.5).within_group(per_attempt.c.active),
+            func.percentile_cont(0.9).within_group(per_attempt.c.active),
+            func.percentile_cont(0.5).within_group(per_attempt.c.calendar),
+            func.avg(per_attempt.c.sessions),
+        )
+        .join(LabRelease, LabRelease.id == per_attempt.c.release_id)
+        .group_by(LabRelease.lab_id, LabRelease.version)
+        .order_by(LabRelease.lab_id, LabRelease.version)
+    ).all()
+
+    def r(v: Any) -> float | None:
+        return None if v is None else round(float(v), 2)
+
+    return {
+        "since": since.isoformat(),
+        "days": days,
+        "items": [
+            {
+                "labId": lab_id,
+                "version": version,
+                "completedAttempts": n,
+                "activeMinutes": {"avg": r(avg), "p50": r(p50), "p90": r(p90)},
+                "calendarMinutesP50": r(cal),
+                "sessionsPerAttempt": r(sess),
+            }
+            for lab_id, version, n, avg, p50, p90, cal, sess in rows
         ],
     }

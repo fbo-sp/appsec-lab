@@ -29,6 +29,10 @@ class SessionTarget:
 class SessionResolver(Protocol):
     def resolve(self, session_id: str) -> SessionTarget | None: ...
 
+    def touch(self, session_id: str) -> None:
+        """Registra atividade do aluno na sessão (ADR-014)."""
+        ...
+
 
 class SqlSessionResolver:
     def __init__(self, session_factory: sessionmaker[Session]) -> None:
@@ -62,3 +66,18 @@ class SqlSessionResolver:
             inst.endpoint_port if inst else None,
             max_exp,
         )
+
+    def touch(self, session_id: str) -> None:
+        from datetime import UTC
+        from datetime import datetime as _dt
+
+        from app.sessions.service import record_activity
+
+        try:
+            sid = uuid.UUID(session_id)
+        except ValueError:
+            return
+        with self._factory() as db:
+            s = db.get(LabSession, sid)
+            if s is not None and record_activity(db, s, _dt.now(UTC)):
+                db.commit()

@@ -38,8 +38,26 @@ function useViewFromParent(): View {
   return view;
 }
 
+// Avisa o portal de que o aluno está usando o editor/terminal (ADR-014: encerramento por inatividade).
+// A mensagem não carrega dados; o portal só aceita da origem do workspace.
+function useReportActivity() {
+  useEffect(() => {
+    if (window.parent === window) return;
+    let last = 0;
+    const report = () => {
+      if (Date.now() - last < 30_000) return;
+      last = Date.now();
+      window.parent.postMessage({ type: "cecyber:activity" }, "*");
+    };
+    const events = ["pointerdown", "keydown", "wheel"] as const;
+    events.forEach((ev) => window.addEventListener(ev, report, { passive: true, capture: true }));
+    return () => events.forEach((ev) => window.removeEventListener(ev, report, { capture: true }));
+  }, []);
+}
+
 export function Workspace() {
   const paneView = useViewFromParent();
+  useReportActivity();
   const [tree, setTree] = useState<Record<string, Entry[]>>({});
   const [open, setOpen] = useState<Set<string>>(new Set([""]));
   const [file, setFile] = useState<string>();

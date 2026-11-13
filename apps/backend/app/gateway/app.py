@@ -40,6 +40,8 @@ PV_COOKIE = "cecyber_pv"
 WS_HEADER = "X-Cecyber-Workspace"
 GRANT_MAX_SECONDS = 8 * 3600
 RECHECK_SECONDS = 5.0
+# Atividade do aluno (ADR-014) é gravada no máximo uma vez a cada 30 s por sessão.
+ACTIVITY_THROTTLE_SECONDS = 30.0
 HOP = {
     "connection",
     "keep-alive",
@@ -75,6 +77,20 @@ class _State:
     used_jti: dict[str, int] = field(default_factory=dict)
     cache: dict[str, tuple[float, SessionTarget | None]] = field(default_factory=dict)
     http: aiohttp.ClientSession | None = None
+    touched: dict[str, float] = field(default_factory=dict)
+
+    async def activity(self, sid: str) -> None:
+        """Uso real do editor, terminal ou aplicação conta como atividade; falhas não afetam o tráfego."""
+        now = time.monotonic()
+        if now - self.touched.get(sid, -1e9) < ACTIVITY_THROTTLE_SECONDS:
+            return
+        self.touched[sid] = now
+        try:
+            await asyncio.to_thread(self.resolver.touch, sid)
+        except Exception:  # pragma: no cover - banco indisponível não derruba o proxy
+            _log.warning(
+                "gateway_activity_failed", extra={"event": "gateway.activity_failed", "session_id": sid}
+            )
 
     async def target(self, sid: str, *, fresh: bool = False) -> SessionTarget | None:
         hit = self.cache.get(sid)
@@ -286,6 +302,7 @@ async def ws_api(request: web.Request) -> web.StreamResponse:
     allowed = {("files", "GET"), ("file", "GET"), ("file", "PUT")}
     if (op, request.method) not in allowed:
         return _deny(405, "Operação não permitida.")
+    await st.activity(t.session_id)
     url = f"http://{t.host}:{st.config.agent_port}/{op}?{request.query_string}"
     return await _proxy_http(request, url, drop_cookie=WS_COOKIE, extra_headers={"Cache-Control": "no-store"})
 
@@ -320,6 +337,7 @@ async def ws_terminal(request: web.Request) -> web.StreamResponse:
     async def to_upstream() -> None:
         async for msg in client:
             if msg.type is WSMsgType.TEXT:
+                await st.activity(sid)  # digitação no terminal (não conta pings do WebSocket)
                 await upstream.send_str(msg.data)
 
     async def to_client() -> None:
@@ -360,7 +378,9 @@ async def pv_proxy(request: web.Request) -> web.StreamResponse:
     t = await _authorize(request, "", Purpose.PREVIEW, PV_COOKIE)
     if t is None:
         return _deny()
-    cfg = request.app[STATE].config
+    st = request.app[STATE]
+    cfg = st.config
+    await st.activity(t.session_id)
     url = f"http://{t.host}:{t.port}{request.rel_url}"
     return await _proxy_http(
         request,

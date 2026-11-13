@@ -86,6 +86,17 @@ Portas (todas só em 127.0.0.1): 8000 portal + API, 8001 workspace (editor/termi
 - Contêineres de sessão: `docker ps --filter label=io.cecyber.appsec-labs.platform=appsec-labs-local`.
 - Se a sessão ficar em "Preparando ambiente" e falhar, veja `docker compose ... logs worker`.
 
+### Prazo e sessões paradas (ADR-011/014)
+
+Cada sessão tem o prazo do laboratório (ex.: 45 min no LAB-001) e pode ser renovada perto do fim. Sessões sem
+atividade (cliques e teclas no portal, editor, terminal ou aplicação) são encerradas após 15 minutos, com aviso
+3 minutos antes; o progresso fica salvo. Para testar com um limite curto:
+
+```powershell
+$env:SESSION_IDLE_MINUTES = "4"
+docker compose -f infrastructure/local/docker-compose.yml -f infrastructure/local/docker-compose.docker-runtime.yml up -d
+```
+
 ## Logs, parada e limpeza
 
 ```powershell

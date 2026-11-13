@@ -2,6 +2,8 @@
 
 Ações idempotentes por passagem:
 1. sessões vivas com ``expires_at`` vencido => EXPIRED + job TERMINATE;
+1b. sessões prontas sem atividade há ``SESSION_IDLE_MINUTES`` => TERMINATING (motivo ``idle``) + TERMINATE
+    (ADR-014: libera recursos; o progresso fica na tentativa);
 2. sessões em EXPIRED/FAILED/COMPLETED/TERMINATING sem job TERMINATE pendente
    (ex.: job "dead") => re-enfileira TERMINATE;
 3. runtimes de ``list_owned()`` sem sessão ou com sessão TERMINATED => terminate direto + auditoria.
@@ -13,8 +15,9 @@ from __future__ import annotations
 import logging
 import uuid
 from dataclasses import dataclass, field
+from datetime import timedelta
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.audit import service as audit
@@ -23,6 +26,7 @@ from app.db.models import Job, LabSession
 from app.jobs import queue
 from app.jobs.queue import JobKind
 from app.runtime.port import RuntimeAdapterError
+from app.sessions import service as sessions
 from app.sessions.service import apply_event
 from app.sessions.state_machine import EXPIRABLE, NEEDS_CLEANUP, SessionEvent, SessionStatus
 from app.workers.provisioner import WorkerContext
@@ -33,6 +37,7 @@ _log = logging.getLogger("app.reconciler")
 @dataclass
 class ReconcileReport:
     expired: list[str] = field(default_factory=list)
+    idle: list[str] = field(default_factory=list)
     requeued_terminations: list[str] = field(default_factory=list)
     orphans_removed: list[str] = field(default_factory=list)
     errors: list[str] = field(default_factory=list)
@@ -65,6 +70,41 @@ def reconcile_once(ctx: WorkerContext) -> ReconcileReport:
             )
             report.expired.append(str(s.id))
         db.commit()
+
+        if sessions.IDLE_MINUTES > 0:
+            cutoff = now - timedelta(minutes=sessions.IDLE_MINUTES)
+            idle = (
+                db.execute(
+                    select(LabSession)
+                    .where(
+                        LabSession.status.in_([st.value for st in sessions.GATEWAY_STATUSES]),
+                        func.coalesce(LabSession.last_activity_at, LabSession.ready_at) <= cutoff,
+                    )
+                    .with_for_update(skip_locked=True)
+                )
+                .scalars()
+                .all()
+            )
+            for s in idle:
+                apply_event(
+                    db,
+                    s,
+                    SessionEvent.REQUEST_TERMINATION,
+                    now=now,
+                    actor_id=SYSTEM_ACTOR,
+                    metadata={"reason": "idle", "idle_minutes": sessions.IDLE_MINUTES},
+                )
+                s.end_reason = "idle"
+                queue.enqueue(
+                    db,
+                    kind=JobKind.TERMINATE,
+                    session_id=s.id,
+                    now=now,
+                    max_attempts=ctx.job_max_attempts,
+                    correlation_id=s.correlation_id,
+                )
+                report.idle.append(str(s.id))
+            db.commit()
 
         pending = select(Job.session_id).where(
             Job.kind == JobKind.TERMINATE.value, Job.status.in_(("queued", "running"))

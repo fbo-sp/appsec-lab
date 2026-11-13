@@ -351,3 +351,24 @@ def test_progress_without_rich_content_has_empty_defaults(
 ) -> None:
     p = _steps(client, _ready(client, wk))
     assert p["items"][0]["references"] == [] and p["wrapUp"] is None
+
+
+def test_resolution_metrics_count_active_minutes(
+    client: TestClient, registered: dict[str, Any], wk: WorkerContext, evaluator: FakeEvaluator, clock: Any
+) -> None:
+    """ADR-014: o indicador do admin usa minutos ativos, não o tempo de calendário."""
+    from tests.conftest import ADMIN
+
+    sid = _ready(client, wk)
+    _pass_explore(client, sid)  # validar é atividade (minuto 1)
+    clock.advance(minutes=1)
+    client.post(f"/api/v1/sessions/{sid}/activity", headers=ALICE)  # minuto 2
+    clock.advance(minutes=8)  # parado
+    assert _drain_eval(client, sid, wk)["status"] == "PASSED"  # minuto 3 e conclusão
+    att = _steps(client, sid)["attempt"]
+    assert att["status"] == "COMPLETED" and att["activeMinutes"] == 3 and att["sessions"] == 1
+    assert client.get("/api/v1/admin/metrics/resolution", headers=ALICE).status_code == 403
+    [item] = client.get("/api/v1/admin/metrics/resolution", headers=ADMIN).json()["items"]
+    assert item["labId"] == "LAB-000" and item["completedAttempts"] == 1
+    assert item["activeMinutes"]["p50"] == 3 and item["sessionsPerAttempt"] == 1
+    assert item["calendarMinutesP50"] >= 9

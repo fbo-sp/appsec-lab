@@ -24,6 +24,10 @@ ORIGIN = "http://ws.test"
 @dataclass
 class Resolver:
     targets: dict[str, SessionTarget] = field(default_factory=dict)
+    touched: list[str] = field(default_factory=list)
+
+    def touch(self, session_id: str) -> None:
+        self.touched.append(session_id)
 
     def resolve(self, session_id: str) -> SessionTarget | None:
         return self.targets.get(session_id)
@@ -265,3 +269,23 @@ def test_tickets_never_reach_logs(caplog: pytest.LogCaptureFixture) -> None:
     run(s)
     text = "\n".join(f"{r.getMessage()} {r.__dict__}" for r in caplog.records)
     assert "gateway.request" in text and tokens[0] not in text
+
+
+def test_activity_counts_real_use_with_throttle() -> None:
+    """ADR-014: uso do editor, terminal e aplicação adia o encerramento por inatividade (1 registro/30 s)."""
+
+    async def s(ws: TestClient, pv: TestClient, res: Resolver, up: web.Application) -> None:
+        grant = await _login_ws(ws)
+        hdr = {"X-Cecyber-Workspace": "1", "Cookie": f"{WS_COOKIE}={grant}"}
+        assert res.touched == []  # abrir o workspace não é atividade
+        await ws.get(f"/s/{SID}/__cecyber/api/files", headers=hdr)
+        await ws.get(f"/s/{SID}/__cecyber/api/files", headers=hdr)
+        assert res.touched == [SID]  # limitado por sessão
+        pv_grant = await _login_pv(pv)
+        assert (await pv.get("/", headers={"Cookie": f"{PV_COOKIE}={pv_grant}"})).status == 200
+        assert res.touched == [SID]
+        # Grant inválido não registra atividade.
+        await ws.get(f"/s/{OTHER}/__cecyber/api/files", headers=hdr)
+        assert res.touched == [SID]
+
+    run(s)

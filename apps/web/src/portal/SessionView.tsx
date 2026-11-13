@@ -58,6 +58,54 @@ function mmss(totalSeconds: number) {
 }
 
 const WARN_SECONDS = 5 * 60;
+const IDLE_WARN_SECONDS = 3 * 60;
+const ACTIVITY_EVERY_MS = 60_000;
+
+/**
+ * Sinal de atividade (ADR-014): no máximo um por minuto, só com a aba visível e interação recente no
+ * portal ou no workspace (que avisa por postMessage). Uso do editor, terminal e aplicação também é contado
+ * pelo gateway. Devolve um envio imediato, usado pelo botão "Continuar trabalhando".
+ */
+function useActivity(
+  id: string,
+  live: boolean,
+  workspaceOrigin: string | undefined,
+  onSession: (s: LabSession) => void,
+): () => void {
+  const lastInteraction = useRef(0);
+  const lastSent = useRef(0);
+  const onSessionRef = useRef(onSession);
+  onSessionRef.current = onSession;
+  const send = useRef(async () => {
+    lastSent.current = Date.now();
+    try {
+      onSessionRef.current(await api.activity(id));
+    } catch {
+      /* sem rede: o próximo sinal tenta de novo */
+    }
+  });
+  useEffect(() => {
+    if (!live) return;
+    const mark = () => {
+      lastInteraction.current = Date.now();
+      if (document.visibilityState === "visible" && Date.now() - lastSent.current >= ACTIVITY_EVERY_MS) {
+        void send.current();
+      }
+    };
+    const onMessage = (e: MessageEvent) => {
+      const d = e.data as { type?: unknown } | null;
+      if (workspaceOrigin && e.origin === workspaceOrigin && d?.type === "cecyber:activity") mark();
+    };
+    const events = ["pointerdown", "keydown", "wheel"] as const;
+    events.forEach((ev) => window.addEventListener(ev, mark, { passive: true }));
+    window.addEventListener("message", onMessage);
+    return () => {
+      events.forEach((ev) => window.removeEventListener(ev, mark));
+      window.removeEventListener("message", onMessage);
+    };
+  }, [live, workspaceOrigin]);
+  return () => void send.current();
+}
 
 export function SessionView({ id }: { id: string }) {
   const [session, setSession] = useState<LabSession>();
@@ -84,6 +132,9 @@ export function SessionView({ id }: { id: string }) {
   const [renewDismissedFor, setRenewDismissedFor] = useState<string>();
   const [renewing, setRenewing] = useState(false);
   const waited = useElapsed(!session || !LIVE.has(session.status));
+  const live = !!session && LIVE.has(session.status);
+  const sendActivity = useActivity(id, live, frames?.workspaceOrigin, setSession);
+  const idleLeft = session?.idleDeadline ? (Date.parse(session.idleDeadline) - now) / 1000 : Infinity;
 
   // Acompanha o estado da sessão (o backend é a fonte de verdade).
   useEffect(() => {
@@ -252,7 +303,9 @@ export function SessionView({ id }: { id: string }) {
                     Agora não
                   </button>
                   <button className="primary" onClick={renew} disabled={renewing} autoFocus>
-                    {renewing ? "Renovando…" : `Renovar por ${session.ttlMinutes} min`}
+                    {renewing
+                      ? "Renovando…"
+                      : `Renovar por ${session.ttlMinutes} min (${session.renewals + 1} de ${session.maxRenewals})`}
                   </button>
                 </div>
               </div>
@@ -266,6 +319,25 @@ export function SessionView({ id }: { id: string }) {
             </div>
           )
         )
+      )}
+
+      {LIVE.has(status) && idleLeft <= IDLE_WARN_SECONDS && idleLeft > 0 && !(secondsLeft <= WARN_SECONDS) && (
+        <div className="overlay" role="alertdialog" aria-modal="true" aria-labelledby="idle-title">
+          <div className="card renew">
+            <div className="renew-clock" aria-hidden="true">💤</div>
+            <h2 id="idle-title">Você ainda está aí?</h2>
+            <p className="muted">
+              Não detectamos atividade recente. Para liberar recursos, a sessão será encerrada em{" "}
+              {mmss(idleLeft)}.
+            </p>
+            <p className="muted small">Seu progresso fica salvo; você pode iniciar uma nova sessão depois.</p>
+            <div className="summary-actions">
+              <button className="primary" onClick={sendActivity} autoFocus>
+                Continuar trabalhando
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {!LIVE.has(status) && !ENDED.has(status) && status !== "TERMINATING" && (
@@ -310,7 +382,9 @@ export function SessionView({ id }: { id: string }) {
                 ? `Não foi possível preparar o ambiente (${session.lastErrorCode ?? "erro"}). Tente iniciar novamente.`
                 : status === "EXPIRED"
                   ? "O prazo da sessão terminou e o ambiente foi removido."
-                  : "O ambiente e os arquivos temporários foram removidos."}
+                  : session.endReason === "idle"
+                    ? `A sessão foi encerrada após ${session.idleMinutes ?? 15} minutos sem atividade, para liberar recursos. Seu progresso está salvo.`
+                    : "O ambiente e os arquivos temporários foram removidos."}
             </p>
             <button className="primary" onClick={() => go(`/labs/${session.labId}/${session.version}`)}>
               Voltar ao laboratório
@@ -331,6 +405,7 @@ export function SessionView({ id }: { id: string }) {
               onExit={finishAndExit}
               onProgress={() => setProgressVersion((v) => v + 1)}
               onShowLog={() => pickTab("log")}
+              sessionMinutes={session?.ttlMinutes}
             />
           </aside>
           <Splitter

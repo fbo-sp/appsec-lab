@@ -43,6 +43,7 @@
 | ADR/ADR-011-session-renewal-and-provisioning-metrics.md | Proposto; implementado (2026-11-12) |
 | ADR/ADR-012-rich-step-content.md | Aprovado (2026-11-13); implementado |
 | ADR/ADR-013-hint-penalty.md | Aprovado (2026-11-13); implementado |
+| ADR/ADR-014-session-usage-idle-and-resolution-time.md | Aprovado (2026-11-13); implementado (local/test) |
 
 ## Ordem recomendada para trabalho com agentes
 

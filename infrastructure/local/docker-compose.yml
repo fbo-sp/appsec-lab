@@ -15,6 +15,8 @@ x-backend-env: &backend-env
   DATABASE_URL: postgresql+psycopg://appsec:${POSTGRES_PASSWORD:-local-dev-only}@postgres:5432/appsec_labs
   WORKER_POLL_SECONDS: "0.5"
   RECONCILE_INTERVAL_SECONDS: "5"
+  # Encerramento de sessões paradas (ADR-014); 0 desativa. Ex.: SESSION_IDLE_MINUTES=4 para testar.
+  SESSION_IDLE_MINUTES: ${SESSION_IDLE_MINUTES:-15}
   # Segredo de assinatura dos tickets do gateway: valor exclusivo de desenvolvimento local.
   GATEWAY_TICKET_SECRET: ${GATEWAY_TICKET_SECRET:-local-dev-only-gateway-ticket-secret-0001}
   GATEWAY_WORKSPACE_URL: http://127.0.0.1:8001

@@ -22,11 +22,13 @@ export function StepPanel({
   onExit,
   onProgress,
   onShowLog,
+  sessionMinutes,
 }: {
   sessionId: string;
   onExit: () => void;
   onProgress?: () => void;
   onShowLog?: () => void;
+  sessionMinutes?: number;
 }) {
   const onProgressRef = useRef(onProgress);
   onProgressRef.current = onProgress;
@@ -34,11 +36,17 @@ export function StepPanel({
   const [summaryOpen, setSummaryOpen] = useState(false);
   const [selected, setSelected] = useState<string>();
   const [error, setError] = useState<string>();
+  // Sessão nova de uma tentativa já iniciada: deixa claro que o prazo é desta sessão e o progresso continua.
+  const [resumed, setResumed] = useState<number>();
 
   const reload = useCallback(async (selectNext = false) => {
     try {
       const p = await api.steps(sessionId);
       setProgress((prev) => {
+        if (!prev && p.attempt.status !== "COMPLETED") {
+          const passed = p.items.filter((x) => x.status === "PASSED").length;
+          if (passed > 0) setResumed(passed);
+        }
         // Abre o resumo ao concluir (ou ao reabrir uma sessão de tentativa já concluída).
         if (p.attempt.status === "COMPLETED" && prev?.attempt.status !== "COMPLETED") setSummaryOpen(true);
         return p;
@@ -138,6 +146,17 @@ export function StepPanel({
         </div>
       )}
       </div>
+      {resumed !== undefined && (
+        <div className="resumed" role="status">
+          <span>
+            Nova sessão{sessionMinutes ? ` de ${sessionMinutes} min` : ""}. Seu progresso foi mantido: {resumed} de{" "}
+            {items.length} etapas concluídas.
+          </span>
+          <button className="icon-close" aria-label="Fechar aviso" onClick={() => setResumed(undefined)}>
+            ×
+          </button>
+        </div>
+      )}
       {error && <div className="error">{error}</div>}
       {step && step.status !== "LOCKED" && (
         <StepDetail key={step.id} sessionId={sessionId} step={step} onChanged={reload} onShowLog={onShowLog} />
@@ -436,8 +455,22 @@ function Summary({ progress, onClose, onExit }: { progress: Progress; onClose: (
             </span>
           </div>
           <div className="stat">
-            <span className="stat-value">{duration(attempt.startedAt, attempt.completedAt ?? attempt.startedAt)}</span>
-            <span className="stat-label">tempo total</span>
+            {attempt.activeMinutes !== undefined ? (
+              <>
+                <span className="stat-value">{attempt.activeMinutes} min</span>
+                <span
+                  className="stat-label"
+                  title={`Do início à conclusão: ${duration(attempt.startedAt, attempt.completedAt ?? attempt.startedAt)}`}
+                >
+                  de trabalho ativo{attempt.sessions && attempt.sessions > 1 ? ` em ${attempt.sessions} sessões` : ""}
+                </span>
+              </>
+            ) : (
+              <>
+                <span className="stat-value">{duration(attempt.startedAt, attempt.completedAt ?? attempt.startedAt)}</span>
+                <span className="stat-label">tempo total</span>
+              </>
+            )}
           </div>
           <div className="stat">
             <span className="stat-value">{attempt.hintsUsed}</span>

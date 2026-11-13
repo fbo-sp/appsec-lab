@@ -146,6 +146,11 @@ class LabSession(Base):
     # Indicadores (ADR-011): quando ficou pronta e quanto levou desde a solicitação; renovações feitas.
     ready_at: Mapped[datetime | None] = mapped_column(TZ)
     provision_ms: Mapped[int | None] = mapped_column(Integer)
+    # Fim do uso (encerramento, expiração ou falha); com ready_at dá o tempo de uso da sessão.
+    ended_at: Mapped[datetime | None] = mapped_column(TZ)
+    end_reason: Mapped[str | None] = mapped_column(String(24))
+    # Última atividade do aluno (ADR-014): base do encerramento por inatividade.
+    last_activity_at: Mapped[datetime | None] = mapped_column(TZ)
     renewals: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
 
     __mapper_args__ = {"version_id_col": version_num}
@@ -279,8 +284,16 @@ class StepSubmission(Base):
     finished_at: Mapped[datetime | None] = mapped_column(TZ)
 
 
+class AttemptActivity(Base):
+    """Minutos com atividade do aluno na tentativa (ADR-014): tempo de resolução sem contar tempo parado."""
+
+    __tablename__ = "attempt_activity"
+    attempt_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("lab_attempts.id"), primary_key=True)
+    minute: Mapped[datetime] = mapped_column(TZ, primary_key=True)
+
+
 class HintUsage(Base):
-    """Uso de dicas, append-only. OPEN-04 (PO, 2026-11-12): sem penalidade; registrado para relatórios."""
+    """Uso de dicas, append-only; o desconto segue o ADR-013."""
 
     __tablename__ = "hint_usages"
     __table_args__ = (

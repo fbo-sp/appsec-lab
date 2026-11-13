@@ -28,6 +28,10 @@ export type LabSession = {
   renewals: number;
   maxRenewals: number;
   renewableAt: string | null;
+  // Encerramento por inatividade (ADR-014).
+  idleDeadline?: string | null;
+  idleMinutes?: number | null;
+  endReason?: string | null;
 };
 
 export type Criterion = { id: string; description: string; passed: boolean };
@@ -78,6 +82,8 @@ export type Progress = {
     completedAt: string | null;
     hintsUsed: number;
     submissions: number;
+    activeMinutes?: number;
+    sessions?: number;
   };
   items: Step[];
   wrapUp?: { text: string; references?: Reference[] } | null;
@@ -155,6 +161,7 @@ export const api = {
       headers: { "Idempotency-Key": `ui-${crypto.randomUUID()}` },
       body: JSON.stringify({ labId, version, variantId }),
     }),
+  activity: (id: string) => call<LabSession>(`/api/v1/sessions/${id}/activity`, { method: "POST" }),
   renew: (id: string) => call<LabSession>(`/api/v1/sessions/${id}/renewals`, { method: "POST" }),
   terminate: (id: string) => call<LabSession>(`/api/v1/sessions/${id}`, { method: "DELETE" }),
   ticket: (id: string, purpose: "workspace" | "preview") =>

@@ -17,12 +17,13 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 
 from app.audit import service as audit
 from app.db.models import (
+    AttemptActivity,
     HintUsage,
     LabAttempt,
     LabRelease,
@@ -103,6 +104,20 @@ def ensure_attempt(db: Session, s: LabSession, now: datetime) -> LabAttempt:
     att = db.get(LabAttempt, att_id)
     assert att is not None
     return att
+
+
+def _active_minutes(db: Session, att: LabAttempt) -> int:
+    q = select(func.count()).select_from(AttemptActivity).where(AttemptActivity.attempt_id == att.id)
+    if att.completed_at is not None:
+        q = q.where(AttemptActivity.minute <= att.completed_at)
+    return int(db.execute(q).scalar_one())
+
+
+def _mark_activity(db: Session, s: LabSession, now: datetime) -> None:
+    """Validar e abrir dica são atividade do aluno (ADR-014)."""
+    from app.sessions.service import record_activity  # import local: sessions depende deste módulo
+
+    record_activity(db, s, now)
 
 
 def _owned_live_session(db: Session, principal: Principal, session_id: uuid.UUID) -> LabSession:
@@ -240,6 +255,11 @@ def progress_view(db: Session, s: LabSession, now: datetime) -> dict[str, Any]:
             "startedAt": att.started_at.isoformat(),
             "completedAt": att.completed_at.isoformat() if att.completed_at else None,
             "hintsUsed": sum(len(v) for v in revealed.values()),
+            # Tempo de resolução (ADR-014): minutos com atividade, somando todas as sessões.
+            "activeMinutes": _active_minutes(db, att),
+            "sessions": db.execute(
+                select(func.count()).select_from(LabSession).where(LabSession.attempt_id == att.id)
+            ).scalar_one(),
             "submissions": sum(p.submissions for p in rows.values()),
         },
         "items": items,
@@ -320,6 +340,7 @@ def submit(
 ) -> tuple[StepSubmission, bool]:
     """Cria a submissão. ``answer`` é avaliado aqui; ``http`` vai para o worker. Retorna (sub, criada)."""
     s = _owned_live_session(db, principal, session_id)
+    _mark_activity(db, s, now)
     fingerprint = hashlib.sha256(json.dumps([step_key, answer], ensure_ascii=False).encode()).hexdigest()
     existing = db.execute(
         select(StepSubmission).where(
@@ -476,6 +497,7 @@ def reveal_hint(
 ) -> dict[str, Any]:
     s = _owned_live_session(db, principal, session_id)
     att = ensure_attempt(db, s, now)
+    _mark_activity(db, s, now)
     step, prog = _step_and_progress(db, att, s.release_id, step_key)
     if prog.status == "LOCKED":
         raise ApiError(409, "STEP_LOCKED", "Dicas ficam disponíveis quando a etapa é liberada.")

@@ -202,6 +202,18 @@ def renew_session(
     return service.session_view(db, s)
 
 
+@router.post("/{session_id}/activity")
+def session_activity(
+    session_id: uuid.UUID,
+    principal: Annotated[Principal, Depends(get_principal)],
+    db: Annotated[Session, Depends(get_db)],
+    clock: Annotated[Clock, Depends(get_clock)],
+) -> dict[str, Any]:
+    """Sinal de atividade do portal (ADR-014): adia o encerramento por inatividade e conta o minuto."""
+    s = service.touch_session(db, principal=principal, session_id=session_id, now=clock.now())
+    return service.session_view(db, s)
+
+
 @router.delete("/{session_id}", status_code=202)
 def terminate_session(
     session_id: uuid.UUID,
