@@ -132,6 +132,42 @@ def _manifest_step(release: LabRelease, step_key: str) -> dict[str, Any]:
     return next(x for x in release.manifest["steps"] if x["id"] == step_key)
 
 
+# -- desconto por dicas (ADR-013) ----------------------------------------------------------------------
+HINT_PENALTY_MAX_PERCENT = 10
+
+
+def hint_cost(level: int) -> int:
+    """Custo inteiro de uma dica pelo nível: a 1ª é grátis, a 2ª custa 1 e a 3ª em diante (quase a
+    resposta) custa 2 pontos."""
+    return 0 if level <= 1 else 1 if level == 2 else 2
+
+
+def hint_penalty_cap(max_score: int) -> int:
+    return max_score * HINT_PENALTY_MAX_PERCENT // 100
+
+
+def hint_penalty(levels: list[int], max_score: int) -> int:
+    """Desconto total da tentativa: soma dos custos, limitada a 10% da pontuação máxima (inteiros)."""
+    return min(hint_penalty_cap(max_score), sum(hint_cost(lv) for lv in levels))
+
+
+def _hint_levels(db: Session, attempt_id: uuid.UUID) -> list[int]:
+    return list(db.execute(select(HintUsage.level).where(HintUsage.attempt_id == attempt_id)).scalars())
+
+
+def _max_score(db: Session, release_id: uuid.UUID) -> int:
+    return sum(st.max_points for st in _steps(db, release_id))
+
+
+def _recompute_score(db: Session, att: LabAttempt, release_id: uuid.UUID) -> None:
+    """Pontuação = pontos das etapas aprovadas menos o desconto por dicas (nunca negativa)."""
+    earned = sum(
+        p.points_awarded
+        for p in db.execute(select(StepProgress).where(StepProgress.attempt_id == att.id)).scalars()
+    )
+    att.score = max(0, earned - hint_penalty(_hint_levels(db, att.id), _max_score(db, release_id)))
+
+
 # -- leitura -----------------------------------------------------------------------------------------
 def progress_view(db: Session, s: LabSession, now: datetime) -> dict[str, Any]:
     att = ensure_attempt(db, s, now)
@@ -145,6 +181,9 @@ def progress_view(db: Session, s: LabSession, now: datetime) -> dict[str, Any]:
     revealed: dict[uuid.UUID, list[int]] = {}
     for h in db.execute(select(HintUsage).where(HintUsage.attempt_id == att.id)).scalars():
         revealed.setdefault(h.step_id, []).append(h.level)
+    all_levels = [lv for v in revealed.values() for lv in v]
+    max_score = _max_score(db, s.release_id)
+    penalty_left = hint_penalty_cap(max_score) - hint_penalty(all_levels, max_score)
     items: list[dict[str, Any]] = []
     for step in _steps(db, s.release_id):
         prog = rows[step.id]
@@ -176,7 +215,13 @@ def progress_view(db: Session, s: LabSession, now: datetime) -> dict[str, Any]:
                 },
                 hints={
                     "available": len(hints),
-                    "revealed": [{"level": h.level, "text": h.content} for h in hints if h.level in levels],
+                    "revealed": [
+                        {"level": h.level, "text": h.content, "cost": hint_cost(h.level)}
+                        for h in hints
+                        if h.level in levels
+                    ],
+                    # Custo efetivo da próxima dica (0 quando o teto de 10% já foi atingido).
+                    "nextCost": min(penalty_left, hint_cost(len(levels) + 1)),
                 },
                 lastSubmission=_last_submission(db, att.id, step.id),
             )
@@ -187,7 +232,10 @@ def progress_view(db: Session, s: LabSession, now: datetime) -> dict[str, Any]:
             "id": str(att.id),
             "status": att.status,
             "score": att.score,
-            "maxScore": sum(st.max_points for st in _steps(db, s.release_id)),
+            "maxScore": max_score,
+            "earnedPoints": sum(p.points_awarded for p in rows.values()),
+            "hintPenalty": hint_penalty(all_levels, max_score),
+            "hintPenaltyCap": hint_penalty_cap(max_score),
             "passingScore": release.manifest.get("policy", {}).get("finalPassingScore", 100),
             "startedAt": att.started_at.isoformat(),
             "completedAt": att.completed_at.isoformat() if att.completed_at else None,
@@ -398,7 +446,7 @@ def finalize(
             all_progress = list(
                 db.execute(select(StepProgress).where(StepProgress.attempt_id == att.id)).scalars()
             )
-            att.score = sum(p.points_awarded for p in all_progress)
+            _recompute_score(db, att, step.release_id)
             if all(p.status == "PASSED" for p in all_progress):
                 att.status = "COMPLETED"
                 att.completed_at = now
@@ -443,8 +491,14 @@ def reveal_hint(
     )
     if level > 1 and (level - 1) not in used:
         raise ApiError(409, "HINT_ORDER", "Revele as dicas em ordem.")
+    penalty = 0
     if level not in used:
+        max_score = _max_score(db, s.release_id)
+        before = hint_penalty(_hint_levels(db, att.id), max_score)
         db.add(HintUsage(id=uuid.uuid4(), attempt_id=att.id, step_id=step.id, level=level, revealed_at=now))
+        db.flush()
+        penalty = hint_penalty(_hint_levels(db, att.id), max_score) - before
+        _recompute_score(db, att, s.release_id)
         audit.record(
             db,
             now=now,
@@ -452,7 +506,7 @@ def reveal_hint(
             action="hint.revealed",
             resource_kind="lab_attempt",
             resource_id=str(att.id),
-            metadata={"step": step_key, "level": level},
+            metadata={"step": step_key, "level": level, "penalty": penalty},
         )
     db.commit()
-    return {"level": level, "text": hint.content, "penalty": 0}
+    return {"level": level, "text": hint.content, "penalty": penalty, "score": att.score}

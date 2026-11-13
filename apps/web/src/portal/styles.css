@@ -120,7 +120,7 @@ label { font-weight: 600; font-size: 0.9rem; }
 .progress li { color: var(--muted); }
 .progress li.done { color: var(--ok); font-weight: 600; }
 
-.workbench { flex: 1; display: grid; grid-template-columns: var(--steps-w, 320px) 7px minmax(0, 1fr); min-height: 0; height: calc(100vh - 100px); }
+.workbench { flex: none; display: grid; grid-template-columns: var(--steps-w, 320px) 7px minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); min-height: 0; height: calc(100vh - 100px); }
 .steps { background: var(--surface); overflow: auto; padding: 1rem; min-width: 0; }
 /* Divisor arrastável entre etapas e abas */
 .splitter { position: relative; cursor: col-resize; background: var(--surface); border-left: 1px solid var(--border); touch-action: none; }
@@ -141,6 +141,23 @@ label { font-weight: 600; font-size: 0.9rem; }
 .score-row { display: flex; justify-content: space-between; font-size: 0.9rem; font-variant-numeric: tabular-nums; }
 .meter { height: 8px; border-radius: 99px; background: var(--chip-bg); overflow: hidden; margin-top: 0.3rem; }
 .meter span { display: block; height: 100%; background: var(--ok); transition: width 0.4s; }
+.trail-head { position: sticky; top: -1rem; z-index: 2; background: var(--surface); margin: -1rem -1rem 0; padding: 1rem 1rem 0; }
+.trail-head .score { margin-bottom: 0.6rem; }
+.trail-head .score-row { gap: 0.5rem; white-space: nowrap; }
+.trail { display: flex; gap: 4px; list-style: none; padding: 0; margin: 0.5rem 0 0 !important; }
+.trail li { flex-basis: 0; min-width: 2rem; }
+.seg { width: 100%; height: 1.9rem; border-radius: 6px; border: 1px solid var(--border); background: var(--chip-bg); color: var(--muted); font-size: 0.8rem; font-weight: 600; cursor: pointer; padding: 0; white-space: nowrap; overflow: hidden; }
+.seg:disabled { cursor: not-allowed; opacity: 0.8; }
+.seg-passed { background: var(--ok); border-color: var(--ok); color: var(--surface); }
+.seg-available { background: var(--surface); color: var(--accent); border-color: var(--accent); }
+.seg-selected { outline: 2px solid var(--accent); outline-offset: 2px; }
+.seg:not(:disabled):hover { filter: brightness(0.95); }
+.step-nav { display: flex; align-items: center; gap: 0.5rem; padding-bottom: 0.7rem; margin-bottom: 0.7rem; border-bottom: 1px solid var(--border); }
+.step-nav-title { flex: 1; min-width: 0; }
+.step-nav-title h3 { margin: 0; font-size: 1.05rem; }
+.nav-btn { width: 2rem; height: 2rem; flex: none; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); color: var(--text); font-size: 1.1rem; line-height: 1; padding: 0; cursor: pointer; }
+.nav-btn:disabled { color: var(--muted); opacity: 0.5; cursor: default; }
+.penalty { color: var(--warn); font-weight: 600; font-size: 0.85rem; }
 .completed { margin-top: 0.6rem; color: var(--ok); font-weight: 600; font-size: 0.9rem; }
 .validate { display: flex; flex-direction: column; gap: 0.4rem; align-items: stretch; }
 .validate label { display: flex; flex-direction: column; }
@@ -189,7 +206,7 @@ label { font-weight: 600; font-size: 0.9rem; }
 
 @media (max-width: 860px) {
   .two-col { grid-template-columns: 1fr; }
-  .workbench { grid-template-columns: 1fr; height: auto; }
+  .workbench { grid-template-columns: 1fr; grid-template-rows: none; height: auto; }
   .splitter { display: none; }
   .steps { border-bottom: 1px solid var(--border); }
   .tab-body { height: 560px; flex: none; }

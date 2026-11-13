@@ -55,7 +55,7 @@
 | 33 | IMP-402 | Snapshot de workspace | F4 | Done local (ADR-010); produção Blocked (ADR-003) |
 | 34 | IMP-403 | Validation controller e envelope autenticado | F4 | Parcial local: registro protegido + worker (ADR-010); envelope assinado Blocked (ADR-003) |
 | 35 | IMP-404 | Avaliação por etapa e desbloqueio transacional | F4 | Done local (2026-11-12) |
-| 36 | IMP-405 | Dicas progressivas e HintUsage | F4 | Done (OPEN-04: sem penalidade, 2026-11-12) |
+| 36 | IMP-405 | Dicas progressivas e HintUsage | F4 | Done (desconto por dicas conforme ADR-013, 2026-11-13) |
 | 37 | IMP-501..504 | Conteúdo LAB-001..004 | F5 | IMP-501 Ready só local (F4 local pronto); demais Blocked (`17`) |
 | 38 | IMP-601 | Visão de instrutor e CSV | F6 | Blocked (OPEN-06) |
 | 39 | IMP-602 | Visão operacional admin | F6 | Ready após F2 |

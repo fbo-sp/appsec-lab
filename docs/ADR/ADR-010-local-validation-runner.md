@@ -28,7 +28,7 @@ A experiência exige validar cada etapa e liberar a próxima no servidor (`21`, 
    - aprovação, pontos, desbloqueio da próxima etapa e conclusão da tentativa ocorrem na mesma transação;
    - há uma avaliação pendente por sessão e idempotência por `Idempotency-Key`;
    - o progresso pertence à tentativa e sobrevive ao fim da sessão.
-6. **OPEN-04** (PO, 2026-11-12): dicas são reveladas em ordem e sem penalidade (`penalty: 0`), e as tentativas são ilimitadas. Tudo é auditado (`step.submitted`, `step.passed|failed|error`, `hint.revealed`, `attempt.completed`).
+6. **OPEN-04** (PO, 2026-11-12): dicas são reveladas em ordem e as tentativas são ilimitadas. O desconto por dicas foi revisto pelo PO em 2026-11-13 e agora segue o ADR-013 (custo por nível, teto de 10%). Tudo é auditado (`step.submitted`, `step.passed|failed|error`, `hint.revealed`, `attempt.completed`).
 
 ## Alternativas consideradas
 

@@ -54,11 +54,14 @@ export type Step = {
   concept?: string | null;
   references?: Reference[];
   validation?: { type: "answer" | "http" | "unavailable"; answerPrompt: string | null };
-  hints?: { available: number; revealed: { level: number; text: string }[] };
+  hints?: Hints;
   lastSubmission?: Evaluation | null;
 };
 
 export type Reference = { title: string; url: string };
+
+/** Dicas da etapa; ``cost``/``nextCost`` em pontos inteiros (ADR-013). */
+export type Hints = { available: number; revealed: { level: number; text: string; cost?: number }[]; nextCost?: number };
 
 export type Progress = {
   sessionId: string;
@@ -67,6 +70,9 @@ export type Progress = {
     status: "IN_PROGRESS" | "COMPLETED";
     score: number;
     maxScore: number;
+    earnedPoints?: number;
+    hintPenalty?: number;
+    hintPenaltyCap?: number;
     passingScore: number;
     startedAt: string;
     completedAt: string | null;
@@ -139,7 +145,7 @@ export const api = {
   evaluation: (id: string, evaluationId: string) =>
     call<Evaluation>(`/api/v1/sessions/${id}/evaluations/${evaluationId}`),
   revealHint: (id: string, stepId: string, level: number) =>
-    call<{ level: number; text: string; penalty: number }>(
+    call<{ level: number; text: string; penalty: number; score?: number }>(
       `/api/v1/sessions/${id}/steps/${stepId}/hints/${level}/reveal`,
       { method: "POST" },
     ),

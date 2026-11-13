@@ -51,7 +51,8 @@ Roteiro das etapas do LAB-000 0.2.1 (ADR-010):
 
 1. **Explorar o ambiente**: descubra no terminal com qual usuário os comandos rodam (`whoami`), digite a
    resposta e clique em **Validar**. Respostas erradas mostram o critério que falhou. As tentativas são
-   livres e as dicas não descontam pontos.
+   livres. A 1ª dica de cada etapa é grátis, a 2ª custa 1 ponto e a 3ª custa 2, com desconto total de
+   no máximo 10% (ADR-013).
 2. **Alterar a aplicação**: edite `index.html` para exibir "Olá, CECyber", salve e clique em **Validar**.
    O worker copia o workspace, sobe uma cópia isolada da aplicação e a testa de fora; leva alguns segundos.
    Ao concluir, a pontuação chega a 100/100 e aparece "Laboratório concluído".
