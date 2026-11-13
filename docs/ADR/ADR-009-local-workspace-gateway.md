@@ -17,7 +17,7 @@ O aluno precisa de editor, terminal e pré-visualização da aplicação da sess
 3. **Tickets**:
    - a API emite HMAC-SHA256 por sessão, usuário e finalidade (`workspace`/`preview`), com vida de 60 s e uso único, **somente ao dono** e com a sessão em `READY`/`ACTIVE`;
    - o primeiro ticket move a sessão de `READY` para `ACTIVE`;
-   - o gateway troca o ticket por um *grant* em cookie `HttpOnly; SameSite=Strict`, com caminho escopado e prazo limitado pela expiração da sessão;
+   - o gateway troca o ticket por um *grant* em cookie `HttpOnly; SameSite=Strict`, com caminho escopado e prazo limitado pelo prazo máximo da sessão (expiração atual mais as renovações restantes, ADR-011; teto de 8 h), de modo que renovar não derruba as abas abertas. Estado, dono e expiração efetiva continuam revalidados no banco a cada requisição;
    - chaves são derivadas por audiência, então um ticket não vale como grant.
 4. **Revogação**: cada requisição revalida estado e dono no banco (cache de 2 s). O terminal é derrubado em até 5 s após encerramento ou expiração.
 5. **CSRF a partir do preview**: o preview é *same-site* com o workspace. Por isso:

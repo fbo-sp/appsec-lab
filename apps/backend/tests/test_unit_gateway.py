@@ -178,6 +178,36 @@ def test_workspace_api_requires_grant_header_and_matching_session() -> None:
     run(s)
 
 
+def test_grant_survives_renewal_but_not_expiry(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Regressão: o grant valia só até o prazo da emissão; renovar derrubava as abas (GATEWAY_DENIED)."""
+    import app.gateway.app as gw
+
+    async def s(ws: TestClient, pv: TestClient, res: Resolver, up: web.Application) -> None:
+        t0 = datetime.now(UTC)
+        # 10 min de prazo + 2 renovações de 45 min ainda disponíveis.
+        res.targets[SID] = replace(res.targets[SID], max_expires_at=t0 + timedelta(minutes=100))
+        r = await pv.get(
+            "/__cecyber/auth", params={"ticket": _ticket(purpose=Purpose.PREVIEW)}, allow_redirects=False
+        )
+        assert r.status == 303
+        assert 5900 <= int(r.cookies[PV_COOKIE]["max-age"]) <= 6000
+        grant = r.cookies[PV_COOKIE].value
+        hdr = {"Cookie": f"{PV_COOKIE}={grant}"}
+        # 20 min depois, já após o prazo original, com a sessão renovada até t0+55.
+        monkeypatch.setattr(gw, "_now", lambda: t0 + timedelta(minutes=20))
+        res.targets[SID] = replace(res.targets[SID], expires_at=t0 + timedelta(minutes=55))
+        pv.server.app[gw.STATE].cache.clear()  # o cache de resolução dura 2 s
+        ok = await pv.get("/", headers=hdr)
+        assert ok.status == 200, await ok.text()
+        # Sem nova renovação, o prazo efetivo do banco continua valendo.
+        monkeypatch.setattr(gw, "_now", lambda: t0 + timedelta(minutes=56))
+        pv.server.app[gw.STATE].cache.clear()
+        expired = await pv.get("/", headers=hdr)
+        assert expired.status == 403
+
+    run(s)
+
+
 def test_termination_revokes_existing_grant_immediately() -> None:
     async def s(ws: TestClient, pv: TestClient, res: Resolver, up: web.Application) -> None:
         grant = await _login_ws(ws)

@@ -38,7 +38,7 @@ ALLOWED_STATUSES = frozenset({"READY", "ACTIVE"})
 WS_COOKIE = "cecyber_ws"
 PV_COOKIE = "cecyber_pv"
 WS_HEADER = "X-Cecyber-Workspace"
-GRANT_MAX_SECONDS = 4 * 3600
+GRANT_MAX_SECONDS = 8 * 3600
 RECHECK_SECONDS = 5.0
 HOP = {
     "connection",
@@ -148,7 +148,10 @@ async def _exchange(
     t = await st.target(claims.sid, fresh=True)
     if t is None or not _usable(t, claims.sub):
         return _deny()
-    max_age = max(1, min(GRANT_MAX_SECONDS, int((t.expires_at - _now()).total_seconds())))
+    # Vale até o prazo máximo da sessão (inclui renovações restantes): renovar não derruba as abas.
+    # Encerramento/expiração continuam efetivos porque cada requisição revalida estado e prazo no banco.
+    limit = t.max_expires_at or t.expires_at
+    max_age = max(1, min(GRANT_MAX_SECONDS, int((limit - _now()).total_seconds())))
     token, _ = issue(
         st.config.secret,
         sid=claims.sid,
