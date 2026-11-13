@@ -13,6 +13,7 @@ const TABS: { id: Tab; label: string }[] = [
   { id: "log", label: "Validação" },
 ];
 import { ErrorBox, StatusChip, go } from "./App";
+import { previewPathFrom } from "./previewPath";
 
 const LIVE = new Set(["READY", "ACTIVE"]);
 const ENDED = new Set(["TERMINATED", "EXPIRED", "FAILED", "COMPLETED"]);
@@ -124,6 +125,9 @@ export function SessionView({ id }: { id: string }) {
   const steps = useStepsWidth(workbench);
   const [resizing, setResizing] = useState(false);
   const [previewKey, setPreviewKey] = useState(0);
+  // Barra de endereço da aba Aplicação: caminho dentro da aplicação do laboratório (mesma origem).
+  const [previewPath, setPreviewPath] = useState("/");
+  const [addressDraft, setAddressDraft] = useState("/");
   const [ending, setEnding] = useState(false);
   const fetchingTickets = useRef(false);
   const now = useNow();
@@ -436,10 +440,36 @@ export function SessionView({ id }: { id: string }) {
               <div className="tab-tools">
                 {showApp && frames && (
                   <>
+                    <form
+                      className="address-bar"
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        const path = previewPathFrom(addressDraft, frames.previewOrigin);
+                        setAddressDraft(path);
+                        setPreviewPath(path);
+                        setPreviewKey((k) => k + 1);
+                      }}
+                    >
+                      <input
+                        aria-label="Endereço na aplicação"
+                        title="Digite um caminho da aplicação, por exemplo /comprovantes/10458, e pressione Enter"
+                        value={addressDraft}
+                        onChange={(e) => setAddressDraft(e.target.value)}
+                        spellCheck={false}
+                      />
+                      <button type="submit" className="link">
+                        ir
+                      </button>
+                    </form>
                     <button className="link" onClick={() => setPreviewKey((k) => k + 1)}>
                       recarregar
                     </button>
-                    <a className="link" href={`${frames.previewOrigin}/`} target="_blank" rel="noreferrer">
+                    <a
+                      className="link"
+                      href={`${frames.previewOrigin}${previewPath}`}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
                       abrir em nova aba
                     </a>
                   </>
@@ -475,7 +505,7 @@ export function SessionView({ id }: { id: string }) {
                   key={previewKey}
                   className="pane-preview"
                   title="Aplicação do laboratório"
-                  src={previewKey === 0 ? frames.preview : `${frames.previewOrigin}/`}
+                  src={previewKey === 0 ? frames.preview : `${frames.previewOrigin}${previewPath}`}
                   sandbox="allow-scripts allow-forms allow-same-origin allow-popups"
                   hidden={!showApp}
                 />

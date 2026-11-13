@@ -1,13 +1,17 @@
 # Constrói as imagens LOCAIS dos laboratórios e registra cada release apontando para o ID local da imagem.
 # Uso (PowerShell, na raiz do repositório):  .\scripts\lab-local.ps1
-# Somente para o runtime Docker local (ADR-008). LAB-001 contém vulnerabilidade INTENCIONAL:
-# roda só na rede interna da sessão, nunca exposto.
+# Somente para o runtime Docker local (ADR-008). LAB-001 a LAB-004 contêm vulnerabilidades INTENCIONAIS:
+# rodam só na rede interna da sessão, nunca expostos.
 param([string]$Api = "http://127.0.0.1:8000")
 $ErrorActionPreference = "Stop"
 $Root = Split-Path -Parent $PSScriptRoot
-$Labs = @("LAB-000-hello-benign", "LAB-001-sqli-clinica")
+$Labs = @("LAB-000-hello-benign", "LAB-001-sqli-clinica", "LAB-002-idor-banco", "LAB-003-jwt-cartoes",
+  "LAB-004-cmdi-industria")
 docker build -q -t cecyber-labs/base-python:local (Join-Path $Root "laboratories\_base\python") | Out-Null
 if ($LASTEXITCODE -ne 0) { throw "docker build da base falhou" }
+# Base Node.js (LAB-003): parte da base Python, que traz o agente de workspace.
+docker build -q -t cecyber-labs/base-node:local (Join-Path $Root "laboratories\_base\node") | Out-Null
+if ($LASTEXITCODE -ne 0) { throw "docker build da base Node falhou" }
 $Headers = @{ "X-Dev-User" = "admin"; "X-Dev-Roles" = "admin" }
 foreach ($Dir in $Labs) {
   $Lab = Join-Path $Root "laboratories\$Dir"

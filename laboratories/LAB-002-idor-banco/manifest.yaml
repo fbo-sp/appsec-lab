@@ -1,0 +1,249 @@
+# LAB-002: IDOR (CWE-639) nos comprovantes de PIX do Banco Vértice Digital (Flask + SQLite).
+# CONTÉM VULNERABILIDADE INTENCIONAL. Uso exclusivo no runtime Docker LOCAL (ADR-008), em rede
+# interna da sessão. Dados 100% fictícios (documentos mascarados, domínio .example).
+#
+# ATENÇÃO: o digest abaixo é uma FIXTURE (sha256 de um texto fixo), não uma imagem publicada.
+# scripts/lab-local.sh e .ps1 trocam pela imagem construída localmente antes de registrar.
+apiVersion: labs.cecyber.io/v1alpha1
+kind: AppSecLab
+metadata:
+  id: LAB-002
+  version: 1.0.0
+  title: "IDOR: o comprovante que não era seu"
+  primaryCwe: CWE-639
+  secondaryCwes: [CWE-862]
+learning:
+  singleVulnerability: true
+  estimatedMinutes: 40
+  difficulty: beginner
+  objectives:
+    - Diferenciar autenticação (quem é você) de autorização (o que você pode ver)
+    - Reconhecer identificadores previsíveis em URLs e APIs
+    - Medir o impacto de um IDOR enumerando objetos de outros clientes
+    - Corrigir a falha verificando o dono do objeto no servidor, para a página e para a API
+  story:
+    role: Desenvolvedor(a) do time de canais digitais do Banco Vértice Digital
+    application: Internet Banking, área "Meus comprovantes de PIX"
+    context: >-
+      Um cliente abriu uma reclamação: ao digitar um número errado no endereço do comprovante, viu o
+      PIX de outra pessoa, com nome, agência e conta. Comprovantes bancários são protegidos por sigilo
+      bancário e pela LGPD.
+    mission: Reproduzir a reclamação, medir quantos clientes estão expostos e corrigir o código
+  wrapUp:
+    text: |
+      Agora cada comprovante só é entregue ao próprio dono, na página e na API. Em um sistema real, vale reforçar outras camadas:
+
+      - **Filtrar já na consulta.** Uma alternativa à verificação no serviço é buscar com `WHERE id = ? AND cliente_id = ?`. Assim o dado de outro cliente nem sai do banco.
+      - **Identificadores aleatórios ajudam, mas não corrigem.** Trocar `10458` por um UUID dificulta adivinhar, mas um identificador vazado num print ou num log continua abrindo o comprovante. A verificação de dono é obrigatória.
+      - **Autorização centralizada.** Quando cada rota faz a própria checagem, uma rota nova esquece. Políticas em um só lugar (um decorador ou uma camada de autorização) reduzem esse risco.
+      - **Testes com dois usuários.** Inclua nos testes automatizados o caso "usuário A pede o objeto do usuário B". Foi isso que a validação desta etapa fez.
+      - **Detectar enumeração.** Muitas respostas 404 seguidas para o mesmo cliente indicam varredura. Monitorar e limitar a taxa de requisições ajuda a perceber o ataque cedo.
+    references:
+      - title: "OWASP Top 10: A01 Broken Access Control"
+        url: https://owasp.org/Top10/A01_2021-Broken_Access_Control/
+      - title: "OWASP API Security Top 10: API1 Broken Object Level Authorization"
+        url: https://owasp.org/API-Security/editions/2023/en/0xa1-broken-object-level-authorization/
+      - title: "OWASP Cheat Sheet: Insecure Direct Object Reference Prevention"
+        url: https://cheatsheetseries.owasp.org/cheatsheets/Insecure_Direct_Object_Reference_Prevention_Cheat_Sheet.html
+      - title: "CWE-639: Authorization Bypass Through User-Controlled Key"
+        url: https://cwe.mitre.org/data/definitions/639.html
+variants:
+  - id: python-flask
+    language: python
+    framework: flask
+    image: registry.local/labs/lab-002-idor@sha256:4630aa57fa753d4de97ccab25dee4799bfca1a1780f2aea21bb460a4b960b29e
+    runtimeProfile: web-basic
+    workspacePath: /workspace
+    startup:
+      # A saída do processo (inclusive erros de importação, como IndentationError) também vai para /tmp/app.log.
+      command: ["sh", "-c", "python -u -m flask --app app run --host 0.0.0.0 --port 8080 --reload --no-debugger 2>&1 | tee -a /tmp/app.log"]
+      port: 8080
+    resources:
+      cpuMillicores: 500
+      memoryMiB: 512
+      storageMiB: 256
+      pidsMax: 64
+    session:
+      ttlMinutes: 45
+      maxRenewals: 2
+    interfaces: [editor, terminal, web]
+steps:
+  - id: conhecer
+    order: 1
+    title: Conhecer a aplicação
+    explanation: |
+      O Internet Banking exige **login**: só clientes autenticados chegam à área de comprovantes. Isso responde à pergunta *quem é você?*.
+
+      Mas existe uma segunda pergunta, tão importante quanto: *você pode ver **este** comprovante?* Ela se chama **autorização** e precisa ser feita a cada pedido, para cada objeto.
+
+      A aplicação é dividida em camadas:
+
+      1. **Controller** (`controllers/comprovantes_controller.py`): recebe a requisição e lê o número do comprovante da URL.
+      2. **Serviço** (`services/comprovante_service.py`): aplica as regras de negócio.
+      3. **Repositório** (`repositories/comprovante_repository.py`): consulta o banco.
+      4. **Autenticação** (`controllers/auth_controller.py`): o login guarda o id do cliente em `session["cliente_id"]`.
+    task: |
+      1. Na aba **Aplicação**, entre com a cliente fictícia Marina:
+         - e-mail: `marina.ribeiro@clientes.vertice.example`
+         - senha: `Marina@2026`
+      2. Clique no número de um comprovante para abrir o detalhe.
+      3. Na aba **Código**, abra `controllers/comprovantes_controller.py` e siga a rota `/comprovantes/<comprovante_id>` até o serviço e do serviço até o repositório.
+
+      Informe abaixo o nome do **método do repositório** que busca um comprovante pelo número.
+    concept: Autenticação versus autorização
+    validatorRef: idor/answer/locate-lookup-v1
+    hints:
+      - level: 1
+        text: A rota `detalhar` chama `_servico(conexao).obter(...)`. Abra `services/comprovante_service.py` e veja o que `obter` chama.
+      - level: 2
+        text: O serviço usa a classe `ComprovanteRepository`, em `repositories/comprovante_repository.py`.
+      - level: 3
+        text: O método é `buscar_por_id`.
+    points: 10
+  - id: observar-numero
+    order: 2
+    title: Observar o identificador
+    explanation: |
+      Abra um comprovante e repare no endereço: ele termina com o **número do comprovante**, por exemplo `/comprovantes/10446`. Esse número é a chave que a aplicação usa para buscar o registro no banco.
+
+      Números **sequenciais** são previsíveis: se o seu é `10458`, é bem provável que `10457` exista e seja de outra pessoa.
+
+      O mesmo dado também sai pela **API** usada pelo aplicativo do celular, em formato JSON: `/api/comprovantes/<número>`. APIs costumam ser alvo de quem procura esse tipo de falha, porque devolvem os dados "crus" e são fáceis de automatizar.
+    task: |
+      1. Na lista **Meus comprovantes de PIX**, veja qual é o comprovante **mais recente** da Marina (o primeiro da lista).
+      2. Na barra de endereço da aba **Aplicação**, digite `/api/comprovantes/` seguido desse número e pressione **Enter**. Repare no JSON: ele traz `cliente_id`, o id do dono do comprovante.
+
+      Informe abaixo o **número** do comprovante mais recente da Marina.
+    concept: Identificadores previsíveis e referências diretas a objetos
+    validatorRef: idor/answer/latest-receipt-v1
+    hints:
+      - level: 1
+        text: A lista está ordenada do mais recente para o mais antigo. O número é o link da primeira linha.
+      - level: 2
+        text: É o comprovante de R$ 1.350,00 para a Escola Pequeno Saber, de 10/11.
+      - level: 3
+        text: O número é `10458`.
+    points: 15
+  - id: trocar-numero
+    order: 3
+    title: Abrir o comprovante de outro cliente
+    explanation: |
+      Veja o método `obter` em `services/comprovante_service.py`:
+
+      ```python
+          def obter(self, comprovante_id: int, cliente_id: int) -> Comprovante | None:
+              """Retorna o comprovante pedido pelo cliente logado, ou ``None`` se não existir."""
+              return self._repositorio.buscar_por_id(comprovante_id)
+      ```
+
+      O controller passa o `cliente_id` do usuário logado, mas o serviço **não usa esse valor**: busca o comprovante só pelo número que veio da URL. Quem está logado consegue abrir **qualquer** comprovante, bastando trocar o número.
+
+      Essa falha se chama **IDOR** (*Insecure Direct Object Reference*, referência direta insegura a objeto). Em APIs, o mesmo problema é chamado de **BOLA** (*Broken Object Level Authorization*) e ocupa o 1º lugar no OWASP API Security Top 10.
+    task: |
+      1. Na barra de endereço da aba **Aplicação**, abra `/comprovantes/10457`, um número antes do comprovante da Marina.
+      2. Veja de quem é esse comprovante.
+
+      Informe abaixo o **nome do pagador** do comprovante `10457`. Todos os dados deste laboratório são fictícios.
+    concept: IDOR / BOLA, quebra de controle de acesso por objeto
+    validatorRef: idor/answer/other-payer-v1
+    hints:
+      - level: 1
+        text: Digite `/comprovantes/10457` na barra de endereço da aba **Aplicação** e pressione **Enter**.
+      - level: 2
+        text: O nome aparece na seção **Pagador** do comprovante. Na API, é o campo `pagador.nome`.
+      - level: 3
+        text: O pagador é `Rodrigo Tavares Lima`.
+    points: 15
+  - id: medir-impacto
+    order: 4
+    title: Medir o impacto
+    explanation: |
+      Um atacante não troca o número à mão: ele **automatiza**. Com um pequeno laço no terminal, dá para baixar todos os comprovantes em poucos segundos.
+
+      Para a API aceitar as chamadas do terminal, primeiro é preciso fazer login e guardar o **cookie de sessão**, o mesmo que o navegador guarda depois do login. O `curl` faz isso com `-c` (salvar cookies) e `-b` (enviar cookies).
+
+      Esse é o impacto real de um IDOR: **vazamento em massa** de dados protegidos por sigilo bancário. Em uma instituição financeira, isso significa comunicar o incidente ao Banco Central e à ANPD, além do dano aos clientes.
+    task: |
+      Na aba **Terminal**, rode os comandos abaixo. O primeiro faz login como Marina e o segundo baixa os comprovantes de `10421` a `10460`:
+
+      ```bash
+      curl -s -c /tmp/cookies.txt -d "email=marina.ribeiro@clientes.vertice.example&senha=Marina@2026" http://127.0.0.1:8080/login > /dev/null
+      for n in $(seq 10421 10460); do curl -s -b /tmp/cookies.txt http://127.0.0.1:8080/api/comprovantes/$n; echo; done > /tmp/vazamento.txt
+      ```
+
+      Cada linha de `/tmp/vazamento.txt` é um comprovante. Agora conte quantas linhas **não** são da Marina:
+
+      ```bash
+      grep -vc "Marina Costa Ribeiro" /tmp/vazamento.txt
+      ```
+
+      Informe abaixo **quantos comprovantes de outros clientes** você conseguiu ler. Se quiser ver o pior caso, procure pelo PIX de `R$ 487.900,00`.
+    concept: Enumeração automatizada e impacto em sigilo bancário
+    validatorRef: idor/answer/leaked-count-v1
+    hints:
+      - level: 1
+        text: Rode os dois comandos exatamente como estão, um de cada vez. Depois rode o `grep -vc`, que conta as linhas que **não** têm o nome da Marina.
+      - level: 2
+        text: Se o resultado for 0 ou 40, confira se o login funcionou com `cat /tmp/cookies.txt` (deve haver uma linha `session`) e rode o laço de novo.
+      - level: 3
+        text: São 40 comprovantes no intervalo e 6 são da Marina. A resposta é `34`.
+    points: 20
+  - id: corrigir
+    order: 5
+    title: Corrigir verificando o dono
+    explanation: |
+      **Por que a falha existe.** O serviço confia no número que veio da URL e não confere se o comprovante pertence a quem está logado.
+
+      **A correção: verificar o dono no servidor.** O id do cliente logado vem da **sessão**, que o servidor assinou no login, e não de algo que o usuário possa editar. Antes de devolver o comprovante, o serviço compara o dono do comprovante com esse id. Se forem diferentes, a resposta é a mesma de um comprovante inexistente.
+
+      **Por que responder "não encontrado" (404) e não "proibido" (403)?** Um 403 confirma ao atacante que aquele número existe. Com 404, ele não distingue um comprovante alheio de um que não existe.
+
+      **Por que no serviço?** A página e a API usam o mesmo método `obter`. Corrigindo ali, as duas ficam protegidas de uma vez. Esconder o link na página ou corrigir só a rota HTML deixaria a API aberta.
+    task: |
+      Abra `services/comprovante_service.py` na aba **Código**. O método `obter` está assim:
+
+      ```python
+          def obter(self, comprovante_id: int, cliente_id: int) -> Comprovante | None:
+              """Retorna o comprovante pedido pelo cliente logado, ou ``None`` se não existir."""
+              return self._repositorio.buscar_por_id(comprovante_id)
+      ```
+
+      Troque a linha do `return` para que o método fique assim:
+
+      ```python
+          def obter(self, comprovante_id: int, cliente_id: int) -> Comprovante | None:
+              """Retorna o comprovante pedido pelo cliente logado, ou ``None`` se não existir."""
+              comprovante = self._repositorio.buscar_por_id(comprovante_id)
+              if comprovante is None or comprovante.cliente_id != cliente_id:
+                  return None
+              return comprovante
+      ```
+
+      **Cuidado com o recuo.** As linhas de dentro do método começam com **8 espaços** e a linha de dentro do `if` com **12**. Se depois de salvar a aplicação mostrar *Internal Server Error*, rode `tail -n 20 /tmp/app.log` no **Terminal** para ver a linha com erro.
+
+      Salve com **Ctrl+S**: a aplicação recarrega sozinha. Então:
+
+      1. abra `/comprovantes/10457` e confirme que aparece *Not Found*;
+      2. abra `/comprovantes/10458` e confirme que o comprovante da Marina continua aparecendo;
+      3. clique em **Validar**.
+    concept: Autorização no nível do objeto (verificação de dono)
+    validatorRef: idor/python-flask/owner-check-v1
+    hints:
+      - level: 1
+        text: A mudança é só em `services/comprovante_service.py`, dentro de `obter`. O `cliente_id` que o método recebe já é o do usuário logado.
+      - level: 2
+        text: Guarde o resultado de `buscar_por_id` em uma variável e compare `comprovante.cliente_id` com o `cliente_id` recebido. Se forem diferentes, devolva `None`.
+      - level: 3
+        text: "Use exatamente as três linhas da tarefa, com 8 espaços antes de `comprovante =`, `if` e `return comprovante`, e 12 antes de `return None`. Se a validação falhar, veja na aba **Validação** qual verificação não passou."
+    references:
+      - title: "OWASP Cheat Sheet: Authorization"
+        url: https://cheatsheetseries.owasp.org/cheatsheets/Authorization_Cheat_Sheet.html
+      - title: "OWASP Cheat Sheet: Insecure Direct Object Reference Prevention"
+        url: https://cheatsheetseries.owasp.org/cheatsheets/Insecure_Direct_Object_Reference_Prevention_Cheat_Sheet.html
+    points: 40
+policy:
+  sequentialUnlock: true
+  allowStepRetry: true
+  persistProgressAcrossReset: true
+  allowSolutionReveal: false
+  finalPassingScore: 100

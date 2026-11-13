@@ -5,9 +5,9 @@
 | Campo | Valor |
 |---|---|
 | Atualizado em | 2026-11-13 |
-| Fase atual | F1 concluída; **F3/F4/F5 local**: interface visual, validação de etapas e primeiro laboratório real, o LAB-001 (ADR-008 a 012) |
+| Fase atual | F1 concluída; **F3/F4/F5 local**: interface visual, validação de etapas e os quatro laboratórios do MVP, LAB-001 aprovado e LAB-002 a 004 em teste do PO (ADR-008 a 015) |
 | Branch | `claude/project-thread-arhml7` |
-| Última entrega concluída | IMP-501 local: LAB-001 SQL Injection (Clínica VidaPlena, 5 etapas) e conteúdo rico nas etapas (ADR-012) |
+| Última entrega concluída | IMP-502..504 local: LAB-002 IDOR (banco digital), LAB-003 JWT (cartões, Node.js) e LAB-004 Command Injection (indústria), com verificações autenticadas no probe (ADR-015) |
 
 ## 1. Funcionalidades implementadas (com escopo real)
 
@@ -35,6 +35,7 @@
 | Conteúdo rico nas etapas (ADR-012) | Markdown restrito em explicação, tarefa, conceito e dicas, renderizado só com elementos React (sem HTML cru, links só https); `steps[].references` e `learning.wrapUp` ("Para ir além" no resumo) opcionais, sem mudar digests existentes; job `web` no CI (typecheck + vitest) | Imagens, tabelas e títulos no conteúdo |
 | IMP-501 LAB-001 SQL Injection (só local) | Aplicação Flask em camadas da Clínica VidaPlena (dados fictícios), 5 etapas (4 por resposta e 1 comportamental com 7 verificações), 3 dicas por etapa, "Para ir além"; `scripts/lab-local.sh`/`.ps1` registram LAB-000 e LAB-001; especificação em `17 §1` | Respostas fixas compartilháveis e banco legível pelo terminal (aceitos pelo PO no MVP local); revisão pedagógica externa; teste com alunos |
 | Trilha de etapas, tempo de sessão e inatividade (ADR-013/014) | Barra de pontuação vira trilha clicável por etapa; desconto por dicas (ADR-013); `ended_at`/`end_reason` por sessão e duração nos indicadores do admin; sinal de atividade (gateway, API e portal) e minutos ativos por tentativa; encerramento de sessões paradas após `SESSION_IDLE_MINUTES` (15) com aviso 3 min antes; `GET /admin/metrics/resolution`; correção do grant após renovação; avaliação informa quando a aplicação não inicia (com o erro) e LAB-001 1.0.1 (passo 5 com recuo explícito, erros de importação também em `/tmp/app.log`) | Minutos ativos por etapa ainda não calculados; orçamento de tempo por aluno fica para IMP-205; leitura longa sem interação pode encerrar a sessão (há aviso) |
+| IMP-502..504 LAB-002, 003 e 004 (só local) | LAB-002 IDOR (Banco Vértice Digital, Flask com login), LAB-003 JWT (Orbe Cartões, Node.js 22/Express, base `base-node` derivada da base Python) e LAB-004 Command Injection (Ferrara Metais, CLPs simulados), cada um com 5 etapas, 3 dicas por etapa e "Para ir além"; probe com logins de usuários fictícios, token Bearer, cabeçalhos, JSON e status aceitos (ADR-015); barra de endereço na aba Aplicação; suítes testadas com Docker real contra código original, correções corretas e ingênuas | Teste do PO pendente; ADR-015 proposto; `curl` real das imagens só validado no CI e na máquina do PO (o sandbox de desenvolvimento usa substituto); G5 obrigatório para o LAB-004 fora do local; respostas fixas compartilháveis |
 | IMP-114 CI | `.github/workflows/ci.yml` (ruff, mypy, validação do LAB-000, pytest com PostgreSQL 16); `main` criada no baseline `aad8812` | Executado no PR #1: job `backend` verde (run 43128706201) |
 
 Laboratório usado: `laboratories/LAB-000-hello-benign` — **benigno, sem vulnerabilidade**. O digest de imagem é uma fixture de teste (não existe imagem publicada); aceitável apenas com o adapter fake.
@@ -97,6 +98,7 @@ Cenários cobertos (rastreio): ENG-01 (20 requisições concorrentes com mesma c
 ## 7. Próxima tarefa recomendada
 
 1. LAB-001 1.0.1 aprovado pelo PO (2026-11-13) e adotado como modelo de formato (IMP-505).
-2. IMP-502 (LAB-002 IDOR), somente local, com cenário de setor de cliente CECyber.
+2. **Teste conjunto do PO** dos LAB-002 (IDOR, banco digital), LAB-003 (JWT, cartões, Node.js) e LAB-004
+   (Command Injection, indústria), implementados em 2026-11-13, só local (ADR-015 proposto).
 3. Replicação dos labs em outras linguagens (IMP-506) só após os 4 labs do MVP.
 Em paralelo: IMP-I01 (inventário on-prem).

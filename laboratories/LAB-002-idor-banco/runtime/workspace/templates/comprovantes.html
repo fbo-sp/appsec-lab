@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block conteudo %}
+<h1>Meus comprovantes de PIX</h1>
+{% if comprovantes %}
+<table>
+  <thead><tr><th>Nº</th><th>Data</th><th>Para</th><th class="valor">Valor</th></tr></thead>
+  <tbody>
+    {% for c in comprovantes %}
+    <tr>
+      <td><a href="{{ url_for('comprovantes.detalhar', comprovante_id=c.id) }}">{{ c.id }}</a></td>
+      <td>{{ c.data_hora }}</td>
+      <td>{{ c.recebedor_nome }}</td>
+      <td class="valor">{{ c.valor_formatado }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p class="vazio">Você ainda não enviou nenhum PIX.</p>
+{% endif %}
+{% endblock %}

@@ -31,6 +31,9 @@ jobs:
       - run: uv run mypy packages/contracts/src apps/backend/app
       - run: uv run python -m cecyber_contracts validate laboratories/LAB-000-hello-benign/manifest.yaml
       - run: uv run python -m cecyber_contracts validate laboratories/LAB-001-sqli-clinica/manifest.yaml
+      - run: uv run python -m cecyber_contracts validate laboratories/LAB-002-idor-banco/manifest.yaml
+      - run: uv run python -m cecyber_contracts validate laboratories/LAB-003-jwt-cartoes/manifest.yaml
+      - run: uv run python -m cecyber_contracts validate laboratories/LAB-004-cmdi-industria/manifest.yaml
       - run: uv run pytest
         env:
           # Suíte de contrato e controles do runtime Docker LOCAL (ADR-008) contra o Docker do runner.

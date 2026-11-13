@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block titulo %}Comprovante {{ comprovante.id }} · Vértice Digital{% endblock %}
+{% block conteudo %}
+<p><a href="{{ url_for('comprovantes.listar') }}">← Meus comprovantes</a></p>
+<section class="cartao comprovante">
+  <h1>Comprovante de PIX nº {{ comprovante.id }}</h1>
+  <p class="destaque">{{ comprovante.valor_formatado }}</p>
+  <p class="muted">{{ comprovante.data_hora }}</p>
+  <h2>Pagador</h2>
+  <dl>
+    <dt>Nome</dt><dd>{{ comprovante.pagador_nome }}</dd>
+    <dt>CPF/CNPJ</dt><dd>{{ comprovante.pagador_documento }}</dd>
+    <dt>Agência e conta</dt><dd>{{ comprovante.pagador_agencia }} / {{ comprovante.pagador_conta }}</dd>
+  </dl>
+  <h2>Recebedor</h2>
+  <dl>
+    <dt>Nome</dt><dd>{{ comprovante.recebedor_nome }}</dd>
+    <dt>CPF/CNPJ</dt><dd>{{ comprovante.recebedor_documento }}</dd>
+    <dt>Chave PIX</dt><dd>{{ comprovante.chave_pix }}</dd>
+  </dl>
+  <p class="muted">ID da transação: {{ comprovante.id_transacao }}</p>
+</section>
+{% endblock %}

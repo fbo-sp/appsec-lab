@@ -191,6 +191,8 @@ label { font-weight: 600; font-size: 0.9rem; }
 .tab:hover { color: var(--text); }
 .tab-on { background: var(--bg); border-color: var(--border); color: var(--text); font-weight: 600; margin-bottom: -1px; }
 .tab-tools { display: flex; align-items: center; gap: 0.4rem; padding-bottom: 0.35rem; flex-wrap: wrap; }
+.address-bar { display: flex; align-items: center; gap: 0.2rem; }
+.address-bar input { width: 16rem; max-width: 40vw; padding: 0.2rem 0.45rem; font: 0.8rem ui-monospace, SFMono-Regular, Menlo, monospace; border: 1px solid var(--border); border-radius: 4px; background: transparent; color: inherit; }
 .split-toggle { display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.82rem; padding: 0.3rem 0.65rem; }
 .split-toggle.on { border-color: var(--accent); color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, var(--surface)); }
 .tab-body { flex: 1; min-height: 0; display: flex; }
