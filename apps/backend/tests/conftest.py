@@ -163,7 +163,7 @@ def registered(client: TestClient) -> dict[str, Any]:
     return body
 
 
-SESSION_BODY = {"labId": "LAB-000", "version": "0.2.0", "variantId": "python-http"}
+SESSION_BODY = {"labId": "LAB-000", "version": "0.2.1", "variantId": "python-http"}
 
 
 def create_session(

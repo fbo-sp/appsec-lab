@@ -9,7 +9,7 @@ apiVersion: labs.cecyber.io/v1alpha1
 kind: AppSecLab
 metadata:
   id: LAB-000
-  version: 0.2.0
+  version: 0.2.1
   title: Laboratório benigno de verificação do motor
   # O contrato exige uma CWE principal. CWE-1000 é a raiz da visão "Research Concepts" do MITRE,
   # usada aqui apenas como marcador neutro: este laboratório NÃO contém vulnerabilidade.
@@ -55,7 +55,7 @@ steps:
     validatorRef: benign/answer/whoami-v1
     hints:
       - level: 1
-        text: O terminal fica logo abaixo do editor de arquivos.
+        text: Abra a aba Terminal, ao lado de Código, acima do painel do laboratório.
       - level: 2
         text: O comando whoami mostra o nome do usuário atual.
     points: 40

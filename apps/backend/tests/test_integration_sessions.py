@@ -129,7 +129,7 @@ def _concurrent_create(session_factory: sessionmaker[Session], keys: list[str]) 
     with session_factory() as db:
         uid = _ensure_user(db, "alice")
     principal = Principal(uid, "alice", frozenset({Role.STUDENT}))
-    cmd = service.CreateSessionCommand("LAB-000", "0.2.0", "python-http")
+    cmd = service.CreateSessionCommand("LAB-000", "0.2.1", "python-http")
     barrier = threading.Barrier(len(keys))
     results: list[Any] = [None] * len(keys)
 
@@ -410,7 +410,7 @@ def test_orphan_runtime_is_removed_and_audited(
     ref = runtime.inject_orphan(
         ProvisionRequest(
             session_id=orphan_sid,
-            lab_release="LAB-000@0.2.0",
+            lab_release="LAB-000@0.2.1",
             variant_id="python-http",
             image_digest="registry.local/labs/x@sha256:" + "ab" * 32,
             runtime_profile="benign-test",
@@ -481,7 +481,7 @@ def test_eng07_new_version_does_not_change_existing_session(
     v2["variants"][0]["session"]["ttlMinutes"] = 30
     assert client.post("/api/v1/admin/lab-releases", json=v2, headers=ADMIN).status_code == 201
     body = client.get(f"/api/v1/sessions/{sid}", headers=ALICE).json()
-    assert body["version"] == "0.2.0"
+    assert body["version"] == "0.2.1"
 
 
 def test_ready_persists_internal_endpoint_but_api_never_exposes_it(

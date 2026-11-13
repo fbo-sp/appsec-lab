@@ -84,7 +84,7 @@ def test_unsupported_media_type(client: TestClient) -> None:
 def test_public_view_hides_protected_data(client: TestClient, registered: dict[str, object]) -> None:
     for r in (
         client.get("/api/v1/labs", headers=ALICE),
-        client.get("/api/v1/labs/LAB-000/releases/0.2.0", headers=ALICE),
+        client.get("/api/v1/labs/LAB-000/releases/0.2.1", headers=ALICE),
     ):
         assert r.status_code == 200
         text = r.text
@@ -98,7 +98,7 @@ def test_new_version_coexists(client: TestClient, registered: dict[str, object])
     v2["metadata"]["version"] = "0.3.0"
     assert client.post("/api/v1/admin/lab-releases", json=v2, headers=ADMIN).status_code == 201
     versions = sorted(i["version"] for i in client.get("/api/v1/labs", headers=ALICE).json()["items"])
-    assert versions == ["0.2.0", "0.3.0"]
+    assert versions == ["0.2.1", "0.3.0"]
 
 
 def test_unknown_validator_is_rejected(client: TestClient) -> None:

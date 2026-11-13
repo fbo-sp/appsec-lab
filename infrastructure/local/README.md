@@ -38,10 +38,12 @@ docker compose -f infrastructure/local/docker-compose.yml -f infrastructure/loca
 
 Depois abra **http://127.0.0.1:8000** (use `127.0.0.1`, não `localhost`), entre com um usuário de teste
 (ex.: `aluno1`), abra o LAB-000 e clique em **Iniciar laboratório**. Em alguns segundos aparecem:
-etapas à esquerda, editor de arquivos e terminal no centro, e a aplicação do laboratório embaixo.
-Edite `index.html`, salve com Ctrl+S e clique em **recarregar** para ver a mudança.
+etapas à esquerda e, à direita, as abas **Aplicação**, **Código**, **Terminal** e **Validação** (histórico
+das validações). O botão **Código + Aplicação** mostra editor e aplicação lado a lado. Trocar de aba não
+derruba o terminal. Edite `index.html`, salve com Ctrl+S e clique em **recarregar** para ver a mudança.
+As dicas abrem em uma janela pelo botão **Dicas** ao lado de **Validar**.
 
-Roteiro das etapas do LAB-000 0.2.0 (ADR-010):
+Roteiro das etapas do LAB-000 0.2.1 (ADR-010):
 
 1. **Explorar o ambiente**: descubra no terminal com qual usuário os comandos rodam (`whoami`), digite a
    resposta e clique em **Validar**. Respostas erradas mostram o critério que falhou. As tentativas são

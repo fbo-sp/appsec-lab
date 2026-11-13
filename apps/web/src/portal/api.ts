@@ -128,6 +128,10 @@ export const api = {
       headers: { "Idempotency-Key": `ui-${crypto.randomUUID()}` },
       body: JSON.stringify(answer === undefined ? {} : { answer }),
     }),
+  evaluations: (id: string) =>
+    call<{ items: (Evaluation & { stepId: string; stepTitle: string; stepOrder: number })[] }>(
+      `/api/v1/sessions/${id}/evaluations`,
+    ),
   evaluation: (id: string, evaluationId: string) =>
     call<Evaluation>(`/api/v1/sessions/${id}/evaluations/${evaluationId}`),
   revealHint: (id: string, stepId: string, level: number) =>

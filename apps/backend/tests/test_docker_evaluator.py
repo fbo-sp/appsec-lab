@@ -43,7 +43,7 @@ def _provision(rt: Any, image: str) -> Any:
     ref = rt.provision(
         ProvisionRequest(
             session_id=sid,
-            lab_release="LAB-000@0.2.0",
+            lab_release="LAB-000@0.2.1",
             variant_id="python-http",
             image_digest=image,
             runtime_profile="benign-test",

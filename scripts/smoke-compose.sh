@@ -36,7 +36,7 @@ else
   [ "$code" = "201" ] || { echo "registro falhou: $code" >&2; exit 1; }
 fi
 SID=$(curl -sf -H "X-Dev-User: smoke" -H "Idempotency-Key: smoke-key-0001" -H "Content-Type: application/json" \
-  -d '{"labId":"LAB-000","version":"0.2.0","variantId":"python-http"}' "$API/api/v1/sessions" | json '["sessionId"]')
+  -d '{"labId":"LAB-000","version":"0.2.1","variantId":"python-http"}' "$API/api/v1/sessions" | json '["sessionId"]')
 wait_status "$SID" READY
 if [ "$DOCKER_RT" = 1 ]; then
   C="cecyber-lab-$SID"

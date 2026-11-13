@@ -218,6 +218,33 @@ def submission_view(sub: StepSubmission) -> dict[str, Any]:
     }
 
 
+def list_submissions(
+    db: Session, principal: Principal, session_id: uuid.UUID, limit: int = 50
+) -> dict[str, Any]:
+    """Histórico de validações da tentativa (mais recentes primeiro), para a aba Validação."""
+    s = _owned_live_session(db, principal, session_id)
+    if s.attempt_id is None:
+        return {"items": []}
+    rows = db.execute(
+        select(StepSubmission, LabStep)
+        .join(LabStep, LabStep.id == StepSubmission.step_id)
+        .where(StepSubmission.attempt_id == s.attempt_id)
+        .order_by(StepSubmission.created_at.desc())
+        .limit(limit)
+    ).all()
+    return {
+        "items": [
+            {
+                **submission_view(sub),
+                "stepId": step.step_key,
+                "stepTitle": step.title,
+                "stepOrder": step.position,
+            }
+            for sub, step in rows
+        ]
+    }
+
+
 def get_submission(
     db: Session, principal: Principal, session_id: uuid.UUID, evaluation_id: uuid.UUID
 ) -> StepSubmission:

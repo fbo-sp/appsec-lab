@@ -300,3 +300,19 @@ def test_progress_survives_new_session(
     sid2 = _ready(client, wk, key="key-0000002")
     body = _steps(client, sid2)
     assert [i["status"] for i in body["items"]] == ["PASSED", "AVAILABLE"] and body["attempt"]["score"] == 40
+
+
+def test_evaluation_history_is_owner_only_and_newest_first(
+    client: TestClient, registered: dict[str, Any], wk: WorkerContext, clock: Any
+) -> None:
+    sid = _ready(client, wk)
+    _evaluate(client, sid, "explore", "root", key="eval-hist-0001")
+    clock.advance(seconds=5)
+    _pass_explore(client, sid)
+    r = client.get(f"/api/v1/sessions/{sid}/evaluations", headers=ALICE)
+    assert r.status_code == 200
+    items = r.json()["items"]
+    assert [i["status"] for i in items] == ["PASSED", "FAILED"]
+    assert items[0]["stepId"] == "explore" and items[0]["stepTitle"] and items[0]["stepOrder"] == 1
+    assert "answer" not in items[0]
+    assert client.get(f"/api/v1/sessions/{sid}/evaluations", headers=BOB).status_code == 404

@@ -157,6 +157,15 @@ def evaluate_step(
     return progress.submission_view(sub)
 
 
+@router.get("/{session_id}/evaluations")
+def list_evaluations(
+    session_id: uuid.UUID,
+    principal: Annotated[Principal, Depends(get_principal)],
+    db: Annotated[Session, Depends(get_db)],
+) -> dict[str, Any]:
+    return progress.list_submissions(db, principal, session_id)
+
+
 @router.get("/{session_id}/evaluations/{evaluation_id}")
 def get_evaluation(
     session_id: uuid.UUID,

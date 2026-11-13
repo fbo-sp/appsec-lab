@@ -30,7 +30,7 @@ _IMAGE: dict[str, str] = {}
 def _request(session_id: str = "11111111-1111-1111-1111-111111111111") -> ProvisionRequest:
     return ProvisionRequest(
         session_id=session_id,
-        lab_release="LAB-000@0.2.0",
+        lab_release="LAB-000@0.2.1",
         variant_id="python-http",
         image_digest=_IMAGE.get("current", FAKE_IMAGE),
         runtime_profile="benign-test",

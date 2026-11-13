@@ -1,6 +1,6 @@
 // Painel de etapas: progresso, validação (resposta ou comportamento) e dicas.
 // O backend decide desbloqueio, aprovação e pontos; a interface só exibe e solicita.
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { api, ApiError, type Evaluation, type Progress, type Step } from "./api";
 
 const PENDING = new Set(["QUEUED", "RUNNING"]);
@@ -16,7 +16,19 @@ function message(e: unknown): string {
   return e instanceof Error ? e.message : String(e);
 }
 
-export function StepPanel({ sessionId, onExit }: { sessionId: string; onExit: () => void }) {
+export function StepPanel({
+  sessionId,
+  onExit,
+  onProgress,
+  onShowLog,
+}: {
+  sessionId: string;
+  onExit: () => void;
+  onProgress?: () => void;
+  onShowLog?: () => void;
+}) {
+  const onProgressRef = useRef(onProgress);
+  onProgressRef.current = onProgress;
   const [progress, setProgress] = useState<Progress>();
   const [summaryOpen, setSummaryOpen] = useState(false);
   const [selected, setSelected] = useState<string>();
@@ -31,6 +43,7 @@ export function StepPanel({ sessionId, onExit }: { sessionId: string; onExit: ()
         return p;
       });
       setError(undefined);
+      onProgressRef.current?.();
       const current = p.items.find((s) => s.status === "AVAILABLE");
       setSelected((old) => (selectNext || !old ? (current ?? p.items[p.items.length - 1])?.id : old));
     } catch (e) {
@@ -94,7 +107,7 @@ export function StepPanel({ sessionId, onExit }: { sessionId: string; onExit: ()
       </ol>
       {error && <div className="error">{error}</div>}
       {step && step.status !== "LOCKED" && (
-        <StepDetail key={step.id} sessionId={sessionId} step={step} onChanged={reload} />
+        <StepDetail key={step.id} sessionId={sessionId} step={step} onChanged={reload} onShowLog={onShowLog} />
       )}
       {summaryOpen && attempt.status === "COMPLETED" && (
         <Summary progress={progress} onClose={() => setSummaryOpen(false)} onExit={onExit} />
@@ -107,11 +120,14 @@ function StepDetail({
   sessionId,
   step,
   onChanged,
+  onShowLog,
 }: {
   sessionId: string;
   step: Step;
   onChanged: (selectNext?: boolean) => Promise<void>;
+  onShowLog?: () => void;
 }) {
+  const [hintsOpen, setHintsOpen] = useState(false);
   const [answer, setAnswer] = useState("");
   const [evaluation, setEvaluation] = useState<Evaluation | null>(step.lastSubmission ?? null);
   const [busy, setBusy] = useState(false);
@@ -166,6 +182,16 @@ function StepDetail({
   const hints = step.hints ?? { available: 0, revealed: [] };
   const nextHint = hints.revealed.length + 1;
   const pending = evaluation !== null && PENDING.has(evaluation.status);
+  const hintButton = (
+    <button type="button" className="hint-button" onClick={() => setHintsOpen(true)}>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="M9 18h6" />
+        <path d="M10 22h4" />
+        <path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.2 1 2V17h6v-.3c0-.8.4-1.5 1-2A7 7 0 0 0 12 2z" />
+      </svg>
+      Dicas ({hints.revealed.length}/{hints.available})
+    </button>
+  );
 
   return (
     <div className="step-detail">
@@ -204,11 +230,15 @@ function StepDetail({
               separado, sem acesso ao seu editor.
             </p>
           )}
-          <button className="primary" type="submit" disabled={busy || pending}>
-            {pending ? "Validando…" : "Validar"}
-          </button>
+          <div className="validate-actions">
+            <button className="primary" type="submit" disabled={busy || pending}>
+              {pending ? "Validando…" : "Validar"}
+            </button>
+            {hints.available > 0 && hintButton}
+          </div>
         </form>
       )}
+      {(passed || kind === "unavailable") && hints.available > 0 && <div className="validate-actions">{hintButton}</div>}
 
       {evaluation && !(passed && evaluation.status !== "PASSED") && (
         <div className={`result result-${evaluation.status.toLowerCase()}`} aria-live="polite">
@@ -223,29 +253,86 @@ function StepDetail({
             </ul>
           )}
           {evaluation.feedback && <p>{evaluation.feedback}</p>}
+          {onShowLog && !PENDING.has(evaluation.status) && (
+            <button className="link result-link" onClick={onShowLog}>
+              ver histórico na aba Validação
+            </button>
+          )}
         </div>
       )}
       {step.submissions > 0 && <p className="muted small">Tentativas nesta etapa: {step.submissions} (sem limite)</p>}
       {error && <div className="error">{error}</div>}
 
-      {hints.available > 0 && (
-        <div className="hints">
-          <h4>
-            Dicas ({hints.revealed.length}/{hints.available})
-          </h4>
-          <p className="muted small">Dicas não descontam pontos.</p>
-          {hints.revealed.map((h) => (
-            <div key={h.level} className="hint">
-              <span className="hint-n">Dica {h.level}</span> {h.text}
-            </div>
-          ))}
-          {nextHint <= hints.available && (
-            <button onClick={() => reveal(nextHint)} disabled={hintBusy}>
-              Revelar dica {nextHint}
-            </button>
-          )}
-        </div>
+      {hintsOpen && (
+        <HintsModal
+          stepTitle={step.title}
+          hints={hints}
+          busy={hintBusy}
+          error={error}
+          onReveal={() => reveal(nextHint)}
+          onClose={() => setHintsOpen(false)}
+        />
       )}
+    </div>
+  );
+}
+
+function HintsModal({
+  stepTitle,
+  hints,
+  busy,
+  error,
+  onReveal,
+  onClose,
+}: {
+  stepTitle: string;
+  hints: { available: number; revealed: { level: number; text: string }[] };
+  busy: boolean;
+  error?: string;
+  onReveal: () => void;
+  onClose: () => void;
+}) {
+  const next = hints.revealed.length + 1;
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+  return (
+    <div className="overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
+      <div className="card hints-modal" role="dialog" aria-modal="true" aria-labelledby="hints-title">
+        <div className="hints-head">
+          <div>
+            <h2 id="hints-title">Dicas · {stepTitle}</h2>
+            <p className="muted small">Revele uma de cada vez. Dicas não descontam pontos.</p>
+          </div>
+          <button className="icon-close" aria-label="Fechar dicas" onClick={onClose}>
+            ×
+          </button>
+        </div>
+        {hints.revealed.map((h) => (
+          <div key={h.level} className="hint">
+            <span className="hint-n">Dica {h.level}</span>
+            <span>{h.text}</span>
+          </div>
+        ))}
+        {next <= hints.available ? (
+          <div className="hint-locked">
+            <span className="muted">
+              {hints.revealed.length === 0 ? "Nenhuma dica revelada ainda." : `Dica ${next} ainda oculta.`}
+            </span>
+            <button className="primary" onClick={onReveal} disabled={busy} autoFocus>
+              {busy ? "Revelando…" : `Revelar dica ${next}`}
+            </button>
+          </div>
+        ) : (
+          <p className="muted small">Todas as dicas desta etapa já foram reveladas.</p>
+        )}
+        {error && <div className="error">{error}</div>}
+        <div className="summary-actions">
+          <button onClick={onClose}>Voltar ao laboratório</button>
+        </div>
+      </div>
     </div>
   );
 }

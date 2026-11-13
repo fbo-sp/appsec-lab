@@ -1,6 +1,15 @@
 import { useEffect, useRef, useState } from "react";
 import { api, type LabSession } from "./api";
 import { StepPanel } from "./StepPanel";
+import { ValidationLog } from "./ValidationLog";
+
+type Tab = "app" | "code" | "terminal" | "log";
+const TABS: { id: Tab; label: string }[] = [
+  { id: "app", label: "Aplicação" },
+  { id: "code", label: "Código" },
+  { id: "terminal", label: "Terminal" },
+  { id: "log", label: "Validação" },
+];
 import { ErrorBox, StatusChip, go } from "./App";
 
 const LIVE = new Set(["READY", "ACTIVE"]);
@@ -51,7 +60,16 @@ const WARN_SECONDS = 5 * 60;
 export function SessionView({ id }: { id: string }) {
   const [session, setSession] = useState<LabSession>();
   const [error, setError] = useState<string>();
-  const [frames, setFrames] = useState<{ workspace: string; preview: string; previewOrigin: string }>();
+  const [frames, setFrames] = useState<{
+    workspace: string;
+    workspaceOrigin: string;
+    preview: string;
+    previewOrigin: string;
+  }>();
+  const [tab, setTab] = useState<Tab>("app");
+  const [split, setSplit] = useState(false);
+  const [progressVersion, setProgressVersion] = useState(0);
+  const workspaceFrame = useRef<HTMLIFrameElement>(null);
   const [previewKey, setPreviewKey] = useState(0);
   const [ending, setEnding] = useState(false);
   const fetchingTickets = useRef(false);
@@ -102,7 +120,12 @@ export function SessionView({ id }: { id: string }) {
     (async () => {
       try {
         const [ws, pv] = await Promise.all([api.ticket(id, "workspace"), api.ticket(id, "preview")]);
-        setFrames({ workspace: ws.url, preview: pv.url, previewOrigin: new URL(pv.url).origin });
+        setFrames({
+          workspace: ws.url,
+          workspaceOrigin: new URL(ws.url).origin,
+          preview: pv.url,
+          previewOrigin: new URL(pv.url).origin,
+        });
         setSession(await api.session(id)); // READY -> ACTIVE na primeira conexão
       } catch (e) {
         setError(e instanceof Error ? e.message : String(e));
@@ -111,6 +134,30 @@ export function SessionView({ id }: { id: string }) {
       }
     })();
   }, [session, frames, id]);
+
+  const showApp = tab === "app" || (split && tab === "code");
+  const showWorkspace = tab === "code" || tab === "terminal";
+  const wsView = tab === "terminal" ? "terminal" : "code";
+
+  // Diz ao workspace (outra origem) qual parte mostrar; o iframe nunca é recriado, então o terminal
+  // e o arquivo aberto continuam vivos ao trocar de aba.
+  // Só envia depois do onLoad: antes disso o iframe ainda está em about:blank (outra origem).
+  const workspaceLoaded = useRef(false);
+  const syncWorkspaceView = () => {
+    if (!frames || !workspaceLoaded.current) return;
+    workspaceFrame.current?.contentWindow?.postMessage({ type: "cecyber:view", view: wsView }, frames.workspaceOrigin);
+  };
+  useEffect(syncWorkspaceView, [wsView, frames]);
+
+  function pickTab(t: Tab) {
+    setTab(t);
+    if (t !== "app" && t !== "code") setSplit(false);
+  }
+
+  function toggleSplit() {
+    setSplit((v) => !v);
+    setTab("code");
+  }
 
   async function finishAndExit() {
     try {
@@ -270,32 +317,79 @@ export function SessionView({ id }: { id: string }) {
       {LIVE.has(status) && (
         <div className="workbench">
           <aside className="steps">
-            <StepPanel sessionId={id} onExit={finishAndExit} />
+            <StepPanel
+              sessionId={id}
+              onExit={finishAndExit}
+              onProgress={() => setProgressVersion((v) => v + 1)}
+              onShowLog={() => pickTab("log")}
+            />
           </aside>
           <section className="panes">
+            <div className="tabbar">
+              <div className="tabs" role="tablist" aria-label="Áreas do laboratório">
+                {TABS.map((t) => {
+                  const selected = tab === t.id || (split && t.id === "app" && tab === "code");
+                  return (
+                    <button
+                      key={t.id}
+                      role="tab"
+                      aria-selected={selected}
+                      className={`tab ${selected ? "tab-on" : ""}`}
+                      onClick={() => pickTab(t.id)}
+                    >
+                      {t.label}
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="tab-tools">
+                {showApp && frames && (
+                  <>
+                    <button className="link" onClick={() => setPreviewKey((k) => k + 1)}>
+                      recarregar
+                    </button>
+                    <a className="link" href={`${frames.previewOrigin}/`} target="_blank" rel="noreferrer">
+                      abrir em nova aba
+                    </a>
+                  </>
+                )}
+                <button
+                  className={`split-toggle ${split ? "on" : ""}`}
+                  aria-pressed={split}
+                  onClick={toggleSplit}
+                  title="Ver código e aplicação lado a lado"
+                >
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                    <rect x="3" y="4" width="18" height="16" rx="2" />
+                    <path d="M12 4v16" />
+                  </svg>
+                  Código + Aplicação
+                </button>
+              </div>
+            </div>
             {frames ? (
-              <>
-                <div className="pane-preview">
-                  <div className="preview-bar">
-                    <span>Aplicação do laboratório</span>
-                    <span>
-                      <button className="link" onClick={() => setPreviewKey((k) => k + 1)}>
-                        recarregar
-                      </button>
-                      <a className="link" href={`${frames.previewOrigin}/`} target="_blank" rel="noreferrer">
-                        abrir em nova aba
-                      </a>
-                    </span>
-                  </div>
-                  <iframe
-                    key={previewKey}
-                    title="Aplicação do laboratório"
-                    src={previewKey === 0 ? frames.preview : `${frames.previewOrigin}/`}
-                    sandbox="allow-scripts allow-forms allow-same-origin allow-popups"
-                  />
-                </div>
-                <iframe className="pane-workspace" title="Editor e terminal" src={frames.workspace} />
-              </>
+              <div className={`tab-body ${split && tab === "code" ? "split" : ""}`}>
+                <iframe
+                  ref={workspaceFrame}
+                  className="pane-workspace"
+                  title="Editor e terminal"
+                  src={frames.workspace}
+                  hidden={!showWorkspace}
+                  onLoad={() => {
+                    workspaceLoaded.current = true;
+                    syncWorkspaceView();
+                  }}
+                />
+                <iframe
+                  key={previewKey}
+                  className="pane-preview"
+                  title="Aplicação do laboratório"
+                  src={previewKey === 0 ? frames.preview : `${frames.previewOrigin}/`}
+                  sandbox="allow-scripts allow-forms allow-same-origin allow-popups"
+                  hidden={!showApp}
+                />
+                {tab === "log" && <ValidationLog sessionId={id} version={progressVersion} />}
+              </div>
             ) : (
               <div className="muted pad">Conectando ao ambiente…</div>
             )}

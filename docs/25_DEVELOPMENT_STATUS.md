@@ -4,10 +4,10 @@
 
 | Campo | Valor |
 |---|---|
-| Atualizado em | 2026-11-12 |
+| Atualizado em | 2026-11-13 |
 | Fase atual | F1 concluída; **F3/F4 local**: interface visual com validação de etapas, progresso e dicas (ADR-008/009/010) |
 | Branch | `claude/project-thread-arhml7` |
-| Última entrega concluída | IMP-401–405 local: validação de etapas fora do workspace, progresso, pontuação e dicas (LAB-000 0.2.0) |
+| Última entrega concluída | IMP-401–405 local: validação de etapas fora do workspace, progresso, pontuação e dicas (LAB-000 0.2.1); workspace em abas e dicas em modal |
 
 ## 1. Funcionalidades implementadas (com escopo real)
 
@@ -31,6 +31,7 @@
 | IMP-303/304 Interface local | `apps/web` (React + Vite + TS): login de desenvolvimento, catálogo, introdução, sessão com estados e timer, etapas (só a 1ª liberada), editor CodeMirror, terminal xterm.js, preview em iframe; servida pela API (portal) e pelo gateway (workspace) | Sem OIDC (IMP-202); acessibilidade não auditada |
 | IMP-401–405 Validação e progresso (ADR-005/010) | Migração `0003` (tentativas, progresso, submissões, dicas); registro protegido de validadores; etapa `answer` checada na API; etapa `http` avaliada pelo worker num snapshot do workspace, em contêiner novo e rede interna, por um probe confiável; desbloqueio, pontos e conclusão na mesma transação; dicas em ordem sem penalidade; tentativas livres; `ERROR` técnico nunca aprova; UI com botão Validar, critérios, dicas e pontuação | Runner de produção e envelope assinado (ADR-003); rate limit de submissões; suítes caixa-preta podem ser "enganadas" por respostas fixas |
 | Prazo, renovação e indicadores (ADR-011) | `maxRenewals` no manifesto; `POST /sessions/{id}/renewals` (janela final, limite, auditoria); aviso de fim de prazo com "Renovar" e revalidação ao voltar à aba; migração `0004` (`ready_at`, `provision_ms`, `renewals`); `GET /admin/metrics/provisioning` (p50/p95/máx por lab/versão/variante); tela de preparação com progresso; aplicação no topo; resumo de conclusão | Painel visual do admin; teto global de renovações (IMP-205) |
+| Workspace em abas e dicas em modal | Abas Aplicação/Código/Terminal/Validação com iframes sempre montados (terminal não reconecta); modo "Código + Aplicação"; troca de painel do workspace por `postMessage` validado (`source === parent`, formato exato; workspace só embutível pelo portal via CSP); `GET /sessions/{id}/evaluations` (só o dono, mais recente primeiro) na aba Validação; dicas em modal (Esc/fundo fecham); LAB-000 0.2.1 só ajusta o texto da dica 1 | Teste de usabilidade com alunos; layout em telas < 900 px só verificado por CSS |
 | IMP-114 CI | `.github/workflows/ci.yml` (ruff, mypy, validação do LAB-000, pytest com PostgreSQL 16); `main` criada no baseline `aad8812` | Executado no PR #1: job `backend` verde (run 43128706201) |
 
 Laboratório usado: `laboratories/LAB-000-hello-benign` — **benigno, sem vulnerabilidade**. O digest de imagem é uma fixture de teste (não existe imagem publicada); aceitável apenas com o adapter fake.
@@ -91,6 +92,6 @@ Cenários cobertos (rastreio): ENG-01 (20 requisições concorrentes com mesma c
 
 ## 7. Próxima tarefa recomendada
 
-1. **Teste manual do PO** com o LAB-000 0.2.0 (roteiro em `infrastructure/local/README.md`): validação, dicas e pontuação.
+1. **Teste manual do PO** com o LAB-000 0.2.1 (roteiro em `infrastructure/local/README.md`): validação, dicas e pontuação.
 2. **IMP-501**: LAB-001 SQL Injection, somente local.
 Em paralelo: IMP-I01 (inventário on-prem).

@@ -42,7 +42,7 @@ def rt() -> Iterator[Any]:
 def _req(image: str, sid: str | None = None) -> ProvisionRequest:
     return ProvisionRequest(
         session_id=sid or str(uuid.uuid4()),
-        lab_release="LAB-000@0.2.0",
+        lab_release="LAB-000@0.2.1",
         variant_id="python-http",
         image_digest=image,
         runtime_profile="benign-test",
