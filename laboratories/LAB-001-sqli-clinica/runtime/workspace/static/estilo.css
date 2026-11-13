@@ -1,0 +1,14 @@
+body { margin: 0; font-family: system-ui, sans-serif; background: #f4f7f6; color: #1d2b2a; }
+.topo { background: #0f766e; color: #fff; padding: 0.8rem 1.2rem; display: flex; gap: 1rem; align-items: baseline; }
+.marca { font-weight: 700; font-size: 1.1rem; }
+.sub { opacity: 0.85; font-size: 0.9rem; }
+main { max-width: 860px; margin: 1.5rem auto; padding: 0 1rem; }
+h1 { font-size: 1.4rem; }
+.busca { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
+.busca input { flex: 1; padding: 0.55rem 0.7rem; border: 1px solid #b7c7c4; border-radius: 6px; font-size: 1rem; }
+.busca button { padding: 0.55rem 1rem; border: 0; border-radius: 6px; background: #0f766e; color: #fff; font-size: 1rem; cursor: pointer; }
+table { width: 100%; border-collapse: collapse; background: #fff; }
+th, td { text-align: left; padding: 0.5rem 0.7rem; border-bottom: 1px solid #dfe7e5; }
+th { background: #e6f0ee; }
+.vazio { color: #55706c; }
+footer { text-align: center; color: #6b807d; font-size: 0.8rem; margin: 2rem 0; }

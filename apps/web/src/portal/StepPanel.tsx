@@ -1,7 +1,8 @@
 // Painel de etapas: progresso, validação (resposta ou comportamento) e dicas.
 // O backend decide desbloqueio, aprovação e pontos; a interface só exibe e solicita.
 import { useCallback, useEffect, useRef, useState } from "react";
-import { api, ApiError, type Evaluation, type Progress, type Step } from "./api";
+import { api, ApiError, type Evaluation, type Hints, type Progress, type Step } from "./api";
+import { Markdown, References } from "./Markdown";
 
 const PENDING = new Set(["QUEUED", "RUNNING"]);
 const STATUS_LABEL: Record<Evaluation["status"], string> = {
@@ -21,11 +22,13 @@ export function StepPanel({
   onExit,
   onProgress,
   onShowLog,
+  sessionMinutes,
 }: {
   sessionId: string;
   onExit: () => void;
   onProgress?: () => void;
   onShowLog?: () => void;
+  sessionMinutes?: number;
 }) {
   const onProgressRef = useRef(onProgress);
   onProgressRef.current = onProgress;
@@ -33,11 +36,17 @@ export function StepPanel({
   const [summaryOpen, setSummaryOpen] = useState(false);
   const [selected, setSelected] = useState<string>();
   const [error, setError] = useState<string>();
+  // Sessão nova de uma tentativa já iniciada: deixa claro que o prazo é desta sessão e o progresso continua.
+  const [resumed, setResumed] = useState<number>();
 
   const reload = useCallback(async (selectNext = false) => {
     try {
       const p = await api.steps(sessionId);
       setProgress((prev) => {
+        if (!prev && p.attempt.status !== "COMPLETED") {
+          const passed = p.items.filter((x) => x.status === "PASSED").length;
+          if (passed > 0) setResumed(passed);
+        }
         // Abre o resumo ao concluir (ou ao reabrir uma sessão de tentativa já concluída).
         if (p.attempt.status === "COMPLETED" && prev?.attempt.status !== "COMPLETED") setSummaryOpen(true);
         return p;
@@ -55,23 +64,61 @@ export function StepPanel({
     reload();
   }, [reload]);
 
+  // Ao trocar de etapa, volta ao início do texto (a trilha fica fixa no topo do painel).
+  const headRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const pane = headRef.current?.closest(".steps");
+    if (pane) pane.scrollTop = 0;
+  }, [selected]);
+
   if (!progress) return <div className="muted">{error ?? "Carregando etapas…"}</div>;
   const { attempt, items } = progress;
   const step = items.find((s) => s.id === selected);
-  const pct = Math.min(100, Math.round((attempt.score / Math.max(1, attempt.passingScore)) * 100));
+  const done = items.filter((s) => s.status === "PASSED").length;
+  const open = items.filter((s) => s.status !== "LOCKED");
+  const pos = step ? open.findIndex((s) => s.id === step.id) : -1;
+  const prev = pos > 0 ? open[pos - 1] : undefined;
+  const next = pos >= 0 && pos < open.length - 1 ? open[pos + 1] : undefined;
 
   return (
     <>
-      <div className="score" aria-label="Pontuação">
+      {/* Trilha de etapas (PO, 2026-11-13): a barra de pontuação mostra cada etapa, proporcional aos pontos. */}
+      <div className="trail-head" ref={headRef}>
+      <div className="score" aria-label="Pontuação e etapas">
         <div className="score-row">
-          <strong>Pontuação</strong>
-          <span>
-            {attempt.score} / {attempt.passingScore} pts
+          <strong>
+            {attempt.score} / {attempt.maxScore} pts
+            {(attempt.hintPenalty ?? 0) > 0 && (
+              <span className="penalty" title={`Desconto por dicas (máximo ${attempt.hintPenaltyCap} pts)`}>
+                {" "}
+                · dicas −{attempt.hintPenalty}
+              </span>
+            )}
+          </strong>
+          <span className="muted" title={`${done} de ${items.length} etapas concluídas`}>
+            {done}/{items.length} etapas
           </span>
         </div>
-        <div className="meter" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}>
-          <span style={{ width: `${pct}%` }} />
-        </div>
+        <ol className="trail">
+          {items.map((s) => {
+            const label = `Etapa ${s.order} · ${s.title} · ${s.status === "PASSED" ? `${s.pointsAwarded}/` : ""}${s.points} pts${s.status === "LOCKED" ? " · bloqueada" : ""}`;
+            return (
+              <li key={s.id} style={{ flexGrow: Math.max(1, s.points) }}>
+                <button
+                  className={`seg seg-${s.status.toLowerCase()} ${s.id === selected ? "seg-selected" : ""}`}
+                  onClick={() => s.status !== "LOCKED" && setSelected(s.id)}
+                  disabled={s.status === "LOCKED"}
+                  title={s.status === "LOCKED" ? `${label} (conclua a etapa anterior)` : label}
+                  aria-label={label}
+                  aria-current={s.id === selected ? "step" : undefined}
+                >
+                  {s.status === "PASSED" ? "✓" : s.order}
+                  {s.status === "LOCKED" && <span aria-hidden="true"> 🔒</span>}
+                </button>
+              </li>
+            );
+          })}
+        </ol>
         {attempt.status === "COMPLETED" && (
           <div className="completed">
             🎉 Laboratório concluído!{" "}
@@ -81,30 +128,35 @@ export function StepPanel({
           </div>
         )}
       </div>
-      <h2>Etapas</h2>
-      <ol>
-        {items.map((s) => (
-          <li key={s.id}>
-            <button
-              className={`step step-${s.status.toLowerCase()} ${s.id === selected ? "step-selected" : ""}`}
-              onClick={() => s.status !== "LOCKED" && setSelected(s.id)}
-              disabled={s.status === "LOCKED"}
-              title={s.status === "LOCKED" ? "Conclua a etapa anterior" : undefined}
-            >
-              <span className="step-n">{s.status === "PASSED" ? "✓" : s.order}</span>
-              <span className="step-name">
-                {s.title}
-                <span className="muted small">
-                  {" "}
-                  · {s.status === "PASSED" ? `${s.pointsAwarded}/` : ""}
-                  {s.points} pts
-                </span>
-              </span>
-              {s.status === "LOCKED" && <span className="lock">🔒</span>}
-            </button>
-          </li>
-        ))}
-      </ol>
+      {step && (
+        <div className="step-nav">
+          <button className="nav-btn" onClick={() => prev && setSelected(prev.id)} disabled={!prev} aria-label="Etapa anterior">
+            ‹
+          </button>
+          <div className="step-nav-title">
+            <span className="muted small">
+              Etapa {step.order} de {items.length} · {step.status === "PASSED" ? `${step.pointsAwarded}/` : ""}
+              {step.points} pts
+            </span>
+            <h3>{step.title}</h3>
+          </div>
+          <button className="nav-btn" onClick={() => next && setSelected(next.id)} disabled={!next} aria-label="Próxima etapa">
+            ›
+          </button>
+        </div>
+      )}
+      </div>
+      {resumed !== undefined && (
+        <div className="resumed" role="status">
+          <span>
+            Nova sessão{sessionMinutes ? ` de ${sessionMinutes} min` : ""}. Seu progresso foi mantido: {resumed} de{" "}
+            {items.length} etapas concluídas.
+          </span>
+          <button className="icon-close" aria-label="Fechar aviso" onClick={() => setResumed(undefined)}>
+            ×
+          </button>
+        </div>
+      )}
       {error && <div className="error">{error}</div>}
       {step && step.status !== "LOCKED" && (
         <StepDetail key={step.id} sessionId={sessionId} step={step} onChanged={reload} onShowLog={onShowLog} />
@@ -195,12 +247,21 @@ function StepDetail({
 
   return (
     <div className="step-detail">
-      <h3>{step.title}</h3>
-      <p>{step.explanation}</p>
+      {step.explanation && <Markdown text={step.explanation} />}
       <h4>Tarefa</h4>
-      <p>{step.task}</p>
-      <h4>Conceito</h4>
-      <p>{step.concept}</p>
+      {step.task && <Markdown text={step.task} />}
+      {step.concept && (
+        <>
+          <h4>Conceito</h4>
+          <Markdown text={step.concept} />
+        </>
+      )}
+      {!!step.references?.length && (
+        <>
+          <h4>Para saber mais</h4>
+          <References items={step.references} />
+        </>
+      )}
 
       <h4>Validação</h4>
       {passed && evaluation?.status === "PASSED" ? null : passed ? (
@@ -252,7 +313,7 @@ function StepDetail({
               ))}
             </ul>
           )}
-          {evaluation.feedback && <p>{evaluation.feedback}</p>}
+          {evaluation.feedback && <p className="feedback">{evaluation.feedback}</p>}
           {onShowLog && !PENDING.has(evaluation.status) && (
             <button className="link result-link" onClick={onShowLog}>
               ver histórico na aba Validação
@@ -286,7 +347,7 @@ function HintsModal({
   onClose,
 }: {
   stepTitle: string;
-  hints: { available: number; revealed: { level: number; text: string }[] };
+  hints: Hints;
   busy: boolean;
   error?: string;
   onReveal: () => void;
@@ -304,7 +365,10 @@ function HintsModal({
         <div className="hints-head">
           <div>
             <h2 id="hints-title">Dicas · {stepTitle}</h2>
-            <p className="muted small">Revele uma de cada vez. Dicas não descontam pontos.</p>
+            <p className="muted small">
+              Revele uma de cada vez. A 1ª dica é grátis, a 2ª custa 1 ponto e a 3ª custa 2; o desconto total
+              não passa de 10% da pontuação do laboratório.
+            </p>
           </div>
           <button className="icon-close" aria-label="Fechar dicas" onClick={onClose}>
             ×
@@ -312,8 +376,11 @@ function HintsModal({
         </div>
         {hints.revealed.map((h) => (
           <div key={h.level} className="hint">
-            <span className="hint-n">Dica {h.level}</span>
-            <span>{h.text}</span>
+            <span className="hint-n">
+              Dica {h.level}
+              {h.cost ? <span className="muted"> · −{h.cost} pt{h.cost > 1 ? "s" : ""}</span> : null}
+            </span>
+            <Markdown text={h.text} />
           </div>
         ))}
         {next <= hints.available ? (
@@ -322,7 +389,7 @@ function HintsModal({
               {hints.revealed.length === 0 ? "Nenhuma dica revelada ainda." : `Dica ${next} ainda oculta.`}
             </span>
             <button className="primary" onClick={onReveal} disabled={busy} autoFocus>
-              {busy ? "Revelando…" : `Revelar dica ${next}`}
+              {busy ? "Revelando…" : `Revelar dica ${next} (${costLabel(hints.nextCost ?? 0)})`}
             </button>
           </div>
         ) : (
@@ -335,6 +402,10 @@ function HintsModal({
       </div>
     </div>
   );
+}
+
+function costLabel(cost: number): string {
+  return cost === 0 ? "grátis" : `−${cost} pt${cost > 1 ? "s" : ""}`;
 }
 
 function duration(fromIso: string, toIso: string): string {
@@ -379,11 +450,27 @@ function Summary({ progress, onClose, onExit }: { progress: Progress; onClose: (
               {attempt.score}
               <small>/{attempt.maxScore}</small>
             </span>
-            <span className="stat-label">pontos</span>
+            <span className="stat-label">
+              pontos{(attempt.hintPenalty ?? 0) > 0 ? ` (−${attempt.hintPenalty} por dicas)` : ""}
+            </span>
           </div>
           <div className="stat">
-            <span className="stat-value">{duration(attempt.startedAt, attempt.completedAt ?? attempt.startedAt)}</span>
-            <span className="stat-label">tempo total</span>
+            {attempt.activeMinutes !== undefined ? (
+              <>
+                <span className="stat-value">{attempt.activeMinutes} min</span>
+                <span
+                  className="stat-label"
+                  title={`Do início à conclusão: ${duration(attempt.startedAt, attempt.completedAt ?? attempt.startedAt)}`}
+                >
+                  de trabalho ativo{attempt.sessions && attempt.sessions > 1 ? ` em ${attempt.sessions} sessões` : ""}
+                </span>
+              </>
+            ) : (
+              <>
+                <span className="stat-value">{duration(attempt.startedAt, attempt.completedAt ?? attempt.startedAt)}</span>
+                <span className="stat-label">tempo total</span>
+              </>
+            )}
           </div>
           <div className="stat">
             <span className="stat-value">{attempt.hintsUsed}</span>
@@ -431,6 +518,13 @@ function Summary({ progress, onClose, onExit }: { progress: Progress; onClose: (
             ))}
           </tbody>
         </table>
+        {progress.wrapUp && (
+          <section className="wrapup">
+            <h3>Para ir além</h3>
+            <Markdown text={progress.wrapUp.text} />
+            <References items={progress.wrapUp.references} />
+          </section>
+        )}
         <p className="muted small">
           Ao voltar ao painel, este ambiente é encerrado e os arquivos temporários são descartados. Seu resultado
           continua registrado.

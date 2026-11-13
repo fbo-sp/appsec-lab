@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block conteudo %}
+<h1>Encontre um médico</h1>
+<form method="get" action="{{ url_for('medicos.buscar') }}" class="busca">
+  <input name="nome" value="{{ termo }}" placeholder="Digite parte do nome do médico" aria-label="Nome do médico">
+  <button type="submit">Buscar</button>
+</form>
+{% if medicos %}
+<table>
+  <thead><tr><th>Nome</th><th>Especialidade</th><th>CRM</th></tr></thead>
+  <tbody>
+    {% for medico in medicos %}
+    <tr><td>{{ medico.nome }}</td><td>{{ medico.especialidade }}</td><td>{{ medico.crm }}</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p class="vazio">Nenhum médico encontrado.</p>
+{% endif %}
+{% endblock %}

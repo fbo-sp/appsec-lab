@@ -136,10 +136,13 @@ def test_edited_workspace_passes_and_runs_on_isolated_copy(env: tuple[Any, Any, 
 def test_app_that_never_starts_fails_criteria_without_error_leak(env: tuple[Any, Any, str]) -> None:
     rt, ev, image = env
     _, ref = _provision(rt, image)
-    req = replace(_request(ref, image), startup_command=("python", "-c", "import sys; sys.exit(1)"))
+    crash = "import sys; print('SyntaxError: invalid syntax', file=sys.stderr); sys.exit(1)"
+    req = replace(_request(ref, image), startup_command=("python", "-c", crash))
     req = replace(req, timeout_seconds=40)
     out = ev.evaluate(req)
-    assert out.error is None and not any(out.results.values())
+    # Não é falha técnica: a aplicação do aluno não subiu, e a saída dela volta como pista.
+    assert out.error is None and not out.app_started and not out.results
+    assert out.app_log_tail and "SyntaxError" in out.app_log_tail
     assert _leftovers(rt, req.submission_id) == []
 
 

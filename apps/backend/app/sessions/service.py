@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import uuid
 from dataclasses import dataclass
 from datetime import datetime, timedelta
@@ -14,7 +15,7 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 
 from app.audit import service as audit
-from app.db.models import LabRelease, LabSession, LabVariant
+from app.db.models import AttemptActivity, LabRelease, LabSession, LabVariant
 from app.identity.principal import Principal, Role
 from app.jobs.queue import JobKind, enqueue
 from app.progress.service import ensure_attempt
@@ -50,6 +51,56 @@ class CreateSessionResult:
     created: bool
 
 
+# -- atividade e inatividade (ADR-014) --------------------------------------------------------------------
+# 0 desativa o encerramento por inatividade. Configurável por ambiente (ex.: limite curto em testes locais).
+IDLE_MINUTES = int(os.environ.get("SESSION_IDLE_MINUTES", "15"))
+IDLE_WARNING_SECONDS = 180
+
+
+def idle_deadline(s: LabSession) -> datetime | None:
+    if IDLE_MINUTES <= 0 or SessionStatus(s.status) not in GATEWAY_STATUSES:
+        return None
+    last = s.last_activity_at or s.ready_at
+    return None if last is None else last + timedelta(minutes=IDLE_MINUTES)
+
+
+def record_activity(db: Session, s: LabSession, now: datetime) -> bool:
+    """Marca atividade do aluno: adia o encerramento por inatividade e soma o minuto à tentativa.
+
+    Só vale para sessão utilizável e dentro do prazo. Não faz commit (o chamador decide).
+    """
+    if SessionStatus(s.status) not in GATEWAY_STATUSES or s.expires_at <= now:
+        return False
+    if s.last_activity_at is None or s.last_activity_at < now:
+        s.last_activity_at = now
+    if s.attempt_id is not None:
+        minute = now.replace(second=0, microsecond=0)
+        db.execute(
+            insert(AttemptActivity)
+            .values(attempt_id=s.attempt_id, minute=minute)
+            .on_conflict_do_nothing(index_elements=["attempt_id", "minute"])
+        )
+    return True
+
+
+def touch_session(db: Session, *, principal: Principal, session_id: uuid.UUID, now: datetime) -> LabSession:
+    """Sinal de atividade do portal (aba visível e interação recente). Só o dono."""
+    s = db.get(LabSession, session_id)
+    if s is None or s.user_id != principal.user_id:
+        raise not_found("Sessão")
+    record_activity(db, s, now)
+    db.commit()
+    return s
+
+
+def usage_seconds(s: LabSession, now: datetime) -> int:
+    """Tempo de uso da sessão: de pronta até o fim (ou até agora, limitado ao prazo, se ainda viva)."""
+    if s.ready_at is None:
+        return 0
+    end = s.ended_at or min(now, s.expires_at)
+    return max(0, int((end - s.ready_at).total_seconds()))
+
+
 def apply_event(
     db: Session,
     s: LabSession,
@@ -65,6 +116,10 @@ def apply_event(
     new = transition(current, event)
     s.status = new.value
     s.updated_at = now
+    if new not in ACTIVE and s.ended_at is None:
+        # Fim do uso (ADR-014): a expiração conta no prazo, mesmo que o worker a detecte depois.
+        s.ended_at = min(now, s.expires_at)
+        s.end_reason = event.value
     if error_code is not None:
         s.last_error_code = error_code
     audit.record(
@@ -257,6 +312,7 @@ def renew_session(db: Session, *, principal: Principal, session_id: uuid.UUID, n
             {"renewableAt": (s.expires_at - renew_window(variant)).isoformat()},
         )
     previous = s.expires_at
+    record_activity(db, s, now)  # renovar é ação do aluno (ADR-014)
     s.expires_at = now + timedelta(minutes=variant.ttl_minutes)
     s.renewals += 1
     s.updated_at = now
@@ -298,6 +354,10 @@ def session_view(db: Session, s: LabSession) -> dict[str, Any]:
         "createdAt": s.created_at.isoformat(),
         "updatedAt": s.updated_at.isoformat(),
         "lastErrorCode": s.last_error_code,
+        # Encerramento por inatividade (ADR-014): prazo atual e minutos configurados (None = desativado).
+        "idleDeadline": (d.isoformat() if (d := idle_deadline(s)) else None),
+        "idleMinutes": IDLE_MINUTES or None,
+        "endReason": s.end_reason,
         "statusUrl": f"/api/v1/sessions/{s.id}",
     }
 

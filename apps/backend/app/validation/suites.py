@@ -98,6 +98,128 @@ _SUITES: tuple[Suite, ...] = (
     ),
 )
 
+# LAB-001 (SQL Injection, Clínica VidaPlena) ------------------------------------------------------
+# Dados fictícios definidos em laboratories/LAB-001-sqli-clinica/runtime/workspace/database/seed.py.
+_PACIENTE_EMAIL = "@pacientes.vidaplena.example"
+_PACIENTE_CPF = "123.456.789-00"
+_TOKEN = "VP-INT-7Q2K-93XD"  # noqa: S105 - valor FICTÍCIO do exercício, não é credencial
+_SEM_RESULTADO = "Nenhum médico encontrado"
+
+_SUITES_LAB001: tuple[Suite, ...] = (
+    AnswerSuite(
+        ref="sqli/answer/locate-query-v1",
+        version="1.0.0",
+        prompt="Nome do método que monta o SQL",
+        accepted=(
+            "buscar_por_nome",
+            "buscar_por_nome()",
+            "medicorepository.buscar_por_nome",
+            "medicorepository.buscar_por_nome()",
+        ),
+        success_feedback="Isso: o repositório recebe o termo já limpo pelo serviço e o encaixa no SQL.",
+        failure_feedback=(
+            "Ainda não. Siga a busca a partir da rota /medicos até a camada que fala com o banco."
+        ),
+    ),
+    AnswerSuite(
+        ref="sqli/answer/error-type-v1",
+        version="1.0.0",
+        prompt="Tipo de erro registrado no log",
+        accepted=("operationalerror", "sqlite3.operationalerror"),
+        success_feedback="Exato: a aspa fechou o texto antes da hora e o banco recebeu um SQL inválido.",
+        failure_feedback=(
+            "Não é esse. Procure no log a linha final do erro, logo abaixo do caminho dos arquivos."
+        ),
+    ),
+    AnswerSuite(
+        ref="sqli/answer/column-count-v1",
+        version="1.0.0",
+        prompt="Número de colunas da consulta",
+        accepted=("4", "quatro"),
+        success_feedback="Isso: com 4 colunas você já consegue montar um UNION compatível.",
+        failure_feedback="Não é esse número. Aumente o ORDER BY até o banco reclamar.",
+    ),
+    AnswerSuite(
+        ref="sqli/answer/integration-token-v1",
+        version="1.0.0",
+        prompt="Token de integração encontrado",
+        accepted=(_TOKEN.casefold(),),
+        success_feedback="Você leu uma tabela que a busca nunca deveria mostrar. Agora vamos corrigir.",
+        failure_feedback="Esse não é o token. Ele está na tabela configuracoes, na coluna valor.",
+    ),
+    HttpSuite(
+        ref="sqli/python-flask/parameterized-search-v1",
+        version="1.0.0",
+        checks=(
+            HttpCheck(
+                id="busca-parcial",
+                description="A busca por parte do nome continua encontrando o médico certo.",
+                path="/medicos",
+                method="POST",
+                form={"nome": "Beatriz"},
+                contains=("Ana Beatriz Souza",),
+                not_contains=("Carlos Menezes",),
+            ),
+            HttpCheck(
+                id="busca-vazia",
+                description="A busca vazia continua listando todo o corpo clínico.",
+                path="/medicos",
+                method="POST",
+                form={"nome": ""},
+                contains=("Carlos Menezes", "Rafael Oliveira"),
+            ),
+            HttpCheck(
+                id="apostrofo",
+                description="Nomes com apóstrofo, como D'Ávila, continuam sendo encontrados.",
+                path="/medicos",
+                method="POST",
+                form={"nome": "D'Ávila"},
+                contains=("CRM-SP 123456",),
+            ),
+            HttpCheck(
+                id="aspa-sem-erro",
+                description="Uma aspa sozinha não causa erro no servidor.",
+                path="/medicos",
+                method="POST",
+                form={"nome": "'"},
+            ),
+            HttpCheck(
+                id="union-pacientes",
+                description="Tentativas de UNION não revelam dados de pacientes.",
+                path="/medicos",
+                method="POST",
+                form={"nome": "zz' UNION SELECT 1, email, cpf, condicao FROM pacientes --"},
+                not_contains=(_PACIENTE_EMAIL, _PACIENTE_CPF),
+            ),
+            HttpCheck(
+                id="union-configuracoes",
+                description="Tentativas de UNION não revelam configurações internas.",
+                path="/medicos",
+                method="POST",
+                form={"nome": "zz' UNION SELECT 1, valor, chave, valor FROM configuracoes --"},
+                not_contains=(_TOKEN,),
+            ),
+            HttpCheck(
+                id="condicao-injetada",
+                description="Condições injetadas, como OR '1'='1', não alteram o resultado da busca.",
+                path="/medicos",
+                method="POST",
+                form={"nome": "zz' OR '1'='1' --"},
+                contains=(_SEM_RESULTADO,),
+            ),
+        ),
+        success_feedback=(
+            "Busca corrigida: os ataques viraram texto comum e as buscas legítimas continuam funcionando. "
+            "Validado em uma cópia isolada do seu workspace."
+        ),
+        failure_feedback=(
+            "Algumas verificações falharam. Confira cada item abaixo, ajuste o código e valide de novo."
+        ),
+    ),
+)
+
+_SUITES = _SUITES + _SUITES_LAB001
+
 REGISTRY: dict[str, Suite] = {s.ref: s for s in _SUITES}
 
 

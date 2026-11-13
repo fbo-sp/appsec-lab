@@ -153,3 +153,43 @@ def test_issues_have_location(manifest: dict[str, Any]) -> None:
     with pytest.raises(ManifestValidationError) as exc:
         validate_manifest(manifest)
     assert exc.value.issues[0].loc == "variants.0.resources.cpuMillicores"
+
+
+# --- ADR-012: conteúdo rico (referências e "Para ir além") ---------------------------------------
+
+
+def test_optional_content_fields_do_not_change_existing_digests(manifest: dict[str, Any]) -> None:
+    dumped = canonical_manifest_json_for(manifest)
+    assert '"references"' not in dumped and '"wrapUp"' not in dumped
+
+
+def canonical_manifest_json_for(data: dict[str, Any]) -> str:
+    from cecyber_contracts.digest import canonical_manifest_json
+
+    return canonical_manifest_json(validate_manifest(data))
+
+
+def test_references_and_wrap_up_are_accepted(manifest: dict[str, Any]) -> None:
+    ref = {"title": "CWE-89", "url": "https://cwe.mitre.org/data/definitions/89.html"}
+    manifest["steps"][0]["references"] = [ref]
+    text = "Use **parâmetros**.\n\n```python\nx = 1\n```"
+    manifest["learning"]["wrapUp"] = {"text": text, "references": [ref]}
+    m = validate_manifest(manifest)
+    assert m.steps[0].references is not None and m.steps[0].references[0].url.startswith("https://")
+    assert m.learning.wrap_up is not None
+
+
+@pytest.mark.parametrize(
+    "url",
+    [
+        "javascript:alert(1)",
+        "http://owasp.org/",
+        'https://owasp.org/"onmouseover=alert(1)',
+        "https://owasp.org/a b",
+        "data:text/html,<script>alert(1)</script>",
+        "//owasp.org/",
+    ],
+)
+def test_reference_urls_must_be_plain_https(manifest: dict[str, Any], url: str) -> None:
+    manifest["steps"][0]["references"] = [{"title": "x", "url": url}]
+    assert codes(manifest)

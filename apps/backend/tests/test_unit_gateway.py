@@ -24,6 +24,10 @@ ORIGIN = "http://ws.test"
 @dataclass
 class Resolver:
     targets: dict[str, SessionTarget] = field(default_factory=dict)
+    touched: list[str] = field(default_factory=list)
+
+    def touch(self, session_id: str) -> None:
+        self.touched.append(session_id)
 
     def resolve(self, session_id: str) -> SessionTarget | None:
         return self.targets.get(session_id)
@@ -178,6 +182,36 @@ def test_workspace_api_requires_grant_header_and_matching_session() -> None:
     run(s)
 
 
+def test_grant_survives_renewal_but_not_expiry(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Regressão: o grant valia só até o prazo da emissão; renovar derrubava as abas (GATEWAY_DENIED)."""
+    import app.gateway.app as gw
+
+    async def s(ws: TestClient, pv: TestClient, res: Resolver, up: web.Application) -> None:
+        t0 = datetime.now(UTC)
+        # 10 min de prazo + 2 renovações de 45 min ainda disponíveis.
+        res.targets[SID] = replace(res.targets[SID], max_expires_at=t0 + timedelta(minutes=100))
+        r = await pv.get(
+            "/__cecyber/auth", params={"ticket": _ticket(purpose=Purpose.PREVIEW)}, allow_redirects=False
+        )
+        assert r.status == 303
+        assert 5900 <= int(r.cookies[PV_COOKIE]["max-age"]) <= 6000
+        grant = r.cookies[PV_COOKIE].value
+        hdr = {"Cookie": f"{PV_COOKIE}={grant}"}
+        # 20 min depois, já após o prazo original, com a sessão renovada até t0+55.
+        monkeypatch.setattr(gw, "_now", lambda: t0 + timedelta(minutes=20))
+        res.targets[SID] = replace(res.targets[SID], expires_at=t0 + timedelta(minutes=55))
+        pv.server.app[gw.STATE].cache.clear()  # o cache de resolução dura 2 s
+        ok = await pv.get("/", headers=hdr)
+        assert ok.status == 200, await ok.text()
+        # Sem nova renovação, o prazo efetivo do banco continua valendo.
+        monkeypatch.setattr(gw, "_now", lambda: t0 + timedelta(minutes=56))
+        pv.server.app[gw.STATE].cache.clear()
+        expired = await pv.get("/", headers=hdr)
+        assert expired.status == 403
+
+    run(s)
+
+
 def test_termination_revokes_existing_grant_immediately() -> None:
     async def s(ws: TestClient, pv: TestClient, res: Resolver, up: web.Application) -> None:
         grant = await _login_ws(ws)
@@ -235,3 +269,23 @@ def test_tickets_never_reach_logs(caplog: pytest.LogCaptureFixture) -> None:
     run(s)
     text = "\n".join(f"{r.getMessage()} {r.__dict__}" for r in caplog.records)
     assert "gateway.request" in text and tokens[0] not in text
+
+
+def test_activity_counts_real_use_with_throttle() -> None:
+    """ADR-014: uso do editor, terminal e aplicação adia o encerramento por inatividade (1 registro/30 s)."""
+
+    async def s(ws: TestClient, pv: TestClient, res: Resolver, up: web.Application) -> None:
+        grant = await _login_ws(ws)
+        hdr = {"X-Cecyber-Workspace": "1", "Cookie": f"{WS_COOKIE}={grant}"}
+        assert res.touched == []  # abrir o workspace não é atividade
+        await ws.get(f"/s/{SID}/__cecyber/api/files", headers=hdr)
+        await ws.get(f"/s/{SID}/__cecyber/api/files", headers=hdr)
+        assert res.touched == [SID]  # limitado por sessão
+        pv_grant = await _login_pv(pv)
+        assert (await pv.get("/", headers={"Cookie": f"{PV_COOKIE}={pv_grant}"})).status == 200
+        assert res.touched == [SID]
+        # Grant inválido não registra atividade.
+        await ws.get(f"/s/{OTHER}/__cecyber/api/files", headers=hdr)
+        assert res.touched == [SID]
+
+    run(s)

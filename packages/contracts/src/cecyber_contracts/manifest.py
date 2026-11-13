@@ -39,6 +39,10 @@ ValidatorRef = Annotated[
 ]
 NonEmptyText = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=4000)]
 ShortText = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=200)]
+# Links de conteúdo (ADR-012): só https, sem espaços nem caracteres que quebrem atributos.
+HttpsUrl = Annotated[
+    str, StringConstraints(pattern=r"^https://[A-Za-z0-9.-]+(:[0-9]{1,5})?(/[^\s<>\"'`]*)?$", max_length=500)
+]
 CommandArg = Annotated[str, StringConstraints(min_length=1, max_length=512)]
 
 
@@ -73,12 +77,28 @@ class Story(_Strict):
     mission: NonEmptyText
 
 
+class Reference(_Strict):
+    """Leitura recomendada (ADR-012). Exibida como link externo; nunca carregada pela plataforma."""
+
+    title: ShortText
+    url: HttpsUrl
+
+
+class WrapUp(_Strict):
+    """Bloco "Para ir além" do resumo de conclusão (ADR-012). ``text`` aceita Markdown restrito."""
+
+    text: NonEmptyText
+    references: tuple[Reference, ...] | None = Field(default=None, max_length=8)
+
+
 class Learning(_Strict):
     single_vulnerability: Literal[True] = Field(alias="singleVulnerability")
     estimated_minutes: int = Field(alias="estimatedMinutes", ge=5, le=240)
     difficulty: Difficulty
     objectives: tuple[NonEmptyText, ...] = Field(min_length=1, max_length=10)
     story: Story
+    # Opcional e sem valor padrão serializado, para não alterar o digest de manifestos existentes.
+    wrap_up: WrapUp | None = Field(default=None, alias="wrapUp")
 
 
 class Startup(_Strict):
@@ -131,6 +151,8 @@ class Hint(_Strict):
 
 
 class LabStep(_Strict):
+    """Etapa. ``explanation``, ``task``, ``concept`` e textos de dica aceitam Markdown restrito (ADR-012)."""
+
     id: Slug
     order: int = Field(ge=1, le=50)
     title: ShortText
@@ -140,6 +162,7 @@ class LabStep(_Strict):
     expected_outcome: NonEmptyText | None = Field(default=None, alias="expectedOutcome")
     validator_ref: ValidatorRef = Field(alias="validatorRef")
     hints: tuple[Hint, ...] = Field(default=(), max_length=3)
+    references: tuple[Reference, ...] | None = Field(default=None, max_length=8)
     unlock_on_pass: bool = Field(default=True, alias="unlockOnPass")
     points: int = Field(ge=0, le=100)
 

@@ -180,28 +180,36 @@ def test_terminated_session_rejects_evaluation(
     assert r.status_code == 409 and r.json()["error"]["code"] == "SESSION_NOT_READY"
 
 
-# --- dicas (OPEN-04: sem penalidade) ------------------------------------------------------------------
+# --- dicas (ADR-013: desconto por nível, teto de 10%) ------------------------------------------------
 
 
-def test_hints_revealed_in_order_without_penalty(
+def test_hints_revealed_in_order_with_level_penalty(
     client: TestClient, registered: dict[str, Any], wk: WorkerContext, session_factory: sessionmaker[Session]
 ) -> None:
     sid = _ready(client, wk)
     r = _hint(client, sid, "explore", 2)
     assert r.status_code == 409 and r.json()["error"]["code"] == "HINT_ORDER"
+    assert _steps(client, sid)["items"][0]["hints"]["nextCost"] == 0
     h1 = _hint(client, sid, "explore", 1)
     assert h1.status_code == 200 and h1.json()["penalty"] == 0 and h1.json()["text"]
     assert _hint(client, sid, "explore", 1).json() == h1.json()  # revelar de novo é idempotente
-    assert _hint(client, sid, "explore", 2).status_code == 200
+    assert _steps(client, sid)["items"][0]["hints"]["nextCost"] == 1
+    h2 = _hint(client, sid, "explore", 2)
+    assert h2.status_code == 200 and h2.json()["penalty"] == 1
+    assert _hint(client, sid, "explore", 2).json()["penalty"] == 0  # repetir não cobra de novo
     assert _hint(client, sid, "explore", 3).status_code == 404
-    item = _steps(client, sid)["items"][0]
-    assert [h["level"] for h in item["hints"]["revealed"]] == [1, 2]
+    body = _steps(client, sid)
+    item = body["items"][0]
+    assert [(h["level"], h["cost"]) for h in item["hints"]["revealed"]] == [(1, 0), (2, 1)]
+    # Antes de pontuar, o desconto não deixa a pontuação negativa.
+    assert body["attempt"]["score"] == 0 and body["attempt"]["hintPenalty"] == 1
     _pass_explore(client, sid)
     att = _steps(client, sid)["attempt"]
-    assert att["score"] == 40 and att["hintsUsed"] == 2  # sem desconto, mas registrado
+    assert att["score"] == 39 and att["earnedPoints"] == 40
+    assert att["hintPenalty"] == 1 and att["hintPenaltyCap"] == 10 and att["hintsUsed"] == 2
     with session_factory() as db:
         n = db.execute(select(AuditEvent).where(AuditEvent.action == "hint.revealed")).scalars().all()
-    assert len(n) == 2
+    assert sorted(e.event_metadata["penalty"] for e in n) == [0, 1]
 
 
 # --- etapa http via worker ------------------------------------------------------------------------------
@@ -248,6 +256,20 @@ def test_http_step_failure_reports_criteria(
         "page-still-served": True,
     }
     evaluator.results = {}
+    assert _drain_eval(client, sid, wk, key="eval-http-0002")["status"] == "PASSED"
+
+
+def test_app_that_does_not_start_gets_single_clear_message(
+    client: TestClient, registered: dict[str, Any], wk: WorkerContext, evaluator: FakeEvaluator
+) -> None:
+    sid = _ready(client, wk)
+    _pass_explore(client, sid)
+    evaluator.not_started_log = '  File "app.py", line 3\nSyntaxError: invalid syntax'
+    res = _drain_eval(client, sid, wk)
+    assert res["status"] == "FAILED"  # reprova (não é falha técnica), mas sem N falhas de segurança
+    assert [c["id"] for c in res["criteria"]] == ["app-starts"]
+    assert "não iniciou" in res["feedback"] and "SyntaxError" in res["feedback"]
+    evaluator.not_started_log = None
     assert _drain_eval(client, sid, wk, key="eval-http-0002")["status"] == "PASSED"
 
 
@@ -316,3 +338,51 @@ def test_evaluation_history_is_owner_only_and_newest_first(
     assert items[0]["stepId"] == "explore" and items[0]["stepTitle"] and items[0]["stepOrder"] == 1
     assert "answer" not in items[0]
     assert client.get(f"/api/v1/sessions/{sid}/evaluations", headers=BOB).status_code == 404
+
+
+def test_rich_content_references_and_wrap_up_are_exposed(client: TestClient, wk: WorkerContext) -> None:
+    from tests.conftest import ADMIN, benign_manifest
+
+    m = benign_manifest()
+    m["metadata"]["version"] = "0.9.0"
+    ref = {"title": "CWE-89", "url": "https://cwe.mitre.org/data/definitions/89.html"}
+    m["steps"][0]["task"] = "Rode `whoami` no terminal.\n\n```bash\nwhoami\n```"
+    m["steps"][0]["references"] = [ref]
+    m["learning"]["wrapUp"] = {"text": "Use **parâmetros**.", "references": [ref]}
+    assert client.post("/api/v1/admin/lab-releases", json=m, headers=ADMIN).status_code == 201
+    body = {"labId": "LAB-000", "version": "0.9.0", "variantId": "python-http"}
+    sid = create_session(client, ALICE, body=body).json()["sessionId"]
+    drain(wk)
+    p = _steps(client, sid)
+    first, locked = p["items"]
+    assert first["task"].startswith("Rode `whoami`") and first["references"] == [ref]
+    assert "references" not in locked  # etapa bloqueada não revela conteúdo
+    assert p["wrapUp"] == {"text": "Use **parâmetros**.", "references": [ref]}
+
+
+def test_progress_without_rich_content_has_empty_defaults(
+    client: TestClient, registered: dict[str, Any], wk: WorkerContext
+) -> None:
+    p = _steps(client, _ready(client, wk))
+    assert p["items"][0]["references"] == [] and p["wrapUp"] is None
+
+
+def test_resolution_metrics_count_active_minutes(
+    client: TestClient, registered: dict[str, Any], wk: WorkerContext, evaluator: FakeEvaluator, clock: Any
+) -> None:
+    """ADR-014: o indicador do admin usa minutos ativos, não o tempo de calendário."""
+    from tests.conftest import ADMIN
+
+    sid = _ready(client, wk)
+    _pass_explore(client, sid)  # validar é atividade (minuto 1)
+    clock.advance(minutes=1)
+    client.post(f"/api/v1/sessions/{sid}/activity", headers=ALICE)  # minuto 2
+    clock.advance(minutes=8)  # parado
+    assert _drain_eval(client, sid, wk)["status"] == "PASSED"  # minuto 3 e conclusão
+    att = _steps(client, sid)["attempt"]
+    assert att["status"] == "COMPLETED" and att["activeMinutes"] == 3 and att["sessions"] == 1
+    assert client.get("/api/v1/admin/metrics/resolution", headers=ALICE).status_code == 403
+    [item] = client.get("/api/v1/admin/metrics/resolution", headers=ADMIN).json()["items"]
+    assert item["labId"] == "LAB-000" and item["completedAttempts"] == 1
+    assert item["activeMinutes"]["p50"] == 3 and item["sessionsPerAttempt"] == 1
+    assert item["calendarMinutesP50"] >= 9

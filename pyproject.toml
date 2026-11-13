@@ -30,7 +30,8 @@ cecyber-backend = { workspace = true }
 [tool.ruff]
 line-length = 110
 target-version = "py312"
-extend-exclude = ["docs"]
+# Código dos laboratórios é conteúdo didático (com falhas INTENCIONAIS), não código da plataforma.
+extend-exclude = ["docs", "laboratories/*/runtime/workspace"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP", "S", "N", "SIM", "RUF"]

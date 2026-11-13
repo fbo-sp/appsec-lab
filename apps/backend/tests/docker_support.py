@@ -30,6 +30,30 @@ def _build() -> str:
     return f"local/labs/lab-000-hello@{image.id}"
 
 
+LAB001_RUNTIME = LABS / "LAB-001-sqli-clinica" / "runtime"
+LAB001_TAG = "cecyber-labs/lab-001-sqli:local"
+
+
+@cache
+def _build_lab001() -> str:
+    import docker
+
+    client = docker.from_env()
+    _build()  # garante a base
+    # SKIP_LAB_BUILD=1 usa a imagem já construída (ex.: build com CA de proxy, fora do repositório).
+    if os.environ.get("SKIP_LAB_BUILD") == "1":
+        image = client.images.get(LAB001_TAG)
+    else:
+        image, _ = client.images.build(path=str(LAB001_RUNTIME), tag=LAB001_TAG, rm=True)
+    return f"local/labs/lab-001-sqli@{image.id}"
+
+
+def lab001_image() -> str:
+    """Imagem do LAB-001 (vulnerabilidade INTENCIONAL; só em rede interna da sessão)."""
+    docker_lab_image()  # mesmas condições de opt-in e disponibilidade
+    return _build_lab001()
+
+
 def docker_lab_image() -> str:
     """Constrói (com cache) a imagem do LAB-000 e devolve a referência por digest do ID local."""
     if not docker_enabled():

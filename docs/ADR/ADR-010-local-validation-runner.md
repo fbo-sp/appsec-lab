@@ -28,13 +28,17 @@ A experiência exige validar cada etapa e liberar a próxima no servidor (`21`, 
    - aprovação, pontos, desbloqueio da próxima etapa e conclusão da tentativa ocorrem na mesma transação;
    - há uma avaliação pendente por sessão e idempotência por `Idempotency-Key`;
    - o progresso pertence à tentativa e sobrevive ao fim da sessão.
-6. **OPEN-04** (PO, 2026-11-12): dicas são reveladas em ordem e sem penalidade (`penalty: 0`), e as tentativas são ilimitadas. Tudo é auditado (`step.submitted`, `step.passed|failed|error`, `hint.revealed`, `attempt.completed`).
+6. **OPEN-04** (PO, 2026-11-12): dicas são reveladas em ordem e as tentativas são ilimitadas. O desconto por dicas foi revisto pelo PO em 2026-11-13 e agora segue o ADR-013 (custo por nível, teto de 10%). Tudo é auditado (`step.submitted`, `step.passed|failed|error`, `hint.revealed`, `attempt.completed`).
 
 ## Alternativas consideradas
 
 - **Rodar testes dentro do contêiner do aluno:** rejeitada, porque o aluno controla esse ambiente e poderia forjar o resultado.
 - **Testar a instância viva do aluno pela rede:** é mais simples, mas o aluno pode alterar o estado durante a avaliação, e o teste não seria reprodutível. O snapshot dá consistência e um digest para auditoria.
 - **Envelope assinado entre o runner e a API (IMP-403):** é desnecessário enquanto o runner é o próprio worker confiável. Volta a ser exigido quando o runner for um serviço separado (ADR-003).
+
+### Adendo (2026-11-13): aplicação que não inicia
+
+Se a cópia avaliada não responder dentro da espera do probe (30 s), a avaliação não lista as N verificações da suíte como falhas de segurança. Ela reprova com um único critério, "A aplicação inicia com o código salvo", e o feedback traz as últimas linhas da saída da aplicação (por exemplo, um `IndentationError`), tratadas como dado não confiável e mostradas como texto. Recursos de avaliação (rótulo `evaluation-id`) só são considerados órfãos pelo reconciliador após 10 minutos.
 
 ## Consequências e limitações
 

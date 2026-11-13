@@ -15,7 +15,36 @@ Detalhar **catálogo dos quatro laboratórios** com rastreabilidade aos requisit
 
 ### 1. LAB-001 SQL Injection: Flask/SQLite
 
-**A desenvolver.** Referenciar FR/NFR, evidências e ADRs aplicáveis. Não assumir tecnologia ou requisito não aprovado.
+**Implementado, só local** (2026-11-13). Proposta e decisões aprovadas pelo PO em 2026-11-13. Requisitos: PRD §12, US-022, LEX-001–005, IMP-501. ADRs: 005, 006, 008, 010 e 012.
+
+- **Cenário.** O aluno é desenvolvedor(a) da Clínica VidaPlena (fictícia). A busca "Encontre um médico" do portal de agendamento expõe as tabelas `pacientes` e `configuracoes`. Os dados são 100% fictícios: CPFs com dígito inválido e e-mails em domínio `.example`.
+- **Aplicação** (`laboratories/LAB-001-sqli-clinica/runtime/workspace`). Flask com camadas controller, serviço, repositório, modelo e template, e identificadores em português (decisão do PO). A falha está em `MedicoRepository.buscar_por_nome`, que monta o SQL com f-string. O banco e o log ficam em `/tmp`, e o banco é recriado a cada início. A aplicação recarrega ao salvar e roda sem o depurador interativo.
+- **Recursos.** 0,5 vCPU, 512 MiB, 256 MiB de disco e 64 PIDs. Prazo de 45 min com até 2 renovações. Sem egress.
+- **Etapas** (100 pontos, desbloqueio sequencial, 3 dicas por etapa):
+
+| # | Etapa | Validação | Pts |
+|---|---|---|---|
+| 1 | Conhecer a aplicação | Resposta `buscar_por_nome` (`sqli/answer/locate-query-v1`) | 10 |
+| 2 | Provocar um erro | Resposta `OperationalError`, lida em `/tmp/app.log` (`sqli/answer/error-type-v1`) | 15 |
+| 3 | Medir a consulta | Resposta `4` via `ORDER BY` (`sqli/answer/column-count-v1`) | 15 |
+| 4 | Extrair dados sensíveis | Token fictício lido com `UNION` (`sqli/answer/integration-token-v1`) | 20 |
+| 5 | Corrigir com consulta parametrizada | Suíte comportamental com 7 verificações em cópia isolada (`sqli/python-flask/parameterized-search-v1`) | 40 |
+
+- **Suíte da correção.** Verifica:
+  - busca parcial;
+  - busca vazia;
+  - nome com apóstrofo (D'Ávila);
+  - aspa sem erro 500;
+  - `UNION` contra `pacientes` e contra `configuracoes`;
+  - condição `OR '1'='1' --`.
+
+  Com Docker real (`tests/test_lab001_validation.py`), o código original e as "correções" que removem ou bloqueiam aspas reprovam. As correções com `?` e com parâmetro nomeado passam. Escapar aspas duplicando-as também passa, e isso é aceito por ser seguro no SQLite.
+- **Limitações aceitas pelo PO para o MVP local:**
+  - as respostas das etapas 2 a 4 são fixas e podem ser repassadas entre alunos;
+  - o banco pode ser lido pelo terminal, porque terminal e aplicação usam o mesmo usuário.
+
+  A correção (40 pts) é sempre validada pelo comportamento.
+- **Para ir além** (resumo final): erros genéricos, limite de entrada, menor privilégio no banco, SQL cru em ORMs e segredos fora do código.
 
 ### 2. LAB-002 IDOR: Flask/REST
 

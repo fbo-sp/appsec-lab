@@ -1,0 +1,260 @@
+# LAB-001: SQL Injection (CWE-89) no portal da Clínica VidaPlena (Flask + SQLite).
+# CONTÉM VULNERABILIDADE INTENCIONAL. Uso exclusivo no runtime Docker LOCAL (ADR-008), em rede
+# interna da sessão. Dados 100% fictícios (CPFs inválidos, domínio .example).
+#
+# ATENÇÃO: o digest abaixo é uma FIXTURE (sha256 de um texto fixo), não uma imagem publicada.
+# scripts/lab-local.sh e .ps1 trocam pela imagem construída localmente antes de registrar.
+apiVersion: labs.cecyber.io/v1alpha1
+kind: AppSecLab
+metadata:
+  id: LAB-001
+  version: 1.0.1
+  title: "SQL Injection: a busca que expõe pacientes"
+  primaryCwe: CWE-89
+  secondaryCwes: []
+learning:
+  singleVulnerability: true
+  estimatedMinutes: 40
+  difficulty: beginner
+  objectives:
+    - Seguir uma requisição pelas camadas de uma aplicação web até a consulta ao banco
+    - Entender por que concatenar texto em SQL transforma dado em código
+    - Demonstrar o impacto de uma SQL Injection com UNION em dados fictícios
+    - Corrigir a falha com consulta parametrizada sem quebrar a busca legítima
+  story:
+    role: Desenvolvedor(a) do time de sistemas da Clínica VidaPlena
+    application: Portal de agendamento com a busca "Encontre um médico"
+    context: >-
+      A equipe de segurança recebeu um alerta: a busca de médicos pode estar expondo dados de
+      pacientes, que são dados pessoais sensíveis protegidos pela LGPD.
+    mission: Confirmar a falha, medir o impacto e corrigir o código antes que alguém de fora a encontre
+  wrapUp:
+    text: |
+      Sua busca agora trata o que o paciente digita sempre como **dado**. Em um sistema real, vale reforçar outras camadas:
+
+      - **Mensagens de erro genéricas.** Um erro 500 não deve mostrar detalhes técnicos ao usuário. No Flask, um tratador como `@app.errorhandler(500)` devolve uma página amigável, e o detalhe fica só no log.
+      - **Limite e validação da entrada.** O serviço já corta a busca em 120 caracteres. Valide também no navegador para orientar o usuário, mas lembre que só a validação no servidor protege.
+      - **Menor privilégio no banco.** O usuário de banco da busca não precisa ler a tabela de pacientes. Com permissões separadas, uma injeção teria muito menos a revelar.
+      - **ORMs também têm SQL cru.** Bibliotecas como SQLAlchemy parametrizam por padrão, mas trechos com `text()` ou f-strings voltam a ter o mesmo problema.
+      - **Dados sensíveis fora do código.** Tokens e chaves de integração não devem ficar em tabelas acessíveis à aplicação web nem no repositório.
+    references:
+      - title: "OWASP Cheat Sheet: SQL Injection Prevention"
+        url: https://cheatsheetseries.owasp.org/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.html
+      - title: "OWASP Top 10: A03 Injection"
+        url: https://owasp.org/Top10/A03_2021-Injection/
+      - title: "CWE-89: Improper Neutralization of Special Elements used in an SQL Command"
+        url: https://cwe.mitre.org/data/definitions/89.html
+variants:
+  - id: python-flask
+    language: python
+    framework: flask
+    image: registry.local/labs/lab-001-sqli@sha256:ffa43a34f3d5dfea160431dc871ed9fc1b303e91ff93b416bd6606d487d86ff9
+    runtimeProfile: web-basic
+    workspacePath: /workspace
+    startup:
+      # A saída do processo (inclusive erros de importação, como IndentationError) também vai para /tmp/app.log.
+      command: ["sh", "-c", "python -u -m flask --app app run --host 0.0.0.0 --port 8080 --reload --no-debugger 2>&1 | tee -a /tmp/app.log"]
+      port: 8080
+    resources:
+      cpuMillicores: 500
+      memoryMiB: 512
+      storageMiB: 256
+      pidsMax: 64
+    session:
+      ttlMinutes: 45
+      maxRenewals: 2
+    interfaces: [editor, terminal, web]
+steps:
+  - id: conhecer
+    order: 1
+    title: Conhecer a aplicação
+    explanation: |
+      Antes de atacar ou corrigir, é preciso entender **por onde o dado do usuário passa**. Aplicações web costumam ser divididas em camadas, cada uma com uma responsabilidade:
+
+      1. **Controller** (`controllers/medicos_controller.py`): recebe a requisição HTTP e lê o que foi digitado.
+      2. **Serviço** (`services/medico_service.py`): aplica as regras de negócio, como limpar o termo.
+      3. **Repositório** (`repositories/medico_repository.py`): conversa com o banco de dados.
+      4. **Modelo** (`models/medico.py`): representa um médico como objeto Python.
+      5. **Template** (`templates/medicos.html`): monta a página de resposta.
+
+      Uma vulnerabilidade de injeção acontece no ponto em que o dado do usuário encontra uma linguagem interpretada, aqui o SQL.
+    task: |
+      1. Na aba **Aplicação**, busque por `ana` e veja os médicos encontrados.
+      2. Na aba **Código**, abra `controllers/medicos_controller.py` e siga o caminho do campo `nome`: do controller para o serviço e do serviço para o repositório.
+      3. Encontre o método que **monta o comando SQL** com o termo digitado.
+
+      Informe abaixo o nome desse método.
+    concept: Arquitetura em camadas e fluxo de dados não confiáveis
+    validatorRef: sqli/answer/locate-query-v1
+    hints:
+      - level: 1
+        text: O controller cria um `MedicoService` e chama `servico.buscar(termo)`. Abra o serviço para ver o que ele chama em seguida.
+      - level: 2
+        text: O serviço delega para a classe `MedicoRepository`, em `repositories/medico_repository.py`.
+      - level: 3
+        text: O método é `buscar_por_nome`. Repare na linha que começa com `sql = f"SELECT ...`.
+    points: 10
+  - id: provocar-erro
+    order: 2
+    title: Provocar um erro
+    explanation: |
+      Veja como o repositório monta a consulta:
+
+      ```python
+      sql = f"SELECT id, nome, especialidade, crm FROM medicos WHERE nome LIKE '%{termo}%'"
+      ```
+
+      O `f"..."` encaixa o texto digitado **dentro** do comando. Se o paciente digita `ana`, o banco recebe:
+
+      ```sql
+      SELECT id, nome, especialidade, crm FROM medicos WHERE nome LIKE '%ana%'
+      ```
+
+      As aspas simples marcam onde o texto começa e termina. E se o próprio usuário digitar uma aspa? Ela fecha o texto antes da hora e o resto passa a ser lido como **código SQL**.
+    task: |
+      1. Na aba **Aplicação**, busque apenas por uma aspa simples: `'`
+      2. A página mostra *Internal Server Error*. O detalhe do erro não aparece para o usuário: ele vai para o log.
+      3. Na aba **Terminal**, leia as últimas linhas do log da aplicação:
+
+      ```bash
+      tail -n 20 /tmp/app.log
+      ```
+
+      Informe abaixo o **tipo do erro** que aparece na última linha do erro (o nome antes dos dois-pontos, sem o módulo).
+    concept: Dado versus código, ou por que a aspa quebra a consulta
+    validatorRef: sqli/answer/error-type-v1
+    hints:
+      - level: 1
+        text: O erro aparece no log como um *traceback*, uma lista de arquivos e linhas. O tipo do erro está na última linha desse bloco.
+      - level: 2
+        text: "A última linha tem o formato `sqlite3.AlgumErro: mensagem`. A resposta é o `AlgumErro`."
+      - level: 3
+        text: "A linha é `sqlite3.OperationalError: ...`. Responda `OperationalError`."
+    points: 15
+  - id: medir-consulta
+    order: 3
+    title: Medir a consulta
+    explanation: |
+      Para ler outras tabelas, o atacante usa `UNION`, que junta o resultado de dois `SELECT` em uma lista só. Existe uma regra: **os dois `SELECT` precisam ter o mesmo número de colunas**.
+
+      Como descobrir quantas colunas a consulta original tem sem ver o código? Uma técnica comum é o `ORDER BY N`, que ordena pela coluna de número N. Se essa coluna não existe, o banco devolve erro. A injeção fica assim:
+
+      ```sql
+      ... WHERE nome LIKE '%' ORDER BY 3 --%'
+      ```
+
+      O `--` inicia um comentário em SQL: tudo depois dele, incluindo o `%'` que sobrou do código original, é ignorado.
+    task: |
+      Na aba **Aplicação**, busque por cada entrada abaixo, uma de cada vez, e observe se a página funciona ou dá erro:
+
+      ```text
+      ' ORDER BY 3 --
+      ' ORDER BY 4 --
+      ' ORDER BY 5 --
+      ```
+
+      Se quiser confirmar, a mensagem completa do erro está em `/tmp/app.log`. Informe abaixo **quantas colunas** a consulta retorna.
+    concept: Enumeração de colunas para ataques com UNION
+    validatorRef: sqli/answer/column-count-v1
+    hints:
+      - level: 1
+        text: O maior número que **não** causa erro é a quantidade de colunas.
+      - level: 2
+        text: Se `ORDER BY 5` dá erro e `ORDER BY 4` funciona, existem 4 colunas. No código, conte os campos depois do `SELECT`.
+      - level: 3
+        text: "A consulta retorna `id, nome, especialidade, crm`: são 4 colunas."
+    points: 15
+  - id: extrair-dados
+    order: 4
+    title: Extrair dados sensíveis
+    explanation: |
+      Agora você sabe que a consulta tem 4 colunas e que a página mostra a 2ª (nome), a 3ª (especialidade) e a 4ª (CRM). Com `UNION`, dá para acrescentar ao resultado linhas de **qualquer tabela** do banco, encaixando os campos desejados nessas posições.
+
+      No banco da clínica existem duas tabelas que a busca nunca deveria mostrar: `pacientes` (nome, email, cpf, condicao) e `configuracoes` (chave, valor).
+
+      Este é o impacto real de uma SQL Injection: **perda de confidencialidade**. Dados de saúde são dados pessoais sensíveis na LGPD, e um vazamento assim gera dano às pessoas, multas e obrigação de comunicar o incidente.
+    task: |
+      1. Liste os pacientes buscando por:
+
+      ```text
+      ' UNION SELECT id, nome, email, cpf FROM pacientes --
+      ```
+
+      Repare que os pacientes aparecem misturados aos médicos, nas colunas da tabela.
+
+      2. Agora adapte a entrada para ler a tabela `configuracoes`. Coloque `chave` e `valor` nas colunas que aparecem na tela e complete as demais com valores fixos, como `1` ou `''`.
+
+      Informe abaixo o **token de integração** que você encontrou. Todos os dados deste laboratório são fictícios.
+    concept: Impacto de SQL Injection em confidencialidade (LGPD)
+    validatorRef: sqli/answer/integration-token-v1
+    hints:
+      - level: 1
+        text: "A consulta injetada precisa ter 4 colunas: use `chave` e `valor` em duas delas e preencha as outras duas com valores fixos."
+      - level: 2
+        text: "Comece com `' UNION SELECT 1, chave, valor, '' FROM configuracoes --`."
+      - level: 3
+        text: "Procure a linha `token_integracao_laboratorio`: o token é o texto ao lado dela, no formato `VP-INT-...`."
+    points: 20
+  - id: corrigir
+    order: 5
+    title: Corrigir com consulta parametrizada
+    explanation: |
+      **Por que a falha existe.** O repositório monta o SQL juntando texto: o que o paciente digita entra no meio do comando, e o banco não tem como distinguir a parte escrita pelo programador da parte que veio do formulário.
+
+      **A correção: consulta parametrizada.** Em vez de colar o valor no comando, você escreve o SQL com um marcador, o `?` no `sqlite3`, e envia o valor **separado**. O banco recebe o comando já pronto e trata o valor sempre como dado, nunca como código. Mesmo que alguém digite `' UNION SELECT ...`, o banco só vai procurar um médico com esse nome estranho.
+
+      **Por que não basta remover as aspas?** Bloquear ou escapar caracteres à mão quebra nomes legítimos, como o da Dra. Joana D'Ávila, e costuma deixar brechas, porque cada banco tem regras próprias. O parâmetro resolve o problema na origem.
+    task: |
+      Abra `repositories/medico_repository.py` na aba **Código**. O método `buscar_por_nome` está assim:
+
+      ```python
+          def buscar_por_nome(self, termo: str) -> list[Medico]:
+              """Retorna os médicos cujo nome contém ``termo``."""
+              sql = f"SELECT id, nome, especialidade, crm FROM medicos WHERE nome LIKE '%{termo}%'"
+              linhas = self._conexao.execute(sql).fetchall()
+              return [Medico(*linha) for linha in linhas]
+      ```
+
+      Troque as duas linhas do meio (`sql = ...` e `linhas = ...`) para que o método fique assim:
+
+      ```python
+          def buscar_por_nome(self, termo: str) -> list[Medico]:
+              """Retorna os médicos cujo nome contém ``termo``."""
+              sql = "SELECT id, nome, especialidade, crm FROM medicos WHERE nome LIKE ?"
+              linhas = self._conexao.execute(sql, (f"%{termo}%",)).fetchall()
+              return [Medico(*linha) for linha in linhas]
+      ```
+
+      **Cuidado com o recuo.** Em Python, a indentação faz parte do código: as linhas de dentro do método começam com **8 espaços**, alinhadas com o `return`. Se você copiar daqui, selecione as linhas **inteiras**, desde o início, e cole no início da linha no editor. Se depois de salvar a aplicação mostrar *Internal Server Error*, rode `tail -n 20 /tmp/app.log` no **Terminal**: um `IndentationError` ou `SyntaxError` indica a linha a corrigir.
+
+      Repare em dois detalhes:
+
+      - os `%` continuam existindo, mas agora fazem parte do **valor** do parâmetro, não do comando;
+      - a vírgula em `(f"%{termo}%",)` é necessária: os parâmetros vão em uma tupla, mesmo quando há só um.
+
+      Salve com **Ctrl+S**: a aplicação recarrega sozinha em cerca de um segundo. Então:
+
+      1. repita o ataque da etapa 4 e confirme que nenhum paciente aparece;
+      2. busque por `D'Ávila` e confirme que a Dra. Joana continua sendo encontrada;
+      3. clique em **Validar**.
+    concept: Consultas parametrizadas (prepared statements)
+    validatorRef: sqli/python-flask/parameterized-search-v1
+    hints:
+      - level: 1
+        text: A mudança é só no arquivo `repositories/medico_repository.py`, dentro de `buscar_por_nome`. Controller, serviço e template não mudam.
+      - level: 2
+        text: "No SQL fica só o marcador `?`, sem aspas em volta e sem `%`. O valor vai como segundo argumento de `execute`: `execute(sql, (valor,))`."
+      - level: 3
+        text: "Use exatamente: `linhas = self._conexao.execute(sql, (f\"%{termo}%\",)).fetchall()`, com `sql = \"SELECT id, nome, especialidade, crm FROM medicos WHERE nome LIKE ?\"`. Se a validação falhar, veja na aba **Validação** qual verificação não passou e confira o log com `tail -n 20 /tmp/app.log`."
+    references:
+      - title: "Python: placeholders no sqlite3"
+        url: https://docs.python.org/3/library/sqlite3.html#sqlite3-placeholders
+      - title: "OWASP Cheat Sheet: SQL Injection Prevention"
+        url: https://cheatsheetseries.owasp.org/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.html
+    points: 40
+policy:
+  sequentialUnlock: true
+  allowStepRetry: true
+  persistProgressAcrossReset: true
+  allowSolutionReveal: false
+  finalPassingScore: 100

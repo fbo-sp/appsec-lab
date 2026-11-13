@@ -55,7 +55,7 @@
 | 33 | IMP-402 | Snapshot de workspace | F4 | Done local (ADR-010); produção Blocked (ADR-003) |
 | 34 | IMP-403 | Validation controller e envelope autenticado | F4 | Parcial local: registro protegido + worker (ADR-010); envelope assinado Blocked (ADR-003) |
 | 35 | IMP-404 | Avaliação por etapa e desbloqueio transacional | F4 | Done local (2026-11-12) |
-| 36 | IMP-405 | Dicas progressivas e HintUsage | F4 | Done (OPEN-04: sem penalidade, 2026-11-12) |
+| 36 | IMP-405 | Dicas progressivas e HintUsage | F4 | Done (desconto por dicas conforme ADR-013, 2026-11-13) |
 | 37 | IMP-501..504 | Conteúdo LAB-001..004 | F5 | IMP-501 Ready só local (F4 local pronto); demais Blocked (`17`) |
 | 38 | IMP-601 | Visão de instrutor e CSV | F6 | Blocked (OPEN-06) |
 | 39 | IMP-602 | Visão operacional admin | F6 | Ready após F2 |
@@ -268,6 +268,17 @@
 ### IMP-501..504 — LAB-001 SQLi, LAB-002 IDOR, LAB-003 JWT, LAB-004 Command Injection
 - **Descrição:** um item por lab: especificação em `17`, aplicação realista, manifesto, ≥3 etapas, dicas, validadores privados positivos/negativos/regressão. **Req.:** US-022–025, US-031/032, LEX-001–005, `14 §3` · **Dep.:** F4 + especificação aprovada; LAB-004 também G5 de contenção · **P0 (LAB-004 condicionado)**
 - **Aceite:** G4; VAL-01/02 por lab; nenhum código de plataforma alterado para incluir o lab. **Testes:** suíte de validadores contra soluções corretas, incorretas e adversariais. **DoD:** comum + revisão pedagógica.
+
+### IMP-505 — Guia de autoria no padrão LAB-001
+- **Descrição:** checklist "como escrever um lab" a partir do LAB-001 1.0.1, aprovado pelo PO em 2026-11-13 como modelo: cenário realista de setor de cliente (financeiro, saúde, energia, indústria), código em camadas com identificadores em português, ~5 etapas progressivas (explicação, tarefa, conceito, referências em Markdown restrito, ADR-012), 3 dicas por etapa (ADR-013), etapa final de correção validada por suíte HTTP caixa-preta que aceita correções corretas e rejeita as ingênuas, trechos com recuo real e método inteiro, saída de erro da aplicação em `/tmp/app.log`, "Para ir além" no resumo. **Dep.:** IMP-501 · **P1**
+- **Aceite:** guia em `docs/` usado na especificação de LAB-002 a LAB-004. **DoD:** comum.
+
+### IMP-506 — Replicação dos labs em outras linguagens (pós-MVP de conteúdo)
+- **Quando:** só depois que os 4 labs do MVP (IMP-501..504) estiverem construídos; vale para todos os labs (decisão do PO, 2026-11-13).
+- **Descrição:** criar variantes de linguagem por lab usando `variants` do manifesto, sem alterar código de plataforma. Ordem sugerida: Node.js (Express + better-sqlite3) e Java (Spring Boot + JdbcTemplate); depois PHP (PDO) e C# (ASP.NET Core + Microsoft.Data.Sqlite); Go por último.
+- **Reaproveitável:** suítes HTTP caixa-preta de cada lab, desde que rotas, campos e textos da página sejam mantidos; mesma base de dados fictícia.
+- **Muda por variante:** respostas das etapas de pergunta (ex.: nome do método, tipo de exceção do driver); trechos de código e sintaxe de parâmetro (`?`, `@nome`, `:nome`); limites de recursos e tempo de espera da validação (calibrar Java e .NET, mais pesados e lentos para recarregar); recarga automática ao salvar; saída de erro em `/tmp/app.log` para o feedback "aplicação não iniciou". **P2**
+- **Aceite:** por variante, VAL-01/02 com a mesma suíte HTTP; soluções corretas aprovadas e ingênuas rejeitadas. **Testes:** suíte de validadores por variante. **DoD:** comum + revisão pedagógica.
 
 ## Épico EP-OPS — Gestão e prontidão (F6)
 

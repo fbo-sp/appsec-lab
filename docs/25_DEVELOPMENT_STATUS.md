@@ -5,9 +5,9 @@
 | Campo | Valor |
 |---|---|
 | Atualizado em | 2026-11-13 |
-| Fase atual | F1 concluída; **F3/F4 local**: interface visual com validação de etapas, progresso e dicas (ADR-008/009/010) |
+| Fase atual | F1 concluída; **F3/F4/F5 local**: interface visual, validação de etapas e primeiro laboratório real, o LAB-001 (ADR-008 a 012) |
 | Branch | `claude/project-thread-arhml7` |
-| Última entrega concluída | IMP-401–405 local: validação de etapas fora do workspace, progresso, pontuação e dicas (LAB-000 0.2.1); workspace em abas e dicas em modal |
+| Última entrega concluída | IMP-501 local: LAB-001 SQL Injection (Clínica VidaPlena, 5 etapas) e conteúdo rico nas etapas (ADR-012) |
 
 ## 1. Funcionalidades implementadas (com escopo real)
 
@@ -29,9 +29,12 @@
 | IMP-301L Runtime Docker local (ADR-008) | `DockerRuntimeAdapter` restrito a `APP_ENV=local\|test`: rede `internal` por sessão, não-root obrigatório, raiz somente leitura, `cap_drop=ALL`, limites, sem portas no host; endpoint interno persistido (migração `0002`); imagem do LAB-000 em `laboratories/LAB-000-hello-benign/runtime/`; `scripts/lab-local.sh`/`.ps1`; override `docker-compose.docker-runtime.yml` (socket só no worker) | **Não** é isolamento para código hostil; `reset` não suportado; sem gateway ainda (aplicação não acessível pelo navegador) |
 | IMP-302 Gateway local (ADR-009) | `app/gateway`: tickets HMAC de uso único (60 s, só o dono, READY/ACTIVE → ACTIVE), grant em cookie HttpOnly/SameSite=Strict escopado, revalidação no banco a cada requisição, origens separadas para workspace (:8001) e preview (:8002), proteção CSRF por cabeçalho próprio e `Origin` no WebSocket; agente de workspace no contêiner (`laboratories/_base/python`) | Mesmo *site* entre portas (ver limitações do ADR-009); registro de tickets usados em memória; sem TLS; sem rate limit |
 | IMP-303/304 Interface local | `apps/web` (React + Vite + TS): login de desenvolvimento, catálogo, introdução, sessão com estados e timer, etapas (só a 1ª liberada), editor CodeMirror, terminal xterm.js, preview em iframe; servida pela API (portal) e pelo gateway (workspace) | Sem OIDC (IMP-202); acessibilidade não auditada |
-| IMP-401–405 Validação e progresso (ADR-005/010) | Migração `0003` (tentativas, progresso, submissões, dicas); registro protegido de validadores; etapa `answer` checada na API; etapa `http` avaliada pelo worker num snapshot do workspace, em contêiner novo e rede interna, por um probe confiável; desbloqueio, pontos e conclusão na mesma transação; dicas em ordem sem penalidade; tentativas livres; `ERROR` técnico nunca aprova; UI com botão Validar, critérios, dicas e pontuação | Runner de produção e envelope assinado (ADR-003); rate limit de submissões; suítes caixa-preta podem ser "enganadas" por respostas fixas |
+| IMP-401–405 Validação e progresso (ADR-005/010) | Migração `0003` (tentativas, progresso, submissões, dicas); registro protegido de validadores; etapa `answer` checada na API; etapa `http` avaliada pelo worker num snapshot do workspace, em contêiner novo e rede interna, por um probe confiável; desbloqueio, pontos e conclusão na mesma transação; dicas em ordem, com desconto por nível e teto de 10% (ADR-013); tentativas livres; `ERROR` técnico nunca aprova; UI com botão Validar, critérios, dicas e pontuação | Runner de produção e envelope assinado (ADR-003); rate limit de submissões; suítes caixa-preta podem ser "enganadas" por respostas fixas |
 | Prazo, renovação e indicadores (ADR-011) | `maxRenewals` no manifesto; `POST /sessions/{id}/renewals` (janela final, limite, auditoria); aviso de fim de prazo com "Renovar" e revalidação ao voltar à aba; migração `0004` (`ready_at`, `provision_ms`, `renewals`); `GET /admin/metrics/provisioning` (p50/p95/máx por lab/versão/variante); tela de preparação com progresso; aplicação no topo; resumo de conclusão | Painel visual do admin; teto global de renovações (IMP-205) |
 | Workspace em abas e dicas em modal | Abas Aplicação/Código/Terminal/Validação com iframes sempre montados (terminal não reconecta); modo "Código + Aplicação"; troca de painel do workspace por `postMessage` validado (`source === parent`, formato exato; workspace só embutível pelo portal via CSP); `GET /sessions/{id}/evaluations` (só o dono, mais recente primeiro) na aba Validação; dicas em modal (Esc/fundo fecham); divisor arrastável entre etapas e abas (mouse, setas/Home/End, duplo clique = padrão 320 px; mín. 260 px, máx. 60% da área; lembrado no navegador); LAB-000 0.2.1 só ajusta o texto da dica 1 | Teste de usabilidade com alunos; layout em telas < 900 px só verificado por CSS |
+| Conteúdo rico nas etapas (ADR-012) | Markdown restrito em explicação, tarefa, conceito e dicas, renderizado só com elementos React (sem HTML cru, links só https); `steps[].references` e `learning.wrapUp` ("Para ir além" no resumo) opcionais, sem mudar digests existentes; job `web` no CI (typecheck + vitest) | Imagens, tabelas e títulos no conteúdo |
+| IMP-501 LAB-001 SQL Injection (só local) | Aplicação Flask em camadas da Clínica VidaPlena (dados fictícios), 5 etapas (4 por resposta e 1 comportamental com 7 verificações), 3 dicas por etapa, "Para ir além"; `scripts/lab-local.sh`/`.ps1` registram LAB-000 e LAB-001; especificação em `17 §1` | Respostas fixas compartilháveis e banco legível pelo terminal (aceitos pelo PO no MVP local); revisão pedagógica externa; teste com alunos |
+| Trilha de etapas, tempo de sessão e inatividade (ADR-013/014) | Barra de pontuação vira trilha clicável por etapa; desconto por dicas (ADR-013); `ended_at`/`end_reason` por sessão e duração nos indicadores do admin; sinal de atividade (gateway, API e portal) e minutos ativos por tentativa; encerramento de sessões paradas após `SESSION_IDLE_MINUTES` (15) com aviso 3 min antes; `GET /admin/metrics/resolution`; correção do grant após renovação; avaliação informa quando a aplicação não inicia (com o erro) e LAB-001 1.0.1 (passo 5 com recuo explícito, erros de importação também em `/tmp/app.log`) | Minutos ativos por etapa ainda não calculados; orçamento de tempo por aluno fica para IMP-205; leitura longa sem interação pode encerrar a sessão (há aviso) |
 | IMP-114 CI | `.github/workflows/ci.yml` (ruff, mypy, validação do LAB-000, pytest com PostgreSQL 16); `main` criada no baseline `aad8812` | Executado no PR #1: job `backend` verde (run 43128706201) |
 
 Laboratório usado: `laboratories/LAB-000-hello-benign` — **benigno, sem vulnerabilidade**. O digest de imagem é uma fixture de teste (não existe imagem publicada); aceitável apenas com o adapter fake.
@@ -74,8 +77,9 @@ Cenários cobertos (rastreio): ENG-01 (20 requisições concorrentes com mesma c
 1. Documentos importados sem alteração da cópia local, pois o repositório GitHub estava vazio.
 2. ADR-005 (modelo acadêmico), ADR-006 (contrato v1alpha1) e ADR-007 (fila em PostgreSQL) **aprovados pelo PO** em 2026-11-11; 006 e 007 implementados, 005 previsto em IMP-401.
 3. Premissas não bloqueantes: TTL conta a partir da solicitação e limita a vida total da sessão; `VALIDATING` não é persistido; sessão ativa duplicada → `409 SESSION_ALREADY_ACTIVE`; não-donos recebem `404`; registro de release publica diretamente (sem draft) e é restrito a admin; operações síncronas (SQLAlchemy sync + threadpool do FastAPI) em vez da assinatura `async` ilustrativa de `08 §7`.
-4. ADR-008 (runtime Docker só local/test) aprovado pelo PO em 2026-11-12. ADR-009 (gateway e interface locais) e ADR-010 (avaliação fora do workspace) propostos e implementados só para local/test. OPEN-04: dicas sem penalidade e tentativas livres (PO, 2026-11-12).
-5. Autenticação por cabeçalho apenas em `APP_ENV=local|test`; `AUTH_MODE=oidc` e qualquer adapter que não seja `fake` fazem a aplicação recusar o início (fail closed).
+4. ADR-008 (runtime Docker só local/test) aprovado pelo PO em 2026-11-12. ADR-009 (gateway e interface locais) e ADR-010 (avaliação fora do workspace) propostos e implementados só para local/test. OPEN-04: tentativas livres (PO, 2026-11-12); desconto por dicas revisto no ADR-013 (PO, 2026-11-13).
+5. LAB-001 (PO, 2026-11-13, por cartões de decisão): cenário Clínica VidaPlena, um lab com exploração e correção, identificadores em português, ADR-012 aprovado e limitações das etapas por resposta aceitas no MVP local.
+6. Autenticação por cabeçalho apenas em `APP_ENV=local|test`; `AUTH_MODE=oidc` e qualquer adapter que não seja `fake` fazem a aplicação recusar o início (fail closed).
 
 ## 5. Pendências
 
@@ -92,6 +96,7 @@ Cenários cobertos (rastreio): ENG-01 (20 requisições concorrentes com mesma c
 
 ## 7. Próxima tarefa recomendada
 
-1. **Teste manual do PO** com o LAB-000 0.2.1 (roteiro em `infrastructure/local/README.md`): validação, dicas e pontuação.
-2. **IMP-501**: LAB-001 SQL Injection, somente local.
+1. LAB-001 1.0.1 aprovado pelo PO (2026-11-13) e adotado como modelo de formato (IMP-505).
+2. IMP-502 (LAB-002 IDOR), somente local, com cenário de setor de cliente CECyber.
+3. Replicação dos labs em outras linguagens (IMP-506) só após os 4 labs do MVP.
 Em paralelo: IMP-I01 (inventário on-prem).
