@@ -27,8 +27,9 @@ for dir in "${LABS[@]}"; do
   echo
   case "$code" in
     200|201) echo "$ID_LAB registrado ($code)";;
-    409) echo "A release $ID_LAB@$VERSION já existe com outra imagem. Recrie o banco local:" >&2
-         echo "  docker compose -f infrastructure/local/docker-compose.yml down -v" >&2; exit 1;;
+    # Release imutável já publicada com outro conteúdo/imagem: avisa e segue para o próximo laboratório.
+    409) echo "AVISO: $ID_LAB@$VERSION já está publicada com conteúdo diferente (409); mantida a versão existente." >&2
+         echo "  Para publicar a nova, suba a versão no manifesto (ou recrie o banco local, apagando os dados)." >&2;;
     *) echo "registro de $ID_LAB falhou: HTTP $code" >&2; exit 1;;
   esac
 done

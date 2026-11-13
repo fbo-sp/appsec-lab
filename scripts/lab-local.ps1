@@ -27,8 +27,10 @@ foreach ($Dir in $Labs) {
   } catch {
     $code = $_.Exception.Response.StatusCode.value__
     if ($code -eq 409) {
-      Write-Host "A release $LabId@$Version já existe com outra imagem. Recrie o banco local:"
-      Write-Host "  docker compose -f infrastructure/local/docker-compose.yml down -v"
+      # Release imutável já publicada com outro conteúdo/imagem: avisa e segue para o próximo laboratório.
+      Write-Warning "$LabId@$Version já está publicada com conteúdo diferente (409); mantida a versão existente."
+      Write-Warning "  Para publicar a nova, suba a versão no manifesto (ou recrie o banco local, apagando os dados)."
+      continue
     }
     throw
   }

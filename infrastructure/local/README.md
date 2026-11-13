@@ -31,10 +31,13 @@ Por padrão o worker usa o runtime *fake* (nada é executado). Para abrir os lab
 
 ```powershell
 # na raiz do repositório (PowerShell)
-docker compose -f infrastructure/local/docker-compose.yml down -v      # se já subiu antes: recomeça limpo
 docker compose -f infrastructure/local/docker-compose.yml -f infrastructure/local/docker-compose.docker-runtime.yml up --build -d
 .\scripts\lab-local.ps1     # constrói as imagens do LAB-000 e do LAB-001 e registra as releases
 ```
+
+Releases são imutáveis: se uma versão já foi publicada no banco local com outro conteúdo, o script avisa
+(409) e segue para o próximo laboratório, mantendo a versão existente. Para publicar o conteúdo novo, suba a
+versão no manifesto; recriar o banco (`down -v`) também resolve, mas **apaga** sessões e progresso locais.
 
 Depois abra **http://127.0.0.1:8000** (use `127.0.0.1`, não `localhost`), entre com um usuário de teste
 (ex.: `aluno1`), abra o LAB-000 e clique em **Iniciar laboratório**. Em alguns segundos aparecem:
