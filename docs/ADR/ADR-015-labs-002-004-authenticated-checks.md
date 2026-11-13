@@ -47,3 +47,4 @@ O PO pediu o desenvolvimento conjunto do LAB-002 (IDOR, banco digital), do LAB-0
   - as respostas das etapas de pergunta são fixas e podem ser compartilhadas;
   - o aluno também consegue ler os arquivos fictícios pelo terminal.
 - A barra de endereço não acompanha a navegação feita por links dentro da aplicação, porque o iframe é de outra origem e não pode ser lido.
+- **LAB-004 1.0.1 (2026-11-13):** no teste no Windows, o checkout com CRLF quebrou o shebang do `diag-clp`, que não tinha extensão. Isso só aparecia depois da correção sem shell. O arquivo virou `diag-clp.py` (LF garantido pelo `.gitattributes`), o `.gitattributes` passou a forçar LF em `runtime/planta/**` e nos Dockerfiles, e o Dockerfile remove `\r` como defesa.

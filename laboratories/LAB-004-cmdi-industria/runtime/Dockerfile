@@ -8,9 +8,11 @@ FROM cecyber-labs/base-python:local
 USER root
 RUN pip install --no-cache-dir "flask==3.1.2"
 # Planta SIMULADA: utilitário de diagnóstico e arquivos fictícios fora do workspace.
-COPY planta/diag-clp /usr/local/bin/diag-clp
+# sed: defesa contra checkout com CRLF (Windows), que quebraria o shebang do utilitário.
+COPY planta/diag-clp.py /usr/local/bin/diag-clp
 COPY planta/equipamentos.csv planta/scada.conf /opt/planta/
-RUN chmod 0755 /usr/local/bin/diag-clp && chmod 0755 /opt/planta && chmod 0644 /opt/planta/*
+RUN sed -i 's/\r$//' /usr/local/bin/diag-clp /opt/planta/equipamentos.csv /opt/planta/scada.conf \
+ && chmod 0755 /usr/local/bin/diag-clp && chmod 0755 /opt/planta && chmod 0644 /opt/planta/*
 USER 10001
 
 # Conteúdo inicial do workspace: copiado para o volume da sessão na primeira montagem.

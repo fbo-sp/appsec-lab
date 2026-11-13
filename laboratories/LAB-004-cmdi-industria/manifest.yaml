@@ -10,7 +10,7 @@ apiVersion: labs.cecyber.io/v1alpha1
 kind: AppSecLab
 metadata:
   id: LAB-004
-  version: 1.0.0
+  version: 1.0.1
   title: "Command Injection: o teste de rede que virou terminal"
   primaryCwe: CWE-78
   secondaryCwes: []
