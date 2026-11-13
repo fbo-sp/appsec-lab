@@ -1,0 +1,17 @@
+# Imagem do LAB-001 (SQL Injection, Flask + SQLite) para o runtime Docker LOCAL (ADR-008).
+# CONTÉM VULNERABILIDADE INTENCIONAL: usar só em rede interna da sessão, nunca exposta (ver ADR-008).
+# Build: scripts/lab-local.sh (ou scripts/lab-local.ps1 no Windows), que antes constrói a base.
+FROM cecyber-labs/base-python:local
+
+USER root
+RUN pip install --no-cache-dir "flask==3.1.2"
+USER 10001
+
+# Conteúdo inicial do workspace: copiado para o volume da sessão na primeira montagem.
+COPY --chown=10001:10001 workspace/ /workspace/
+EXPOSE 8080
+# Pronto = aplicação (8080) e agente de workspace (7681) respondendo.
+HEALTHCHECK --interval=3s --timeout=10s --start-period=3s --retries=20 \
+  CMD ["python", "-c", "import urllib.request as u; u.urlopen('http://127.0.0.1:8080/medicos', timeout=2); u.urlopen('http://127.0.0.1:7681/healthz', timeout=2)"]
+# Recarrega ao salvar; o depurador interativo do Werkzeug fica DESLIGADO (é um console de execução).
+CMD ["python", "-m", "flask", "--app", "app", "run", "--host", "0.0.0.0", "--port", "8080", "--reload", "--no-debugger"]

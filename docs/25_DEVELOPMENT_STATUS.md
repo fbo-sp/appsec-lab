@@ -5,9 +5,9 @@
 | Campo | Valor |
 |---|---|
 | Atualizado em | 2026-11-13 |
-| Fase atual | F1 concluída; **F3/F4 local**: interface visual com validação de etapas, progresso e dicas (ADR-008/009/010) |
+| Fase atual | F1 concluída; **F3/F4/F5 local**: interface visual, validação de etapas e primeiro laboratório real, o LAB-001 (ADR-008 a 012) |
 | Branch | `claude/project-thread-arhml7` |
-| Última entrega concluída | IMP-401–405 local: validação de etapas fora do workspace, progresso, pontuação e dicas (LAB-000 0.2.1); workspace em abas e dicas em modal |
+| Última entrega concluída | IMP-501 local: LAB-001 SQL Injection (Clínica VidaPlena, 5 etapas) e conteúdo rico nas etapas (ADR-012) |
 
 ## 1. Funcionalidades implementadas (com escopo real)
 
@@ -32,6 +32,8 @@
 | IMP-401–405 Validação e progresso (ADR-005/010) | Migração `0003` (tentativas, progresso, submissões, dicas); registro protegido de validadores; etapa `answer` checada na API; etapa `http` avaliada pelo worker num snapshot do workspace, em contêiner novo e rede interna, por um probe confiável; desbloqueio, pontos e conclusão na mesma transação; dicas em ordem sem penalidade; tentativas livres; `ERROR` técnico nunca aprova; UI com botão Validar, critérios, dicas e pontuação | Runner de produção e envelope assinado (ADR-003); rate limit de submissões; suítes caixa-preta podem ser "enganadas" por respostas fixas |
 | Prazo, renovação e indicadores (ADR-011) | `maxRenewals` no manifesto; `POST /sessions/{id}/renewals` (janela final, limite, auditoria); aviso de fim de prazo com "Renovar" e revalidação ao voltar à aba; migração `0004` (`ready_at`, `provision_ms`, `renewals`); `GET /admin/metrics/provisioning` (p50/p95/máx por lab/versão/variante); tela de preparação com progresso; aplicação no topo; resumo de conclusão | Painel visual do admin; teto global de renovações (IMP-205) |
 | Workspace em abas e dicas em modal | Abas Aplicação/Código/Terminal/Validação com iframes sempre montados (terminal não reconecta); modo "Código + Aplicação"; troca de painel do workspace por `postMessage` validado (`source === parent`, formato exato; workspace só embutível pelo portal via CSP); `GET /sessions/{id}/evaluations` (só o dono, mais recente primeiro) na aba Validação; dicas em modal (Esc/fundo fecham); divisor arrastável entre etapas e abas (mouse, setas/Home/End, duplo clique = padrão 320 px; mín. 260 px, máx. 60% da área; lembrado no navegador); LAB-000 0.2.1 só ajusta o texto da dica 1 | Teste de usabilidade com alunos; layout em telas < 900 px só verificado por CSS |
+| Conteúdo rico nas etapas (ADR-012) | Markdown restrito em explicação, tarefa, conceito e dicas, renderizado só com elementos React (sem HTML cru, links só https); `steps[].references` e `learning.wrapUp` ("Para ir além" no resumo) opcionais, sem mudar digests existentes; job `web` no CI (typecheck + vitest) | Imagens, tabelas e títulos no conteúdo |
+| IMP-501 LAB-001 SQL Injection (só local) | Aplicação Flask em camadas da Clínica VidaPlena (dados fictícios), 5 etapas (4 por resposta e 1 comportamental com 7 verificações), 3 dicas por etapa, "Para ir além"; `scripts/lab-local.sh`/`.ps1` registram LAB-000 e LAB-001; especificação em `17 §1` | Respostas fixas compartilháveis e banco legível pelo terminal (aceitos pelo PO no MVP local); revisão pedagógica externa; teste com alunos |
 | IMP-114 CI | `.github/workflows/ci.yml` (ruff, mypy, validação do LAB-000, pytest com PostgreSQL 16); `main` criada no baseline `aad8812` | Executado no PR #1: job `backend` verde (run 43128706201) |
 
 Laboratório usado: `laboratories/LAB-000-hello-benign` — **benigno, sem vulnerabilidade**. O digest de imagem é uma fixture de teste (não existe imagem publicada); aceitável apenas com o adapter fake.
@@ -75,7 +77,8 @@ Cenários cobertos (rastreio): ENG-01 (20 requisições concorrentes com mesma c
 2. ADR-005 (modelo acadêmico), ADR-006 (contrato v1alpha1) e ADR-007 (fila em PostgreSQL) **aprovados pelo PO** em 2026-11-11; 006 e 007 implementados, 005 previsto em IMP-401.
 3. Premissas não bloqueantes: TTL conta a partir da solicitação e limita a vida total da sessão; `VALIDATING` não é persistido; sessão ativa duplicada → `409 SESSION_ALREADY_ACTIVE`; não-donos recebem `404`; registro de release publica diretamente (sem draft) e é restrito a admin; operações síncronas (SQLAlchemy sync + threadpool do FastAPI) em vez da assinatura `async` ilustrativa de `08 §7`.
 4. ADR-008 (runtime Docker só local/test) aprovado pelo PO em 2026-11-12. ADR-009 (gateway e interface locais) e ADR-010 (avaliação fora do workspace) propostos e implementados só para local/test. OPEN-04: dicas sem penalidade e tentativas livres (PO, 2026-11-12).
-5. Autenticação por cabeçalho apenas em `APP_ENV=local|test`; `AUTH_MODE=oidc` e qualquer adapter que não seja `fake` fazem a aplicação recusar o início (fail closed).
+5. LAB-001 (PO, 2026-11-13, por cartões de decisão): cenário Clínica VidaPlena, um lab com exploração e correção, identificadores em português, ADR-012 aprovado e limitações das etapas por resposta aceitas no MVP local.
+6. Autenticação por cabeçalho apenas em `APP_ENV=local|test`; `AUTH_MODE=oidc` e qualquer adapter que não seja `fake` fazem a aplicação recusar o início (fail closed).
 
 ## 5. Pendências
 
@@ -92,6 +95,6 @@ Cenários cobertos (rastreio): ENG-01 (20 requisições concorrentes com mesma c
 
 ## 7. Próxima tarefa recomendada
 
-1. **Teste manual do PO** com o LAB-000 0.2.1 (roteiro em `infrastructure/local/README.md`): validação, dicas e pontuação.
-2. **IMP-501**: LAB-001 SQL Injection, somente local.
+1. **Teste manual do PO** com o LAB-001 (roteiro em `infrastructure/local/README.md`).
+2. Ajustes de conteúdo do LAB-001 a partir do teste; depois IMP-502 (LAB-002 IDOR), somente local.
 Em paralelo: IMP-I01 (inventário on-prem).

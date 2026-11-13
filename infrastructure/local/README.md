@@ -27,13 +27,13 @@ recebe 404 e encerra até `TERMINATED`.
 
 ## Teste visual: laboratório no navegador (runtime Docker local — ADR-008/009)
 
-Por padrão o worker usa o runtime *fake* (nada é executado). Para abrir o LAB-000 de verdade no navegador:
+Por padrão o worker usa o runtime *fake* (nada é executado). Para abrir os laboratórios de verdade no navegador:
 
 ```powershell
 # na raiz do repositório (PowerShell)
 docker compose -f infrastructure/local/docker-compose.yml down -v      # se já subiu antes: recomeça limpo
 docker compose -f infrastructure/local/docker-compose.yml -f infrastructure/local/docker-compose.docker-runtime.yml up --build -d
-.\scripts\lab-local.ps1     # constrói as imagens do LAB-000 e registra a release
+.\scripts\lab-local.ps1     # constrói as imagens do LAB-000 e do LAB-001 e registra as releases
 ```
 
 Depois abra **http://127.0.0.1:8000** (use `127.0.0.1`, não `localhost`), entre com um usuário de teste
@@ -52,6 +52,22 @@ Roteiro das etapas do LAB-000 0.2.1 (ADR-010):
 2. **Alterar a aplicação**: edite `index.html` para exibir "Olá, CECyber", salve e clique em **Validar**.
    O worker copia o workspace, sobe uma cópia isolada da aplicação e a testa de fora; leva alguns segundos.
    Ao concluir, a pontuação chega a 100/100 e aparece "Laboratório concluído".
+
+Roteiro do **LAB-001 SQL Injection** (Clínica VidaPlena, dados fictícios, cerca de 40 min). As etapas
+explicam cada passo; as respostas abaixo servem só para conferência:
+
+1. **Conhecer a aplicação**: siga a busca do controller até o repositório. Resposta: `buscar_por_nome`.
+2. **Provocar um erro**: busque por `'` e leia `tail -n 20 /tmp/app.log` no terminal. Resposta:
+   `OperationalError`.
+3. **Medir a consulta**: `' ORDER BY 5 --` dá erro e `' ORDER BY 4 --` funciona. Resposta: `4`.
+4. **Extrair dados sensíveis**: `' UNION SELECT 1, chave, valor, '' FROM configuracoes --`. Resposta:
+   o token `VP-INT-...` exibido.
+5. **Corrigir**: em `repositories/medico_repository.py`, troque a f-string por `LIKE ?` com o valor em
+   tupla, salve (a aplicação recarrega sozinha) e clique em **Validar**. O worker testa uma cópia isolada
+   com buscas legítimas e ataques.
+
+O LAB-001 contém vulnerabilidade **intencional**: ele roda só na rede interna da sessão, acessível pelo
+gateway em 127.0.0.1. Não exponha em rede compartilhada.
 
 O progresso fica na tentativa do usuário: encerrar e iniciar de novo retoma as etapas já concluídas. Para
 recomeçar do zero, use outro usuário de teste.
