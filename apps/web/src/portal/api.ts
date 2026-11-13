@@ -51,11 +51,14 @@ export type Step = {
   submissions: number;
   explanation?: string;
   task?: string;
-  concept?: string;
+  concept?: string | null;
+  references?: Reference[];
   validation?: { type: "answer" | "http" | "unavailable"; answerPrompt: string | null };
   hints?: { available: number; revealed: { level: number; text: string }[] };
   lastSubmission?: Evaluation | null;
 };
+
+export type Reference = { title: string; url: string };
 
 export type Progress = {
   sessionId: string;
@@ -71,6 +74,7 @@ export type Progress = {
     submissions: number;
   };
   items: Step[];
+  wrapUp?: { text: string; references?: Reference[] } | null;
 };
 
 export class ApiError extends Error {

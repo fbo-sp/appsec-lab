@@ -168,7 +168,8 @@ def progress_view(db: Session, s: LabSession, now: datetime) -> dict[str, Any]:
             item.update(
                 explanation=m["explanation"],
                 task=m["task"],
-                concept=m["concept"],
+                concept=m.get("concept"),
+                references=m.get("references", []),
                 validation={
                     "type": suite.kind if suite else "unavailable",
                     "answerPrompt": suite.prompt if isinstance(suite, AnswerSuite) else None,
@@ -194,6 +195,8 @@ def progress_view(db: Session, s: LabSession, now: datetime) -> dict[str, Any]:
             "submissions": sum(p.submissions for p in rows.values()),
         },
         "items": items,
+        # "Para ir além" (ADR-012): conteúdo público do manifesto, mostrado no resumo de conclusão.
+        "wrapUp": release.manifest.get("learning", {}).get("wrapUp"),
     }
 
 

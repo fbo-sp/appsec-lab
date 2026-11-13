@@ -35,6 +35,23 @@ jobs:
           # Suíte de contrato e controles do runtime Docker LOCAL (ADR-008) contra o Docker do runner.
           DOCKER_CONTRACT_TESTS: "1"
 
+  web:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - run: npm ci --no-audit --no-fund
+      - run: npm run typecheck
+      # Inclui os testes do Markdown restrito (ADR-012): sem HTML cru, links só https.
+      - run: npm test
+
   compose-smoke:
     runs-on: ubuntu-latest
     steps:

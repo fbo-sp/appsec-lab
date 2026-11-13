@@ -41,6 +41,7 @@
 | ADR/ADR-009-local-workspace-gateway.md | Proposto; implementado só local/test (2026-11-12) |
 | ADR/ADR-010-local-validation-runner.md | Proposto; implementado só local/test (2026-11-12); ADR-003 segue pendente |
 | ADR/ADR-011-session-renewal-and-provisioning-metrics.md | Proposto; implementado (2026-11-12) |
+| ADR/ADR-012-rich-step-content.md | Aprovado (2026-11-13); implementado |
 
 ## Ordem recomendada para trabalho com agentes
 

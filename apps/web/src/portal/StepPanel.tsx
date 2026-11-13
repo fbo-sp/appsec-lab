@@ -2,6 +2,7 @@
 // O backend decide desbloqueio, aprovação e pontos; a interface só exibe e solicita.
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api, ApiError, type Evaluation, type Progress, type Step } from "./api";
+import { Markdown, References } from "./Markdown";
 
 const PENDING = new Set(["QUEUED", "RUNNING"]);
 const STATUS_LABEL: Record<Evaluation["status"], string> = {
@@ -196,11 +197,21 @@ function StepDetail({
   return (
     <div className="step-detail">
       <h3>{step.title}</h3>
-      <p>{step.explanation}</p>
+      {step.explanation && <Markdown text={step.explanation} />}
       <h4>Tarefa</h4>
-      <p>{step.task}</p>
-      <h4>Conceito</h4>
-      <p>{step.concept}</p>
+      {step.task && <Markdown text={step.task} />}
+      {step.concept && (
+        <>
+          <h4>Conceito</h4>
+          <Markdown text={step.concept} />
+        </>
+      )}
+      {!!step.references?.length && (
+        <>
+          <h4>Para saber mais</h4>
+          <References items={step.references} />
+        </>
+      )}
 
       <h4>Validação</h4>
       {passed && evaluation?.status === "PASSED" ? null : passed ? (
@@ -313,7 +324,7 @@ function HintsModal({
         {hints.revealed.map((h) => (
           <div key={h.level} className="hint">
             <span className="hint-n">Dica {h.level}</span>
-            <span>{h.text}</span>
+            <Markdown text={h.text} />
           </div>
         ))}
         {next <= hints.available ? (
@@ -431,6 +442,13 @@ function Summary({ progress, onClose, onExit }: { progress: Progress; onClose: (
             ))}
           </tbody>
         </table>
+        {progress.wrapUp && (
+          <section className="wrapup">
+            <h3>Para ir além</h3>
+            <Markdown text={progress.wrapUp.text} />
+            <References items={progress.wrapUp.references} />
+          </section>
+        )}
         <p className="muted small">
           Ao voltar ao painel, este ambiente é encerrado e os arquivos temporários são descartados. Seu resultado
           continua registrado.

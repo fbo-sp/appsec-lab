@@ -121,6 +121,20 @@ policy:
 
 `content/pt-BR/*.md` pode guardar storytelling, conceitos, passos e dicas em arquivos versionados, referenciados no manifesto em vez de embutidos. `runtime/<variant>/` inclui a aplicação realista e dados fictícios. `validation/<variant>/` fica em distribuição **separada** com controle de acesso, nunca dentro da imagem disponibilizada ao aluno. A interface web deve permitir editar, compilar, pré-compilar, interpretar e reiniciar conforme a tecnologia; o motor expõe uma operação de `build` ou `run` parametrizada por comandos aprovados.
 
+### 4.1 Conteúdo rico (ADR-012)
+
+`explanation`, `task`, `concept` e o texto das dicas aceitam **Markdown restrito**:
+- parágrafos e listas;
+- blocos de código cercados por ```` ``` ````;
+- código inline, negrito e itálico;
+- links `https://`.
+
+Não há HTML.
+
+Campos opcionais:
+- `steps[].references[]` (`title`, `url` https, até 8);
+- `learning.wrapUp` (`text` em Markdown e `references`), exibido como "Para ir além" ao concluir o laboratório.
+
 ## 5. Pipeline mínimo de publicação
 
 Lint YAML -> validação JSON Schema -> validação semântica -> build OCI -> SCA/scan -> teste de execução isolada -> suíte de avaliação positiva/negativa -> verificação de storytelling e dicas -> assinatura -> publicação. Falha em qualquer gate bloqueia `published`.

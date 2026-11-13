@@ -316,3 +316,30 @@ def test_evaluation_history_is_owner_only_and_newest_first(
     assert items[0]["stepId"] == "explore" and items[0]["stepTitle"] and items[0]["stepOrder"] == 1
     assert "answer" not in items[0]
     assert client.get(f"/api/v1/sessions/{sid}/evaluations", headers=BOB).status_code == 404
+
+
+def test_rich_content_references_and_wrap_up_are_exposed(client: TestClient, wk: WorkerContext) -> None:
+    from tests.conftest import ADMIN, benign_manifest
+
+    m = benign_manifest()
+    m["metadata"]["version"] = "0.9.0"
+    ref = {"title": "CWE-89", "url": "https://cwe.mitre.org/data/definitions/89.html"}
+    m["steps"][0]["task"] = "Rode `whoami` no terminal.\n\n```bash\nwhoami\n```"
+    m["steps"][0]["references"] = [ref]
+    m["learning"]["wrapUp"] = {"text": "Use **parâmetros**.", "references": [ref]}
+    assert client.post("/api/v1/admin/lab-releases", json=m, headers=ADMIN).status_code == 201
+    body = {"labId": "LAB-000", "version": "0.9.0", "variantId": "python-http"}
+    sid = create_session(client, ALICE, body=body).json()["sessionId"]
+    drain(wk)
+    p = _steps(client, sid)
+    first, locked = p["items"]
+    assert first["task"].startswith("Rode `whoami`") and first["references"] == [ref]
+    assert "references" not in locked  # etapa bloqueada não revela conteúdo
+    assert p["wrapUp"] == {"text": "Use **parâmetros**.", "references": [ref]}
+
+
+def test_progress_without_rich_content_has_empty_defaults(
+    client: TestClient, registered: dict[str, Any], wk: WorkerContext
+) -> None:
+    p = _steps(client, _ready(client, wk))
+    assert p["items"][0]["references"] == [] and p["wrapUp"] is None

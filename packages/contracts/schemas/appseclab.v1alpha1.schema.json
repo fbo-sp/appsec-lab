@@ -71,6 +71,7 @@
     },
     "LabStep": {
       "additionalProperties": false,
+      "description": "Etapa. ``explanation``, ``task``, ``concept`` e textos de dica aceitam Markdown restrito (ADR-012).",
       "properties": {
         "concept": {
           "anyOf": [
@@ -132,6 +133,22 @@
           "minimum": 0,
           "title": "Points",
           "type": "integer"
+        },
+        "references": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/Reference"
+              },
+              "maxItems": 8,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "References"
         },
         "task": {
           "maxLength": 4000,
@@ -288,6 +305,17 @@
         },
         "story": {
           "$ref": "#/$defs/Story"
+        },
+        "wrapUp": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/WrapUp"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "required": [
@@ -391,6 +419,30 @@
         "finalPassingScore"
       ],
       "title": "Policy",
+      "type": "object"
+    },
+    "Reference": {
+      "additionalProperties": false,
+      "description": "Leitura recomendada (ADR-012). Exibida como link externo; nunca carregada pela plataforma.",
+      "properties": {
+        "title": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        },
+        "url": {
+          "maxLength": 500,
+          "pattern": "^https://[A-Za-z0-9.-]+(:[0-9]{1,5})?(/[^\\s<>\\\"'`]*)?$",
+          "title": "Url",
+          "type": "string"
+        }
+      },
+      "required": [
+        "title",
+        "url"
+      ],
+      "title": "Reference",
       "type": "object"
     },
     "Resources": {
@@ -511,6 +563,39 @@
         "mission"
       ],
       "title": "Story",
+      "type": "object"
+    },
+    "WrapUp": {
+      "additionalProperties": false,
+      "description": "Bloco \"Para ir além\" do resumo de conclusão (ADR-012). ``text`` aceita Markdown restrito.",
+      "properties": {
+        "references": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/Reference"
+              },
+              "maxItems": 8,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "References"
+        },
+        "text": {
+          "maxLength": 4000,
+          "minLength": 1,
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "text"
+      ],
+      "title": "WrapUp",
       "type": "object"
     }
   },
