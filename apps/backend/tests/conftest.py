@@ -24,10 +24,14 @@ BACKEND = Path(__file__).resolve().parents[1]
 ROOT = BACKEND.parents[1]
 BENIGN_MANIFEST = ROOT / "laboratories" / "LAB-000-hello-benign" / "manifest.yaml"
 TABLES = (
+    "hint_usages",
+    "step_submissions",
+    "step_progress",
     "audit_events",
     "jobs",
     "runtime_instances",
     "lab_sessions",
+    "lab_attempts",
     "step_hints",
     "lab_steps",
     "lab_variants",
@@ -159,7 +163,7 @@ def registered(client: TestClient) -> dict[str, Any]:
     return body
 
 
-SESSION_BODY = {"labId": "LAB-000", "version": "0.1.0", "variantId": "python-http"}
+SESSION_BODY = {"labId": "LAB-000", "version": "0.2.1", "variantId": "python-http"}
 
 
 def create_session(

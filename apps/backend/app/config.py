@@ -43,6 +43,8 @@ class Settings:
     gateway_preview_url: str = "http://127.0.0.1:8002"
     portal_origin: str = "http://127.0.0.1:8000"
     web_dist_dir: str | None = None
+    # Imagem do probe confiável de validação comportamental (ADR-010).
+    validator_probe_image: str = "cecyber-labs/base-python:local"
 
     @staticmethod
     def from_env(env: dict[str, str] | None = None) -> Settings:
@@ -66,6 +68,7 @@ class Settings:
                 gateway_preview_url=e.get("GATEWAY_PREVIEW_URL", "http://127.0.0.1:8002").rstrip("/"),
                 portal_origin=e.get("PORTAL_ORIGIN", "http://127.0.0.1:8000").rstrip("/"),
                 web_dist_dir=e.get("WEB_DIST_DIR") or None,
+                validator_probe_image=e.get("VALIDATOR_PROBE_IMAGE", "cecyber-labs/base-python:local"),
             )
         except KeyError as exc:
             raise ConfigError(f"Variável de ambiente obrigatória ausente: {exc.args[0]}") from exc

@@ -38,8 +38,23 @@ docker compose -f infrastructure/local/docker-compose.yml -f infrastructure/loca
 
 Depois abra **http://127.0.0.1:8000** (use `127.0.0.1`, não `localhost`), entre com um usuário de teste
 (ex.: `aluno1`), abra o LAB-000 e clique em **Iniciar laboratório**. Em alguns segundos aparecem:
-etapas à esquerda, editor de arquivos e terminal no centro, e a aplicação do laboratório embaixo.
-Edite `index.html`, salve com Ctrl+S e clique em **recarregar** para ver a mudança.
+etapas à esquerda e, à direita, as abas **Aplicação**, **Código**, **Terminal** e **Validação** (histórico
+das validações). O botão **Código + Aplicação** mostra editor e aplicação lado a lado. Trocar de aba não
+derruba o terminal. Edite `index.html`, salve com Ctrl+S e clique em **recarregar** para ver a mudança.
+As dicas abrem em uma janela pelo botão **Dicas** ao lado de **Validar**. Arraste a divisa entre as
+etapas e as abas para alargar o painel de explicação (duplo clique volta ao tamanho padrão).
+
+Roteiro das etapas do LAB-000 0.2.1 (ADR-010):
+
+1. **Explorar o ambiente**: descubra no terminal com qual usuário os comandos rodam (`whoami`), digite a
+   resposta e clique em **Validar**. Respostas erradas mostram o critério que falhou. As tentativas são
+   livres e as dicas não descontam pontos.
+2. **Alterar a aplicação**: edite `index.html` para exibir "Olá, CECyber", salve e clique em **Validar**.
+   O worker copia o workspace, sobe uma cópia isolada da aplicação e a testa de fora; leva alguns segundos.
+   Ao concluir, a pontuação chega a 100/100 e aparece "Laboratório concluído".
+
+O progresso fica na tentativa do usuário: encerrar e iniciar de novo retoma as etapas já concluídas. Para
+recomeçar do zero, use outro usuário de teste.
 
 Portas (todas só em 127.0.0.1): 8000 portal + API, 8001 workspace (editor/terminal), 8002 aplicação do lab.
 

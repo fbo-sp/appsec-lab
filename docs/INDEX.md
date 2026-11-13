@@ -39,6 +39,8 @@
 | ADR/ADR-007-postgres-job-queue.md | Aprovado (2026-11-11), implementado |
 | ADR/ADR-008-local-docker-runtime.md | Aprovado (2026-11-12), implementado (somente local/test) |
 | ADR/ADR-009-local-workspace-gateway.md | Proposto; implementado só local/test (2026-11-12) |
+| ADR/ADR-010-local-validation-runner.md | Proposto; implementado só local/test (2026-11-12); ADR-003 segue pendente |
+| ADR/ADR-011-session-renewal-and-provisioning-metrics.md | Proposto; implementado (2026-11-12) |
 
 ## Ordem recomendada para trabalho com agentes
 

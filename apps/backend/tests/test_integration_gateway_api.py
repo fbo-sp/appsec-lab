@@ -123,7 +123,10 @@ def test_steps_expose_only_first_step_details(
     items = r.json()["items"]
     assert items[0]["status"] == "AVAILABLE" and items[0]["task"]
     body = r.text
-    assert "validatorRef" not in body and "benign/python-http" not in body and '"hints"' not in body
+    assert "validatorRef" not in body and "benign/" not in body
+    # Dicas: só a contagem antes da revelação; etapa bloqueada não expõe enunciado.
+    assert items[0]["hints"] == {"available": 2, "revealed": []}
+    assert "task" not in items[1] and "hints" not in items[1] and items[1]["status"] == "LOCKED"
     assert client.get(f"/api/v1/sessions/{sid}/steps", headers=BOB).status_code == 404
 
 

@@ -429,6 +429,13 @@
     "SessionPolicy": {
       "additionalProperties": false,
       "properties": {
+        "maxRenewals": {
+          "default": 2,
+          "maximum": 10,
+          "minimum": 0,
+          "title": "Maxrenewals",
+          "type": "integer"
+        },
         "ttlMinutes": {
           "minimum": 5,
           "title": "Ttlminutes",

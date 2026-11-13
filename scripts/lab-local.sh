@@ -18,7 +18,7 @@ code=$(printf '%s' "$MANIFEST" | curl -s -o /dev/stderr -w "%{http_code}" -H "X-
 echo
 case "$code" in
   200|201) echo "LAB-000 registrado ($code)";;
-  409) echo "A release LAB-000@0.1.0 já existe com outra imagem. Recrie o banco local:" >&2
+  409) echo "A release LAB-000@0.2.1 já existe com outra imagem. Recrie o banco local:" >&2
        echo "  docker compose -f infrastructure/local/docker-compose.yml down -v" >&2; exit 1;;
   *) echo "registro falhou: HTTP $code" >&2; exit 1;;
 esac

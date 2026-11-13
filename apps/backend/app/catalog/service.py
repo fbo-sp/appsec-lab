@@ -20,6 +20,7 @@ from sqlalchemy.orm import Session
 from app.audit import service as audit
 from app.db.models import Lab, LabRelease, LabStep, LabVariant, StepHint
 from app.shared.errors import ApiError
+from app.validation.suites import get_suite
 
 
 @dataclass(frozen=True, slots=True)
@@ -30,11 +31,24 @@ class RegistrationResult:
 
 def _validate(data: dict[str, Any]) -> AppSecLab:
     try:
-        return validate_manifest(data)
+        manifest = validate_manifest(data)
     except ManifestValidationError as exc:
         raise ApiError(
             400, "VALIDATION_ERROR", "Manifesto inválido.", {"issues": [i.as_dict() for i in exc.issues]}
         ) from exc
+    # Regra 6 de docs/11 §3: todo validatorRef deve existir no registro protegido de validadores.
+    issues = [
+        {
+            "path": f"steps.{i}.validatorRef",
+            "code": "UNKNOWN_VALIDATOR",
+            "message": "Validador não registrado.",
+        }
+        for i, step in enumerate(manifest.steps)
+        if get_suite(step.validator_ref) is None
+    ]
+    if issues:
+        raise ApiError(400, "VALIDATION_ERROR", "Manifesto inválido.", {"issues": issues})
+    return manifest
 
 
 def register_release(
@@ -92,6 +106,7 @@ def register_release(
                 image_digest=v.image,
                 runtime_profile=v.runtime_profile,
                 ttl_minutes=v.session.ttl_minutes,
+                max_renewals=v.session.max_renewals,
             )
         )
     for s in manifest.steps:
@@ -164,6 +179,7 @@ def public_release_view(db: Session, release: LabRelease) -> dict[str, Any]:
                 "language": v.language,
                 "framework": v.framework,
                 "ttlMinutes": v.ttl_minutes,
+                "maxRenewals": v.max_renewals,
             }
             for v in variants
         ],

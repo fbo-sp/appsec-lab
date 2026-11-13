@@ -24,11 +24,11 @@ curl -s "${ADMIN[@]}" -H "Content-Type: application/yaml" --data-binary @"$ROOT/
 echo "== 2. Criar sessão (Idempotency-Key)"
 KEY="demo-$(date +%s%N)"
 SID=$(curl -s "${ALUNO[@]}" -H "Idempotency-Key: $KEY" -H "Content-Type: application/json" \
-  -d '{"labId":"LAB-000","version":"0.1.0","variantId":"python-http"}' "$API/api/v1/sessions" | python3 -c 'import json,sys; print(json.load(sys.stdin)["sessionId"])')
+  -d '{"labId":"LAB-000","version":"0.2.1","variantId":"python-http"}' "$API/api/v1/sessions" | python3 -c 'import json,sys; print(json.load(sys.stdin)["sessionId"])')
 echo "sessionId=$SID"
 echo "== 3. Repetir com a mesma chave (deve retornar a mesma sessão)"
 curl -s "${ALUNO[@]}" -H "Idempotency-Key: $KEY" -H "Content-Type: application/json" \
-  -d '{"labId":"LAB-000","version":"0.1.0","variantId":"python-http"}' "$API/api/v1/sessions" | python3 -c 'import json,sys; print(json.load(sys.stdin)["sessionId"])'
+  -d '{"labId":"LAB-000","version":"0.2.1","variantId":"python-http"}' "$API/api/v1/sessions" | python3 -c 'import json,sys; print(json.load(sys.stdin)["sessionId"])'
 echo "== 4. Aguardar READY"
 for _ in $(seq 1 50); do
   ST=$(curl -s "${ALUNO[@]}" "$API/api/v1/sessions/$SID" | python3 -c 'import json,sys; print(json.load(sys.stdin)["status"])')

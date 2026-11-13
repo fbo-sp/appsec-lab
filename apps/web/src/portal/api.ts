@@ -24,6 +24,21 @@ export type LabSession = {
   variantId: string;
   expiresAt: string;
   lastErrorCode: string | null;
+  ttlMinutes: number;
+  renewals: number;
+  maxRenewals: number;
+  renewableAt: string | null;
+};
+
+export type Criterion = { id: string; description: string; passed: boolean };
+
+export type Evaluation = {
+  evaluationId: string;
+  status: "QUEUED" | "RUNNING" | "PASSED" | "FAILED" | "ERROR";
+  criteria: Criterion[];
+  feedback: string | null;
+  createdAt: string;
+  finishedAt: string | null;
 };
 
 export type Step = {
@@ -32,10 +47,30 @@ export type Step = {
   title: string;
   points: number;
   status: "AVAILABLE" | "LOCKED" | "PASSED";
+  pointsAwarded: number;
+  submissions: number;
   explanation?: string;
   task?: string;
   concept?: string;
-  hintsAvailable?: number;
+  validation?: { type: "answer" | "http" | "unavailable"; answerPrompt: string | null };
+  hints?: { available: number; revealed: { level: number; text: string }[] };
+  lastSubmission?: Evaluation | null;
+};
+
+export type Progress = {
+  sessionId: string;
+  attempt: {
+    id: string;
+    status: "IN_PROGRESS" | "COMPLETED";
+    score: number;
+    maxScore: number;
+    passingScore: number;
+    startedAt: string;
+    completedAt: string | null;
+    hintsUsed: number;
+    submissions: number;
+  };
+  items: Step[];
 };
 
 export class ApiError extends Error {
@@ -86,13 +121,31 @@ export const api = {
   release: (labId: string, version: string) => call<Lab>(`/api/v1/labs/${labId}/releases/${version}`),
   sessions: () => call<{ items: LabSession[] }>("/api/v1/sessions"),
   session: (id: string) => call<LabSession>(`/api/v1/sessions/${id}`),
-  steps: (id: string) => call<{ items: Step[] }>(`/api/v1/sessions/${id}/steps`),
+  steps: (id: string) => call<Progress>(`/api/v1/sessions/${id}/steps`),
+  evaluate: (id: string, stepId: string, answer?: string) =>
+    call<Evaluation>(`/api/v1/sessions/${id}/steps/${stepId}/evaluations`, {
+      method: "POST",
+      headers: { "Idempotency-Key": `ui-${crypto.randomUUID()}` },
+      body: JSON.stringify(answer === undefined ? {} : { answer }),
+    }),
+  evaluations: (id: string) =>
+    call<{ items: (Evaluation & { stepId: string; stepTitle: string; stepOrder: number })[] }>(
+      `/api/v1/sessions/${id}/evaluations`,
+    ),
+  evaluation: (id: string, evaluationId: string) =>
+    call<Evaluation>(`/api/v1/sessions/${id}/evaluations/${evaluationId}`),
+  revealHint: (id: string, stepId: string, level: number) =>
+    call<{ level: number; text: string; penalty: number }>(
+      `/api/v1/sessions/${id}/steps/${stepId}/hints/${level}/reveal`,
+      { method: "POST" },
+    ),
   start: (labId: string, version: string, variantId: string) =>
     call<LabSession>("/api/v1/sessions", {
       method: "POST",
       headers: { "Idempotency-Key": `ui-${crypto.randomUUID()}` },
       body: JSON.stringify({ labId, version, variantId }),
     }),
+  renew: (id: string) => call<LabSession>(`/api/v1/sessions/${id}/renewals`, { method: "POST" }),
   terminate: (id: string) => call<LabSession>(`/api/v1/sessions/${id}`, { method: "DELETE" }),
   ticket: (id: string, purpose: "workspace" | "preview") =>
     call<{ url: string }>(`/api/v1/sessions/${id}/gateway-ticket`, {

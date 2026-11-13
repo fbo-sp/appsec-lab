@@ -113,14 +113,15 @@ def _second_step(manifest: dict[str, Any], **overrides: Any) -> dict[str, Any]:
         (lambda m: m["metadata"].update(secondaryCwes=[m["metadata"]["primaryCwe"]]), "DUPLICATE_CWE"),
         (lambda m: m["steps"][0].update(points=90), "INVALID_TOTAL_POINTS"),
         (lambda m: m["steps"].append(_second_step(m, id=m["steps"][0]["id"])), "DUPLICATE_STEP_ID"),
-        (lambda m: m["steps"].append(_second_step(m, order=3)), "NON_CONTIGUOUS_ORDER"),
-        (lambda m: m["steps"][0]["hints"].append({"level": 3, "text": "x"}), "INVALID_HINT_LEVELS"),
+        (lambda m: m["steps"].append(_second_step(m, order=len(m["steps"]) + 2)), "NON_CONTIGUOUS_ORDER"),
+        (
+            lambda m: m["steps"][0].update(hints=[{"level": 1, "text": "x"}, {"level": 3, "text": "y"}]),
+            "INVALID_HINT_LEVELS",
+        ),
         (
             lambda m: (
-                m["steps"][0].update(points=50),
-                m["steps"].append(_second_step(m, points=50)),
-                m["policy"].update(finalPassingScore=100),
-                m["steps"][1].update(points=40),
+                m["steps"][0].update(points=m["steps"][0]["points"] - 10),
+                m["policy"].update(finalPassingScore=sum(st["points"] for st in m["steps"]) + 10),
             ),
             "UNREACHABLE_PASSING_SCORE",
         ),
@@ -144,7 +145,7 @@ def test_two_variants_share_steps(manifest: dict[str, Any]) -> None:
     manifest["variants"].append(node)
     m = validate_manifest(manifest)
     assert [v.id for v in m.variants] == ["python-http", "node-http"]
-    assert len(m.steps) == 1
+    assert len(m.steps) == len(manifest["steps"])
 
 
 def test_issues_have_location(manifest: dict[str, Any]) -> None:

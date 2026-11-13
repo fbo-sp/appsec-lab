@@ -51,12 +51,12 @@
 | 29 | IMP-303 | Frontend: catálogo e introdução do lab | F3 | Done local (2026-11-12; login OIDC pendente IMP-202) |
 | 30 | IMP-304 | Frontend: workspace (editor, terminal, preview) | F3 | Done local (2026-11-12; CodeMirror 6 no lugar de Monaco, ADR-009) |
 | 31 | IMP-305 | Ação build/run por perfil aprovado | F3 | Blocked (IMP-301) |
-| 32 | IMP-401 | Modelo acadêmico LabAttempt/StepProgress | F4 | Ready (ADR-005 aprovado) |
-| 33 | IMP-402 | Snapshot de workspace | F4 | Blocked (ADR-003) |
-| 34 | IMP-403 | Validation controller e envelope autenticado | F4 | Blocked (ADR-003) |
-| 35 | IMP-404 | Avaliação por etapa e desbloqueio transacional | F4 | Blocked (IMP-401/403) |
-| 36 | IMP-405 | Dicas progressivas e HintUsage | F4 | Blocked (IMP-401, OPEN-04) |
-| 37 | IMP-501..504 | Conteúdo LAB-001..004 | F5 | Blocked (`17`, F4) |
+| 32 | IMP-401 | Modelo acadêmico LabAttempt/StepProgress | F4 | Done (migração `0003`, 2026-11-12) |
+| 33 | IMP-402 | Snapshot de workspace | F4 | Done local (ADR-010); produção Blocked (ADR-003) |
+| 34 | IMP-403 | Validation controller e envelope autenticado | F4 | Parcial local: registro protegido + worker (ADR-010); envelope assinado Blocked (ADR-003) |
+| 35 | IMP-404 | Avaliação por etapa e desbloqueio transacional | F4 | Done local (2026-11-12) |
+| 36 | IMP-405 | Dicas progressivas e HintUsage | F4 | Done (OPEN-04: sem penalidade, 2026-11-12) |
+| 37 | IMP-501..504 | Conteúdo LAB-001..004 | F5 | IMP-501 Ready só local (F4 local pronto); demais Blocked (`17`) |
 | 38 | IMP-601 | Visão de instrutor e CSV | F6 | Blocked (OPEN-06) |
 | 39 | IMP-602 | Visão operacional admin | F6 | Ready após F2 |
 | 40 | IMP-603 | Carga 30 sessões | F6 | Blocked (F3) |
@@ -85,7 +85,7 @@
 - **Prioridade:** P0 · **Requisitos:** FR-011/013, BR-009, `11 §3`, `09 §2` · **Dependências:** IMP-102 · **Componentes:** contracts
 - **Aceite:** cada regra tem ao menos um teste negativo com mensagem localizada (`loc`).
 - **Testes:** unitários parametrizados.
-- **DoD:** comum. **Pendente:** regra 6 (existência no registro de validadores) depende de IMP-403.
+- **DoD:** comum. Regra 6 (existência no registro de validadores) implementada em 2026-11-12 (`UNKNOWN_VALIDATOR`).
 
 ### IMP-104 — Esqueleto FastAPI, erros, correlação e logs JSON
 - **Descrição:** app factory, settings via ambiente, middleware `X-Request-Id`, formatter JSON, envelope de erro `13 §5`, `GET /healthz`, autenticação de desenvolvimento só em `APP_ENV=local|test`.

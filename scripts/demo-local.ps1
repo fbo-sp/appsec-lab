@@ -30,7 +30,7 @@ Write-Host "HTTP $($rel.StatusCode) (201 = publicado, 200 = ja existia)"
 
 Write-Host "== 2. Criar sessao com Idempotency-Key"
 $key = "demo-" + [guid]::NewGuid().ToString("N")
-$body = '{"labId":"LAB-000","version":"0.1.0","variantId":"python-http"}'
+$body = '{"labId":"LAB-000","version":"0.2.1","variantId":"python-http"}'
 $h = $Aluno.Clone(); $h["Idempotency-Key"] = $key
 $s1 = Invoke-RestMethod -Method Post -Uri "$Api/api/v1/sessions" -Headers $h -ContentType "application/json" -Body $body
 Write-Host "sessionId=$($s1.sessionId) status=$($s1.status)"

@@ -18,7 +18,28 @@ function language(path: string): Extension[] {
   return [];
 }
 
+type View = "both" | "code" | "terminal";
+
+// O portal (única origem autorizada a embutir esta página: frame-ancestors) escolhe a visão pela aba
+// ativa. Só aceitamos a mensagem do próprio pai e com formato exato; trocar a visão não dá acesso a nada.
+function useViewFromParent(): View {
+  const [view, setView] = useState<View>("both");
+  useEffect(() => {
+    const onMessage = (e: MessageEvent) => {
+      if (e.source !== window.parent || window.parent === window) return;
+      const d = e.data as { type?: unknown; view?: unknown } | null;
+      if (d && d.type === "cecyber:view" && (d.view === "both" || d.view === "code" || d.view === "terminal")) {
+        setView(d.view);
+      }
+    };
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
+  }, []);
+  return view;
+}
+
 export function Workspace() {
+  const paneView = useViewFromParent();
   const [tree, setTree] = useState<Record<string, Entry[]>>({});
   const [open, setOpen] = useState<Set<string>>(new Set([""]));
   const [file, setFile] = useState<string>();
@@ -116,7 +137,7 @@ export function Workspace() {
   }
 
   return (
-    <div className="ws">
+    <div className={`ws view-${paneView}`}>
       <aside className="files">
         <div className="files-head">
           <span>Arquivos</span>
