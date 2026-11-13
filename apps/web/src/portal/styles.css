@@ -120,8 +120,15 @@ label { font-weight: 600; font-size: 0.9rem; }
 .progress li { color: var(--muted); }
 .progress li.done { color: var(--ok); font-weight: 600; }
 
-.workbench { flex: 1; display: grid; grid-template-columns: 320px 1fr; min-height: 0; height: calc(100vh - 100px); }
-.steps { border-right: 1px solid var(--border); background: var(--surface); overflow: auto; padding: 1rem; }
+.workbench { flex: 1; display: grid; grid-template-columns: var(--steps-w, 320px) 7px minmax(0, 1fr); min-height: 0; height: calc(100vh - 100px); }
+.steps { background: var(--surface); overflow: auto; padding: 1rem; min-width: 0; }
+/* Divisor arrastável entre etapas e abas */
+.splitter { position: relative; cursor: col-resize; background: var(--surface); border-left: 1px solid var(--border); touch-action: none; }
+.splitter::after { content: ""; position: absolute; top: 50%; left: 1px; width: 3px; height: 36px; margin-top: -18px; border-radius: 3px; background: var(--border); }
+.splitter:hover, .splitter:focus-visible, .resizing .splitter { background: var(--chip-bg); outline: none; }
+.splitter:hover::after, .splitter:focus-visible::after, .resizing .splitter::after { background: var(--accent); }
+.workbench.resizing { cursor: col-resize; user-select: none; }
+.workbench.resizing iframe { pointer-events: none; }
 .steps ol { list-style: none; padding: 0; margin: 0 0 1rem; }
 .step { display: flex; gap: 0.6rem; align-items: flex-start; padding: 0.45rem 0.4rem; border-radius: 8px; width: 100%; text-align: left; border: 1px solid transparent; background: none; }
 .step:disabled { cursor: not-allowed; opacity: 1; }
@@ -183,7 +190,8 @@ label { font-weight: 600; font-size: 0.9rem; }
 @media (max-width: 860px) {
   .two-col { grid-template-columns: 1fr; }
   .workbench { grid-template-columns: 1fr; height: auto; }
-  .steps { border-right: 0; border-bottom: 1px solid var(--border); }
+  .splitter { display: none; }
+  .steps { border-bottom: 1px solid var(--border); }
   .tab-body { height: 560px; flex: none; }
 }
 

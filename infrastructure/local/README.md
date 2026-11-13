@@ -41,7 +41,8 @@ Depois abra **http://127.0.0.1:8000** (use `127.0.0.1`, não `localhost`), entre
 etapas à esquerda e, à direita, as abas **Aplicação**, **Código**, **Terminal** e **Validação** (histórico
 das validações). O botão **Código + Aplicação** mostra editor e aplicação lado a lado. Trocar de aba não
 derruba o terminal. Edite `index.html`, salve com Ctrl+S e clique em **recarregar** para ver a mudança.
-As dicas abrem em uma janela pelo botão **Dicas** ao lado de **Validar**.
+As dicas abrem em uma janela pelo botão **Dicas** ao lado de **Validar**. Arraste a divisa entre as
+etapas e as abas para alargar o painel de explicação (duplo clique volta ao tamanho padrão).
 
 Roteiro das etapas do LAB-000 0.2.1 (ADR-010):
 

@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
+import type { CSSProperties } from "react";
 import { api, type LabSession } from "./api";
 import { StepPanel } from "./StepPanel";
+import { Splitter, useStepsWidth } from "./Splitter";
 import { ValidationLog } from "./ValidationLog";
 
 type Tab = "app" | "code" | "terminal" | "log";
@@ -70,6 +72,9 @@ export function SessionView({ id }: { id: string }) {
   const [split, setSplit] = useState(false);
   const [progressVersion, setProgressVersion] = useState(0);
   const workspaceFrame = useRef<HTMLIFrameElement>(null);
+  const workbench = useRef<HTMLDivElement>(null);
+  const steps = useStepsWidth(workbench);
+  const [resizing, setResizing] = useState(false);
   const [previewKey, setPreviewKey] = useState(0);
   const [ending, setEnding] = useState(false);
   const fetchingTickets = useRef(false);
@@ -315,7 +320,11 @@ export function SessionView({ id }: { id: string }) {
       )}
 
       {LIVE.has(status) && (
-        <div className="workbench">
+        <div
+          ref={workbench}
+          className={`workbench ${resizing ? "resizing" : ""}`}
+          style={{ "--steps-w": `${steps.width}px` } as CSSProperties}
+        >
           <aside className="steps">
             <StepPanel
               sessionId={id}
@@ -324,6 +333,13 @@ export function SessionView({ id }: { id: string }) {
               onShowLog={() => pickTab("log")}
             />
           </aside>
+          <Splitter
+            width={steps.width}
+            min={steps.min}
+            max={steps.max}
+            onChange={steps.setWidth}
+            onDragging={setResizing}
+          />
           <section className="panes">
             <div className="tabbar">
               <div className="tabs" role="tablist" aria-label="Áreas do laboratório">
