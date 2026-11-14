@@ -1,0 +1,277 @@
+# LAB-003: JWT sem verificação de assinatura (CWE-347) na API de cartões da Orbe (Node.js + Express).
+# CONTÉM VULNERABILIDADE INTENCIONAL. Uso exclusivo no runtime Docker LOCAL (ADR-008), em rede
+# interna da sessão. Dados 100% fictícios (cartões só com 4 dígitos finais, domínio .example).
+#
+# ATENÇÃO: o digest abaixo é uma FIXTURE (sha256 de um texto fixo), não uma imagem publicada.
+# scripts/lab-local.sh e .ps1 trocam pela imagem construída localmente antes de registrar.
+apiVersion: labs.cecyber.io/v1alpha1
+kind: AppSecLab
+metadata:
+  id: LAB-003
+  version: 1.0.0
+  title: "JWT: o token que ninguém conferiu"
+  primaryCwe: CWE-347
+  secondaryCwes: [CWE-287]
+learning:
+  singleVulnerability: true
+  estimatedMinutes: 45
+  difficulty: beginner
+  objectives:
+    - Entender a estrutura de um JWT (cabeçalho, dados e assinatura) e por que ele não é criptografado
+    - Diferenciar decodificar um token de verificar um token
+    - Forjar um token para demonstrar o impacto em dados fictícios
+    - Corrigir a validação conferindo assinatura, algoritmo e validade
+  story:
+    role: Desenvolvedor(a) do time de APIs da Orbe Cartões, emissora de cartões de crédito
+    application: API do Portal Orbe, usada pelo site e pelo aplicativo do cliente
+    context: >-
+      A auditoria de crédito encontrou o limite de um cartão aumentado de R$ 3.000 para R$ 50.000 sem
+      nenhuma análise, e o log diz que a alteração foi feita pela própria cliente, com perfil de
+      gerente.
+    mission: Descobrir como um cliente virou gerente, medir o impacto e corrigir a validação dos tokens
+  wrapUp:
+    text: |
+      Agora a API só confia em tokens que ela mesma assinou, com o algoritmo esperado e dentro da validade. Em um sistema real, vale reforçar outras camadas:
+
+      - **Segredo forte e fora do código.** O segredo HS256 deve ser longo e aleatório e ficar em um cofre de segredos, nunca no repositório. Se ele vazar, qualquer um assina tokens válidos.
+      - **Chaves assimétricas quando há vários serviços.** Com RS256 ou ES256, só o emissor tem a chave privada; os demais serviços verificam com a chave pública e não conseguem emitir tokens.
+      - **Validar emissor e público.** Opções como `issuer` e `audience` no `jwt.verify` impedem que um token de outro sistema seja aceito aqui.
+      - **Decisões sensíveis no servidor.** Perfil e permissões podem ser conferidos no banco a cada operação crítica, como alterar limite, em vez de confiar só no que está no token.
+      - **Vida curta e revogação.** Tokens de acesso curtos, com renovação controlada, limitam o estrago de um token roubado.
+    references:
+      - title: "OWASP Cheat Sheet: JSON Web Token for Java (conceitos válidos para qualquer linguagem)"
+        url: https://cheatsheetseries.owasp.org/cheatsheets/JSON_Web_Token_for_Java_Cheat_Sheet.html
+      - title: "RFC 8725: JSON Web Token Best Current Practices"
+        url: https://www.rfc-editor.org/rfc/rfc8725
+      - title: "OWASP API Security Top 10: API2 Broken Authentication"
+        url: https://owasp.org/API-Security/editions/2023/en/0xa2-broken-authentication/
+      - title: "CWE-347: Improper Verification of Cryptographic Signature"
+        url: https://cwe.mitre.org/data/definitions/347.html
+variants:
+  - id: node-express
+    language: javascript
+    framework: express
+    image: registry.local/labs/lab-003-jwt@sha256:0190917df85e2533ec5dcf0a25e97c757e2f10f27dae72d01d419da3d3e51f93
+    runtimeProfile: web-basic
+    workspacePath: /workspace
+    startup:
+      # Reinicia ao salvar (node --watch). A saída do processo também vai para /tmp/app.log.
+      command: ["sh", "-c", "node --watch app.js 2>&1 | tee -a /tmp/app.log"]
+      port: 8080
+    resources:
+      cpuMillicores: 500
+      memoryMiB: 512
+      storageMiB: 256
+      pidsMax: 64
+    session:
+      ttlMinutes: 45
+      maxRenewals: 2
+    interfaces: [editor, terminal, web]
+steps:
+  - id: conhecer
+    order: 1
+    title: Conhecer a aplicação
+    explanation: |
+      O Portal Orbe usa **JWT** (*JSON Web Token*) para saber quem está chamando a API. No login, o servidor devolve um token. Depois disso, o site envia esse token em toda requisição, no cabeçalho:
+
+      ```text
+      Authorization: Bearer <token>
+      ```
+
+      A aplicação é dividida em camadas:
+
+      1. **Rotas** (`routes/`): definem os caminhos da API e quais proteções cada um tem.
+      2. **Middlewares** (`middlewares/autenticacao.js`): rodam antes do controller. `autenticar` lê o token e `exigirPerfil` confere se o usuário é gerente (`admin`).
+      3. **Serviços** (`services/`): `token.service.js` emite e lê os tokens.
+      4. **Controllers** e **repositórios**: regras de negócio e dados dos cartões.
+    task: |
+      1. Na aba **Aplicação**, entre com a cliente fictícia Larissa:
+         - e-mail: `larissa.mendes@clientes.orbe.example`
+         - senha: `Larissa@2026`
+      2. Veja o cartão final `4821` e o limite de R$ 3.000,00.
+      3. Na aba **Código**, abra `routes/admin.routes.js` e veja que as rotas do gerente passam por `autenticar` e `exigirPerfil('admin')`.
+      4. Abra `middlewares/autenticacao.js` e encontre a função que o `autenticar` chama para **ler o token**.
+
+      Informe abaixo o nome dessa função.
+    concept: Autenticação por token em APIs (Bearer)
+    validatorRef: jwt/answer/locate-reader-v1
+    hints:
+      - level: 1
+        text: Dentro de `autenticar`, procure a linha que recebe o `token` e devolve os `dados` do usuário.
+      - level: 2
+        text: A função é importada de `../services/token.service` no topo do arquivo.
+      - level: 3
+        text: A função é `lerToken`.
+    points: 10
+  - id: decodificar
+    order: 2
+    title: Ler o conteúdo do token
+    explanation: |
+      Um JWT tem três partes separadas por ponto: **cabeçalho**, **dados** (*claims*) e **assinatura**.
+
+      ```text
+      eyJhbGciOiJIUzI1NiJ9 . eyJzdWIiOjEsInBlcmZpbCI6ImNsaWVudGUifQ . 4kX9...
+           cabeçalho                    dados                    assinatura
+      ```
+
+      As duas primeiras partes são só **Base64URL**, uma forma de escrever texto com caracteres seguros para URLs. Isso é **codificação**, não criptografia: qualquer pessoa com o token lê o que está dentro. A proteção do JWT está na **assinatura**, que só o servidor sabe gerar.
+    task: |
+      Na aba **Terminal**, faça login pela API e guarde o token em uma variável:
+
+      ```bash
+      TOKEN=$(curl -s -X POST http://127.0.0.1:8080/api/login -H "Content-Type: application/json" -d '{"email":"larissa.mendes@clientes.orbe.example","senha":"Larissa@2026"}' | node -pe 'JSON.parse(require("fs").readFileSync(0)).token')
+      echo $TOKEN
+      ```
+
+      Agora decodifique a parte do meio (os dados):
+
+      ```bash
+      node -pe 'Buffer.from(process.argv[1].split(".")[1], "base64url").toString()' $TOKEN
+      ```
+
+      Informe abaixo o **valor do campo `perfil`** que aparece nos dados do token.
+    concept: Estrutura do JWT e codificação Base64URL
+    validatorRef: jwt/answer/profile-claim-v1
+    hints:
+      - level: 1
+        text: O primeiro comando deve imprimir um texto longo começando com `eyJ`. Se não imprimir, confira se copiou a linha inteira.
+      - level: 2
+        text: 'O segundo comando mostra um JSON como `{"sub":1,"nome":"Larissa Mendes","perfil":"...",...}`.'
+      - level: 3
+        text: O perfil da Larissa é `cliente`.
+    points: 15
+  - id: forjar-token
+    order: 3
+    title: Forjar um token de gerente
+    explanation: |
+      Veja como `services/token.service.js` lê o token:
+
+      ```javascript
+      function lerToken(token) {
+        // Lê os dados (claims) do token recebido no cabeçalho Authorization.
+        return jwt.decode(token);
+      }
+      ```
+
+      A biblioteca `jsonwebtoken` tem duas funções parecidas:
+
+      - `jwt.decode` só **decodifica**: devolve os dados sem conferir a assinatura;
+      - `jwt.verify` **verifica**: confere a assinatura com o segredo, o algoritmo e a validade, e só então devolve os dados.
+
+      Como a API usa `decode`, ela acredita em **qualquer** token bem formado, até em um sem assinatura, com o algoritmo `none`.
+    task: |
+      No **Terminal**, monte um token com cabeçalho `alg: none`, perfil `admin` e assinatura vazia:
+
+      ```bash
+      FORJADO=$(node -pe 'const b = (o) => Buffer.from(JSON.stringify(o)).toString("base64url"); b({ alg: "none", typ: "JWT" }) + "." + b({ sub: 1, nome: "Larissa Mendes", perfil: "admin" }) + "."')
+      echo $FORJADO
+      ```
+
+      Use esse token para chamar o painel do gerente:
+
+      ```bash
+      curl -s http://127.0.0.1:8080/api/admin/resumo -H "Authorization: Bearer $FORJADO"
+      ```
+
+      Informe abaixo o **código de auditoria** (`codigoAuditoria`) que o painel devolveu. Todos os dados deste laboratório são fictícios.
+    concept: Decodificar não é verificar (alg none e assinatura ignorada)
+    validatorRef: jwt/answer/audit-code-v1
+    hints:
+      - level: 1
+        text: 'Se o `curl` devolver `{"erro":"Token ausente."}`, a variável `FORJADO` ficou vazia. Rode o primeiro comando de novo e confira com `echo $FORJADO`.'
+      - level: 2
+        text: O token forjado tem duas partes com texto e termina com um ponto, porque a assinatura está vazia.
+      - level: 3
+        text: O código é `ORB-AUD-5583-QX`.
+    points: 15
+  - id: medir-impacto
+    order: 4
+    title: Medir o impacto
+    explanation: |
+      Com o token forjado, a API trata a Larissa como gerente de crédito. As rotas do gerente permitem **alterar o limite de qualquer cartão**, sem análise e sem aprovação de ninguém.
+
+      Em uma emissora de cartões, esse é o tipo de falha que vira **fraude financeira**: limites elevados são gastos rapidamente e o prejuízo fica com a empresa. Além disso, o log registra a alteração como feita por alguém com perfil de gerente, o que atrapalha a investigação.
+    task: |
+      No **Terminal**, use o mesmo token forjado para aumentar o limite do cartão de id `1` (o da Larissa) para `50000`:
+
+      ```bash
+      curl -s -X PATCH http://127.0.0.1:8080/api/admin/cartoes/1/limite -H "Authorization: Bearer $FORJADO" -H "Content-Type: application/json" -d '{"novoLimite": 50000}'
+      ```
+
+      Recarregue a aba **Aplicação**: o limite do cartão mudou. Veja também o log com `tail -n 5 /tmp/app.log`.
+
+      Informe abaixo o **protocolo** devolvido pela alteração de limite.
+    concept: Escalada de privilégio e fraude por token forjado
+    validatorRef: jwt/answer/limit-protocol-v1
+    hints:
+      - level: 1
+        text: Se a variável `FORJADO` sumiu (por exemplo, ao abrir um novo terminal), rode de novo o comando da etapa anterior que cria o token.
+      - level: 2
+        text: 'A resposta é um JSON com os campos `cartao`, `limiteAnterior` e `protocolo`.'
+      - level: 3
+        text: O protocolo é `ORB-LIM-4821-50000`.
+    points: 20
+  - id: corrigir
+    order: 5
+    title: Corrigir verificando a assinatura
+    explanation: |
+      **Por que a falha existe.** A API lê os dados do token sem conferir se foi ela mesma que assinou. O conteúdo de um JWT é do cliente: ele pode escrever ali o que quiser.
+
+      **A correção: `jwt.verify`.** Essa função recalcula a assinatura com o segredo do servidor e compara com a que veio no token. Se alguém mudou um único caractere dos dados, a assinatura não confere e o token é recusado. Ela também recusa tokens expirados.
+
+      **Por que informar o algoritmo?** Com `{ algorithms: ['HS256'] }`, a API aceita **só** o algoritmo que ela usa para emitir. Isso fecha a porta para truques como `alg: none` ou a troca de algoritmo, mesmo em bibliotecas ou versões que aceitariam outros.
+
+      **E se o token for inválido?** O `jwt.verify` lança um erro. O `try`/`catch` transforma esse erro em `null`, e o middleware `autenticar` já responde `401` nesse caso.
+    task: |
+      Abra `services/token.service.js` na aba **Código**. A função `lerToken` está assim:
+
+      ```javascript
+      function lerToken(token) {
+        // Lê os dados (claims) do token recebido no cabeçalho Authorization.
+        return jwt.decode(token);
+      }
+      ```
+
+      Troque a linha do `return` para que a função fique assim:
+
+      ```javascript
+      function lerToken(token) {
+        // Lê os dados (claims) do token recebido no cabeçalho Authorization.
+        try {
+          return jwt.verify(token, config.SEGREDO_JWT, { algorithms: ['HS256'] });
+        } catch (erro) {
+          return null;
+        }
+      }
+      ```
+
+      O `config` já está importado no topo do arquivo. Em JavaScript o recuo não muda o funcionamento, mas mantenha 2 espaços por nível para o código ficar legível.
+
+      Salve com **Ctrl+S**: a aplicação reinicia sozinha. Então:
+
+      1. repita o `curl` da etapa 3 com `$FORJADO` e confirme que a resposta agora é `{"erro":"Token inválido."}`;
+      2. saia e entre de novo na aba **Aplicação** e confirme que o cartão da Larissa continua aparecendo;
+      3. clique em **Validar**.
+
+      Se a aplicação parar de responder depois de salvar, rode `tail -n 20 /tmp/app.log` no **Terminal**: um `SyntaxError` indica a linha a corrigir.
+    concept: Verificação de assinatura, algoritmo e validade do JWT
+    validatorRef: jwt/node-express/verify-signature-v1
+    hints:
+      - level: 1
+        text: A mudança é só em `services/token.service.js`, dentro de `lerToken`. O middleware e as rotas não mudam.
+      - level: 2
+        text: 'Troque `jwt.decode(token)` por `jwt.verify(token, config.SEGREDO_JWT, { algorithms: [''HS256''] })` e coloque a chamada dentro de um `try`/`catch` que devolve `null`.'
+      - level: 3
+        text: Use exatamente o código da tarefa. Se a validação falhar, veja na aba **Validação** qual verificação não passou e confira o log com `tail -n 20 /tmp/app.log`.
+    references:
+      - title: "jsonwebtoken: jwt.verify"
+        url: https://github.com/auth0/node-jsonwebtoken#jwtverifytoken-secretorpublickey-options-callback
+      - title: "RFC 8725: JSON Web Token Best Current Practices"
+        url: https://www.rfc-editor.org/rfc/rfc8725
+    points: 40
+policy:
+  sequentialUnlock: true
+  allowStepRetry: true
+  persistProgressAcrossReset: true
+  allowSolutionReveal: false
+  finalPassingScore: 100

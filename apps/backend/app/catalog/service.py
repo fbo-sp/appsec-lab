@@ -200,6 +200,24 @@ def list_published(db: Session) -> list[LabRelease]:
     )
 
 
+def _semver_key(version: str) -> tuple[int, ...]:
+    return tuple(int(p) for p in version.split("."))
+
+
+def list_latest_published(db: Session) -> list[LabRelease]:
+    """Catálogo: só a versão publicada MAIS ALTA (SemVer) de cada laboratório (ADR-016).
+
+    Versões anteriores seguem publicadas e acessíveis pelo endereço da release, para que tentativas já
+    iniciadas nelas continuem; apenas deixam de aparecer na lista.
+    """
+    latest: dict[str, LabRelease] = {}
+    for release in list_published(db):
+        current = latest.get(release.lab_id)
+        if current is None or _semver_key(release.version) > _semver_key(current.version):
+            latest[release.lab_id] = release
+    return [latest[lab_id] for lab_id in sorted(latest)]
+
+
 def get_published(db: Session, lab_id: str, version: str) -> LabRelease | None:
     return db.execute(
         select(LabRelease).where(

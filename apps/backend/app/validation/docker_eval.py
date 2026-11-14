@@ -120,6 +120,7 @@ class DockerEvaluator:
             spec = {
                 "base": f"http://{name}:{request.app_port}",
                 "checks": request.checks,
+                "logins": request.logins,
                 "wait_seconds": min(30, request.timeout_seconds),
             }
             probe_src = resources.files("app.validation").joinpath("probe.py").read_bytes()

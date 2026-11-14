@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block conteudo %}
+<h1>Teste de comunicação com CLP</h1>
+<p class="muted">Use antes de abrir uma ordem de manutenção para confirmar se o controlador responde na rede da planta.</p>
+<form method="post" action="{{ url_for('diagnostico.testar') }}" class="busca">
+  <input name="endereco" value="{{ endereco }}" placeholder="Endereço IP do CLP, ex.: 10.20.1.15" aria-label="Endereço IP do CLP">
+  <button type="submit">Testar</button>
+</form>
+{% if relatorio is not none %}
+<h2>Resultado</h2>
+<pre class="relatorio">{{ relatorio }}</pre>
+{% endif %}
+<h2>Equipamentos cadastrados</h2>
+<table>
+  <thead><tr><th>Endereço</th><th>Equipamento</th><th>Linha</th></tr></thead>
+  <tbody>
+    {% for e in equipamentos %}
+    <tr><td><code>{{ e.endereco }}</code></td><td>{{ e.nome }}</td><td>{{ e.linha }}</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

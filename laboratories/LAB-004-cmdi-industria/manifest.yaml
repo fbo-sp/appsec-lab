@@ -1,0 +1,268 @@
+# LAB-004: OS Command Injection (CWE-78) no portal de manutenção da Ferrara Metais (Flask).
+# CONTÉM VULNERABILIDADE INTENCIONAL. Uso exclusivo no runtime Docker LOCAL (ADR-008), em rede
+# interna da sessão. A injeção executa comandos só dentro do contêiner da sessão, como o usuário sem
+# privilégios 10001, sem capabilities e sem rede externa. CLPs simulados e dados 100% fictícios.
+# Gate G5 (contenção validada) continua obrigatório antes de qualquer ambiente além do local.
+#
+# ATENÇÃO: o digest abaixo é uma FIXTURE (sha256 de um texto fixo), não uma imagem publicada.
+# scripts/lab-local.sh e .ps1 trocam pela imagem construída localmente antes de registrar.
+apiVersion: labs.cecyber.io/v1alpha1
+kind: AppSecLab
+metadata:
+  id: LAB-004
+  version: 1.0.1
+  title: "Command Injection: o teste de rede que virou terminal"
+  primaryCwe: CWE-78
+  secondaryCwes: []
+learning:
+  singleVulnerability: true
+  estimatedMinutes: 40
+  difficulty: beginner
+  objectives:
+    - Reconhecer quando uma aplicação repassa dados do usuário para o shell do sistema operacional
+    - Entender o papel dos metacaracteres do shell, como ponto e vírgula, pipe e $( )
+    - Demonstrar o impacto lendo um arquivo sensível fictício da planta
+    - Corrigir a falha validando a entrada e executando o programa sem shell, com lista de argumentos
+  story:
+    role: Desenvolvedor(a) do time de sistemas industriais da Ferrara Metais
+    application: Portal de Manutenção da Planta Contagem, com o teste de comunicação com CLPs
+    context: >-
+      O time de segurança de OT (tecnologia operacional) encontrou, no log do portal de manutenção,
+      comandos estranhos executados junto com o teste de comunicação dos CLPs. O portal fica na mesma
+      rede do supervisório SCADA que controla as linhas de produção.
+    mission: Reproduzir o ataque, entender até onde ele chega e corrigir o código do teste
+  wrapUp:
+    text: |
+      Agora o endereço digitado é validado e o programa roda sem shell, então metacaracteres viram texto comum. Em um sistema real, vale reforçar outras camadas:
+
+      - **Evitar o sistema operacional quando possível.** Muitas tarefas têm bibliotecas próprias. Um teste de conexão, por exemplo, pode usar `socket` do Python em vez de chamar um programa externo.
+      - **Menor privilégio.** O processo da aplicação não deve ter acesso a arquivos como credenciais do SCADA. Aqui ele roda sem privilégios e em contêiner isolado, o que limitou o estrago.
+      - **Segredos fora de arquivos legíveis.** Credenciais de sistemas industriais devem ficar em um cofre de segredos, com acesso registrado.
+      - **Segmentação de rede (IT/OT).** Um portal web não deveria alcançar diretamente o supervisório. Modelos como a ISA/IEC 62443 organizam a rede da planta em zonas e conduítes.
+      - **Monitorar o log.** O log desta aplicação registrava cada comando executado; alertas sobre caracteres como `;` e `|` ajudam a detectar a exploração cedo.
+    references:
+      - title: "OWASP Cheat Sheet: OS Command Injection Defense"
+        url: https://cheatsheetseries.owasp.org/cheatsheets/OS_Command_Injection_Defense_Cheat_Sheet.html
+      - title: "OWASP Top 10: A03 Injection"
+        url: https://owasp.org/Top10/A03_2021-Injection/
+      - title: "CWE-78: Improper Neutralization of Special Elements used in an OS Command"
+        url: https://cwe.mitre.org/data/definitions/78.html
+      - title: "CISA: segurança de sistemas de controle industrial (ICS)"
+        url: https://www.cisa.gov/topics/industrial-control-systems
+variants:
+  - id: python-flask
+    language: python
+    framework: flask
+    image: registry.local/labs/lab-004-cmdi@sha256:e2b8fb11dbb27d8f172d4248b83d9e706548ec01831997ec9f5d6c20d0178e94
+    runtimeProfile: web-basic
+    workspacePath: /workspace
+    startup:
+      # A saída do processo (inclusive erros de importação, como IndentationError) também vai para /tmp/app.log.
+      command: ["sh", "-c", "python -u -m flask --app app run --host 0.0.0.0 --port 8080 --reload --no-debugger 2>&1 | tee -a /tmp/app.log"]
+      port: 8080
+    resources:
+      cpuMillicores: 500
+      memoryMiB: 512
+      storageMiB: 256
+      pidsMax: 64
+    session:
+      ttlMinutes: 45
+      maxRenewals: 2
+    interfaces: [editor, terminal, web]
+steps:
+  - id: conhecer
+    order: 1
+    title: Conhecer a aplicação
+    explanation: |
+      O Portal de Manutenção tem um **teste de comunicação**: o técnico digita o endereço IP de um CLP (controlador lógico programável, o "computador" que comanda uma máquina da linha de produção) e o portal diz se ele responde.
+
+      Para isso, a aplicação chama um **programa do sistema operacional**. Esse é um ponto de atenção: sempre que um dado digitado pelo usuário vira parte de um comando do sistema, pode existir uma **injeção de comandos**.
+
+      A aplicação é dividida em camadas:
+
+      1. **Controller** (`controllers/diagnostico_controller.py`): recebe o formulário e lê o campo `endereco`.
+      2. **Serviço** (`services/diagnostico_service.py`): monta o comando do teste.
+      3. **Infraestrutura** (`infra/executor_comandos.py`): executa o comando no sistema operacional.
+    task: |
+      1. Na aba **Aplicação**, teste o endereço `10.20.1.15` e veja o resultado.
+      2. Na aba **Código**, siga o campo `endereco` do controller até o serviço.
+      3. Encontre a linha que monta o comando.
+
+      Informe abaixo o **nome do programa** que a aplicação executa.
+    concept: Dados do usuário chegando ao sistema operacional
+    validatorRef: cmdi/answer/locate-program-v1
+    hints:
+      - level: 1
+        text: O controller cria um `DiagnosticoService` e chama `testar_comunicacao`. Abra o serviço.
+      - level: 2
+        text: Procure a linha `comando = f"..."` em `services/diagnostico_service.py`. O programa é a primeira palavra do comando.
+      - level: 3
+        text: O programa é `diag-clp`.
+    points: 10
+  - id: encadear-comando
+    order: 2
+    title: Encadear um comando
+    explanation: |
+      Veja como o serviço monta e executa o comando:
+
+      ```python
+              comando = f"diag-clp {endereco}"
+              return self._executor.executar(comando, usar_shell=True)
+      ```
+
+      Com `usar_shell=True`, o texto inteiro é entregue ao **shell** (`/bin/sh`), o mesmo interpretador do terminal. Para o shell, alguns caracteres têm significado especial, os **metacaracteres**. O ponto e vírgula `;`, por exemplo, separa dois comandos:
+
+      ```bash
+      diag-clp 10.20.1.15; whoami
+      ```
+
+      O shell roda o `diag-clp` e, em seguida, o `whoami`, que mostra com qual usuário o processo está rodando.
+    task: |
+      Na aba **Aplicação**, teste o endereço abaixo, exatamente como está:
+
+      ```text
+      10.20.1.15; whoami
+      ```
+
+      Veja o resultado e o log com `tail -n 5 /tmp/app.log` no **Terminal**: ele mostra o comando que foi executado.
+
+      Informe abaixo o **usuário** que apareceu na última linha do resultado.
+    concept: Metacaracteres do shell e encadeamento de comandos
+    validatorRef: cmdi/answer/process-user-v1
+    hints:
+      - level: 1
+        text: O resultado mostra primeiro o teste do CLP e, na última linha, a saída do `whoami`.
+      - level: 2
+        text: É o mesmo usuário que aparece se você rodar `whoami` no **Terminal**.
+      - level: 3
+        text: O usuário é `lab`.
+    points: 15
+  - id: explorar
+    order: 3
+    title: Explorar o servidor
+    explanation: |
+      Se é possível rodar `whoami`, é possível rodar **qualquer** comando que o usuário da aplicação tenha permissão de executar: listar pastas, ler arquivos, baixar programas.
+
+      Além do `;`, outros metacaracteres também funcionam, e é por isso que tentar bloquear um só não resolve:
+
+      - `&&` roda o segundo comando se o primeiro der certo;
+      - `|` (pipe) envia a saída de um comando para outro;
+      - `$( )` e crases executam um comando e colocam o resultado no lugar;
+      - uma **quebra de linha** também separa comandos.
+    task: |
+      A engenharia de automação guarda os arquivos da planta em `/opt/planta`. Na aba **Aplicação**, teste:
+
+      ```text
+      10.20.1.15; ls /opt/planta
+      ```
+
+      Informe abaixo o **nome do arquivo de configuração** do supervisório SCADA que aparece na lista.
+    concept: Execução arbitrária de comandos (RCE) e reconhecimento
+    validatorRef: cmdi/answer/scada-file-v1
+    hints:
+      - level: 1
+        text: O `ls` lista os arquivos da pasta. Um deles é o inventário de CLPs que a própria página usa.
+      - level: 2
+        text: O outro arquivo tem a extensão `.conf` e o nome do sistema supervisório.
+      - level: 3
+        text: O arquivo é `scada.conf`.
+    points: 15
+  - id: medir-impacto
+    order: 4
+    title: Medir o impacto
+    explanation: |
+      Em um ambiente industrial, o impacto de uma injeção de comandos vai além de dados. O servidor do portal fica na rede da planta, e credenciais do **SCADA** (o sistema que supervisiona e comanda as máquinas) permitem a um atacante **mudar parâmetros de produção**, parar uma linha ou causar riscos à segurança física das pessoas.
+
+      Aqui, a aplicação roda em um contêiner isolado, como usuário sem privilégios e sem acesso à internet. É essa contenção que limita o estrago, mas a falha continua no código.
+    task: |
+      Na aba **Aplicação**, leia o arquivo de configuração do SCADA:
+
+      ```text
+      10.20.1.15; cat /opt/planta/scada.conf
+      ```
+
+      Informe abaixo a **senha do operador** (`senha_operador`) que você encontrou. Todos os dados deste laboratório são fictícios.
+    concept: Impacto de RCE em tecnologia operacional (OT)
+    validatorRef: cmdi/answer/scada-password-v1
+    hints:
+      - level: 1
+        text: O `cat` mostra o conteúdo do arquivo no resultado do teste.
+      - level: 2
+        text: A senha está na linha que começa com `senha_operador=`. Informe só o que vem depois do `=`.
+      - level: 3
+        text: A senha é `SCADA-OPR-4471-KX`.
+    points: 20
+  - id: corrigir
+    order: 5
+    title: Corrigir sem shell e com validação
+    explanation: |
+      **Por que a falha existe.** O serviço junta o texto digitado com o nome do programa e entrega tudo ao shell, que interpreta os metacaracteres.
+
+      **A correção tem duas camadas:**
+
+      1. **Executar sem shell, com lista de argumentos.** Com `["diag-clp", endereco]` e `usar_shell=False`, o Python chama o programa diretamente. O endereço vira **um único argumento**, mesmo que tenha `;`, `|` ou `$( )`: nada disso é interpretado.
+      2. **Validar a entrada pelo formato esperado.** O campo deve conter um endereço IPv4. O módulo `ipaddress` do Python faz essa checagem com precisão. É uma **lista de permissão** (aceita só o que é válido), muito mais segura que tentar bloquear caracteres perigosos.
+
+      **Por que não basta remover o `;`?** Como você viu na etapa 3, existem vários outros metacaracteres. Listas de bloqueio quase sempre esquecem algum.
+    task: |
+      Abra `services/diagnostico_service.py` na aba **Código**.
+
+      1. No topo do arquivo, acrescente a importação do módulo `ipaddress`, acima da linha que já existe:
+
+      ```python
+      import ipaddress
+
+      from infra.executor_comandos import ExecutorComandos
+      ```
+
+      2. O método `testar_comunicacao` está assim:
+
+      ```python
+          def testar_comunicacao(self, endereco: str) -> str:
+              """Testa a comunicação com o CLP no ``endereco`` informado e devolve o relatório."""
+              endereco = endereco.strip()
+              comando = f"diag-clp {endereco}"
+              return self._executor.executar(comando, usar_shell=True)
+      ```
+
+      Troque as duas últimas linhas para que o método fique assim:
+
+      ```python
+          def testar_comunicacao(self, endereco: str) -> str:
+              """Testa a comunicação com o CLP no ``endereco`` informado e devolve o relatório."""
+              endereco = endereco.strip()
+              try:
+                  ipaddress.IPv4Address(endereco)
+              except ValueError:
+                  return "Endereço inválido. Informe um IPv4, por exemplo 10.20.1.15."
+              return self._executor.executar(["diag-clp", endereco], usar_shell=False)
+      ```
+
+      **Cuidado com o recuo.** As linhas de dentro do método começam com **8 espaços** e as de dentro do `try` e do `except` com **12**. Se depois de salvar a aplicação mostrar *Internal Server Error*, rode `tail -n 20 /tmp/app.log` no **Terminal**.
+
+      Salve com **Ctrl+S**: a aplicação recarrega sozinha. Então:
+
+      1. repita o ataque da etapa 4 e confirme que aparece *Endereço inválido*;
+      2. teste `10.20.1.15` e confirme que o CLP continua respondendo;
+      3. clique em **Validar**.
+    concept: Execução sem shell, lista de argumentos e validação por lista de permissão
+    validatorRef: cmdi/python-flask/no-shell-v1
+    hints:
+      - level: 1
+        text: As mudanças são só em `services/diagnostico_service.py`. O controller e o executor não mudam.
+      - level: 2
+        text: 'O comando deixa de ser um texto (`f"diag-clp {endereco}"`) e passa a ser uma lista: `["diag-clp", endereco]`, com `usar_shell=False`.'
+      - level: 3
+        text: Use exatamente o código da tarefa, sem esquecer o `import ipaddress` no topo. Se a validação falhar, veja na aba **Validação** qual verificação não passou e confira o log com `tail -n 20 /tmp/app.log`.
+    references:
+      - title: "Python: subprocess, considerações de segurança"
+        url: https://docs.python.org/3/library/subprocess.html#security-considerations
+      - title: "Python: módulo ipaddress"
+        url: https://docs.python.org/3/library/ipaddress.html
+    points: 40
+policy:
+  sequentialUnlock: true
+  allowStepRetry: true
+  persistProgressAcrossReset: true
+  allowSolutionReveal: false
+  finalPassingScore: 100

@@ -19,6 +19,7 @@ class EvaluationRequest:
     memory_mib: int
     pids_max: int
     timeout_seconds: int
+    logins: list[dict[str, Any]] = field(default_factory=list)  # ADR-015
 
 
 @dataclass(frozen=True, slots=True)

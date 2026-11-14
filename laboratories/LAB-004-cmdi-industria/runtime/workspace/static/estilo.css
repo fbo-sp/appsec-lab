@@ -1,0 +1,17 @@
+* { box-sizing: border-box; }
+body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; color: #1f2328; background: #f2f3f1; }
+.topo { display: flex; gap: 12px; align-items: baseline; padding: 14px 24px; background: #2b2f33; color: #fff; border-bottom: 4px solid #e8a317; }
+.marca { font-weight: 700; font-size: 18px; color: #f2b632; }
+.sub { opacity: .85; }
+main { max-width: 860px; margin: 24px auto; padding: 0 16px; }
+h1 { font-size: 22px; }
+h2 { font-size: 16px; margin-top: 24px; }
+.busca { display: flex; gap: 8px; }
+input { flex: 1; padding: 8px 10px; border: 1px solid #c3c7c2; border-radius: 6px; font-size: 15px; }
+button { padding: 9px 14px; border: 0; border-radius: 6px; background: #2b2f33; color: #fff; font-size: 15px; cursor: pointer; }
+.relatorio { background: #1d2125; color: #d8f5c8; padding: 14px; border-radius: 8px; white-space: pre-wrap; overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 8px; overflow: hidden; }
+th, td { padding: 9px 12px; border-bottom: 1px solid #e3e5e1; text-align: left; }
+th { background: #e9ebe7; font-size: 13px; }
+.muted { color: #5f6660; }
+footer { text-align: center; color: #7b827c; font-size: 12px; padding: 24px; }

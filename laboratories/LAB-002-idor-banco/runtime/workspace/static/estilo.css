@@ -1,0 +1,28 @@
+* { box-sizing: border-box; }
+body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; color: #1c2430; background: #f3f5f9; }
+.topo { display: flex; gap: 12px; align-items: baseline; padding: 14px 24px; background: #12324f; color: #fff; }
+.marca { font-weight: 700; font-size: 18px; }
+.sub { opacity: .8; }
+.usuario { margin-left: auto; font-size: 14px; }
+.usuario a { color: #cfe3ff; }
+main { max-width: 820px; margin: 24px auto; padding: 0 16px; }
+h1 { font-size: 22px; }
+h2 { font-size: 15px; margin: 18px 0 6px; color: #12324f; }
+table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 8px; overflow: hidden; }
+th, td { padding: 10px 12px; border-bottom: 1px solid #e3e7ee; text-align: left; }
+th { background: #eaf0f7; font-size: 13px; }
+.valor { text-align: right; white-space: nowrap; }
+a { color: #1f5fa6; }
+.cartao { background: #fff; border-radius: 10px; padding: 20px 24px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+.login { display: grid; gap: 12px; max-width: 360px; }
+.login label { display: grid; gap: 4px; font-size: 14px; }
+input { padding: 8px 10px; border: 1px solid #c4ccd8; border-radius: 6px; font-size: 15px; }
+button { padding: 9px 14px; border: 0; border-radius: 6px; background: #1f5fa6; color: #fff; font-size: 15px; cursor: pointer; }
+.erro { color: #b3261e; margin: 0; }
+.destaque { font-size: 28px; font-weight: 700; margin: 4px 0; }
+.muted { color: #5b6675; font-size: 13px; }
+dl { display: grid; grid-template-columns: 140px 1fr; gap: 4px 12px; margin: 0; }
+dt { color: #5b6675; }
+dd { margin: 0; }
+footer { text-align: center; color: #7a8594; font-size: 12px; padding: 24px; }
+.vazio { color: #5b6675; }

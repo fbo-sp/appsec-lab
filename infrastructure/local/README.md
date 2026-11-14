@@ -32,7 +32,7 @@ Por padrão o worker usa o runtime *fake* (nada é executado). Para abrir os lab
 ```powershell
 # na raiz do repositório (PowerShell)
 docker compose -f infrastructure/local/docker-compose.yml -f infrastructure/local/docker-compose.docker-runtime.yml up --build -d
-.\scripts\lab-local.ps1     # constrói as imagens do LAB-000 e do LAB-001 e registra as releases
+.\scripts\lab-local.ps1     # constrói as imagens do LAB-000 ao LAB-004 e registra as releases
 ```
 
 Releases são imutáveis: se uma versão já foi publicada no banco local com outro conteúdo, o script avisa
@@ -70,8 +70,24 @@ explicam cada passo; as respostas abaixo servem só para conferência:
    tupla, salve (a aplicação recarrega sozinha) e clique em **Validar**. O worker testa uma cópia isolada
    com buscas legítimas e ataques.
 
-O LAB-001 contém vulnerabilidade **intencional**: ele roda só na rede interna da sessão, acessível pelo
-gateway em 127.0.0.1. Não exponha em rede compartilhada.
+Roteiro do **LAB-002 IDOR** (Banco Vértice Digital, cerca de 40 min). Login: `marina.ribeiro@clientes.vertice.example`
+/ `Marina@2026`. A **barra de endereço** da aba Aplicação (ao lado de "recarregar") abre caminhos como
+`/comprovantes/10457` ou `/api/comprovantes/10458`. Respostas para conferência: `buscar_por_id`, `10458`,
+`Rodrigo Tavares Lima`, `34` (laço com `curl` no terminal). Correção: em `services/comprovante_service.py`,
+`obter` devolve `None` quando `comprovante.cliente_id != cliente_id`.
+
+Roteiro do **LAB-003 JWT** (Orbe Cartões, Node.js, cerca de 45 min). Login: `larissa.mendes@clientes.orbe.example`
+/ `Larissa@2026`. Respostas: `lerToken`, `cliente`, `ORB-AUD-5583-QX`, `ORB-LIM-4821-50000`. Correção: em
+`services/token.service.js`, trocar `jwt.decode` por `jwt.verify(token, config.SEGREDO_JWT, { algorithms:
+['HS256'] })` dentro de `try`/`catch`. A primeira construção da imagem baixa o Node.js e as dependências npm.
+
+Roteiro do **LAB-004 Command Injection** (Ferrara Metais, CLPs simulados, cerca de 40 min). Respostas:
+`diag-clp`, `lab`, `scada.conf`, `SCADA-OPR-4471-KX`. Correção: em `services/diagnostico_service.py`, validar
+com `ipaddress.IPv4Address` e executar `["diag-clp", endereco]` com `usar_shell=False`.
+
+Os LAB-001 a LAB-004 contêm vulnerabilidades **intencionais**: rodam só na rede interna da sessão, acessível
+pelo gateway em 127.0.0.1. Não exponha em rede compartilhada. No LAB-004 os comandos injetados rodam dentro do
+contêiner da sessão, com o mesmo alcance do terminal do aluno (ADR-015).
 
 O progresso fica na tentativa do usuário: encerrar e iniciar de novo retoma as etapas já concluídas. Para
 recomeçar do zero, use outro usuário de teste.

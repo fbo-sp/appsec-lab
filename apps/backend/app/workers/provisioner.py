@@ -328,18 +328,8 @@ def _evaluate(ctx: WorkerContext, job: ClaimedJob) -> None:
             workspace_path=base.workspace_path,
             startup_command=base.startup_command,
             app_port=base.exposed_port,
-            checks=[
-                {
-                    "id": c.id,
-                    "path": c.path,
-                    "method": c.method,
-                    "form": c.form,
-                    "expect_status": c.expect_status,
-                    "contains": list(c.contains),
-                    "not_contains": list(c.not_contains),
-                }
-                for c in suite.checks
-            ],
+            checks=suite.probe_checks(),
+            logins=suite.probe_logins(),
             cpu_millicores=base.resources.cpu_millicores,
             memory_mib=base.resources.memory_mib,
             pids_max=base.resources.pids_max,

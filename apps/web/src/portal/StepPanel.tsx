@@ -2,7 +2,7 @@
 // O backend decide desbloqueio, aprovação e pontos; a interface só exibe e solicita.
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api, ApiError, type Evaluation, type Hints, type Progress, type Step } from "./api";
-import { Markdown, References } from "./Markdown";
+import { Markdown, References, type TermHelp } from "./Markdown";
 
 const PENDING = new Set(["QUEUED", "RUNNING"]);
 const STATUS_LABEL: Record<Evaluation["status"], string> = {
@@ -23,12 +23,15 @@ export function StepPanel({
   onProgress,
   onShowLog,
   sessionMinutes,
+  terms,
 }: {
   sessionId: string;
   onExit: () => void;
   onProgress?: () => void;
   onShowLog?: () => void;
   sessionMinutes?: number;
+  /** Ajudas contextuais nos termos em negrito das etapas (ex.: "barra de endereço"). */
+  terms?: TermHelp;
 }) {
   const onProgressRef = useRef(onProgress);
   onProgressRef.current = onProgress;
@@ -159,7 +162,7 @@ export function StepPanel({
       )}
       {error && <div className="error">{error}</div>}
       {step && step.status !== "LOCKED" && (
-        <StepDetail key={step.id} sessionId={sessionId} step={step} onChanged={reload} onShowLog={onShowLog} />
+        <StepDetail key={step.id} sessionId={sessionId} step={step} onChanged={reload} onShowLog={onShowLog} terms={terms} />
       )}
       {summaryOpen && attempt.status === "COMPLETED" && (
         <Summary progress={progress} onClose={() => setSummaryOpen(false)} onExit={onExit} />
@@ -173,11 +176,13 @@ function StepDetail({
   step,
   onChanged,
   onShowLog,
+  terms,
 }: {
   sessionId: string;
   step: Step;
   onChanged: (selectNext?: boolean) => Promise<void>;
   onShowLog?: () => void;
+  terms?: TermHelp;
 }) {
   const [hintsOpen, setHintsOpen] = useState(false);
   const [answer, setAnswer] = useState("");
@@ -247,9 +252,9 @@ function StepDetail({
 
   return (
     <div className="step-detail">
-      {step.explanation && <Markdown text={step.explanation} />}
+      {step.explanation && <Markdown text={step.explanation} terms={terms} />}
       <h4>Tarefa</h4>
-      {step.task && <Markdown text={step.task} />}
+      {step.task && <Markdown text={step.task} terms={terms} />}
       {step.concept && (
         <>
           <h4>Conceito</h4>
