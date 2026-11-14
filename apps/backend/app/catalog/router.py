@@ -57,8 +57,8 @@ def list_labs(
     _: Annotated[Principal, Depends(get_principal)],
     db: Annotated[Session, Depends(get_db)],
 ) -> dict[str, Any]:
-    # Filtro por atribuição/turma (BR-001) é IMP-204; hoje lista releases publicadas.
-    items = [service.public_release_view(db, r) for r in service.list_published(db)]
+    # Filtro por atribuição/turma (BR-001) é IMP-204. Lista a última versão publicada de cada lab (ADR-016).
+    items = [service.public_release_view(db, r) for r in service.list_latest_published(db)]
     return {"items": items}
 
 
