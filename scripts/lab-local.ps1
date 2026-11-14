@@ -23,8 +23,9 @@ foreach ($Dir in $Labs) {
   # Release é imutável: se essa tag já existe, ela é reaproveitada e NADA é reconstruído para essa versão.
   # Sem isso, reconstruir a base trocava o ID das imagens e as releases já registradas ficavam órfãs.
   $Pinned = "cecyber-labs/${Name}:$Version"
-  docker image inspect $Pinned 2>$null | Out-Null
-  if ($LASTEXITCODE -eq 0) {
+  # docker images -q devolve vazio quando a tag não existe; "image inspect" escreveria em stderr,
+  # o que o PowerShell 5.1 trata como erro fatal com ErrorActionPreference=Stop.
+  if (docker images -q $Pinned) {
     Write-Host "$LabId@${Version}: reaproveitando a imagem $Pinned"
   } else {
     docker build -q -t "cecyber-labs/${Name}:local" (Join-Path $Lab "runtime") | Out-Null
