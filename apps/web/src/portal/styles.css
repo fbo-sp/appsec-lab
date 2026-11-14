@@ -296,3 +296,6 @@ label { font-weight: 600; font-size: 0.9rem; }
 .address-bar-highlight input { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 35%, transparent); animation: address-pulse 1.4s ease-in-out infinite; }
 @keyframes address-pulse { 50% { box-shadow: 0 0 0 6px color-mix(in srgb, var(--accent) 15%, transparent); } }
 @media (prefers-reduced-motion: reduce) { .address-bar-highlight input { animation: none; } }
+.md-term { white-space: nowrap; }
+.md-term strong { white-space: normal; }
+.info-inline { display: inline-flex; align-items: center; justify-content: center; width: 1.05rem; height: 1.05rem; margin-left: 0.25rem; font-size: 0.68rem; vertical-align: 0.1em; cursor: pointer; }

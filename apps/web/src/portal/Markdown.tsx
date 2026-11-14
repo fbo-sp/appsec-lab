@@ -3,8 +3,13 @@ import type { ReactNode } from "react";
 import { parseMarkdown, type Inline } from "./markdown";
 
 /** Renderiza o Markdown restrito do conteúdo das etapas (ADR-012) somente com elementos React. */
-export function Markdown({ text, className }: { text: string; className?: string }) {
+/** Ajudas contextuais: um termo em **negrito** cujo texto (sem diferenciar maiúsculas) é uma chave do mapa
+ * ganha, logo depois dele, o elemento devolvido (por exemplo, o ícone "i" da barra de endereço). */
+export type TermHelp = Record<string, () => ReactNode>;
+
+export function Markdown({ text, className, terms }: { text: string; className?: string; terms?: TermHelp }) {
   const blocks = parseMarkdown(text);
+  const inline = (nodes: Inline[]) => renderInline(nodes, terms);
   return (
     <div className={`md ${className ?? ""}`}>
       {blocks.map((b, i) => {
@@ -35,15 +40,29 @@ export function Markdown({ text, className }: { text: string; className?: string
   );
 }
 
-function inline(nodes: Inline[]): ReactNode[] {
+function plain(nodes: Inline[]): string {
+  return nodes.map((n) => (n.t === "text" || n.t === "code" ? n.v : plain(n.c))).join("");
+}
+
+function renderInline(nodes: Inline[], terms?: TermHelp): ReactNode[] {
+  const inline = (c: Inline[]) => renderInline(c, terms);
   return nodes.map((n, i) => {
     switch (n.t) {
       case "text":
         return n.v;
       case "code":
         return <code key={i}>{n.v}</code>;
-      case "strong":
-        return <strong key={i}>{inline(n.c)}</strong>;
+      case "strong": {
+        const help = terms?.[plain(n.c).trim().toLowerCase()];
+        return help ? (
+          <span key={i} className="md-term">
+            <strong>{inline(n.c)}</strong>
+            {help()}
+          </span>
+        ) : (
+          <strong key={i}>{inline(n.c)}</strong>
+        );
+      }
       case "em":
         return <em key={i}>{inline(n.c)}</em>;
       case "link":

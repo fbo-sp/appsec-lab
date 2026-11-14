@@ -130,6 +130,23 @@ export function SessionView({ id }: { id: string }) {
   const [previewPath, setPreviewPath] = useState("/");
   const [addressDraft, setAddressDraft] = useState("/");
   const [addressHelp, setAddressHelp] = useState(false);
+  // Ícone "i" ao lado de "barra de endereço" no texto das etapas: mostra a aba Aplicação e a explicação.
+  const addressTerms = {
+    "barra de endereço": () => (
+      <button
+        type="button"
+        className="info-btn info-inline"
+        aria-label="Onde fica a barra de endereço?"
+        title="Onde fica a barra de endereço?"
+        onClick={() => {
+          setTab("app");
+          setAddressHelp(true);
+        }}
+      >
+        i
+      </button>
+    ),
+  };
   const [ending, setEnding] = useState(false);
   const fetchingTickets = useRef(false);
   const now = useNow();
@@ -412,6 +429,7 @@ export function SessionView({ id }: { id: string }) {
               onProgress={() => setProgressVersion((v) => v + 1)}
               onShowLog={() => pickTab("log")}
               sessionMinutes={session?.ttlMinutes}
+              terms={addressTerms}
             />
           </aside>
           <Splitter
