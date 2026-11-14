@@ -8,7 +8,7 @@ apiVersion: labs.cecyber.io/v1alpha1
 kind: AppSecLab
 metadata:
   id: LAB-002
-  version: 1.0.0
+  version: 1.0.1
   title: "IDOR: o comprovante que não era seu"
   primaryCwe: CWE-639
   secondaryCwes: [CWE-862]
@@ -111,7 +111,9 @@ steps:
       O mesmo dado também sai pela **API** usada pelo aplicativo do celular, em formato JSON: `/api/comprovantes/<número>`. APIs costumam ser alvo de quem procura esse tipo de falha, porque devolvem os dados "crus" e são fáceis de automatizar.
     task: |
       1. Na lista **Meus comprovantes de PIX**, veja qual é o comprovante **mais recente** da Marina (o primeiro da lista).
-      2. Na barra de endereço da aba **Aplicação**, digite `/api/comprovantes/` seguido desse número e pressione **Enter**. Repare no JSON: ele traz `cliente_id`, o id do dono do comprovante.
+      2. Na **barra de endereço** da aba **Aplicação**, digite `/api/comprovantes/` seguido desse número e pressione **Enter**. Repare no JSON: ele traz `cliente_id`, o id do dono do comprovante.
+
+      **Onde fica a barra de endereço?** É o campo no topo da aba **Aplicação**, ao lado de **ir**, **recarregar** e **abrir em nova aba**. Ele funciona como a barra de um navegador, só que para a aplicação do laboratório: apague o que estiver lá, digite o caminho começando com `/` e pressione **Enter**. Na primeira vez, clique no ícone **i** ao lado do campo para ver onde ele está. Se preferir, clique em **abrir em nova aba** e edite o endereço no navegador, normalmente.
 
       Informe abaixo o **número** do comprovante mais recente da Marina.
     concept: Identificadores previsíveis e referências diretas a objetos
@@ -168,23 +170,31 @@ steps:
 
       ```bash
       curl -s -c /tmp/cookies.txt -d "email=marina.ribeiro@clientes.vertice.example&senha=Marina@2026" http://127.0.0.1:8080/login > /dev/null
-      for n in $(seq 10421 10460); do curl -s -b /tmp/cookies.txt http://127.0.0.1:8080/api/comprovantes/$n; echo; done > /tmp/vazamento.txt
+      for n in $(seq 10421 10460); do curl -s -b /tmp/cookies.txt http://127.0.0.1:8080/api/comprovantes/$n; done > /tmp/vazamento.txt
       ```
 
-      Cada linha de `/tmp/vazamento.txt` é um comprovante. Agora conte quantas linhas **não** são da Marina:
+      Cada linha de `/tmp/vazamento.txt` é um comprovante, 40 linhas no total (confira com `wc -l /tmp/vazamento.txt`). Agora conte quantas linhas **não** são da Marina:
 
       ```bash
       grep -vc "Marina Costa Ribeiro" /tmp/vazamento.txt
       ```
 
-      Informe abaixo **quantos comprovantes de outros clientes** você conseguiu ler. Se quiser ver o pior caso, procure pelo PIX de `R$ 487.900,00`.
+      Informe abaixo **quantos comprovantes de outros clientes** você conseguiu ler.
+
+      **Opcional: o pior caso.** Entre os comprovantes vazados há um PIX de `R$ 487.900,00`. Para encontrá-lo, procure esse valor no arquivo, ainda no **Terminal**:
+
+      ```bash
+      grep "487.900,00" /tmp/vazamento.txt
+      ```
+
+      O comando mostra a linha desse comprovante. Veja o campo `id` e abra `/comprovantes/` seguido desse número na barra de endereço da aba **Aplicação** para ver como ele aparece na tela: quem pagou, para quem e o documento do pagador.
     concept: Enumeração automatizada e impacto em sigilo bancário
     validatorRef: idor/answer/leaked-count-v1
     hints:
       - level: 1
         text: Rode os dois comandos exatamente como estão, um de cada vez. Depois rode o `grep -vc`, que conta as linhas que **não** têm o nome da Marina.
       - level: 2
-        text: Se o resultado for 0 ou 40, confira se o login funcionou com `cat /tmp/cookies.txt` (deve haver uma linha `session`) e rode o laço de novo.
+        text: O arquivo deve ter 40 linhas (`wc -l /tmp/vazamento.txt`). Se o resultado do `grep` for 0 ou 40, confira se o login funcionou com `cat /tmp/cookies.txt` (deve haver uma linha `session`) e rode o laço de novo.
       - level: 3
         text: São 40 comprovantes no intervalo e 6 são da Marina. A resposta é `34`.
     points: 20

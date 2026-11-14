@@ -14,6 +14,7 @@ const TABS: { id: Tab; label: string }[] = [
 ];
 import { ErrorBox, StatusChip, go } from "./App";
 import { previewPathFrom } from "./previewPath";
+import { AddressHelp } from "./AddressHelp";
 
 const LIVE = new Set(["READY", "ACTIVE"]);
 const ENDED = new Set(["TERMINATED", "EXPIRED", "FAILED", "COMPLETED"]);
@@ -128,6 +129,7 @@ export function SessionView({ id }: { id: string }) {
   // Barra de endereço da aba Aplicação: caminho dentro da aplicação do laboratório (mesma origem).
   const [previewPath, setPreviewPath] = useState("/");
   const [addressDraft, setAddressDraft] = useState("/");
+  const [addressHelp, setAddressHelp] = useState(false);
   const [ending, setEnding] = useState(false);
   const fetchingTickets = useRef(false);
   const now = useNow();
@@ -441,7 +443,7 @@ export function SessionView({ id }: { id: string }) {
                 {showApp && frames && (
                   <>
                     <form
-                      className="address-bar"
+                      className={`address-bar ${addressHelp ? "address-bar-highlight" : ""}`}
                       onSubmit={(e) => {
                         e.preventDefault();
                         const path = previewPathFrom(addressDraft, frames.previewOrigin);
@@ -461,6 +463,7 @@ export function SessionView({ id }: { id: string }) {
                         ir
                       </button>
                     </form>
+                    <AddressHelp open={addressHelp} onToggle={setAddressHelp} />
                     <button className="link" onClick={() => setPreviewKey((k) => k + 1)}>
                       recarregar
                     </button>

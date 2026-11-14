@@ -281,3 +281,18 @@ label { font-weight: 600; font-size: 0.9rem; }
 .hint .md p { margin: 0; }
 .wrapup { border-top: 1px solid var(--border); margin-top: 1rem; padding-top: 0.6rem; text-align: left; }
 .wrapup h3 { margin: 0 0 0.4rem; }
+
+/* Ajuda da barra de endereço (ícone "i") */
+.address-help { position: relative; display: inline-flex; }
+.info-btn { width: 1.3rem; height: 1.3rem; padding: 0; border-radius: 50%; font: italic 700 0.78rem Georgia, serif; line-height: 1; color: var(--accent); border: 1px solid var(--accent); background: transparent; }
+.info-btn[aria-expanded="true"] { background: var(--accent); color: var(--surface); }
+.address-help-pop { position: absolute; top: calc(100% + 0.45rem); right: 0; z-index: 20; width: min(360px, 86vw); display: flex; flex-direction: column; gap: 0.45rem; padding: 0.85rem 1rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: 0 8px 24px rgb(0 0 0 / 0.18); font-size: 0.85rem; }
+.address-help-pop p, .address-help-pop ol { margin: 0; }
+.address-help-pop ol { padding-left: 1.2rem; display: flex; flex-direction: column; gap: 0.25rem; }
+.address-help-pop .link { align-self: flex-end; }
+.address-help-mock { display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap; padding: 0.4rem 0.5rem; border: 1px dashed var(--border); border-radius: 4px; font-size: 0.75rem; }
+.mock-field { padding: 0.15rem 0.4rem; border: 2px solid var(--accent); border-radius: 4px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+.mock-link { color: var(--accent); }
+.address-bar-highlight input { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 35%, transparent); animation: address-pulse 1.4s ease-in-out infinite; }
+@keyframes address-pulse { 50% { box-shadow: 0 0 0 6px color-mix(in srgb, var(--accent) 15%, transparent); } }
+@media (prefers-reduced-motion: reduce) { .address-bar-highlight input { animation: none; } }

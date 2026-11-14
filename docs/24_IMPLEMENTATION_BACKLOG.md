@@ -266,7 +266,7 @@
 ## Épico EP-CONTENT — Laboratórios (F5)
 
 ### IMP-501..504 — LAB-001 SQLi, LAB-002 IDOR, LAB-003 JWT, LAB-004 Command Injection
-- **Estado (2026-11-13):** LAB-001 1.0.1 aprovado pelo PO; LAB-002 e LAB-003 1.0.0 e LAB-004 1.0.1 implementados só local, aguardando teste do PO (ADR-015, `17 §2–4`).
+- **Estado (2026-11-13):** LAB-001 1.0.1 aprovado pelo PO; LAB-002 1.0.1, LAB-003 1.0.0 e LAB-004 1.0.1 implementados só local, aguardando teste do PO (ADR-015, `17 §2–4`).
 - **Descrição:** um item por lab: especificação em `17`, aplicação realista, manifesto, ≥3 etapas, dicas, validadores privados positivos/negativos/regressão. **Req.:** US-022–025, US-031/032, LEX-001–005, `14 §3` · **Dep.:** F4 + especificação aprovada; LAB-004 também G5 de contenção · **P0 (LAB-004 condicionado)**
 - **Aceite:** G4; VAL-01/02 por lab; nenhum código de plataforma alterado para incluir o lab. **Testes:** suíte de validadores contra soluções corretas, incorretas e adversariais. **DoD:** comum + revisão pedagógica.
 
