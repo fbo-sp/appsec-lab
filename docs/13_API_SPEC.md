@@ -17,6 +17,7 @@ Autenticação OIDC; autorização sempre no servidor por escopo/ownership/turma
 |---|---|---|---|
 | GET | `/me` | autenticado | perfil e escopos |
 | GET | `/labs` | aluno/instrutor | releases publicadas e autorizadas |
+| GET | `/me/lab-completions` | autenticado (só o próprio) | conclusões do usuário por lab e versão: quantidade, melhor pontuação e datas (ADR-020) |
 | GET | `/labs/{labId}/releases/{version}` | autorizado | narrativa, CWE, objetivos e variantes; sem testes privados |
 | GET | `/labs/{labId}/releases/{version}/steps` | autorizado | metas e estado LOCKED/AVAILABLE/PASSED; dicas somente quando desbloqueadas |
 | POST | `/sessions` | aluno | inicia sessão para `labId`,`version`,`variantId` |

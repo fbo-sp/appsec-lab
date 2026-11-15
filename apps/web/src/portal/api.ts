@@ -18,6 +18,19 @@ export type Lab = {
   steps: { id: string; order: number; title: string; points: number }[];
 };
 
+/** Conclusões do próprio usuário por versão, da mais recente para a mais antiga (ADR-020). */
+export type LabCompletion = {
+  labId: string;
+  versions: {
+    version: string;
+    completedAttempts: number;
+    bestScore: number;
+    maxScore: number;
+    firstCompletedAt: string | null;
+    lastCompletedAt: string | null;
+  }[];
+};
+
 export type LabSession = {
   sessionId: string;
   status: string;
@@ -138,6 +151,7 @@ async function call<T>(path: string, init: RequestInit = {}): Promise<T> {
 
 export const api = {
   labs: () => call<{ items: Lab[] }>("/api/v1/labs"),
+  completions: () => call<{ items: LabCompletion[] }>("/api/v1/me/lab-completions"),
   release: (labId: string, version: string) => call<Lab>(`/api/v1/labs/${labId}/releases/${version}`),
   sessions: () => call<{ items: LabSession[] }>("/api/v1/sessions"),
   session: (id: string) => call<LabSession>(`/api/v1/sessions/${id}`),

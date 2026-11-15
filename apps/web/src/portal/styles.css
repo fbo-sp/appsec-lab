@@ -75,6 +75,9 @@ label { font-weight: 600; font-size: 0.9rem; }
 .lab-card { display: flex; flex-direction: column; gap: 0.3rem; }
 .lab-card button { align-self: flex-start; margin-top: auto; }
 .lab-card-head { display: flex; justify-content: space-between; align-items: center; }
+.lab-done { margin: 0.2rem 0 0.4rem; color: var(--ok); font-weight: 600; font-size: 0.85rem; }
+.lab-done-older { color: var(--muted); }
+.lab-done-detail { display: block; font-weight: 400; margin-top: 0.1rem; }
 .lab-id { font-weight: 700; color: var(--accent); font-size: 0.85rem; }
 .tag { background: var(--chip-bg); border-radius: 99px; padding: 0.05rem 0.55rem; font-size: 0.75rem; }
 .empty { margin-top: 1rem; }

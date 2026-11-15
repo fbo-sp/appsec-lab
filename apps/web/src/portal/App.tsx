@@ -1,5 +1,5 @@
 import { Fragment, useCallback, useEffect, useState } from "react";
-import { api, ApiError, currentUser, setUser, type Lab, type LabSession } from "./api";
+import { api, ApiError, currentUser, setUser, type Lab, type LabCompletion, type LabSession } from "./api";
 import { SessionView } from "./SessionView";
 
 type Route = { name: "catalog" } | { name: "lab"; labId: string; version: string } | { name: "session"; id: string };
@@ -99,6 +99,9 @@ const DIFFICULTY: Record<string, string> = {
 function Catalog() {
   const labs = useAsync(() => api.labs(), []);
   const sessions = useAsync(() => api.sessions(), []);
+  // Falha ao buscar conclusões não impede o painel: os cards só ficam sem o selo.
+  const completions = useAsync(() => api.completions(), []);
+  const doneByLab = new Map((completions.data?.items ?? []).map((c) => [c.labId, c]));
   return (
     <main className="page">
       <h1>Laboratórios</h1>
@@ -137,6 +140,7 @@ function Catalog() {
               {DIFFICULTY[lab.learning.difficulty] ?? lab.learning.difficulty} · ~{lab.learning.estimatedMinutes} min ·{" "}
               {lab.steps.length} {lab.steps.length === 1 ? "etapa" : "etapas"}
             </p>
+            <CompletionBadge lab={lab} completion={doneByLab.get(lab.labId)} />
             <button className="primary" onClick={() => go(`/labs/${lab.labId}/${lab.version}`)}>
               Abrir
             </button>
@@ -144,6 +148,28 @@ function Catalog() {
         ))}
       </div>
     </main>
+  );
+}
+
+/** Selo "Concluído" do card (ADR-020): vale para qualquer versão e cita a versão quando não é a atual. */
+function CompletionBadge({ lab, completion }: { lab: Lab; completion?: LabCompletion }) {
+  const versions = completion?.versions ?? [];
+  if (versions.length === 0) return null;
+  const current = versions.find((v) => v.version === lab.version);
+  const shown = current ?? versions[0];
+  const when = shown.lastCompletedAt ? new Date(shown.lastCompletedAt).toLocaleDateString("pt-BR") : null;
+  const title = versions
+    .map((v) => `Versão ${v.version}: ${v.completedAttempts}× concluído, melhor ${v.bestScore}/${v.maxScore} pts`)
+    .join("\n");
+  return (
+    <p className={`lab-done ${current ? "" : "lab-done-older"}`} title={title}>
+      <span aria-hidden="true">✓</span> {current ? "Concluído" : `Concluído na versão ${shown.version}`}
+      <span className="lab-done-detail muted small">
+        {shown.completedAttempts > 1 ? "melhor " : ""}
+        {shown.bestScore}/{shown.maxScore} pts{when ? ` · ${when}` : ""}
+        {shown.completedAttempts > 1 ? ` · ${shown.completedAttempts} vezes` : ""}
+      </span>
+    </p>
   );
 }
 
