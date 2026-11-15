@@ -15,7 +15,7 @@ ROOT = Path(__file__).resolve().parent.parent
 LABS = ROOT / "laboratories"
 HISTORY = ROOT / "docs" / "catalogo" / "historico-versoes.yaml"
 OUT = ROOT / "docs" / "catalogo" / "CATALOGO_DE_LABORATORIOS.md"
-INTERNAL = {"LAB-000"}  # lab benigno de verificação do motor: fora do catálogo para aulas
+TUTORIAL = {"LAB-000"}  # tutorial da plataforma (ADR-018): sem vulnerabilidade nem classificação
 INTRO = [
     "> Arquivo **gerado** por `scripts/gen-catalogo.py` a partir dos manifestos em `laboratories/`",
     "> e do histórico em `docs/catalogo/historico-versoes.yaml`. Não edite à mão: ao criar um lab ou",
@@ -79,13 +79,39 @@ def _history_table(entries: list[dict], current: str) -> list[str]:
     return rows
 
 
+def _tutorial(manifests: list[dict], history: dict[str, list[dict]]) -> list[str]:
+    out: list[str] = []
+    for m in (m for m in manifests if m["metadata"]["id"] in TUTORIAL):
+        md, lr = m["metadata"], m["learning"]
+        out += [
+            f"## Comece por aqui: {md['id']} · {md['title']}",
+            "",
+            "Tutorial da plataforma, sem vulnerabilidade e sem classificação.",
+            "Indicado como primeira atividade de qualquer turma, antes do primeiro laboratório.",
+            "",
+            f"- Versão vigente: {md['version']}",
+            f"- Duração estimada: {lr['estimatedMinutes']} min",
+            "",
+            "### Etapas",
+            "",
+            *[f"{i}. {s['title']} ({s['points']} pts)" for i, s in enumerate(m["steps"], start=1)],
+            "",
+            "### Histórico de versões",
+            "",
+            *_history_table(history[md["id"]], md["version"]),
+        ]
+    return out
+
+
 def render() -> str:
     manifests, history = _load()
-    public = [m for m in manifests if m["metadata"]["id"] not in INTERNAL]
+    public = [m for m in manifests if m["metadata"]["id"] not in TUTORIAL]
     out = [
         "# Catálogo de laboratórios — CECyber AppSec Labs",
         "",
         *INTRO,
+        "",
+        *_tutorial(manifests, history),
         "",
         "## Visão geral (versões vigentes)",
         "",
@@ -130,18 +156,6 @@ def render() -> str:
             "",
             *_history_table(history[md["id"]], md["version"]),
         ]
-    internal = [m for m in manifests if m["metadata"]["id"] in INTERNAL]
-    if internal:
-        out += ["", "## Uso interno (fora do catálogo de aulas)", ""]
-        for m in internal:
-            md = m["metadata"]
-            out += [
-                f"### {md['id']} · {md['title']}",
-                "",
-                "Lab benigno de verificação do motor (sem vulnerabilidade), usado em testes da plataforma.",
-                "",
-                *_history_table(history[md["id"]], md["version"]),
-            ]
     return "\n".join(out) + "\n"
 
 

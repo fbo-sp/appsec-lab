@@ -47,15 +47,16 @@ derruba o terminal. Edite `index.html`, salve com Ctrl+S e clique em **recarrega
 As dicas abrem em uma janela pelo botão **Dicas** ao lado de **Validar**. Arraste a divisa entre as
 etapas e as abas para alargar o painel de explicação (duplo clique volta ao tamanho padrão).
 
-Roteiro das etapas do LAB-000 0.2.1 (ADR-010):
+Roteiro do **LAB-000 1.0.0, tutorial da plataforma** (ADR-018, cerca de 10 min, sem vulnerabilidade):
 
-1. **Explorar o ambiente**: descubra no terminal com qual usuário os comandos rodam (`whoami`), digite a
-   resposta e clique em **Validar**. Respostas erradas mostram o critério que falhou. As tentativas são
-   livres. A 1ª dica de cada etapa é grátis, a 2ª custa 1 ponto e a 3ª custa 2, com desconto total de
-   no máximo 10% (ADR-013).
-2. **Alterar a aplicação**: edite `index.html` para exibir "Olá, CECyber", salve e clique em **Validar**.
-   O worker copia o workspace, sobe uma cópia isolada da aplicação e a testa de fora; leva alguns segundos.
-   Ao concluir, a pontuação chega a 100/100 e aparece "Laboratório concluído".
+1. **Conhecer a tela**: na aba **Aplicação**, leia o código da etapa 1 (`AZUL-17`) e valide.
+2. **Usar a barra de endereço**: abra `/tutorial/endereco.html` e informe o código da etapa 2 (`VERDE-58`).
+3. **Usar o terminal**: rode `whoami` e informe o usuário (`lab`).
+4. **Pedir uma dica**: a resposta (`LARANJA-23`) está na dica 1, que é gratuita. A 2ª custa 1 ponto e a
+   3ª custa 2, com desconto total de no máximo 10 pontos (ADR-013).
+5. **Editar o código e validar**: acrescente `<p>Olá, CECyber</p>` ao `index.html`, salve e clique em
+   **Validar**. O worker copia o workspace, sobe uma cópia isolada da aplicação e a testa de fora; leva
+   alguns segundos. Ao concluir, a pontuação chega a 100/100 e aparece o resumo.
 
 Roteiro do **LAB-001 SQL Injection** (Clínica VidaPlena, dados fictícios, cerca de 40 min). As etapas
 explicam cada passo; as respostas abaixo servem só para conferência:

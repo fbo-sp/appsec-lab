@@ -17,6 +17,9 @@ labs:
     - version: 0.2.1
       published: 2026-11-13
       summary: Texto da dica 1 ajustado às abas do workspace.
+    - version: 1.0.0
+      published: 2026-11-15
+      summary: Vira o tutorial da plataforma, com 5 etapas sobre a tela, a barra de endereço, o terminal, as dicas e a validação.
   LAB-001:
     - version: 1.0.0
       published: 2026-11-13

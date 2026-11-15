@@ -128,7 +128,9 @@ function Catalog() {
           <article className="card lab-card" key={`${lab.labId}@${lab.version}`}>
             <div className="lab-card-head">
               <span className="lab-id">{lab.labId}</span>
-              <span className="tag">{lab.primaryCwe}</span>
+              <span className={`tag ${isTutorial(lab) ? "tag-tutorial" : ""}`}>
+                {isTutorial(lab) ? "Comece por aqui" : lab.primaryCwe}
+              </span>
             </div>
             <h3>{lab.title}</h3>
             <p className="muted small">
@@ -180,7 +182,7 @@ function LabIntro({ labId, version }: { labId: string; version: string }) {
     <main className="page narrow">
       <a className="back" href="#/">← Laboratórios</a>
       <p className="eyebrow">
-        {l.labId} · versão {l.version} · {l.primaryCwe}
+        {l.labId} · versão {l.version} · {isTutorial(l) ? "tutorial, sem vulnerabilidade" : l.primaryCwe}
       </p>
       <h1>{l.title}</h1>
       <section className="card story">
@@ -233,9 +235,14 @@ function LabIntro({ labId, version }: { labId: string; version: string }) {
         </p>
         {error && <ErrorBox message={error} />}
       </section>
-      <Classification lab={l} />
+      {!isTutorial(l) && <Classification lab={l} />}
     </main>
   );
+}
+
+/** CWE-1000 (raiz da visão "Research Concepts") marca um lab sem vulnerabilidade: o tutorial (ADR-018). */
+function isTutorial(lab: Lab): boolean {
+  return lab.primaryCwe === "CWE-1000";
 }
 
 /** Bloco final da página de abertura (ADR-017): CWE e enquadramento em OWASP e SANS CWE Top 25. */

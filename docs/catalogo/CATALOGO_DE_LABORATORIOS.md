@@ -10,6 +10,31 @@ SANS CWE Top 25 ou CWE). Edições de referência: OWASP Top 10 2025 (anterior 2
 OWASP API Security Top 10 2023 (anterior 2019) e SANS CWE Top 25 2025 (anterior 2024),
 publicada pela MITRE com a CISA. Quando o lab não se enquadra numa lista, o CWE orienta a escolha.
 
+## Comece por aqui: LAB-000 · Tutorial: conhecendo a plataforma de laboratórios
+
+Tutorial da plataforma, sem vulnerabilidade e sem classificação.
+Indicado como primeira atividade de qualquer turma, antes do primeiro laboratório.
+
+- Versão vigente: 1.0.0
+- Duração estimada: 10 min
+
+### Etapas
+
+1. Conhecer a tela (10 pts)
+2. Usar a barra de endereço (15 pts)
+3. Usar o terminal (15 pts)
+4. Pedir uma dica (20 pts)
+5. Editar o código e validar (40 pts)
+
+### Histórico de versões
+
+| Versão | Criada em | Obsoleta em | Situação | O que mudou |
+|---|---|---|---|---|
+| 0.1.0 | 2026-11-11 | 2026-11-12 | obsoleta | Primeira versão do lab benigno de verificação do motor. |
+| 0.2.0 | 2026-11-12 | 2026-11-13 | obsoleta | Etapas com validação, progresso e dicas. |
+| 0.2.1 | 2026-11-13 | 2026-11-15 | obsoleta | Texto da dica 1 ajustado às abas do workspace. |
+| 1.0.0 | 2026-11-15 | — | vigente | Vira o tutorial da plataforma, com 5 etapas sobre a tela, a barra de endereço, o terminal, as dicas e a validação. |
+
 ## Visão geral (versões vigentes)
 
 | Lab | Título | Versão | CWE principal | OWASP Top 10 | SANS CWE Top 25 | Nível | Duração |
@@ -177,15 +202,3 @@ publicada pela MITRE com a CISA. Quando o lab não se enquadra numa lista, o CWE
 | 1.0.0 | 2026-11-13 | 2026-11-13 | obsoleta | Primeira versão (Command Injection, Ferrara Metais). |
 | 1.0.1 | 2026-11-13 | 2026-11-15 | obsoleta | Correção do fim de linha (CRLF) que quebrava o diag-clp no Windows. |
 | 1.0.2 | 2026-11-15 | — | vigente | Classificação OWASP e SANS CWE Top 25; referência do OWASP Top 10 atualizada para 2025. |
-
-## Uso interno (fora do catálogo de aulas)
-
-### LAB-000 · Laboratório benigno de verificação do motor
-
-Lab benigno de verificação do motor (sem vulnerabilidade), usado em testes da plataforma.
-
-| Versão | Criada em | Obsoleta em | Situação | O que mudou |
-|---|---|---|---|---|
-| 0.1.0 | 2026-11-11 | 2026-11-12 | obsoleta | Primeira versão do lab benigno de verificação do motor. |
-| 0.2.0 | 2026-11-12 | 2026-11-13 | obsoleta | Etapas com validação, progresso e dicas. |
-| 0.2.1 | 2026-11-13 | — | vigente | Texto da dica 1 ajustado às abas do workspace. |

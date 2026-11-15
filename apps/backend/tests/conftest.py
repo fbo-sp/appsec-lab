@@ -22,7 +22,7 @@ from sqlalchemy.orm import Session, sessionmaker
 
 BACKEND = Path(__file__).resolve().parents[1]
 ROOT = BACKEND.parents[1]
-BENIGN_MANIFEST = ROOT / "laboratories" / "LAB-000-hello-benign" / "manifest.yaml"
+BENIGN_MANIFEST = Path(__file__).parent / "fixtures" / "lab000-engine-0.2.1.yaml"
 TABLES = (
     "hint_usages",
     "step_submissions",

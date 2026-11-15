@@ -5,7 +5,7 @@ Validadores privados **não** ficam aqui.
 
 | Diretório | Finalidade | Estado |
 |---|---|---|
-| `LAB-000-hello-benign` | Teste do motor, **sem vulnerabilidade** | Usado nos testes da 1ª fatia |
+| `LAB-000-hello-benign` | Tutorial da plataforma (sem vulnerabilidade) | 1.0.0, só local (ADR-018) |
 | `LAB-001-sqli-clinica` | SQL Injection, Clínica VidaPlena (Flask) | 1.0.2 (classificação; conteúdo da 1.0.1 aprovado pelo PO), só local |
 | `LAB-002-idor-banco` | IDOR, Banco Vértice Digital (Flask) | 1.0.2 em teste do PO, só local |
 | `LAB-003-jwt-cartoes` | JWT sem verificação, Orbe Cartões (Node.js) | 1.0.1 em teste do PO, só local |

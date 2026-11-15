@@ -36,7 +36,7 @@ else
   [ "$code" = "201" ] || { echo "registro falhou: $code" >&2; exit 1; }
 fi
 SID=$(curl -sf -H "X-Dev-User: smoke" -H "Idempotency-Key: smoke-key-0001" -H "Content-Type: application/json" \
-  -d '{"labId":"LAB-000","version":"0.2.1","variantId":"python-http"}' "$API/api/v1/sessions" | json '["sessionId"]')
+  -d '{"labId":"LAB-000","version":"1.0.0","variantId":"python-http"}' "$API/api/v1/sessions" | json '["sessionId"]')
 wait_status "$SID" READY
 if [ "$DOCKER_RT" = 1 ]; then
   C="cecyber-lab-$SID"
@@ -68,8 +68,12 @@ if [ "$DOCKER_RT" = 1 ]; then
     curl -sf -H "X-Dev-User: smoke" -H "Idempotency-Key: $3" -H "Content-Type: application/json" \
       -d "$2" "$API/api/v1/sessions/$SID/steps/$1/evaluations"
   }
-  [ "$(evaluate explore '{"answer":"lab"}' smoke-eval-0001 | json '["status"]')" = "PASSED" ]
-  EV=$(evaluate edit-page '{}' smoke-eval-0002 | json '["evaluationId"]')
+  # Tutorial (ADR-018): quatro etapas de resposta liberam a etapa http de edição.
+  [ "$(evaluate conhecer-tela '{"answer":"AZUL-17"}' smoke-eval-0001 | json '["status"]')" = "PASSED" ]
+  [ "$(evaluate barra-endereco '{"answer":"VERDE-58"}' smoke-eval-0003 | json '["status"]')" = "PASSED" ]
+  [ "$(evaluate usar-terminal '{"answer":"lab"}' smoke-eval-0004 | json '["status"]')" = "PASSED" ]
+  [ "$(evaluate usar-dicas '{"answer":"LARANJA-23"}' smoke-eval-0005 | json '["status"]')" = "PASSED" ]
+  EV=$(evaluate editar-validar '{}' smoke-eval-0002 | json '["evaluationId"]')
   for _ in $(seq 1 90); do
     EVST=$(curl -sf -H "X-Dev-User: smoke" "$API/api/v1/sessions/$SID/evaluations/$EV" | json '["status"]')
     case "$EVST" in QUEUED|RUNNING) sleep 1;; *) break;; esac

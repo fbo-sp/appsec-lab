@@ -1,32 +1,45 @@
-# LAB-000 — laboratório BENIGNO de teste do motor (sem vulnerabilidade intencional).
-# Finalidade: exercitar contrato de manifesto, registro, sessão e ciclo de vida do runtime.
-# NÃO é conteúdo pedagógico do MVP e não deve ser publicado para alunos.
+# LAB-000: TUTORIAL da plataforma (ADR-018). Ensina a usar o ambiente de laboratório; SEM vulnerabilidade.
+# Até a 0.2.1 era o lab benigno de verificação do motor; aquela versão segue congelada como fixture dos
+# testes em apps/backend/tests/fixtures/lab000-engine-0.2.1.yaml.
 #
-# ATENÇÃO: o digest abaixo é uma FIXTURE de teste (sha256 de um texto fixo), não uma imagem
-# publicada. Só é aceitável com o FakeRuntimeAdapter, que não faz pull de imagens. O pipeline de
-# publicação (IMP-028/US-028) deverá verificar a existência do digest no registry.
+# ATENÇÃO: o digest abaixo é uma FIXTURE (sha256 de um texto fixo), não uma imagem publicada.
+# scripts/lab-local.sh e .ps1 trocam pela imagem construída localmente antes de registrar.
 apiVersion: labs.cecyber.io/v1alpha1
 kind: AppSecLab
 metadata:
   id: LAB-000
-  version: 0.2.1
-  title: Laboratório benigno de verificação do motor
+  version: 1.0.0
+  title: "Tutorial: conhecendo a plataforma de laboratórios"
   # O contrato exige uma CWE principal. CWE-1000 é a raiz da visão "Research Concepts" do MITRE,
-  # usada aqui apenas como marcador neutro: este laboratório NÃO contém vulnerabilidade.
+  # usada como marcador de "sem vulnerabilidade": o portal e o catálogo tratam este lab como tutorial.
   primaryCwe: CWE-1000
   secondaryCwes: []
 learning:
   singleVulnerability: true
-  estimatedMinutes: 5
+  estimatedMinutes: 10
   difficulty: beginner
   objectives:
-    - Verificar que a plataforma provisiona, consulta e encerra uma sessão de laboratório
-    - Experimentar o fluxo de etapas com validação automática fora do workspace
+    - Reconhecer as partes da tela de um laboratório e para que serve cada aba
+    - Navegar pela aplicação com a barra de endereço e usar o terminal
+    - Entender como funcionam as dicas, a pontuação e a validação das etapas
+    - Editar o código, validar a correção e encerrar a sessão
   story:
-    role: Engenheiro(a) de plataforma
-    application: Serviço "hello" fictício que apenas responde a uma verificação de saúde
-    context: Homologação técnica do motor de laboratórios antes de qualquer conteúdo vulnerável
-    mission: Explorar o ambiente, alterar a página e validar cada etapa
+    role: Aluno(a) da CECyber no primeiro contato com a plataforma
+    application: Página de boas-vindas da plataforma, criada só para este tutorial (sem vulnerabilidade)
+    context: >-
+      Antes do primeiro laboratório de verdade, vale conhecer o ambiente com calma. Aqui nada pode
+      quebrar e não há falha para encontrar: cada etapa mostra uma parte da tela e pede uma ação simples.
+    mission: Percorrer as cinco etapas e terminar pronto para o primeiro laboratório
+  wrapUp:
+    text: |
+      Pronto! Você já conhece tudo o que vai usar nos laboratórios:
+
+      - **Aplicação** e **barra de endereço** para usar o sistema como um usuário faria;
+      - **Código** para ler e corrigir o programa, e **Terminal** para rodar comandos;
+      - **Dicas** com custo crescente, e tentativas sem limite em cada etapa;
+      - **Validar**, que testa sua correção numa cópia isolada, e a aba **Validação** com o histórico.
+
+      Nos próximos laboratórios a aplicação terá uma falha de segurança de verdade, num cenário de empresa. O caminho é sempre parecido: entender a aplicação, encontrar a falha, medir o impacto e corrigir o código. Um bom começo é o LAB-001, de SQL Injection.
 variants:
   - id: python-http
     language: python
@@ -43,37 +56,153 @@ variants:
       storageMiB: 64
       pidsMax: 32
     session:
-      ttlMinutes: 15
+      ttlMinutes: 20
     interfaces: [editor, terminal, web]
 steps:
-  - id: explore
+  - id: conhecer-tela
     order: 1
-    title: Explorar o ambiente
-    explanation: Seu laboratório roda em um contêiner exclusivo e temporário, com um usuário sem privilégios.
-    task: No terminal, descubra com qual usuário seus comandos são executados e informe-o abaixo.
+    title: Conhecer a tela
+    explanation: |
+      Cada laboratório tem duas áreas:
+
+      - **à esquerda, este painel**: a pontuação, a trilha com as etapas (cada bloco é uma etapa, e as próximas abrem quando você conclui a atual), a explicação e a tarefa da etapa, o campo de resposta e o botão **Validar**;
+      - **à direita, o ambiente**: as abas **Aplicação**, **Código**, **Terminal** e **Validação**.
+
+      No topo ficam o prazo da sessão e o botão **Encerrar sessão**. O ambiente é só seu e é apagado ao final, mas o seu **progresso nas etapas fica salvo**. Se o prazo estiver acabando, a tela oferece **renovar** a sessão.
+
+      Você pode arrastar a divisória entre as duas áreas para dar mais espaço a uma delas.
+
+      ```ilustracao
+      tela
+      ```
+    task: |
+      Abra a aba **Aplicação**. A página de boas-vindas mostra um quadro com o **código da etapa 1**.
+
+      Informe esse código abaixo e clique em **Validar**.
+    concept: O ambiente do laboratório
+    validatorRef: tutorial/answer/codigo-etapa-1-v1
+    hints:
+      - level: 1
+        text: A aba **Aplicação** é a primeira das abas, à direita. O código está no quadro destacado da página.
+      - level: 2
+        text: O código tem o formato `COR-NÚMERO`, em maiúsculas.
+      - level: 3
+        text: O código é `AZUL-17`.
+    points: 10
+  - id: barra-endereco
+    order: 2
+    title: Usar a barra de endereço
+    explanation: |
+      Muitas etapas pedem para abrir um endereço específico da aplicação, como `/comprovantes/10458`. Para isso existe a **barra de endereço** no topo da aba **Aplicação**: ela funciona como a de um navegador, só que para a aplicação do laboratório.
+
+      Apague o que estiver no campo, digite o caminho começando com `/` e pressione **Enter** (ou clique em **ir**). Ao lado ficam **recarregar** e **abrir em nova aba**, que abre a aplicação numa aba comum do navegador, onde você pode editar o endereço normalmente.
+
+      Sempre que o texto citar a **barra de endereço**, o ícone **i** ao lado mostra onde ela fica.
+
+      ```ilustracao
+      barra-endereco
+      ```
+    task: |
+      Na **barra de endereço**, abra `/tutorial/endereco.html`. A página mostra o **código da etapa 2**.
+
+      Informe esse código abaixo.
+    concept: Navegar pela aplicação
+    validatorRef: tutorial/answer/codigo-etapa-2-v1
+    hints:
+      - level: 1
+        text: Clique no ícone **i** ao lado de "barra de endereço" no texto desta etapa para ver onde ela fica.
+      - level: 2
+        text: Digite `/tutorial/endereco.html` no campo e pressione **Enter**.
+      - level: 3
+        text: O código é `VERDE-58`.
+    points: 15
+  - id: usar-terminal
+    order: 3
+    title: Usar o terminal
+    explanation: |
+      A aba **Terminal** abre um terminal Linux dentro do seu ambiente. Nos laboratórios ele serve para rodar comandos, ler arquivos de log e testar a aplicação com ferramentas como o `curl`.
+
+      Seus comandos rodam com um **usuário sem privilégios de administrador**. É o **princípio do menor privilégio**: cada programa ou pessoa recebe só as permissões de que precisa, o que limita o estrago se algo der errado.
+
+      Quando a tarefa trouxer um bloco de comando, use o botão **copiar** do bloco e cole no terminal com **Ctrl+Shift+V** (ou o botão direito do mouse).
+
+      ```ilustracao
+      terminal
+      ```
+    task: |
+      Na aba **Terminal**, rode o comando abaixo, que mostra com qual usuário você está conectado:
+
+      ```bash
+      whoami
+      ```
+
+      O começo da linha do terminal (`aluno@lab:/workspace$`) é só um rótulo. Vale o que o comando `whoami` responde na linha de baixo: informe esse nome abaixo.
     concept: Princípio do menor privilégio
     validatorRef: benign/answer/whoami-v1
     hints:
       - level: 1
-        text: Abra a aba Terminal, ao lado de Código, acima do painel do laboratório.
+        text: Abra a aba **Terminal**, clique dentro da área preta e digite `whoami`, seguido de **Enter**.
       - level: 2
-        text: O comando whoami mostra o nome do usuário atual.
-    points: 40
-  - id: edit-page
-    order: 2
-    title: Alterar a aplicação
-    explanation: >-
-      A validação não confia no seu ambiente: ela copia o workspace, sobe uma instância isolada da
-      aplicação e testa o comportamento a partir de fora.
-    task: Edite index.html para que a página inicial exiba o texto “Olá, CECyber”, salve e clique em Validar.
-    concept: Validação comportamental fora do workspace
+        text: A resposta é uma palavra curta, que aparece na linha logo abaixo do comando.
+      - level: 3
+        text: O usuário é `lab`.
+    points: 15
+  - id: usar-dicas
+    order: 4
+    title: Pedir uma dica
+    explanation: |
+      Travou numa etapa? O botão **Dicas**, ao lado de **Validar**, mostra até três dicas, cada uma mais direta que a anterior:
+
+      - a **dica 1 é gratuita**;
+      - a **dica 2 custa 1 ponto**;
+      - a **dica 3 custa 2 pontos** e costuma entregar a resposta.
+
+      O desconto total das dicas é limitado a **10 pontos** no laboratório e **nunca reprova**: concluir todas as etapas conclui o laboratório. As **tentativas são ilimitadas**, então errar uma resposta não custa nada.
+
+      ```ilustracao
+      dicas
+      ```
+    task: |
+      Clique em **Dicas** e abra **apenas a dica 1**, que é gratuita. Ela mostra uma palavra-código.
+
+      Informe essa palavra abaixo.
+    concept: Dicas e pontuação
+    validatorRef: tutorial/answer/palavra-dica-v1
+    hints:
+      - level: 1
+        text: A palavra-código é `LARANJA-23`.
+      - level: 2
+        text: Esta dica custou 1 ponto e não trouxe nada novo. Na dúvida, comece sempre pela dica 1.
+      - level: 3
+        text: A resposta é `LARANJA-23`, a mesma da dica 1.
+    points: 20
+  - id: editar-validar
+    order: 5
+    title: Editar o código e validar
+    explanation: |
+      Nos laboratórios, a última etapa é sempre **corrigir o código**. Na aba **Código** ficam a lista de arquivos e o editor. Salve com **Ctrl+S**; a aplicação recarrega sozinha, e você vê o resultado na aba **Aplicação** (use **recarregar** se precisar). O botão **Código + Aplicação** mostra os dois lado a lado.
+
+      Ao clicar em **Validar** numa etapa de correção, a plataforma **copia o seu código para um ambiente separado**, sobe a aplicação e a testa de fora, como um usuário faria. Assim, o que vale é o comportamento da aplicação, e não o que está no seu terminal. O resultado e o histórico das tentativas ficam na aba **Validação**.
+
+      Depois da última etapa aparece o **resumo** com pontos, tempo e conquistas. Ao terminar, use **Encerrar sessão** para liberar o ambiente.
+
+      ```ilustracao
+      editar-validar
+      ```
+    task: |
+      1. Na aba **Código**, abra o arquivo `index.html`.
+      2. Logo abaixo do título, acrescente o parágrafo `<p>Olá, CECyber</p>` e salve com **Ctrl+S**.
+      3. Confira o texto na aba **Aplicação** e clique em **Validar**.
+    concept: Validação fora do ambiente do aluno
     validatorRef: benign/python-http/edit-page-v1
     hints:
       - level: 1
-        text: Abra o arquivo index.html na lista de arquivos.
+        text: O arquivo `index.html` está na lista de arquivos da aba **Código**. Clique nele para abrir no editor.
       - level: 2
-        text: Inclua, por exemplo, <p>Olá, CECyber</p> dentro de <body> e salve com Ctrl+S.
-    points: 60
+        text: O título é a linha com `<h1>`. Coloque o novo parágrafo na linha de baixo e salve.
+      - level: 3
+        text: "Depois do `</h1>`, a linha deve ficar assim: `<p>Olá, CECyber</p>`. Salve com **Ctrl+S** e valide."
+    points: 40
 policy:
   sequentialUnlock: true
   allowStepRetry: true

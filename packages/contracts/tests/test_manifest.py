@@ -15,7 +15,9 @@ from cecyber_contracts import (
 from cecyber_contracts.__main__ import schema_json
 
 ROOT = Path(__file__).resolve().parents[3]
-BENIGN = ROOT / "laboratories" / "LAB-000-hello-benign" / "manifest.yaml"
+# Manifesto mínimo de referência: o LAB-000 0.2.1 congelado (o lab real virou o tutorial, ADR-018).
+BENIGN = ROOT / "apps" / "backend" / "tests" / "fixtures" / "lab000-engine-0.2.1.yaml"
+TUTORIAL = ROOT / "laboratories" / "LAB-000-hello-benign" / "manifest.yaml"
 SCHEMA = ROOT / "packages" / "contracts" / "schemas" / "appseclab.v1alpha1.schema.json"
 
 
@@ -34,6 +36,12 @@ def test_benign_manifest_is_valid(manifest: dict[str, Any]) -> None:
     m = validate_manifest(manifest)
     assert m.metadata.id == "LAB-000"
     assert m.variants[0].network.egress_profile == "deny-all"
+
+
+def test_tutorial_manifest_is_valid() -> None:
+    m = validate_manifest(load_manifest(TUTORIAL))
+    assert m.metadata.id == "LAB-000" and m.metadata.primary_cwe == "CWE-1000"
+    assert len(m.steps) == 5 and m.metadata.classifications is None
 
 
 def test_schema_file_matches_model() -> None:

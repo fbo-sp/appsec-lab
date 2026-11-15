@@ -307,3 +307,47 @@ label { font-weight: 600; font-size: 0.9rem; }
 .classification dt { color: var(--muted); }
 .classification dd { margin: 0; }
 @media (max-width: 560px) { .classification dl { grid-template-columns: 1fr; } .classification dd { margin-bottom: 0.4rem; } }
+.tag-tutorial { background: color-mix(in srgb, var(--ok) 15%, var(--surface)); color: var(--ok); }
+
+/* Ilustrações da interface no texto das etapas (ADR-018) */
+.ill { margin: 0.6rem 0; padding: 0.6rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg); }
+.ill figcaption { margin-top: 0.45rem; font-size: 0.78rem; color: var(--muted); }
+.ill > div { font-size: 0.72rem; line-height: 1.3; }
+.ill-screen { display: grid; grid-template-columns: 38% 1fr; gap: 0.35rem; min-height: 7.5rem; }
+.ill-side, .ill-main { border: 1px solid var(--border); border-radius: 5px; background: var(--surface); padding: 0.35rem; display: flex; flex-direction: column; gap: 0.35rem; }
+.ill-score { font-weight: 600; display: flex; flex-direction: column; gap: 0.2rem; }
+.ill-trail { display: flex; gap: 2px; }
+.ill-trail i { flex: 1; height: 5px; border-radius: 2px; background: var(--border); }
+.ill-trail i.on { background: var(--accent); }
+.ill-lines { display: flex; flex-direction: column; gap: 3px; }
+.ill-lines span { height: 4px; border-radius: 2px; background: var(--border); }
+.ill-lines span.short { width: 60%; }
+.ill-row { display: flex; gap: 0.3rem; align-items: center; }
+.ill-input { flex: 1; min-width: 2rem; height: 1rem; border: 1px solid var(--border); border-radius: 3px; background: var(--surface); }
+.ill-btn { padding: 0.1rem 0.4rem; border-radius: 4px; background: var(--accent); color: #fff; white-space: nowrap; }
+.ill-ghost { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
+.ill-tabs { display: flex; gap: 0.15rem; flex-wrap: wrap; }
+.ill-tabs span { padding: 0.08rem 0.3rem; border-radius: 4px 4px 0 0; color: var(--muted); }
+.ill-tabs span.on { background: color-mix(in srgb, var(--accent) 14%, var(--surface)); color: var(--accent); font-weight: 600; }
+.ill-page { flex: 1; display: flex; align-items: center; justify-content: center; border-radius: 3px; background: #fff; color: #1f2937; }
+.ill-box { border: 2px solid #2563eb; border-radius: 4px; padding: 0.15rem 0.35rem; background: #eff6ff; }
+.ill-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem; }
+.ill-field { padding: 0.15rem 0.4rem; border: 1px solid var(--border); border-radius: 4px; background: var(--surface); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+.ill-focus { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 30%, transparent); }
+.ill-link { color: var(--accent); }
+.ill-info { display: inline-flex; align-items: center; justify-content: center; width: 1rem; height: 1rem; border-radius: 50%; border: 1px solid var(--accent); color: var(--accent); font: italic 700 0.62rem Georgia, serif; }
+.ill-terminal { background: #0f172a; color: #e2e8f0; border-radius: 5px; padding: 0.45rem 0.55rem; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+.ill-prompt { color: #4ade80; }
+.ill-caret { display: inline-block; width: 0.45em; height: 1em; margin-left: 2px; vertical-align: -0.15em; background: #e2e8f0; }
+.ill-out { color: #94a3b8; margin-top: 0.2rem; }
+.ill-hints { display: flex; flex-direction: column; gap: 0.35rem; }
+.ill-hints ul { margin: 0; padding: 0.35rem 0.5rem; list-style: none; border: 1px solid var(--border); border-radius: 5px; background: var(--surface); display: flex; flex-direction: column; gap: 0.15rem; }
+.ill-hints em { font-style: normal; color: var(--warn); margin-left: 0.3rem; }
+.ill-hints em.free { color: var(--ok); }
+.ill-editor { display: grid; grid-template-columns: max-content 1fr; gap: 0.35rem; }
+.ill-files { display: flex; flex-direction: column; gap: 0.1rem; padding: 0.3rem; border: 1px solid var(--border); border-radius: 5px; background: var(--surface); }
+.ill-files span { padding: 0 0.25rem; border-radius: 3px; }
+.ill-files span.on { background: color-mix(in srgb, var(--accent) 14%, var(--surface)); color: var(--accent); }
+.ill-code { margin: 0; padding: 0.3rem 0.4rem; display: flex; flex-direction: column; border: 1px solid var(--border); border-radius: 5px; background: var(--surface); font-size: 0.7rem; overflow: hidden; }
+.ill-added { background: color-mix(in srgb, var(--ok) 18%, transparent); border-radius: 2px; }
+.ill-result { grid-column: 1 / -1; color: var(--ok); font-weight: 600; }

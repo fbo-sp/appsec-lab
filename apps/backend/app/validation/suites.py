@@ -138,6 +138,31 @@ _SUITES: tuple[Suite, ...] = (
         ),
         success_feedback="Página atualizada e validada a partir de uma cópia isolada do seu workspace.",
     ),
+    # LAB-000 1.0.0+ (tutorial da plataforma, ADR-018) --------------------------------------------
+    AnswerSuite(
+        ref="tutorial/answer/codigo-etapa-1-v1",
+        version="1.0.0",
+        prompt="Código da etapa 1 mostrado na aba Aplicação",
+        accepted=("azul-17", "azul 17", "azul17"),
+        success_feedback="Isso! A aba Aplicação mostra o sistema do laboratório, como um usuário o veria.",
+        failure_feedback="Não é esse. Abra a aba Aplicação e procure o quadro com o código da etapa 1.",
+    ),
+    AnswerSuite(
+        ref="tutorial/answer/codigo-etapa-2-v1",
+        version="1.0.0",
+        prompt="Código da etapa 2 na página /tutorial/endereco.html",
+        accepted=("verde-58", "verde 58", "verde58"),
+        success_feedback="Isso! Com a barra de endereço você abre qualquer caminho da aplicação.",
+        failure_feedback="Não é esse. Digite /tutorial/endereco.html na barra de endereço e pressione Enter.",
+    ),
+    AnswerSuite(
+        ref="tutorial/answer/palavra-dica-v1",
+        version="1.0.0",
+        prompt="Palavra-código da dica 1",
+        accepted=("laranja-23", "laranja 23", "laranja23"),
+        success_feedback="Isso! A dica 1 é sempre gratuita: comece por ela quando travar.",
+        failure_feedback="Não é essa. Clique em Dicas e abra a dica 1, que é gratuita.",
+    ),
 )
 
 # LAB-001 (SQL Injection, Clínica VidaPlena) ------------------------------------------------------

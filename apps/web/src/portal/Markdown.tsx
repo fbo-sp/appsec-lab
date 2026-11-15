@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { ReactNode } from "react";
 import { parseMarkdown, type Inline } from "./markdown";
+import { Illustration, hasIllustration } from "./Illustrations";
 
 /** Renderiza o Markdown restrito do conteúdo das etapas (ADR-012) somente com elementos React. */
 /** Ajudas contextuais: um termo em **negrito** cujo texto (sem diferenciar maiúsculas) é uma chave do mapa
@@ -33,6 +34,9 @@ export function Markdown({ text, className, terms }: { text: string; className?:
               </ol>
             );
           case "pre":
+            if (b.lang === "ilustracao" && hasIllustration(b.v.trim())) {
+              return <Illustration key={i} name={b.v.trim()} />;
+            }
             return <CodeBlock key={i} lang={b.lang} code={b.v} />;
         }
       })}
