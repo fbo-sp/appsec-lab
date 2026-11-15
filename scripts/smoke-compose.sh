@@ -21,6 +21,8 @@ API=http://127.0.0.1:8000
 trap '"${COMPOSE[@]}" logs --no-color api worker | tail -40; "${COMPOSE[@]}" down -v >/dev/null 2>&1 || true' EXIT
 "${COMPOSE[@]}" up -d --wait "${BUILD[@]}"
 json() { python3 -c "import json,sys; print(json.load(sys.stdin)$1)"; }
+# Versão do LAB-000 lida do próprio manifesto, para o smoke não quebrar a cada bump de versão.
+LAB000_VERSION="$(grep -E '^  version:' "$ROOT/laboratories/LAB-000-hello-benign/manifest.yaml" | head -1 | sed -E 's/.*version:[[:space:]]*"?([^"[:space:]]+)"?.*/\1/')"
 wait_status() {
   for _ in $(seq 1 40); do
     st=$(curl -sf -H "X-Dev-User: smoke" "$API/api/v1/sessions/$1" | json '["status"]')
@@ -36,7 +38,7 @@ else
   [ "$code" = "201" ] || { echo "registro falhou: $code" >&2; exit 1; }
 fi
 SID=$(curl -sf -H "X-Dev-User: smoke" -H "Idempotency-Key: smoke-key-0001" -H "Content-Type: application/json" \
-  -d '{"labId":"LAB-000","version":"1.0.0","variantId":"python-http"}' "$API/api/v1/sessions" | json '["sessionId"]')
+  -d "{\"labId\":\"LAB-000\",\"version\":\"$LAB000_VERSION\",\"variantId\":\"python-http\"}" "$API/api/v1/sessions" | json '["sessionId"]')
 wait_status "$SID" READY
 if [ "$DOCKER_RT" = 1 ]; then
   C="cecyber-lab-$SID"
