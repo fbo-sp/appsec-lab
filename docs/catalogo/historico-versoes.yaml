@@ -36,6 +36,9 @@ labs:
     - version: 1.0.3
       published: 2026-11-15
       summary: Texto das tarefas com só o necessário; verificação de log e solução de problemas movidas para "Explorar mais"; ataque a repetir mostrado por extenso na etapa 5.
+    - version: 1.0.4
+      published: 2026-11-15
+      summary: Leitura do log usa grep da linha útil em vez de tail (o /tmp/app.log também registra os acessos GET / 200, que escondiam a linha no tail).
   LAB-002:
     - version: 1.0.0
       published: 2026-11-13
@@ -49,6 +52,9 @@ labs:
     - version: 1.0.3
       published: 2026-11-15
       summary: Texto das tarefas enxuto; log, pior caso do PIX e solução de problemas em "Explorar mais"; navegação pela barra de endereço explicitada na etapa 5.
+    - version: 1.0.4
+      published: 2026-11-15
+      summary: Leitura do log usa grep da linha útil em vez de tail (os acessos GET / 200 no /tmp/app.log escondiam a linha no tail).
   LAB-003:
     - version: 1.0.0
       published: 2026-11-13
@@ -59,6 +65,9 @@ labs:
     - version: 1.0.2
       published: 2026-11-15
       summary: Etapas 4 e 5 com só o necessário na tarefa; leitura do log e solução de problemas em "Explorar mais"; relogin na aba Aplicação explicitado (Sair e entrar com as credenciais da Larissa, da etapa 1).
+    - version: 1.0.3
+      published: 2026-11-15
+      summary: Leitura do log usa grep da linha útil, por exemplo grep da mensagem "Limite alterado", em vez de tail, porque os acessos GET / 200 no /tmp/app.log escondiam a linha.
   LAB-004:
     - version: 1.0.0
       published: 2026-11-13
@@ -72,3 +81,6 @@ labs:
     - version: 1.0.3
       published: 2026-11-15
       summary: Texto das tarefas enxuto; leitura do log e solução de problemas em "Explorar mais"; ataque a repetir mostrado por extenso na etapa 5.
+    - version: 1.0.4
+      published: 2026-11-15
+      summary: Leitura do log usa grep da linha útil, por exemplo grep da mensagem "Executando", em vez de tail, porque os acessos GET / 200 no /tmp/app.log escondiam a linha.

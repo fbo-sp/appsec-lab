@@ -8,7 +8,7 @@ apiVersion: labs.cecyber.io/v1alpha1
 kind: AppSecLab
 metadata:
   id: LAB-001
-  version: 1.0.3
+  version: 1.0.4
   title: "SQL Injection: a busca que expõe pacientes"
   primaryCwe: CWE-89
   secondaryCwes: []
@@ -131,13 +131,13 @@ steps:
     task: |
       1. Na aba **Aplicação**, busque apenas por uma aspa simples: `'`
       2. A página mostra *Internal Server Error*. O detalhe do erro não aparece para o usuário: ele vai para o log.
-      3. Na aba **Terminal**, leia as últimas linhas do log da aplicação:
+      3. Na aba **Terminal**, leia o log da aplicação. O `/tmp/app.log` guarda toda a saída do processo, inclusive os acessos (`GET / 200`), então filtre direto a linha do erro do banco:
 
       ```bash
-      tail -n 20 /tmp/app.log
+      grep sqlite3 /tmp/app.log | tail -n 1
       ```
 
-      Informe abaixo o **tipo do erro** que aparece na última linha do erro (o nome antes dos dois-pontos, sem o módulo).
+      Informe abaixo o **tipo do erro** que aparece nessa linha (o nome antes dos dois-pontos, sem o módulo `sqlite3`).
     concept: Dado versus código, ou por que a aspa quebra a consulta
     validatorRef: sqli/answer/error-type-v1
     hints:
@@ -174,10 +174,10 @@ steps:
     explore: |
       **Por que vale ler o log aqui.** Na tela, cada tentativa só mostra *Internal Server Error* ou a lista de médicos — você infere o número de colunas pela ausência de erro. O log revela o **porquê** de cada erro.
 
-      No **Terminal**:
+      No **Terminal** (o `/tmp/app.log` também registra os acessos `GET / 200`, então filtre as linhas do banco):
 
       ```bash
-      tail -n 20 /tmp/app.log
+      grep sqlite3 /tmp/app.log | tail -n 3
       ```
 
       **O que procurar.** Para o `ORDER BY` que falhou, a mensagem é algo como `sqlite3.OperationalError: 1st ORDER BY term out of range`. O achado interessante é que a mensagem de erro do banco confirma, em texto, quantas colunas a consulta tem — é assim que um atacante troca tentativa-e-erro por certeza, e é também por isso que mensagens de erro detalhadas nunca devem chegar ao usuário final.
@@ -271,10 +271,10 @@ steps:
       2. busque por `D'Ávila` e confirme que a Dra. Joana continua sendo encontrada;
       3. clique em **Validar**.
     explore: |
-      **Se algo não funcionar depois de salvar.** Se a aplicação mostrar *Internal Server Error*, é sinal de que o arquivo ficou com um erro de sintaxe ou de recuo. No **Terminal**:
+      **Se algo não funcionar depois de salvar.** Se a aplicação mostrar *Internal Server Error*, é sinal de que o arquivo ficou com um erro de sintaxe ou de recuo. No **Terminal**, filtre as linhas de erro (o log também traz os acessos `GET / 200`):
 
       ```bash
-      tail -n 20 /tmp/app.log
+      grep -iE "error|traceback" /tmp/app.log | tail -n 15
       ```
 
       **O que procurar.** Uma linha de `IndentationError` ou `SyntaxError` aponta o arquivo e a linha a corrigir. Em Python, quase sempre é um recuo trocado — compare o seu método `buscar_por_nome` com o código da tarefa.
@@ -288,7 +288,7 @@ steps:
       - level: 2
         text: "No SQL fica só o marcador `?`, sem aspas em volta e sem `%`. O valor vai como segundo argumento de `execute`: `execute(sql, (valor,))`."
       - level: 3
-        text: "Use exatamente: `linhas = self._conexao.execute(sql, (f\"%{termo}%\",)).fetchall()`, com `sql = \"SELECT id, nome, especialidade, crm FROM medicos WHERE nome LIKE ?\"`. Se a validação falhar, veja na aba **Validação** qual verificação não passou e confira o log com `tail -n 20 /tmp/app.log`."
+        text: "Use exatamente: `linhas = self._conexao.execute(sql, (f\"%{termo}%\",)).fetchall()`, com `sql = \"SELECT id, nome, especialidade, crm FROM medicos WHERE nome LIKE ?\"`. Se a validação falhar, veja na aba **Validação** qual verificação não passou e confira o log com `grep -iE \"error|traceback\" /tmp/app.log | tail`."
     references:
       - title: "Python: placeholders no sqlite3"
         url: https://docs.python.org/3/library/sqlite3.html#sqlite3-placeholders

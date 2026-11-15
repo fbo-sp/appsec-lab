@@ -8,7 +8,7 @@ apiVersion: labs.cecyber.io/v1alpha1
 kind: AppSecLab
 metadata:
   id: LAB-002
-  version: 1.0.3
+  version: 1.0.4
   title: "IDOR: o comprovante que não era seu"
   primaryCwe: CWE-639
   secondaryCwes: [CWE-862]
@@ -265,13 +265,13 @@ steps:
       2. abra `/comprovantes/10458` e confirme que o comprovante da Marina continua aparecendo;
       3. clique em **Validar**.
     explore: |
-      **Se algo não funcionar depois de salvar.** Se a aplicação mostrar *Internal Server Error*, é sinal de que o arquivo ficou com um erro de sintaxe ou de recuo. No **Terminal**, veja o fim do log:
+      **Se algo não funcionar depois de salvar.** Se a aplicação mostrar *Internal Server Error*, é sinal de que o arquivo ficou com um erro de sintaxe ou de recuo. No **Terminal**, filtre as linhas de erro (o `/tmp/app.log` também registra os acessos `GET / 200`):
 
       ```bash
-      tail -n 20 /tmp/app.log
+      grep -iE "error|traceback" /tmp/app.log | tail -n 15
       ```
 
-      **O que procurar.** A última linha de erro aponta o arquivo e a linha com o problema; em Python, quase sempre é um recuo trocado. Compare o seu método `obter` com o código da tarefa.
+      **O que procurar.** A linha de erro aponta o arquivo e a linha com o problema; em Python, quase sempre é um recuo trocado. Compare o seu método `obter` com o código da tarefa.
 
       **Por que testar os dois comprovantes.** Abrir `/comprovantes/10457` (de outro cliente) e `/comprovantes/10458` (da Marina) confirma que a correção bloqueou só o acesso indevido, sem quebrar o acesso legítimo. Essa é a verificação que se faz ao corrigir uma falha de autorização: o ataque original deixa de funcionar e o uso normal continua intacto.
     concept: Autorização no nível do objeto (verificação de dono)

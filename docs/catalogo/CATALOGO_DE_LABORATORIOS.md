@@ -40,14 +40,14 @@ Indicado como primeira atividade de qualquer turma, antes do primeiro laboratór
 
 | Lab | Título | Versão | CWE principal | OWASP Top 10 | SANS CWE Top 25 | Nível | Duração |
 |---|---|---|---|---|---|---|---|
-| LAB-001 | SQL Injection: a busca que expõe pacientes | 1.0.3 | CWE-89 | A05 Injection (2025) | #2 CWE-89 SQL Injection (2025) | Iniciante | 40 min |
-| LAB-002 | IDOR: o comprovante que não era seu | 1.0.3 | CWE-639 | A01 Broken Access Control (2025) | #4 CWE-862 Missing Authorization (2025) | Iniciante | 40 min |
-| LAB-003 | JWT: o token que ninguém conferiu | 1.0.2 | CWE-347 | A07 Authentication Failures (2025) | Não se enquadra; use o CWE (2025) | Iniciante | 45 min |
-| LAB-004 | Command Injection: o teste de rede que virou terminal | 1.0.3 | CWE-78 | A05 Injection (2025) | #9 CWE-78 OS Command Injection (2025) | Iniciante | 40 min |
+| LAB-001 | SQL Injection: a busca que expõe pacientes | 1.0.4 | CWE-89 | A05 Injection (2025) | #2 CWE-89 SQL Injection (2025) | Iniciante | 40 min |
+| LAB-002 | IDOR: o comprovante que não era seu | 1.0.4 | CWE-639 | A01 Broken Access Control (2025) | #4 CWE-862 Missing Authorization (2025) | Iniciante | 40 min |
+| LAB-003 | JWT: o token que ninguém conferiu | 1.0.3 | CWE-347 | A07 Authentication Failures (2025) | Não se enquadra; use o CWE (2025) | Iniciante | 45 min |
+| LAB-004 | Command Injection: o teste de rede que virou terminal | 1.0.4 | CWE-78 | A05 Injection (2025) | #9 CWE-78 OS Command Injection (2025) | Iniciante | 40 min |
 
 ## LAB-001 · SQL Injection: a busca que expõe pacientes
 
-- Versão vigente: 1.0.3
+- Versão vigente: 1.0.4
 - Cenário: Portal de agendamento com a busca "Encontre um médico"
 - Papel do aluno: Desenvolvedor(a) do time de sistemas da Clínica VidaPlena
 - Linguagem / stack: python / flask
@@ -83,11 +83,12 @@ Indicado como primeira atividade de qualquer turma, antes do primeiro laboratór
 | 1.0.0 | 2026-11-13 | 2026-11-13 | obsoleta | Primeira versão (SQL Injection, Clínica VidaPlena). |
 | 1.0.1 | 2026-11-13 | 2026-11-15 | obsoleta | Trecho da correção com o recuo real do método (evita IndentationError). Aprovada pelo PO. |
 | 1.0.2 | 2026-11-15 | 2026-11-15 | obsoleta | Classificação OWASP e SANS CWE Top 25; referência do OWASP Top 10 atualizada para 2025. |
-| 1.0.3 | 2026-11-15 | — | vigente | Texto das tarefas com só o necessário; verificação de log e solução de problemas movidas para "Explorar mais"; ataque a repetir mostrado por extenso na etapa 5. |
+| 1.0.3 | 2026-11-15 | 2026-11-15 | obsoleta | Texto das tarefas com só o necessário; verificação de log e solução de problemas movidas para "Explorar mais"; ataque a repetir mostrado por extenso na etapa 5. |
+| 1.0.4 | 2026-11-15 | — | vigente | Leitura do log usa grep da linha útil em vez de tail (o /tmp/app.log também registra os acessos GET / 200, que escondiam a linha no tail). |
 
 ## LAB-002 · IDOR: o comprovante que não era seu
 
-- Versão vigente: 1.0.3
+- Versão vigente: 1.0.4
 - Cenário: Internet Banking, área "Meus comprovantes de PIX"
 - Papel do aluno: Desenvolvedor(a) do time de canais digitais do Banco Vértice Digital
 - Linguagem / stack: python / flask
@@ -125,11 +126,12 @@ Indicado como primeira atividade de qualquer turma, antes do primeiro laboratór
 | 1.0.0 | 2026-11-13 | 2026-11-14 | obsoleta | Primeira versão (IDOR, Banco Vértice Digital). |
 | 1.0.1 | 2026-11-14 | 2026-11-15 | obsoleta | Etapa 4 com contagem correta (34) e busca do PIX de R$ 487.900,00; etapa 2 explica a barra de endereço. |
 | 1.0.2 | 2026-11-15 | 2026-11-15 | obsoleta | Classificação OWASP, OWASP API e SANS CWE Top 25; referência do OWASP Top 10 atualizada para 2025. |
-| 1.0.3 | 2026-11-15 | — | vigente | Texto das tarefas enxuto; log, pior caso do PIX e solução de problemas em "Explorar mais"; navegação pela barra de endereço explicitada na etapa 5. |
+| 1.0.3 | 2026-11-15 | 2026-11-15 | obsoleta | Texto das tarefas enxuto; log, pior caso do PIX e solução de problemas em "Explorar mais"; navegação pela barra de endereço explicitada na etapa 5. |
+| 1.0.4 | 2026-11-15 | — | vigente | Leitura do log usa grep da linha útil em vez de tail (os acessos GET / 200 no /tmp/app.log escondiam a linha no tail). |
 
 ## LAB-003 · JWT: o token que ninguém conferiu
 
-- Versão vigente: 1.0.2
+- Versão vigente: 1.0.3
 - Cenário: API do Portal Orbe, usada pelo site e pelo aplicativo do cliente
 - Papel do aluno: Desenvolvedor(a) do time de APIs da Orbe Cartões, emissora de cartões de crédito
 - Linguagem / stack: javascript / express
@@ -166,11 +168,12 @@ Indicado como primeira atividade de qualquer turma, antes do primeiro laboratór
 |---|---|---|---|---|
 | 1.0.0 | 2026-11-13 | 2026-11-15 | obsoleta | Primeira versão (JWT sem verificação de assinatura, Orbe Cartões, Node.js). |
 | 1.0.1 | 2026-11-15 | 2026-11-15 | obsoleta | Classificação OWASP, OWASP API e SANS CWE Top 25; referência ao OWASP Top 10:2025 A07. |
-| 1.0.2 | 2026-11-15 | — | vigente | Etapas 4 e 5 com só o necessário na tarefa; leitura do log e solução de problemas em "Explorar mais"; relogin na aba Aplicação explicitado (Sair e entrar com as credenciais da Larissa, da etapa 1). |
+| 1.0.2 | 2026-11-15 | 2026-11-15 | obsoleta | Etapas 4 e 5 com só o necessário na tarefa; leitura do log e solução de problemas em "Explorar mais"; relogin na aba Aplicação explicitado (Sair e entrar com as credenciais da Larissa, da etapa 1). |
+| 1.0.3 | 2026-11-15 | — | vigente | Leitura do log usa grep da linha útil, por exemplo grep da mensagem "Limite alterado", em vez de tail, porque os acessos GET / 200 no /tmp/app.log escondiam a linha. |
 
 ## LAB-004 · Command Injection: o teste de rede que virou terminal
 
-- Versão vigente: 1.0.3
+- Versão vigente: 1.0.4
 - Cenário: Portal de Manutenção da Planta Contagem, com o teste de comunicação com CLPs
 - Papel do aluno: Desenvolvedor(a) do time de sistemas industriais da Ferrara Metais
 - Linguagem / stack: python / flask
@@ -206,4 +209,5 @@ Indicado como primeira atividade de qualquer turma, antes do primeiro laboratór
 | 1.0.0 | 2026-11-13 | 2026-11-13 | obsoleta | Primeira versão (Command Injection, Ferrara Metais). |
 | 1.0.1 | 2026-11-13 | 2026-11-15 | obsoleta | Correção do fim de linha (CRLF) que quebrava o diag-clp no Windows. |
 | 1.0.2 | 2026-11-15 | 2026-11-15 | obsoleta | Classificação OWASP e SANS CWE Top 25; referência do OWASP Top 10 atualizada para 2025. |
-| 1.0.3 | 2026-11-15 | — | vigente | Texto das tarefas enxuto; leitura do log e solução de problemas em "Explorar mais"; ataque a repetir mostrado por extenso na etapa 5. |
+| 1.0.3 | 2026-11-15 | 2026-11-15 | obsoleta | Texto das tarefas enxuto; leitura do log e solução de problemas em "Explorar mais"; ataque a repetir mostrado por extenso na etapa 5. |
+| 1.0.4 | 2026-11-15 | — | vigente | Leitura do log usa grep da linha útil, por exemplo grep da mensagem "Executando", em vez de tail, porque os acessos GET / 200 no /tmp/app.log escondiam a linha. |

@@ -10,7 +10,7 @@ apiVersion: labs.cecyber.io/v1alpha1
 kind: AppSecLab
 metadata:
   id: LAB-004
-  version: 1.0.3
+  version: 1.0.4
   title: "Command Injection: o teste de rede que virou terminal"
   primaryCwe: CWE-78
   secondaryCwes: []
@@ -145,10 +145,10 @@ steps:
     explore: |
       **Por que vale ver o log do servidor.** Na tela você vê a saída dos comandos, mas não a linha que o servidor de fato executou. O log mostra o comando montado, e é aí que a falha fica evidente.
 
-      No **Terminal**:
+      No **Terminal**, filtre a linha que o servidor executou (o `/tmp/app.log` também registra os acessos `GET / 200`):
 
       ```bash
-      tail -n 5 /tmp/app.log
+      grep "Executando" /tmp/app.log | tail -n 1
       ```
 
       **O que procurar.** A linha registra algo como `Executando: diag-clp 10.20.1.15; whoami` — ou seja, o texto que você digitou foi **concatenado** ao nome do programa e entregue inteiro ao shell. O achado interessante é ver, em texto, que o `;` e tudo depois dele não foram tratados como um endereço, mas como comandos a executar. É exatamente essa concatenação que a etapa 5 vai eliminar.
@@ -277,13 +277,13 @@ steps:
       2. teste `10.20.1.15` e confirme que o CLP continua respondendo;
       3. clique em **Validar**.
     explore: |
-      **Se algo não funcionar depois de salvar.** Se a aplicação mostrar *Internal Server Error*, é sinal de que o arquivo ficou com um erro de sintaxe ou de recuo. No **Terminal**:
+      **Se algo não funcionar depois de salvar.** Se a aplicação mostrar *Internal Server Error*, é sinal de que o arquivo ficou com um erro de sintaxe ou de recuo. No **Terminal**, filtre as linhas de erro (o log também traz os acessos `GET / 200`):
 
       ```bash
-      tail -n 20 /tmp/app.log
+      grep -iE "error|traceback" /tmp/app.log | tail -n 15
       ```
 
-      **O que procurar.** A última linha de erro aponta o arquivo e a linha a corrigir; em Python, quase sempre é um recuo trocado ou o `import ipaddress` esquecido. Compare o seu método `testar_comunicacao` com o código da tarefa.
+      **O que procurar.** A linha de erro aponta o arquivo e a linha a corrigir; em Python, quase sempre é um recuo trocado ou o `import ipaddress` esquecido. Compare o seu método `testar_comunicacao` com o código da tarefa.
 
       **Por que testar os dois casos.** Repetir o ataque da etapa 4 prova que a correção bloqueou a injeção, e testar `10.20.1.15` prova que um endereço legítimo continua funcionando. Testar os dois lados — o ataque deixa de funcionar e o uso normal segue intacto — é a verificação padrão ao corrigir uma vulnerabilidade.
     concept: Execução sem shell, lista de argumentos e validação por lista de permissão
@@ -294,7 +294,7 @@ steps:
       - level: 2
         text: 'O comando deixa de ser um texto (`f"diag-clp {endereco}"`) e passa a ser uma lista: `["diag-clp", endereco]`, com `usar_shell=False`.'
       - level: 3
-        text: Use exatamente o código da tarefa, sem esquecer o `import ipaddress` no topo. Se a validação falhar, veja na aba **Validação** qual verificação não passou e confira o log com `tail -n 20 /tmp/app.log`.
+        text: Use exatamente o código da tarefa, sem esquecer o `import ipaddress` no topo. Se a validação falhar, veja na aba **Validação** qual verificação não passou e confira o log com `grep -iE \"error|traceback\" /tmp/app.log | tail`.
     references:
       - title: "Python: subprocess, considerações de segurança"
         url: https://docs.python.org/3/library/subprocess.html#security-considerations

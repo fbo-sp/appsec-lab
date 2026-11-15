@@ -8,7 +8,7 @@ apiVersion: labs.cecyber.io/v1alpha1
 kind: AppSecLab
 metadata:
   id: LAB-003
-  version: 1.0.2
+  version: 1.0.3
   title: "JWT: o token que ninguém conferiu"
   primaryCwe: CWE-347
   secondaryCwes: [CWE-287]
@@ -233,10 +233,10 @@ steps:
     explore: |
       **Por que vale olhar o log do servidor.** A alteração de limite foi feita com o token forjado, em que a Larissa aparece como gerente (`perfil: admin`). O servidor registra quem fez cada mudança a partir **desse mesmo token** — ou seja, a partir de um dado que o atacante controla.
 
-      No **Terminal**, veja as últimas linhas do log:
+      No **Terminal**, filtre a linha da alteração no log. O `/tmp/app.log` também registra cada acesso da aba Aplicação (`GET / 200`), que recarregando viram ruído e empurram a linha útil para fora de um `tail` curto; por isso filtre direto pelo texto:
 
       ```bash
-      tail -n 5 /tmp/app.log
+      grep "Limite alterado" /tmp/app.log
       ```
 
       **O que procurar.** A linha da alteração mostra algo como `Limite alterado por Larissa Mendes (perfil admin): ORB-LIM-4821-50000`. O achado interessante é que o log atribui a fraude a uma cliente comum com perfil de gerente: a trilha de auditoria registra exatamente o que o token forjado afirmou, e não o que de fato aconteceu. Numa investigação real, isso aponta para a pessoa errada e esconde que houve escalada de privilégio. É por isso que um log só é confiável quando a identidade que ele registra também é verificada — o que esta etapa 5 vai corrigir.
@@ -298,10 +298,10 @@ steps:
       2. Na aba **Aplicação**, clique em **Sair** para deslogar e faça login de novo como a Larissa (as mesmas credenciais da etapa 1): e-mail `larissa.mendes@clientes.orbe.example`, senha `Larissa@2026`. Confirme que o cartão dela continua aparecendo normalmente.
       3. Clique em **Validar**.
     explore: |
-      **Se algo não funcionar depois de salvar.** Se a aplicação parar de responder, é sinal de que o arquivo ficou com um erro de sintaxe (uma chave `{` ou `}` a mais ou a menos, por exemplo). No **Terminal**, veja o fim do log:
+      **Se algo não funcionar depois de salvar.** Se a aplicação parar de responder, é sinal de que o arquivo ficou com um erro de sintaxe (uma chave `{` ou `}` a mais ou a menos, por exemplo). No **Terminal**, filtre as linhas de erro (o `/tmp/app.log` também registra os acessos `GET / 200`):
 
       ```bash
-      tail -n 20 /tmp/app.log
+      grep -iE "error" /tmp/app.log | tail -n 15
       ```
 
       **O que procurar.** Uma linha de `SyntaxError` aponta o arquivo e a linha com o problema; compare o seu `lerToken` com o código da tarefa e corrija o recuo ou as chaves.
@@ -315,7 +315,7 @@ steps:
       - level: 2
         text: 'Troque `jwt.decode(token)` por `jwt.verify(token, config.SEGREDO_JWT, { algorithms: [''HS256''] })` e coloque a chamada dentro de um `try`/`catch` que devolve `null`.'
       - level: 3
-        text: Use exatamente o código da tarefa. Se a validação falhar, veja na aba **Validação** qual verificação não passou e confira o log com `tail -n 20 /tmp/app.log`.
+        text: Use exatamente o código da tarefa. Se a validação falhar, veja na aba **Validação** qual verificação não passou e confira o log com `grep -iE \"error\" /tmp/app.log | tail`.
     references:
       - title: "jsonwebtoken: jwt.verify"
         url: https://github.com/auth0/node-jsonwebtoken#jwtverifytoken-secretorpublickey-options-callback
