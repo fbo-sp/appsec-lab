@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from app.catalog import service
 from app.deps import get_clock, get_db
 from app.identity.principal import Principal, get_principal, require_admin
+from app.progress import service as progress
 from app.shared.clock import Clock
 from app.shared.errors import ApiError, not_found
 
@@ -60,6 +61,16 @@ def list_labs(
     # Filtro por atribuição/turma (BR-001) é IMP-204. Lista a última versão publicada de cada lab (ADR-016).
     items = [service.public_release_view(db, r) for r in service.list_latest_published(db)]
     return {"items": items}
+
+
+@router.get("/me/lab-completions")
+def my_lab_completions(
+    principal: Annotated[Principal, Depends(get_principal)],
+    db: Annotated[Session, Depends(get_db)],
+) -> dict[str, Any]:
+    # Somente o próprio usuário (ownership pelo principal; nunca por parâmetro). Inclui versões antigas,
+    # que saem do painel (ADR-016) mas continuam contando como conclusão (ADR-020).
+    return {"items": progress.lab_completions(db, principal.user_id)}
 
 
 @router.get("/labs/{lab_id}/releases/{version}")

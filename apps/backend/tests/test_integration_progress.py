@@ -388,3 +388,34 @@ def test_resolution_metrics_count_active_minutes(
     assert item["labId"] == "LAB-000" and item["completedAttempts"] == 1
     assert item["activeMinutes"]["p50"] == 3 and item["sessionsPerAttempt"] == 1
     assert item["calendarMinutesP50"] >= 9
+
+
+# --- conclusão no painel (ADR-020) ----------------------------------------------------------------------
+
+
+def test_lab_completions_are_owner_only_and_survive_new_version(
+    client: TestClient, registered: dict[str, Any], wk: WorkerContext
+) -> None:
+    from tests.conftest import ADMIN, benign_manifest
+
+    url = "/api/v1/me/lab-completions"
+    assert client.get(url).status_code == 401
+    sid = _ready(client, wk)
+    _pass_explore(client, sid)
+    # Tentativa em andamento não conta como conclusão.
+    assert client.get(url, headers=ALICE).json() == {"items": []}
+    assert _drain_eval(client, sid, wk)["status"] == "PASSED"
+
+    newer = benign_manifest()
+    newer["metadata"]["version"] = "0.2.2"
+    assert client.post("/api/v1/admin/lab-releases", json=newer, headers=ADMIN).status_code == 201
+    assert [i["version"] for i in client.get("/api/v1/labs", headers=ALICE).json()["items"]] == ["0.2.2"]
+
+    [item] = client.get(url, headers=ALICE).json()["items"]
+    assert item["labId"] == "LAB-000"
+    [v] = item["versions"]
+    assert v["version"] == "0.2.1" and v["completedAttempts"] == 1
+    assert v["bestScore"] == 100 and v["maxScore"] == 100
+    assert v["firstCompletedAt"] and v["firstCompletedAt"] == v["lastCompletedAt"]
+    # Outro aluno não enxerga a conclusão de ALICE.
+    assert client.get(url, headers=BOB).json() == {"items": []}

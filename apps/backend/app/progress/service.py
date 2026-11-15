@@ -533,3 +533,46 @@ def reveal_hint(
         )
     db.commit()
     return {"level": level, "text": hint.content, "penalty": penalty, "score": att.score}
+
+
+def _semver_key(version: str) -> tuple[int, ...]:
+    return tuple(int(p) for p in version.split("."))
+
+
+def lab_completions(db: Session, user_id: uuid.UUID) -> list[dict[str, Any]]:
+    """Histórico de conclusão do PRÓPRIO usuário por laboratório e versão (ADR-020).
+
+    Só considera tentativas ``COMPLETED`` (conclusão decidida no servidor). Não expõe respostas, dicas
+    nem detalhes de etapas: apenas versão, quantidade de conclusões, melhor pontuação e datas.
+    """
+    rows = db.execute(
+        select(
+            LabRelease.lab_id,
+            LabRelease.version,
+            LabRelease.id,
+            func.count(),
+            func.max(LabAttempt.score),
+            func.min(LabAttempt.completed_at),
+            func.max(LabAttempt.completed_at),
+        )
+        .join(LabRelease, LabRelease.id == LabAttempt.release_id)
+        .where(LabAttempt.user_id == user_id, LabAttempt.status == "COMPLETED")
+        .group_by(LabRelease.lab_id, LabRelease.version, LabRelease.id)
+    ).all()
+    by_lab: dict[str, list[dict[str, Any]]] = {}
+    for lab_id, version, release_id, n, best, first, last in rows:
+        by_lab.setdefault(lab_id, []).append(
+            {
+                "version": version,
+                "completedAttempts": n,
+                "bestScore": best,
+                "maxScore": _max_score(db, release_id),
+                "firstCompletedAt": first.isoformat() if first else None,
+                "lastCompletedAt": last.isoformat() if last else None,
+            }
+        )
+    items = []
+    for lab_id in sorted(by_lab):
+        versions = sorted(by_lab[lab_id], key=lambda v: _semver_key(v["version"]), reverse=True)
+        items.append({"labId": lab_id, "versions": versions})
+    return items
