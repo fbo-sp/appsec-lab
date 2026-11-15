@@ -8,10 +8,27 @@ apiVersion: labs.cecyber.io/v1alpha1
 kind: AppSecLab
 metadata:
   id: LAB-001
-  version: 1.0.1
+  version: 1.0.2
   title: "SQL Injection: a busca que expõe pacientes"
   primaryCwe: CWE-89
   secondaryCwes: []
+  classifications:
+    - framework: OWASP Top 10
+      edition: "2025"
+      entries:
+        - "A05 Injection"
+    - framework: OWASP Top 10
+      edition: "2021"
+      entries:
+        - "A03 Injection"
+    - framework: SANS CWE Top 25
+      edition: "2025"
+      entries:
+        - "#2 CWE-89 SQL Injection"
+    - framework: SANS CWE Top 25
+      edition: "2024"
+      entries:
+        - "#3 CWE-89 SQL Injection"
 learning:
   singleVulnerability: true
   estimatedMinutes: 40
@@ -40,8 +57,8 @@ learning:
     references:
       - title: "OWASP Cheat Sheet: SQL Injection Prevention"
         url: https://cheatsheetseries.owasp.org/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.html
-      - title: "OWASP Top 10: A03 Injection"
-        url: https://owasp.org/Top10/A03_2021-Injection/
+      - title: "OWASP Top 10:2025: A05 Injection"
+        url: https://owasp.org/Top10/2025/A05_2025-Injection/
       - title: "CWE-89: Improper Neutralization of Special Elements used in an SQL Command"
         url: https://cwe.mitre.org/data/definitions/89.html
 variants:

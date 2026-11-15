@@ -4,10 +4,10 @@
 
 | Campo | Valor |
 |---|---|
-| Atualizado em | 2026-11-13 |
+| Atualizado em | 2026-11-15 |
 | Fase atual | F1 concluída; **F3/F4/F5 local**: interface visual, validação de etapas e os quatro laboratórios do MVP, LAB-001 aprovado e LAB-002 a 004 em teste do PO (ADR-008 a 015) |
 | Branch | `claude/project-thread-arhml7` |
-| Última entrega concluída | IMP-502..504 local: LAB-002 IDOR (banco digital), LAB-003 JWT (cartões, Node.js) e LAB-004 Command Injection (indústria), com verificações autenticadas no probe (ADR-015) |
+| Última entrega concluída | Classificação OWASP/SANS nos labs e catálogo gerado com histórico de versões (ADR-017); painel com a última versão de cada lab (ADR-016). Antes: IMP-502..504 local: LAB-002 IDOR (banco digital), LAB-003 JWT (cartões, Node.js) e LAB-004 Command Injection (indústria), com verificações autenticadas no probe (ADR-015) |
 
 ## 1. Funcionalidades implementadas (com escopo real)
 

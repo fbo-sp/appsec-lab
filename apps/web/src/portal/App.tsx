@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { Fragment, useCallback, useEffect, useState } from "react";
 import { api, ApiError, currentUser, setUser, type Lab, type LabSession } from "./api";
 import { SessionView } from "./SessionView";
 
@@ -233,7 +233,38 @@ function LabIntro({ labId, version }: { labId: string; version: string }) {
         </p>
         {error && <ErrorBox message={error} />}
       </section>
+      <Classification lab={l} />
     </main>
+  );
+}
+
+/** Bloco final da página de abertura (ADR-017): CWE e enquadramento em OWASP e SANS CWE Top 25. */
+function Classification({ lab }: { lab: Lab }) {
+  const rows = lab.classifications ?? [];
+  const cwes = [`${lab.primaryCwe}${lab.secondaryCwes.length ? " (principal)" : ""}`, ...lab.secondaryCwes];
+  return (
+    <section className="card classification" aria-labelledby="classification-title">
+      <h2 id="classification-title">Classificação</h2>
+      <dl>
+        <dt>CWE</dt>
+        <dd>{cwes.join(", ")}</dd>
+        {rows.map((c) => (
+          <Fragment key={`${c.framework} ${c.edition}`}>
+            <dt>
+              {c.framework} {c.edition}
+            </dt>
+            <dd>
+              {c.entries.map((e, i) => (
+                <span key={e}>
+                  {i > 0 && <span className="muted"> · </span>}
+                  {e}
+                </span>
+              ))}
+            </dd>
+          </Fragment>
+        ))}
+      </dl>
+    </section>
   );
 }
 

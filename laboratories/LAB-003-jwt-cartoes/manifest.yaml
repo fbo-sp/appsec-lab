@@ -8,10 +8,37 @@ apiVersion: labs.cecyber.io/v1alpha1
 kind: AppSecLab
 metadata:
   id: LAB-003
-  version: 1.0.0
+  version: 1.0.1
   title: "JWT: o token que ninguém conferiu"
   primaryCwe: CWE-347
   secondaryCwes: [CWE-287]
+  classifications:
+    - framework: OWASP Top 10
+      edition: "2025"
+      entries:
+        - "A07 Authentication Failures (principal)"
+        - "A04 Cryptographic Failures"
+    - framework: OWASP Top 10
+      edition: "2021"
+      entries:
+        - "A07 Identification and Authentication Failures (principal)"
+        - "A02 Cryptographic Failures"
+    - framework: OWASP API Security Top 10
+      edition: "2023"
+      entries:
+        - "API2 Broken Authentication"
+    - framework: OWASP API Security Top 10
+      edition: "2019"
+      entries:
+        - "API2 Broken User Authentication"
+    - framework: SANS CWE Top 25
+      edition: "2025"
+      entries:
+        - "Não se enquadra; use o CWE"
+    - framework: SANS CWE Top 25
+      edition: "2024"
+      entries:
+        - "#14 CWE-287 Improper Authentication"
 learning:
   singleVulnerability: true
   estimatedMinutes: 45
@@ -43,6 +70,8 @@ learning:
         url: https://cheatsheetseries.owasp.org/cheatsheets/JSON_Web_Token_for_Java_Cheat_Sheet.html
       - title: "RFC 8725: JSON Web Token Best Current Practices"
         url: https://www.rfc-editor.org/rfc/rfc8725
+      - title: "OWASP Top 10:2025: A07 Authentication Failures"
+        url: https://owasp.org/Top10/2025/A07_2025-Authentication_Failures/
       - title: "OWASP API Security Top 10: API2 Broken Authentication"
         url: https://owasp.org/API-Security/editions/2023/en/0xa2-broken-authentication/
       - title: "CWE-347: Improper Verification of Cryptographic Signature"

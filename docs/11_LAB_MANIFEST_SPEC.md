@@ -29,6 +29,13 @@ metadata:
   status: draft
   primaryCwe: CWE-89
   secondaryCwes: []
+  classifications:              # opcional (ADR-017); uma entrada por lista E por edição
+    - framework: OWASP Top 10
+      edition: "2025"
+      entries: ["A05 Injection"]
+    - framework: SANS CWE Top 25
+      edition: "2025"
+      entries: ["#2 CWE-89 SQL Injection"]
 learning:
   singleVulnerability: true
   estimatedMinutes: 25
@@ -116,6 +123,7 @@ policy:
 8. Comandos devem seguir política de execução; não aceitar shells arbitrários de manifestos não confiáveis no plano de controle.
 9. As variantes devem mapear o **mesmo objetivo pedagógico** para validadores equivalentes; não presumir que testes binários sejam idênticos.
 10. Publicação é atômica e gera assinatura/digest da release; releases anteriores não mudam.
+11. `metadata.classifications` (ADR-017) registra o enquadramento do lab no OWASP Top 10 (atual e anterior), no OWASP API Security Top 10 quando couber e no SANS CWE Top 25 (atual e anterior). Quando não se enquadra, a entrada diz isso e o CWE orienta. Cada versão nova deve constar em `docs/catalogo/historico-versoes.yaml`, e o catálogo `docs/catalogo/CATALOGO_DE_LABORATORIOS.md` é regenerado por `scripts/gen-catalogo.py` (o CI confere).
 
 ## 4. Separação de conteúdo e runtime
 

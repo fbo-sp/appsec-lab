@@ -193,3 +193,34 @@ def test_references_and_wrap_up_are_accepted(manifest: dict[str, Any]) -> None:
 def test_reference_urls_must_be_plain_https(manifest: dict[str, Any], url: str) -> None:
     manifest["steps"][0]["references"] = [{"title": "x", "url": url}]
     assert codes(manifest)
+
+
+# --- ADR-017: classificação em listas de referência ----------------------------------------------
+
+
+def test_classifications_are_optional_and_do_not_change_existing_digests(manifest: dict[str, Any]) -> None:
+    assert '"classifications"' not in canonical_manifest_json_for(manifest)
+
+
+def test_classifications_are_accepted(manifest: dict[str, Any]) -> None:
+    manifest["metadata"]["classifications"] = [
+        {"framework": "OWASP Top 10", "edition": "2025", "entries": ["A05 Injection"]},
+        {"framework": "SANS CWE Top 25", "edition": "2025", "entries": ["#2 CWE-89 SQL Injection"]},
+    ]
+    m = validate_manifest(manifest)
+    assert m.metadata.classifications is not None and m.metadata.classifications[0].edition == "2025"
+
+
+@pytest.mark.parametrize(
+    "item",
+    [
+        {"framework": "OWASP Top 10", "edition": "25", "entries": ["A05 Injection"]},
+        {"framework": "OWASP Top 10", "edition": "2025", "entries": []},
+        {"framework": "", "edition": "2025", "entries": ["A05 Injection"]},
+        {"framework": "OWASP Top 10", "edition": "2025", "entries": ["A05"], "extra": 1},
+    ],
+)
+def test_invalid_classification_is_rejected(manifest: dict[str, Any], item: dict[str, Any]) -> None:
+    manifest["metadata"]["classifications"] = [item]
+    with pytest.raises(ManifestValidationError):
+        validate_manifest(manifest)

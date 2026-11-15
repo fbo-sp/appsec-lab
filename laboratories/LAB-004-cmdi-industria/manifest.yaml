@@ -10,10 +10,27 @@ apiVersion: labs.cecyber.io/v1alpha1
 kind: AppSecLab
 metadata:
   id: LAB-004
-  version: 1.0.1
+  version: 1.0.2
   title: "Command Injection: o teste de rede que virou terminal"
   primaryCwe: CWE-78
   secondaryCwes: []
+  classifications:
+    - framework: OWASP Top 10
+      edition: "2025"
+      entries:
+        - "A05 Injection"
+    - framework: OWASP Top 10
+      edition: "2021"
+      entries:
+        - "A03 Injection"
+    - framework: SANS CWE Top 25
+      edition: "2025"
+      entries:
+        - "#9 CWE-78 OS Command Injection"
+    - framework: SANS CWE Top 25
+      edition: "2024"
+      entries:
+        - "#7 CWE-78 OS Command Injection"
 learning:
   singleVulnerability: true
   estimatedMinutes: 40
@@ -43,8 +60,8 @@ learning:
     references:
       - title: "OWASP Cheat Sheet: OS Command Injection Defense"
         url: https://cheatsheetseries.owasp.org/cheatsheets/OS_Command_Injection_Defense_Cheat_Sheet.html
-      - title: "OWASP Top 10: A03 Injection"
-        url: https://owasp.org/Top10/A03_2021-Injection/
+      - title: "OWASP Top 10:2025: A05 Injection"
+        url: https://owasp.org/Top10/2025/A05_2025-Injection/
       - title: "CWE-78: Improper Neutralization of Special Elements used in an OS Command"
         url: https://cwe.mitre.org/data/definitions/78.html
       - title: "CISA: segurança de sistemas de controle industrial (ICS)"

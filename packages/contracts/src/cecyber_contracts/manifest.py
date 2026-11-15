@@ -62,12 +62,29 @@ class Interface(StrEnum):
     WEB = "web"
 
 
+Edition = Annotated[str, StringConstraints(pattern=r"^[0-9]{4}$")]
+
+
+class Classification(_Strict):
+    """Enquadramento do lab numa lista de referência (ADR-017), ex.: OWASP Top 10 2025 -> A05 Injection.
+
+    ``entries`` em ordem de relevância; com mais de um item, o texto indica o principal. Quando o lab
+    não se enquadra na edição, a entrada diz isso (o CWE orienta a escolha da aula).
+    """
+
+    framework: ShortText
+    edition: Edition
+    entries: tuple[ShortText, ...] = Field(min_length=1, max_length=4)
+
+
 class Metadata(_Strict):
     id: LabId
     version: SemVer
     title: ShortText
     primary_cwe: Cwe = Field(alias="primaryCwe")
     secondary_cwes: tuple[Cwe, ...] = Field(default=(), alias="secondaryCwes", max_length=5)
+    # Opcional e sem valor padrão serializado, para não alterar o digest de manifestos existentes.
+    classifications: tuple[Classification, ...] | None = Field(default=None, max_length=12)
 
 
 class Story(_Strict):

@@ -1,0 +1,56 @@
+# Histórico de versões dos laboratórios (ADR-017). Fonte para docs/catalogo/CATALOGO_DE_LABORATORIOS.md.
+#
+# Ao criar um lab ou publicar uma versão nova:
+#   1. acrescente a versão aqui, com a data de publicação e um resumo da mudança;
+#   2. rode `uv run python scripts/gen-catalogo.py` para regenerar o catálogo.
+# O CI falha se a versão de um manifesto não estiver aqui ou se o catálogo estiver desatualizado.
+# A data em que uma versão ficou obsoleta é a data de publicação da versão seguinte (calculada).
+# Datas: publicação no repositório (ambiente local); quando houver implantação, valerá a data de publicação nela.
+labs:
+  LAB-000:
+    - version: 0.1.0
+      published: 2026-11-11
+      summary: Primeira versão do lab benigno de verificação do motor.
+    - version: 0.2.0
+      published: 2026-11-12
+      summary: Etapas com validação, progresso e dicas.
+    - version: 0.2.1
+      published: 2026-11-13
+      summary: Texto da dica 1 ajustado às abas do workspace.
+  LAB-001:
+    - version: 1.0.0
+      published: 2026-11-13
+      summary: Primeira versão (SQL Injection, Clínica VidaPlena).
+    - version: 1.0.1
+      published: 2026-11-13
+      summary: Trecho da correção com o recuo real do método (evita IndentationError). Aprovada pelo PO.
+    - version: 1.0.2
+      published: 2026-11-15
+      summary: Classificação OWASP e SANS CWE Top 25; referência do OWASP Top 10 atualizada para 2025.
+  LAB-002:
+    - version: 1.0.0
+      published: 2026-11-13
+      summary: Primeira versão (IDOR, Banco Vértice Digital).
+    - version: 1.0.1
+      published: 2026-11-14
+      summary: Etapa 4 com contagem correta (34) e busca do PIX de R$ 487.900,00; etapa 2 explica a barra de endereço.
+    - version: 1.0.2
+      published: 2026-11-15
+      summary: Classificação OWASP, OWASP API e SANS CWE Top 25; referência do OWASP Top 10 atualizada para 2025.
+  LAB-003:
+    - version: 1.0.0
+      published: 2026-11-13
+      summary: Primeira versão (JWT sem verificação de assinatura, Orbe Cartões, Node.js).
+    - version: 1.0.1
+      published: 2026-11-15
+      summary: Classificação OWASP, OWASP API e SANS CWE Top 25; referência ao OWASP Top 10:2025 A07.
+  LAB-004:
+    - version: 1.0.0
+      published: 2026-11-13
+      summary: Primeira versão (Command Injection, Ferrara Metais).
+    - version: 1.0.1
+      published: 2026-11-13
+      summary: Correção do fim de linha (CRLF) que quebrava o diag-clp no Windows.
+    - version: 1.0.2
+      published: 2026-11-15
+      summary: Classificação OWASP e SANS CWE Top 25; referência do OWASP Top 10 atualizada para 2025.

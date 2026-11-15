@@ -167,6 +167,7 @@ def public_release_view(db: Session, release: LabRelease) -> dict[str, Any]:
         "title": m["metadata"]["title"],
         "primaryCwe": m["metadata"]["primaryCwe"],
         "secondaryCwes": m["metadata"].get("secondaryCwes", []),
+        "classifications": m["metadata"].get("classifications", []),
         "learning": {
             "difficulty": m["learning"]["difficulty"],
             "estimatedMinutes": m["learning"]["estimatedMinutes"],

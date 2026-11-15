@@ -6,6 +6,8 @@ export type Lab = {
   version: string;
   title: string;
   primaryCwe: string;
+  secondaryCwes: string[];
+  classifications?: { framework: string; edition: string; entries: string[] }[];
   learning: {
     difficulty: string;
     estimatedMinutes: number;

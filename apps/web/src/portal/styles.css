@@ -299,3 +299,11 @@ label { font-weight: 600; font-size: 0.9rem; }
 .md-term { white-space: nowrap; }
 .md-term strong { white-space: normal; }
 .info-inline { display: inline-flex; align-items: center; justify-content: center; width: 1.05rem; height: 1.05rem; margin-left: 0.25rem; font-size: 0.68rem; vertical-align: 0.1em; cursor: pointer; }
+
+/* Classificação no fim da página de abertura (ADR-017) */
+.classification { margin-top: 1rem; }
+.classification h2 { font-size: 0.95rem; margin: 0 0 0.5rem; }
+.classification dl { display: grid; grid-template-columns: max-content 1fr; gap: 0.3rem 1rem; margin: 0; font-size: 0.85rem; }
+.classification dt { color: var(--muted); }
+.classification dd { margin: 0; }
+@media (max-width: 560px) { .classification dl { grid-template-columns: 1fr; } .classification dd { margin-bottom: 0.4rem; } }

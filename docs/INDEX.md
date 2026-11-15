@@ -46,6 +46,8 @@
 | ADR/ADR-014-session-usage-idle-and-resolution-time.md | Aprovado (2026-11-13); implementado (local/test) |
 | ADR/ADR-015-labs-002-004-authenticated-checks.md | Proposto (2026-11-13); implementado para teste (local/test) |
 | ADR/ADR-016-catalog-latest-version-only.md | Aceito pelo PO (2026-11-14): painel mostra só a última versão de cada lab |
+| ADR/ADR-017-lab-classification-and-catalog.md | Aceito pelo PO (2026-11-15): classificação OWASP/SANS nos labs e catálogo com histórico de versões |
+| catalogo/CATALOGO_DE_LABORATORIOS.md | Catálogo de laboratórios para professores e área comercial (gerado; ADR-017) |
 
 ## Ordem recomendada para trabalho com agentes
 

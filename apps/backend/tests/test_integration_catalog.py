@@ -110,3 +110,16 @@ def test_unknown_validator_is_rejected(client: TestClient) -> None:
     r = client.post("/api/v1/admin/lab-releases", json=m, headers=ADMIN)
     assert r.status_code == 400
     assert r.json()["error"]["details"]["issues"][0]["code"] == "UNKNOWN_VALIDATOR"
+
+
+def test_public_view_exposes_classifications(client: TestClient, registered: dict[str, object]) -> None:
+    m = copy.deepcopy(benign_manifest())
+    m["metadata"]["version"] = "0.4.0"
+    m["metadata"]["classifications"] = [
+        {"framework": "OWASP Top 10", "edition": "2025", "entries": ["A05 Injection"]}
+    ]
+    assert client.post("/api/v1/admin/lab-releases", json=m, headers=ADMIN).status_code == 201
+    view = client.get("/api/v1/labs/LAB-000/releases/0.4.0", headers=ALICE).json()
+    assert view["classifications"] == m["metadata"]["classifications"]
+    old = client.get("/api/v1/labs/LAB-000/releases/0.2.1", headers=ALICE).json()
+    assert old["classifications"] == []  # releases antigas, sem o campo
