@@ -10,7 +10,7 @@ apiVersion: labs.cecyber.io/v1alpha1
 kind: AppSecLab
 metadata:
   id: LAB-004
-  version: 1.0.2
+  version: 1.0.3
   title: "Command Injection: o teste de rede que virou terminal"
   primaryCwe: CWE-78
   secondaryCwes: []
@@ -141,9 +141,17 @@ steps:
       10.20.1.15; whoami
       ```
 
-      Veja o resultado e o log com `tail -n 5 /tmp/app.log` no **Terminal**: ele mostra o comando que foi executado.
-
       Informe abaixo o **usuário** que apareceu na última linha do resultado.
+    explore: |
+      **Por que vale ver o log do servidor.** Na tela você vê a saída dos comandos, mas não a linha que o servidor de fato executou. O log mostra o comando montado, e é aí que a falha fica evidente.
+
+      No **Terminal**:
+
+      ```bash
+      tail -n 5 /tmp/app.log
+      ```
+
+      **O que procurar.** A linha registra algo como `Executando: diag-clp 10.20.1.15; whoami` — ou seja, o texto que você digitou foi **concatenado** ao nome do programa e entregue inteiro ao shell. O achado interessante é ver, em texto, que o `;` e tudo depois dele não foram tratados como um endereço, mas como comandos a executar. É exatamente essa concatenação que a etapa 5 vai eliminar.
     concept: Metacaracteres do shell e encadeamento de comandos
     validatorRef: cmdi/answer/process-user-v1
     hints:
@@ -255,13 +263,29 @@ steps:
               return self._executor.executar(["diag-clp", endereco], usar_shell=False)
       ```
 
-      **Cuidado com o recuo.** As linhas de dentro do método começam com **8 espaços** e as de dentro do `try` e do `except` com **12**. Se depois de salvar a aplicação mostrar *Internal Server Error*, rode `tail -n 20 /tmp/app.log` no **Terminal**.
+      **Cuidado com o recuo.** As linhas de dentro do método começam com **8 espaços** e as de dentro do `try` e do `except` com **12**.
 
       Salve com **Ctrl+S**: a aplicação recarrega sozinha. Então:
 
-      1. repita o ataque da etapa 4 e confirme que aparece *Endereço inválido*;
+      1. Na aba **Aplicação**, repita o ataque da etapa 4:
+
+         ```text
+         10.20.1.15; cat /opt/planta/scada.conf
+         ```
+
+         Confirme que agora aparece *Endereço inválido*.
       2. teste `10.20.1.15` e confirme que o CLP continua respondendo;
       3. clique em **Validar**.
+    explore: |
+      **Se algo não funcionar depois de salvar.** Se a aplicação mostrar *Internal Server Error*, é sinal de que o arquivo ficou com um erro de sintaxe ou de recuo. No **Terminal**:
+
+      ```bash
+      tail -n 20 /tmp/app.log
+      ```
+
+      **O que procurar.** A última linha de erro aponta o arquivo e a linha a corrigir; em Python, quase sempre é um recuo trocado ou o `import ipaddress` esquecido. Compare o seu método `testar_comunicacao` com o código da tarefa.
+
+      **Por que testar os dois casos.** Repetir o ataque da etapa 4 prova que a correção bloqueou a injeção, e testar `10.20.1.15` prova que um endereço legítimo continua funcionando. Testar os dois lados — o ataque deixa de funcionar e o uso normal segue intacto — é a verificação padrão ao corrigir uma vulnerabilidade.
     concept: Execução sem shell, lista de argumentos e validação por lista de permissão
     validatorRef: cmdi/python-flask/no-shell-v1
     hints:

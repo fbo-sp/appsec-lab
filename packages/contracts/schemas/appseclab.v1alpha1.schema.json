@@ -106,7 +106,7 @@
     },
     "LabStep": {
       "additionalProperties": false,
-      "description": "Etapa. ``explanation``, ``task``, ``concept`` e textos de dica aceitam Markdown restrito (ADR-012).",
+      "description": "Etapa. ``explanation``, ``task``, ``explore``, ``concept`` e textos de dica aceitam Markdown restrito\n(ADR-012). ``task`` traz só o necessário para concluir a etapa; ``explore`` é o estudo complementar\nopcional, aberto por um botão na tela (ADR-019).",
       "properties": {
         "concept": {
           "anyOf": [
@@ -141,6 +141,20 @@
           "minLength": 1,
           "title": "Explanation",
           "type": "string"
+        },
+        "explore": {
+          "anyOf": [
+            {
+              "maxLength": 4000,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Explore"
         },
         "hints": {
           "default": [],

@@ -48,6 +48,7 @@
 | ADR/ADR-016-catalog-latest-version-only.md | Aceito pelo PO (2026-11-14): painel mostra só a última versão de cada lab |
 | ADR/ADR-017-lab-classification-and-catalog.md | Aceito pelo PO (2026-11-15): classificação OWASP/SANS nos labs e catálogo com histórico de versões |
 | ADR/ADR-018-lab000-platform-tutorial.md | Aceito pelo PO (2026-11-15): LAB-000 vira o tutorial da plataforma |
+| ADR/ADR-019-step-task-and-explore.md | Aceito pelo PO (2026-11-15): tarefa enxuta e estudo complementar opcional ("Explorar mais") |
 | catalogo/CATALOGO_DE_LABORATORIOS.md | Catálogo de laboratórios para professores e área comercial (gerado; ADR-017) |
 
 ## Ordem recomendada para trabalho com agentes

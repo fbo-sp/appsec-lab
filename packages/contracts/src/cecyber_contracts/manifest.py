@@ -168,13 +168,16 @@ class Hint(_Strict):
 
 
 class LabStep(_Strict):
-    """Etapa. ``explanation``, ``task``, ``concept`` e textos de dica aceitam Markdown restrito (ADR-012)."""
+    """Etapa. ``explanation``, ``task``, ``explore``, ``concept`` e textos de dica aceitam Markdown restrito
+    (ADR-012). ``task`` traz só o necessário para concluir a etapa; ``explore`` é o estudo complementar
+    opcional, aberto por um botão na tela (ADR-019)."""
 
     id: Slug
     order: int = Field(ge=1, le=50)
     title: ShortText
     explanation: NonEmptyText
     task: NonEmptyText
+    explore: NonEmptyText | None = None
     concept: NonEmptyText | None = None
     expected_outcome: NonEmptyText | None = Field(default=None, alias="expectedOutcome")
     validator_ref: ValidatorRef = Field(alias="validatorRef")

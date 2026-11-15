@@ -20,6 +20,9 @@ labs:
     - version: 1.0.0
       published: 2026-11-15
       summary: Vira o tutorial da plataforma, com 5 etapas sobre a tela, a barra de endereço, o terminal, as dicas e a validação.
+    - version: 1.0.1
+      published: 2026-11-15
+      summary: Etapa do terminal ganha um "Explorar mais" de exemplo, apresentando o estudo complementar opcional da plataforma.
   LAB-001:
     - version: 1.0.0
       published: 2026-11-13
@@ -30,6 +33,9 @@ labs:
     - version: 1.0.2
       published: 2026-11-15
       summary: Classificação OWASP e SANS CWE Top 25; referência do OWASP Top 10 atualizada para 2025.
+    - version: 1.0.3
+      published: 2026-11-15
+      summary: Texto das tarefas com só o necessário; verificação de log e solução de problemas movidas para "Explorar mais"; ataque a repetir mostrado por extenso na etapa 5.
   LAB-002:
     - version: 1.0.0
       published: 2026-11-13
@@ -40,6 +46,9 @@ labs:
     - version: 1.0.2
       published: 2026-11-15
       summary: Classificação OWASP, OWASP API e SANS CWE Top 25; referência do OWASP Top 10 atualizada para 2025.
+    - version: 1.0.3
+      published: 2026-11-15
+      summary: Texto das tarefas enxuto; log, pior caso do PIX e solução de problemas em "Explorar mais"; navegação pela barra de endereço explicitada na etapa 5.
   LAB-003:
     - version: 1.0.0
       published: 2026-11-13
@@ -47,6 +56,9 @@ labs:
     - version: 1.0.1
       published: 2026-11-15
       summary: Classificação OWASP, OWASP API e SANS CWE Top 25; referência ao OWASP Top 10:2025 A07.
+    - version: 1.0.2
+      published: 2026-11-15
+      summary: Etapas 4 e 5 com só o necessário na tarefa; leitura do log e solução de problemas em "Explorar mais"; relogin na aba Aplicação explicitado (Sair e entrar com as credenciais da Larissa, da etapa 1).
   LAB-004:
     - version: 1.0.0
       published: 2026-11-13
@@ -57,3 +69,6 @@ labs:
     - version: 1.0.2
       published: 2026-11-15
       summary: Classificação OWASP e SANS CWE Top 25; referência do OWASP Top 10 atualizada para 2025.
+    - version: 1.0.3
+      published: 2026-11-15
+      summary: Texto das tarefas enxuto; leitura do log e solução de problemas em "Explorar mais"; ataque a repetir mostrado por extenso na etapa 5.

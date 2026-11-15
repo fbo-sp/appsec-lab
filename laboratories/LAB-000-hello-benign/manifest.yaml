@@ -8,7 +8,7 @@ apiVersion: labs.cecyber.io/v1alpha1
 kind: AppSecLab
 metadata:
   id: LAB-000
-  version: 1.0.0
+  version: 1.0.1
   title: "Tutorial: conhecendo a plataforma de laboratórios"
   # O contrato exige uma CWE principal. CWE-1000 é a raiz da visão "Research Concepts" do MITRE,
   # usada como marcador de "sem vulnerabilidade": o portal e o catálogo tratam este lab como tutorial.
@@ -137,6 +137,18 @@ steps:
       ```
 
       O começo da linha do terminal (`aluno@lab:/workspace$`) é só um rótulo. Vale o que o comando `whoami` responde na linha de baixo: informe esse nome abaixo.
+    explore: |
+      Em alguns laboratórios, as etapas trazem um botão **Explorar mais** como este. Ele abre um estudo complementar: nada ali é preciso para concluir a etapa nem muda a sua pontuação. Serve para quem quer entender melhor o ambiente ou o problema.
+
+      Para experimentar, rode no **Terminal**:
+
+      ```bash
+      pwd
+      ls
+      cat README.md
+      ```
+
+      **O que você vê.** O `pwd` mostra em que pasta você está (`/workspace`, a mesma que aparece na aba **Código**); o `ls` lista os arquivos dessa pasta; e o `cat` mostra o conteúdo de um arquivo de texto. Nos laboratórios de verdade, é com comandos assim que você vai explorar a aplicação: ler código, abrir arquivos de log e procurar pistas sobre a vulnerabilidade.
     concept: Princípio do menor privilégio
     validatorRef: benign/answer/whoami-v1
     hints:

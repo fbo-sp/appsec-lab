@@ -8,7 +8,7 @@ apiVersion: labs.cecyber.io/v1alpha1
 kind: AppSecLab
 metadata:
   id: LAB-001
-  version: 1.0.2
+  version: 1.0.3
   title: "SQL Injection: a busca que expõe pacientes"
   primaryCwe: CWE-89
   secondaryCwes: []
@@ -170,7 +170,17 @@ steps:
       ' ORDER BY 5 --
       ```
 
-      Se quiser confirmar, a mensagem completa do erro está em `/tmp/app.log`. Informe abaixo **quantas colunas** a consulta retorna.
+      Informe abaixo **quantas colunas** a consulta retorna.
+    explore: |
+      **Por que vale ler o log aqui.** Na tela, cada tentativa só mostra *Internal Server Error* ou a lista de médicos — você infere o número de colunas pela ausência de erro. O log revela o **porquê** de cada erro.
+
+      No **Terminal**:
+
+      ```bash
+      tail -n 20 /tmp/app.log
+      ```
+
+      **O que procurar.** Para o `ORDER BY` que falhou, a mensagem é algo como `sqlite3.OperationalError: 1st ORDER BY term out of range`. O achado interessante é que a mensagem de erro do banco confirma, em texto, quantas colunas a consulta tem — é assim que um atacante troca tentativa-e-erro por certeza, e é também por isso que mensagens de erro detalhadas nunca devem chegar ao usuário final.
     concept: Enumeração de colunas para ataques com UNION
     validatorRef: sqli/answer/column-count-v1
     hints:
@@ -242,7 +252,7 @@ steps:
               return [Medico(*linha) for linha in linhas]
       ```
 
-      **Cuidado com o recuo.** Em Python, a indentação faz parte do código: as linhas de dentro do método começam com **8 espaços**, alinhadas com o `return`. Se você copiar daqui, selecione as linhas **inteiras**, desde o início, e cole no início da linha no editor. Se depois de salvar a aplicação mostrar *Internal Server Error*, rode `tail -n 20 /tmp/app.log` no **Terminal**: um `IndentationError` ou `SyntaxError` indica a linha a corrigir.
+      **Cuidado com o recuo.** Em Python, a indentação faz parte do código: as linhas de dentro do método começam com **8 espaços**, alinhadas com o `return`. Se você copiar daqui, selecione as linhas **inteiras**, desde o início, e cole no início da linha no editor.
 
       Repare em dois detalhes:
 
@@ -251,9 +261,25 @@ steps:
 
       Salve com **Ctrl+S**: a aplicação recarrega sozinha em cerca de um segundo. Então:
 
-      1. repita o ataque da etapa 4 e confirme que nenhum paciente aparece;
+      1. Na aba **Aplicação**, repita o ataque da etapa 4, buscando por:
+
+         ```text
+         ' UNION SELECT id, nome, email, cpf FROM pacientes --
+         ```
+
+         Confirme que nenhum paciente aparece.
       2. busque por `D'Ávila` e confirme que a Dra. Joana continua sendo encontrada;
       3. clique em **Validar**.
+    explore: |
+      **Se algo não funcionar depois de salvar.** Se a aplicação mostrar *Internal Server Error*, é sinal de que o arquivo ficou com um erro de sintaxe ou de recuo. No **Terminal**:
+
+      ```bash
+      tail -n 20 /tmp/app.log
+      ```
+
+      **O que procurar.** Uma linha de `IndentationError` ou `SyntaxError` aponta o arquivo e a linha a corrigir. Em Python, quase sempre é um recuo trocado — compare o seu método `buscar_por_nome` com o código da tarefa.
+
+      **Por que repetir o ataque antes de validar.** Refazer a injeção da etapa 4 prova que a correção fechou a falha, e buscar por `D'Ávila` prova que ela não quebrou nomes legítimos. Testar os dois lados — o ataque deixa de funcionar e o uso normal segue intacto — é a verificação padrão ao corrigir uma vulnerabilidade.
     concept: Consultas parametrizadas (prepared statements)
     validatorRef: sqli/python-flask/parameterized-search-v1
     hints:

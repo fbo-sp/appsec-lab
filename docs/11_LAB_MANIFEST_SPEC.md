@@ -74,6 +74,8 @@ steps:
     title: Investigar a consulta
     explanation: Identifique onde dados do usuário são incorporados à query
     task: Localize a função que recebe o identificador do pedido
+    explore: |
+      Opcional. Por que vale ler /tmp/app.log e que tipo de achado aparece ali.
     concept: Consultas SQL parametrizadas
     validatorRef: sqli/python-flask/inspect-v1
     hints:
@@ -124,6 +126,7 @@ policy:
 9. As variantes devem mapear o **mesmo objetivo pedagógico** para validadores equivalentes; não presumir que testes binários sejam idênticos.
 10. Publicação é atômica e gera assinatura/digest da release; releases anteriores não mudam.
 11. `metadata.classifications` (ADR-017) registra o enquadramento do lab no OWASP Top 10 (atual e anterior), no OWASP API Security Top 10 quando couber e no SANS CWE Top 25 (atual e anterior). Quando não se enquadra, a entrada diz isso e o CWE orienta. Cada versão nova deve constar em `docs/catalogo/historico-versoes.yaml`, e o catálogo `docs/catalogo/CATALOGO_DE_LABORATORIOS.md` é regenerado por `scripts/gen-catalogo.py` (o CI confere).
+12. `task` traz **somente o necessário para concluir a etapa** (ADR-019). Verificações e explorações complementares (ler logs, conferir o pior caso, solucionar problemas) vão em `steps[].explore`, aberto por um botão "Explorar mais" na interface; esse texto deve explicar **por que** vale explorar e **que tipo de achado** pode aparecer, não só o comando.
 
 ## 4. Separação de conteúdo e runtime
 
@@ -141,6 +144,7 @@ Não há HTML.
 
 Campos opcionais:
 - `steps[].references[]` (`title`, `url` https, até 8);
+- `steps[].explore` (Markdown restrito): estudo complementar opcional da etapa (ADR-019), aberto pelo botão "Explorar mais". Não vale pontos e não é preciso para concluir a etapa;
 - `learning.wrapUp` (`text` em Markdown e `references`), exibido como "Para ir além" ao concluir o laboratório.
 
 ## 5. Pipeline mínimo de publicação

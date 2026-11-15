@@ -168,7 +168,17 @@ def test_issues_have_location(manifest: dict[str, Any]) -> None:
 
 def test_optional_content_fields_do_not_change_existing_digests(manifest: dict[str, Any]) -> None:
     dumped = canonical_manifest_json_for(manifest)
-    assert '"references"' not in dumped and '"wrapUp"' not in dumped
+    assert '"references"' not in dumped and '"wrapUp"' not in dumped and '"explore":' not in dumped
+
+
+def test_explore_is_accepted_and_optional(manifest: dict[str, Any]) -> None:
+    before = canonical_manifest_json_for(manifest)
+    assert '"explore":' not in before
+    manifest["steps"][0]["explore"] = "Opcional: por que ler o **log** e o que procurar."
+    m = validate_manifest(manifest)
+    assert m.steps[0].explore is not None and m.steps[1].explore is None
+    after = canonical_manifest_json_for(manifest)
+    assert '"explore":' in after
 
 
 def canonical_manifest_json_for(data: dict[str, Any]) -> str:

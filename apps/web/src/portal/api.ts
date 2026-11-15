@@ -57,6 +57,8 @@ export type Step = {
   submissions: number;
   explanation?: string;
   task?: string;
+  /** Estudo complementar opcional, aberto pelo botão "Explorar mais" (ADR-019). */
+  explore?: string | null;
   concept?: string | null;
   references?: Reference[];
   validation?: { type: "answer" | "http" | "unavailable"; answerPrompt: string | null };

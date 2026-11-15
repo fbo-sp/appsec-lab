@@ -8,7 +8,7 @@ apiVersion: labs.cecyber.io/v1alpha1
 kind: AppSecLab
 metadata:
   id: LAB-002
-  version: 1.0.2
+  version: 1.0.3
   title: "IDOR: o comprovante que não era seu"
   primaryCwe: CWE-639
   secondaryCwes: [CWE-862]
@@ -139,7 +139,7 @@ steps:
       1. Na lista **Meus comprovantes de PIX**, veja qual é o comprovante **mais recente** da Marina (o primeiro da lista).
       2. Na **barra de endereço** da aba **Aplicação**, digite `/api/comprovantes/` seguido desse número e pressione **Enter**. Repare no JSON: ele traz `cliente_id`, o id do dono do comprovante.
 
-      **Onde fica a barra de endereço?** É o campo no topo da aba **Aplicação**, ao lado de **ir**, **recarregar** e **abrir em nova aba**. Ele funciona como a barra de um navegador, só que para a aplicação do laboratório: apague o que estiver lá, digite o caminho começando com `/` e pressione **Enter**. Na primeira vez, clique no ícone **i** ao lado do campo para ver onde ele está. Se preferir, clique em **abrir em nova aba** e edite o endereço no navegador, normalmente.
+      A **barra de endereço** é o campo no topo da aba **Aplicação**; clique no ícone **i** ao lado dele se quiser ver onde fica e como usar.
 
       Informe abaixo o **número** do comprovante mais recente da Marina.
     concept: Identificadores previsíveis e referências diretas a objetos
@@ -199,21 +199,23 @@ steps:
       for n in $(seq 10421 10460); do curl -s -b /tmp/cookies.txt http://127.0.0.1:8080/api/comprovantes/$n; done > /tmp/vazamento.txt
       ```
 
-      Cada linha de `/tmp/vazamento.txt` é um comprovante, 40 linhas no total (confira com `wc -l /tmp/vazamento.txt`). Agora conte quantas linhas **não** são da Marina:
+      Cada linha de `/tmp/vazamento.txt` é um comprovante. Conte quantas linhas **não** são da Marina:
 
       ```bash
       grep -vc "Marina Costa Ribeiro" /tmp/vazamento.txt
       ```
 
       Informe abaixo **quantos comprovantes de outros clientes** você conseguiu ler.
+    explore: |
+      **Por que vale examinar o que vazou.** Contar os comprovantes mostra a escala da falha, mas o impacto real aparece quando se olha o conteúdo. Em um banco, cada comprovante traz quem pagou, para quem, o valor e o documento do pagador — dados protegidos por sigilo bancário.
 
-      **Opcional: o pior caso.** Entre os comprovantes vazados há um PIX de `R$ 487.900,00`. Para encontrá-lo, procure esse valor no arquivo, ainda no **Terminal**:
+      O arquivo baixou 40 comprovantes (confira com `wc -l /tmp/vazamento.txt`). Entre eles há um PIX de valor alto. Para encontrá-lo, no **Terminal**:
 
       ```bash
       grep "487.900,00" /tmp/vazamento.txt
       ```
 
-      O comando mostra a linha desse comprovante. Veja o campo `id` e abra `/comprovantes/` seguido desse número na barra de endereço da aba **Aplicação** para ver como ele aparece na tela: quem pagou, para quem e o documento do pagador.
+      **O que procurar.** O comando mostra a linha de um PIX de `R$ 487.900,00`. Veja o campo `id` e abra `/comprovantes/` seguido desse número na barra de endereço da aba **Aplicação**: quem pagou, para quem e o documento do pagador aparecem na tela, de um cliente que não é a Marina. O achado interessante é que a mesma enumeração que conta 39 vazamentos também expõe transações de valor relevante — é esse detalhe que transforma um bug de autorização em um incidente de vazamento de dados a ser notificado.
     concept: Enumeração automatizada e impacto em sigilo bancário
     validatorRef: idor/answer/leaked-count-v1
     hints:
@@ -255,13 +257,23 @@ steps:
               return comprovante
       ```
 
-      **Cuidado com o recuo.** As linhas de dentro do método começam com **8 espaços** e a linha de dentro do `if` com **12**. Se depois de salvar a aplicação mostrar *Internal Server Error*, rode `tail -n 20 /tmp/app.log` no **Terminal** para ver a linha com erro.
+      **Cuidado com o recuo.** As linhas de dentro do método começam com **8 espaços** e a linha de dentro do `if` com **12**.
 
       Salve com **Ctrl+S**: a aplicação recarrega sozinha. Então:
 
-      1. abra `/comprovantes/10457` e confirme que aparece *Not Found*;
+      1. Na **barra de endereço** da aba **Aplicação**, abra `/comprovantes/10457` e confirme que agora aparece *Not Found*;
       2. abra `/comprovantes/10458` e confirme que o comprovante da Marina continua aparecendo;
       3. clique em **Validar**.
+    explore: |
+      **Se algo não funcionar depois de salvar.** Se a aplicação mostrar *Internal Server Error*, é sinal de que o arquivo ficou com um erro de sintaxe ou de recuo. No **Terminal**, veja o fim do log:
+
+      ```bash
+      tail -n 20 /tmp/app.log
+      ```
+
+      **O que procurar.** A última linha de erro aponta o arquivo e a linha com o problema; em Python, quase sempre é um recuo trocado. Compare o seu método `obter` com o código da tarefa.
+
+      **Por que testar os dois comprovantes.** Abrir `/comprovantes/10457` (de outro cliente) e `/comprovantes/10458` (da Marina) confirma que a correção bloqueou só o acesso indevido, sem quebrar o acesso legítimo. Essa é a verificação que se faz ao corrigir uma falha de autorização: o ataque original deixa de funcionar e o uso normal continua intacto.
     concept: Autorização no nível do objeto (verificação de dono)
     validatorRef: idor/python-flask/owner-check-v1
     hints:

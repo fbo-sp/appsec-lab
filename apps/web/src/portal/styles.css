@@ -253,6 +253,10 @@ label { font-weight: 600; font-size: 0.9rem; }
 .validate-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; margin-top: 0.3rem; }
 .hint-button { display: inline-flex; align-items: center; gap: 0.4rem; }
 .hint-button svg { color: var(--warn); }
+.explore-button { display: inline-flex; align-items: center; gap: 0.4rem; margin: 0.25rem 0 0.75rem; font-size: 0.9rem; }
+.explore-button svg { color: var(--accent, currentColor); }
+.explore-button .muted { font-size: 0.8rem; }
+.explore-modal h4 { margin-top: 1rem; }
 .hints-modal { width: min(520px, 100%); display: flex; flex-direction: column; gap: 0.7rem; padding: 1.3rem; }
 .hints-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 0.8rem; }
 .hints-head h2 { margin: 0; font-size: 1.15rem; }

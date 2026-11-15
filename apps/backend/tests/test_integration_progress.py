@@ -348,6 +348,7 @@ def test_rich_content_references_and_wrap_up_are_exposed(client: TestClient, wk:
     ref = {"title": "CWE-89", "url": "https://cwe.mitre.org/data/definitions/89.html"}
     m["steps"][0]["task"] = "Rode `whoami` no terminal.\n\n```bash\nwhoami\n```"
     m["steps"][0]["references"] = [ref]
+    m["steps"][0]["explore"] = "Opcional: leia o **log** para entender o impacto."
     m["learning"]["wrapUp"] = {"text": "Use **parâmetros**.", "references": [ref]}
     assert client.post("/api/v1/admin/lab-releases", json=m, headers=ADMIN).status_code == 201
     body = {"labId": "LAB-000", "version": "0.9.0", "variantId": "python-http"}
@@ -356,7 +357,8 @@ def test_rich_content_references_and_wrap_up_are_exposed(client: TestClient, wk:
     p = _steps(client, sid)
     first, locked = p["items"]
     assert first["task"].startswith("Rode `whoami`") and first["references"] == [ref]
-    assert "references" not in locked  # etapa bloqueada não revela conteúdo
+    assert first["explore"] == "Opcional: leia o **log** para entender o impacto."
+    assert "references" not in locked and "explore" not in locked  # etapa bloqueada não revela conteúdo
     assert p["wrapUp"] == {"text": "Use **parâmetros**.", "references": [ref]}
 
 

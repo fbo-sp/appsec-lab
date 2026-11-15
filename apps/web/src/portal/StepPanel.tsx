@@ -185,6 +185,7 @@ function StepDetail({
   terms?: TermHelp;
 }) {
   const [hintsOpen, setHintsOpen] = useState(false);
+  const [exploreOpen, setExploreOpen] = useState(false);
   const [answer, setAnswer] = useState("");
   const [evaluation, setEvaluation] = useState<Evaluation | null>(step.lastSubmission ?? null);
   const [busy, setBusy] = useState(false);
@@ -255,6 +256,15 @@ function StepDetail({
       {step.explanation && <Markdown text={step.explanation} terms={terms} />}
       <h4>Tarefa</h4>
       {step.task && <Markdown text={step.task} terms={terms} />}
+      {step.explore && (
+        <button type="button" className="explore-button" onClick={() => setExploreOpen(true)}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <circle cx="11" cy="11" r="7" />
+            <path d="m20 20-3.5-3.5" />
+          </svg>
+          Explorar mais <span className="muted">(opcional, não vale pontos)</span>
+        </button>
+      )}
       {step.concept && (
         <>
           <h4>Conceito</h4>
@@ -329,6 +339,9 @@ function StepDetail({
       {step.submissions > 0 && <p className="muted small">Tentativas nesta etapa: {step.submissions} (sem limite)</p>}
       {error && <div className="error">{error}</div>}
 
+      {exploreOpen && step.explore && (
+        <ExploreModal stepTitle={step.title} text={step.explore} terms={terms} onClose={() => setExploreOpen(false)} />
+      )}
       {hintsOpen && (
         <HintsModal
           stepTitle={step.title}
@@ -339,6 +352,49 @@ function StepDetail({
           onClose={() => setHintsOpen(false)}
         />
       )}
+    </div>
+  );
+}
+
+/** Estudo complementar da etapa (ADR-019): fora do texto da tarefa para não desviar o aluno do que conclui a
+ * etapa. O conteúdo explica por que vale explorar e que tipo de achado pode aparecer. */
+function ExploreModal({
+  stepTitle,
+  text,
+  terms,
+  onClose,
+}: {
+  stepTitle: string;
+  text: string;
+  terms?: TermHelp;
+  onClose: () => void;
+}) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+  return (
+    <div className="overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
+      <div className="card hints-modal explore-modal" role="dialog" aria-modal="true" aria-labelledby="explore-title">
+        <div className="hints-head">
+          <div>
+            <h2 id="explore-title">Explorar mais · {stepTitle}</h2>
+            <p className="muted small">
+              Estudo opcional. Não é preciso para concluir a etapa e não muda a pontuação.
+            </p>
+          </div>
+          <button className="icon-close" aria-label="Fechar" onClick={onClose}>
+            ×
+          </button>
+        </div>
+        <Markdown text={text} terms={terms} />
+        <div className="summary-actions">
+          <button onClick={onClose} autoFocus>
+            Voltar ao laboratório
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
