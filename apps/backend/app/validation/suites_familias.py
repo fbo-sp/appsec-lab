@@ -701,12 +701,33 @@ class UploadRamo:
 
 
 UPLOAD_RAMOS = (
-    UploadRamo("fin", "credimova", "comprovantes", "marcos.nunes", "Marcos#Cred26",
-               "Comprovante recebido", "comprovante-exemplo.pdf"),
-    UploadRamo("sau", "sampaio", "pedidos", "carla.ribeiro", "Carla#Sampaio26",
-               "Pedido médico recebido", "pedido-exemplo.pdf"),
-    UploadRamo("ind", "pindorama", "notas", "fornecedor.aco", "Fornec#Pind26",
-               "Nota fiscal recebida", "nota-exemplo.pdf"),
+    UploadRamo(
+        "fin",
+        "credimova",
+        "comprovantes",
+        "marcos.nunes",
+        "Marcos#Cred26",
+        "Comprovante recebido",
+        "comprovante-exemplo.pdf",
+    ),
+    UploadRamo(
+        "sau",
+        "sampaio",
+        "pedidos",
+        "carla.ribeiro",
+        "Carla#Sampaio26",
+        "Pedido médico recebido",
+        "pedido-exemplo.pdf",
+    ),
+    UploadRamo(
+        "ind",
+        "pindorama",
+        "notas",
+        "fornecedor.aco",
+        "Fornec#Pind26",
+        "Nota fiscal recebida",
+        "nota-exemplo.pdf",
+    ),
 )
 
 

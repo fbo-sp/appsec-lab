@@ -31,9 +31,7 @@ IMPORT = (
     "from werkzeug.datastructures import FileStorage\n"
     "from werkzeug.utils import secure_filename\n"
 )
-IMPORT_NOVO = (
-    "import logging\nimport os\nimport uuid\n\nfrom werkzeug.datastructures import FileStorage\n"
-)
+IMPORT_NOVO = "import logging\nimport os\nimport uuid\n\nfrom werkzeug.datastructures import FileStorage\n"
 SALVAR = (
     "    def salvar(self, dono_id: int, descricao: str, arquivo: FileStorage | None) -> str:\n"
     '        """Confere o tipo, grava o arquivo em /tmp/anexos e registra o envio. Devolve o nome gravado."""\n'
