@@ -11,7 +11,7 @@ from __future__ import annotations
 import urllib.parse
 from dataclasses import dataclass
 
-from app.validation.suites import AnswerSuite, HttpCheck, HttpLogin, HttpSuite, Suite
+from app.validation.suites import AnswerSuite, HttpCheck, HttpLogin, HttpSuite, InspectCheck, Suite
 
 # --------------------------------------------------------------------------------------------------
 # A1 XSS (LAB-005 a LAB-007)
@@ -538,8 +538,153 @@ def _csrf(r: CsrfRamo) -> tuple[Suite, ...]:
     )
 
 
+# --------------------------------------------------------------------------------------------------
+# A4 senha: armazenamento inseguro de senha (LAB-017 a LAB-019)
+
+_HASH_FORTE = r"(scrypt|pbkdf2):.+"  # formato do werkzeug, com sal e custo embutidos
+_MD5_PURO = r"^[0-9a-f]{32}$"  # resumo legado (MD5), que não pode sobrar nas contas que logaram
+_HASH_PADRAO = "49c572f76b3c1d9172fe2a6b75f06cf0"  # md5("Trocar@123"), igual em todos os ramos
+
+
+@dataclass(frozen=True, slots=True)
+class SenhaRamo:
+    ramo: str
+    banco: str  # nome do arquivo em /tmp/<banco>.db
+    login_a: str
+    senha_a: str
+    nome_a: str
+    login_b: str
+    senha_b: str
+    hash_repetido: str  # md5 da senha compartilhada por duas contas (etapa "sem-sal")
+
+
+SENHA_RAMOS = (
+    SenhaRamo(
+        "fin",
+        "credimova",
+        "marina.gomes",
+        "Marina#Cred26",
+        "Marina Aguiar Gomes",
+        "rodrigo.sena",
+        "Rodrigo#Cred26",
+        "c8adf383bd545d654573301c5dc2dcac",
+    ),
+    SenhaRamo(
+        "sau",
+        "helios",
+        "rafael.antunes",
+        "Rafael#Helios26",
+        "Rafael Antunes Barreto",
+        "carla.menezes",
+        "Carla#Helios26",
+        "de2f270e4dd8cb84d56af14073f34d7c",
+    ),
+    SenhaRamo(
+        "ind",
+        "pindorama",
+        "diego.farias",
+        "Diego#Pindorama26",
+        "Diego Farias Lobo",
+        "tania.rocha",
+        "Tania#Pindorama26",
+        "2d2c46d6061df0dbe5786bea484f8e66",
+    ),
+)
+
+
+def _senha(r: SenhaRamo) -> tuple[Suite, ...]:
+    db = f"/tmp/{r.banco}.db"  # noqa: S108 - caminho do banco da cópia efêmera do lab (ADR-008)
+    # Logins são constantes fixas deste registro (não entrada do aluno); consulta read-only na cópia.
+    consulta = f"SELECT login, senha_hash FROM usuarios WHERE login IN ('{r.login_a}', '{r.login_b}')"  # noqa: S608
+
+    def login(nome: str, usuario: str, senha: str) -> HttpLogin:
+        return HttpLogin(name=nome, path="/login", form={"login": usuario, "senha": senha})
+
+    return (
+        AnswerSuite(
+            ref=f"senha/answer/hash-algo-{r.ramo}-v1",
+            version="1.0.0",
+            prompt="Algoritmo usado para resumir a senha",
+            accepted=("md5", "hashlib.md5", "MD5"),
+            success_feedback="Isso. O MD5 é o resumo herdado do sistema legado: rápido e sem sal.",
+            failure_feedback="Ainda não. Em services/auth_service.py, veja o que vem depois de hashlib. no método _resumo.",
+        ),
+        AnswerSuite(
+            ref=f"senha/answer/hash-repetido-{r.ramo}-v1",
+            version="1.0.0",
+            prompt="Hash que aparece repetido no banco",
+            accepted=(r.hash_repetido,),
+            success_feedback="Exato: duas contas com a mesma senha têm o mesmo hash. É o que o sal evitaria.",
+            failure_feedback="Não é esse. Procure o senha_hash que aparece idêntico em duas linhas.",
+        ),
+        AnswerSuite(
+            ref=f"senha/answer/hash-default-{r.ramo}-v1",
+            version="1.0.0",
+            prompt="MD5 da senha padrão do legado",
+            accepted=(_HASH_PADRAO,),
+            success_feedback="Isso. O MD5 da senha conhecida bate com o do banco: é MD5 puro, reversível por tabela.",
+            failure_feedback="Não é esse. Rode o comando python com hashlib.md5 e copie o resumo impresso.",
+        ),
+        AnswerSuite(
+            ref=f"senha/answer/funcao-werkzeug-{r.ramo}-v1",
+            version="1.0.0",
+            prompt="Função do werkzeug que gera o hash forte",
+            accepted=("generate_password_hash", "generate_password_hash()"),
+            success_feedback="Isso. generate_password_hash gera o resumo forte, já com sal e custo.",
+            failure_feedback="Ainda não. É a função que gera (não a que confere) o hash: começa com generate_.",
+        ),
+        HttpSuite(
+            ref=f"senha/python-flask/password-hashing-{r.ramo}-v1",
+            version="1.0.0",
+            logins=(login("a", r.login_a, r.senha_a), login("b", r.login_b, r.senha_b)),
+            checks=(
+                HttpCheck(
+                    id="login-legitimo",
+                    description="O login legítimo continua funcionando depois da correção.",
+                    path="/painel",
+                    as_user="a",
+                    contains=(r.nome_a,),
+                ),
+                HttpCheck(
+                    id="senha-errada-recusada",
+                    description="Uma senha errada continua sendo recusada.",
+                    path="/login",
+                    method="POST",
+                    form={"login": r.login_a, "senha": f"{r.senha_a}-errada"},
+                    contains=("inválidos",),
+                    not_contains=(r.nome_a,),
+                ),
+            ),
+            inspections=(
+                InspectCheck(
+                    id="hashes-migrados",
+                    description=(
+                        "As contas que fizeram login passaram para o formato forte (werkzeug), "
+                        "nenhuma continua em MD5, e o hash confere com a senha conhecida."
+                    ),
+                    db_path=db,
+                    query=consulta,
+                    min_rows=2,
+                    all_match=_HASH_FORTE,
+                    none_match=_MD5_PURO,
+                    verify_passwords={r.login_a: r.senha_a, r.login_b: r.senha_b},
+                ),
+            ),
+            success_feedback=(
+                "Correção validada numa cópia isolada do seu workspace: as senhas passaram para o formato "
+                "forte (com sal e custo) e o login legítimo continua funcionando."
+            ),
+            failure_feedback=(
+                "Algumas verificações falharam. Confira cada item abaixo, ajuste services/auth_service.py e "
+                "valide de novo."
+            ),
+        ),
+    )
+
+
 SUITES_FAMILIAS: tuple[Suite, ...] = (
     tuple(s for r in XSS_RAMOS for s in _xss(r))
     + tuple(s for r in MASSA_RAMOS for s in _massa(r))
     + tuple(s for r in CSRF_RAMOS for s in _csrf(r))
+    + tuple(s for r in SENHA_RAMOS for s in _senha(r))
 )

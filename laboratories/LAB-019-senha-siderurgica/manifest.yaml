@@ -1,0 +1,303 @@
+# LAB-019 (A4-IND): armazenamento inseguro de senha (CWE-916) no Portal do Colaborador da Siderúrgica Pindorama (Flask + SQLite).
+# CONTÉM VULNERABILIDADE INTENCIONAL. Uso exclusivo no runtime Docker LOCAL (ADR-008), em rede
+# interna da sessão. Dados 100% fictícios (domínio .example). Família A4 senha (ADR-021): gerado por
+# scripts/gerar-familia.py a partir de laboratories/_familias/senha; não edite este arquivo à mão.
+#
+# ATENÇÃO: o digest abaixo é uma FIXTURE (sha256 de um texto fixo), não uma imagem publicada.
+# scripts/lab-local.sh e .ps1 trocam pela imagem construída localmente antes de registrar.
+apiVersion: labs.cecyber.io/v1alpha1
+kind: AppSecLab
+metadata:
+  id: LAB-019
+  version: 1.0.0
+  title: "A4-IND · Senhas: o portal do colaborador com senhas em MD5"
+  primaryCwe: CWE-916
+  secondaryCwes: [CWE-759, CWE-327]
+  family: senha
+  sectors: [industria-energia]
+  courseModules: [foundation, trained]
+  classifications:
+    - framework: OWASP Top 10
+      edition: "2025"
+      entries:
+        - "A04 Cryptographic Failures"
+    - framework: OWASP Top 10
+      edition: "2021"
+      entries:
+        - "A02 Cryptographic Failures"
+    - framework: SANS CWE Top 25
+      edition: "2025"
+      entries:
+        - "Não se enquadra; use o CWE"
+    - framework: SANS CWE Top 25
+      edition: "2024"
+      entries:
+        - "Não se enquadra; use o CWE"
+learning:
+  singleVulnerability: true
+  estimatedMinutes: 40
+  difficulty: beginner
+  objectives:
+    - Entender por que uma senha nunca é guardada como texto, e sim como um resumo (hash)
+    - Reconhecer por que MD5 (rápido e sem sal) não serve para senha
+    - Confirmar, no banco, que senhas iguais viram hashes iguais e que o resumo legado é reversível na prática
+    - Corrigir adotando um hash forte (com sal e custo) e migrando as contas antigas sem quebrar o login
+  story:
+    role: Pessoa desenvolvedora do time de sistemas internos da Siderúrgica Pindorama
+    application: Portal do Colaborador, onde o funcionário entra para holerite, férias e benefícios
+    context: >-
+      O login do Portal do Colaborador foi herdado de um sistema de RH legado, o "RH Mainframe", com os hashes de senha importados como estavam lá. Antes da certificação ISO/IEC 27001, uma auditoria apontou que as senhas estão em MD5 sem sal, um achado de alta severidade.
+    mission: Confirmar como as senhas estão guardadas e corrigir o armazenamento sem derrubar o login dos colaboradores
+  wrapUp:
+    text: |
+      Agora cada senha é guardada com **sal único** e **custo de cálculo alto**, e as contas antigas passam para o formato novo assim que o usuário entra. Em um sistema real, vale reforçar:
+
+      - **Não invente o seu algoritmo.** Use o que a plataforma já traz. No Flask/Python, `werkzeug.security` (ou `passlib`) entrega `scrypt`, `bcrypt` e `pbkdf2`. Em outras pilhas, há equivalentes mantidos: Spring Security (`DelegatingPasswordEncoder`), ASP.NET (`PasswordHasher`), Django (`PBKDF2`/`argon2`). O erro comum é usar `md5`/`sha1` "porque é rápido" — rápido é exatamente o que o atacante quer.
+      - **Sal e custo.** O **sal** (um valor aleatório por senha) faz com que senhas iguais tenham hashes diferentes, acabando com as tabelas pré-calculadas. O **custo** (fator de trabalho) deixa cada tentativa cara, o que atrapalha a força bruta. O `werkzeug` já guarda os dois dentro do próprio hash.
+      - **Migração sem reset geral.** Você não sabe a senha em texto de ninguém, então não dá para só regerar os hashes. O padrão é o que você fez: aceitar o hash legado **uma última vez** no login e, na hora, regravar no formato forte. Em semanas, quase todas as contas migram sozinhas; o resto você força a trocar.
+      - **Defesas que acompanham.** Limite tentativas de login, ofereça (ou exija) segundo fator e compare senhas novas com listas de senhas vazadas. Hash forte protege o banco; essas camadas protegem o login.
+    references:
+      - title: "OWASP Cheat Sheet: Password Storage"
+        url: https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html
+      - title: "OWASP Top 10:2025: A04 Cryptographic Failures"
+        url: https://top10.owasp.org/2025/A04_2025-Cryptographic_Failures/
+      - title: "CWE-916: Use of Password Hash With Insufficient Computational Effort"
+        url: https://cwe.mitre.org/data/definitions/916.html
+      - title: "CWE-759: Use of a One-Way Hash without a Salt"
+        url: https://cwe.mitre.org/data/definitions/759.html
+      - title: "Werkzeug: generate_password_hash e check_password_hash"
+        url: https://werkzeug.palletsprojects.com/en/stable/utils/#module-werkzeug.security
+variants:
+  - id: python-flask
+    language: python
+    framework: flask
+    image: registry.local/labs/lab-019-senha@sha256:7139ca877fda0ca6b26cd4cc2afdb8d1bc2c2bc6316a235631bc7638488d9154
+    runtimeProfile: web-basic
+    workspacePath: /workspace
+    startup:
+      command: ["sh", "-c", "python -u -m flask --app app run --host 0.0.0.0 --port 8080 --reload --no-debugger 2>&1 | tee -a /tmp/app.log"]
+      port: 8080
+    resources:
+      cpuMillicores: 500
+      memoryMiB: 512
+      storageMiB: 256
+      pidsMax: 64
+    session:
+      ttlMinutes: 45
+      maxRenewals: 2
+    interfaces: [editor, terminal, web]
+steps:
+  - id: conhecer
+    order: 1
+    title: Conhecer o login e achar onde a senha é conferida
+    explanation: |
+      Você é do time de sistemas internos da Siderúrgica Pindorama. O login do Portal do Colaborador veio de um RH legado, o "RH Mainframe". Na preparação para a certificação ISO/IEC 27001, a auditoria classificou como alto risco o fato de as senhas estarem guardadas em MD5 sem sal, reversíveis a partir de listas de senhas vazadas.
+
+      Nenhum sistema sério guarda a senha como você a digitou. Ele guarda um **resumo** (hash): um valor calculado a partir da senha, do qual não se volta para a senha original. No login, o sistema calcula o resumo da senha digitada e compara com o resumo guardado.
+
+      ```ilustracao
+      senha-resumo
+      ```
+
+      Neste laboratório, as contas foram importadas do sistema legado **"RH Mainframe"**, e o resumo de cada senha veio exatamente como estava lá. Siga o login pelas camadas:
+
+      1. **Controller** (`controllers/auth_controller.py`): recebe o formulário e chama o serviço.
+      2. **Serviço** (`services/auth_service.py`): calcula o resumo da senha e compara com o do banco. **É aqui que está a decisão de segurança.**
+      3. **Repositório** (`repositories/usuario_repository.py`): lê o `senha_hash` guardado.
+
+      As credenciais de teste deste laboratório são:
+
+      - Colaborador Diego Farias Lobo: usuário `diego.farias`, senha `Diego#Pindorama26`.
+    task: |
+      1. Na aba **Aplicação**, entre com o usuário `diego.farias` e a senha `Diego#Pindorama26`. Você chega ao **Portal do Colaborador**.
+      2. Na aba **Código**, abra `services/auth_service.py` e leia o método `_resumo`.
+
+      Informe abaixo o nome da função usada para resumir a senha (o nome que aparece depois de `hashlib.`).
+    concept: Senha guardada como resumo (hash), não como texto
+    validatorRef: senha/answer/hash-algo-ind-v1
+    hints:
+      - level: 1
+        text: 'Em `services/auth_service.py`, o método `_resumo` tem uma única linha com `hashlib.____`.'
+      - level: 2
+        text: É um algoritmo antigo, de três letras e um número.
+      - level: 3
+        text: O valor é `md5`.
+    points: 10
+  - id: sem-sal
+    order: 2
+    title: Ver por que esse resumo não protege
+    explanation: |
+      O MD5 tem dois problemas graves para senha:
+
+      - **Não tem sal.** O *sal* é um valor aleatório, diferente para cada senha, misturado antes de resumir. Sem sal, **a mesma senha sempre vira o mesmo resumo**. Então, só de olhar o banco, dá para ver quem usa a mesma senha — e uma tabela pronta (senha → resumo) reverte as senhas comuns na hora.
+      - **É rápido demais.** MD5 foi feito para ser veloz. Para senha, isso é ruim: quem copia o banco testa bilhões de palpites por segundo.
+
+      ```ilustracao
+      senha-sem-sal
+      ```
+
+      Vamos ver o primeiro problema no banco. Duas contas deste laboratório usam, por coincidência, a mesma senha — e por isso têm o **mesmo** `senha_hash`.
+    task: |
+      Na aba **Terminal**, liste as contas e seus resumos:
+
+      ```bash
+      python -c "import sqlite3; [print(l) for l in sqlite3.connect('/tmp/pindorama.db').execute('SELECT login, senha_hash FROM usuarios')]"
+      ```
+
+      Duas linhas têm o **mesmo** `senha_hash` (as contas `marcos.vidal` e `ellen.souza`). Informe abaixo esse valor que aparece repetido.
+    explore: |
+      **Por que isso é uma brecha, não uma curiosia.** Num vazamento real, o atacante não precisa quebrar cada senha: ele agrupa os resumos iguais e ataca uma vez só. E se um dos donos daquele resumo usar a mesma senha em outro serviço já vazado, o atacante liga os dois sem esforço. O sal elimina essa pista: com sal, as mesmas duas senhas teriam resumos diferentes.
+    concept: Hash sem sal é determinístico — senhas iguais, resumos iguais
+    validatorRef: senha/answer/hash-repetido-ind-v1
+    hints:
+      - level: 1
+        text: É uma sequência de 32 caracteres (0-9 e a-f) que aparece em duas linhas.
+      - level: 2
+        text: 'Compare os resumos das contas `marcos.vidal` e `ellen.souza`: são idênticos.'
+      - level: 3
+        text: O valor é `2d2c46d6061df0dbe5786bea484f8e66`.
+    points: 15
+  - id: reversivel
+    order: 3
+    title: Confirmar que o resumo legado é reversível na prática
+    explanation: |
+      Como o MD5 é rápido e sem sal, qualquer um pode **pré-calcular** o resumo de uma lista de senhas comuns e comparar com o banco. Não é "quebrar criptografia": é consultar uma tabela.
+
+      Para confirmar que o banco guarda MD5 puro, basta calcular o MD5 de uma senha conhecida e ver que bate com o resumo guardado. A conta de exemplo `teste.legado` foi importada com a senha padrão do sistema legado, `Trocar@123` (o valor que o "RH Mainframe" usava para contas novas).
+    task: |
+      Na aba **Terminal**, calcule o MD5 da senha padrão:
+
+      ```bash
+      python -c "import hashlib; print(hashlib.md5('Trocar@123'.encode()).hexdigest())"
+      ```
+
+      Compare com o `senha_hash` da conta `teste.legado` na lista da etapa anterior: é o mesmo valor. Informe abaixo esse resumo.
+    explore: |
+      **O que isso significa na prática.** Se um resumo MD5 de uma senha fraca já está numa tabela pública, a senha está exposta no instante em que o banco vaza — sem nenhuma conta ser "arrombada". É por isso que listas de senhas vazadas (como as que alimentam o *credential stuffing*) são tão eficazes contra bancos que guardam MD5.
+    concept: Hash rápido e sem sal é reversível por tabela pré-calculada
+    validatorRef: senha/answer/hash-default-ind-v1
+    hints:
+      - level: 1
+        text: O comando imprime um resumo de 32 caracteres; é esse que você informa.
+      - level: 2
+        text: Ele é igual ao `senha_hash` da conta `teste.legado`.
+      - level: 3
+        text: O valor é `49c572f76b3c1d9172fe2a6b75f06cf0`.
+    points: 15
+  - id: forte
+    order: 4
+    title: Escolher o resumo certo para senha
+    explanation: |
+      A correção não é "um hash melhor que o MD5", e sim um resumo **feito para senha**, que já resolve os dois problemas:
+
+      - **Sal único por senha**, gerado automaticamente e guardado junto do resumo: senhas iguais viram resumos diferentes.
+      - **Custo de cálculo alto** (fator de trabalho), que torna cada palpite caro e atrapalha a força bruta.
+
+      No Flask/Python, você não precisa montar isso à mão: o módulo **`werkzeug.security`** (que já vem com o Flask) traz duas funções:
+
+      - `generate_password_hash(senha)`: gera o resumo forte (por padrão, com o algoritmo **scrypt**), já com sal e custo embutidos;
+      - `check_password_hash(hash, senha)`: confere uma senha contra esse resumo.
+
+      ```ilustracao
+      senha-migracao
+      ```
+
+      Como você não conhece a senha em texto de ninguém, não dá para regerar os hashes antigos de uma vez. A saída é **migrar no login**: quando o usuário entra com a conta ainda legada, você confere o resumo antigo uma última vez e, se bater, **regrava** a senha no formato forte.
+    task: |
+      Informe abaixo o nome da função do `werkzeug.security` que **gera** o resumo forte de uma senha (a que você usaria no lugar de `hashlib.md5`).
+    concept: Hash de senha com sal e custo (scrypt), via werkzeug
+    validatorRef: senha/answer/funcao-werkzeug-ind-v1
+    hints:
+      - level: 1
+        text: São duas funções; a que **gera** o resumo começa com `generate_`.
+      - level: 2
+        text: A outra, `check_password_hash`, serve para conferir.
+      - level: 3
+        text: O valor é `generate_password_hash`.
+    points: 15
+  - id: corrigir
+    order: 5
+    title: Corrigir o armazenamento da senha
+    explanation: |
+      **Por que a falha existe.** O serviço guarda e confere a senha com MD5 (rápido e sem sal), herdado do sistema legado. Quem copiar o banco reverte as senhas fracas na hora.
+
+      **A correção.** Passar a usar o `werkzeug.security`: conferir com `check_password_hash` quando a conta já está no formato forte e, quando ela ainda está no formato legado, conferir o resumo antigo uma última vez e **regravar** com `generate_password_hash`. Assim, nenhuma senha nova é guardada em MD5 e as contas antigas migram sozinhas conforme as pessoas entram.
+
+      O `hashlib` continua importado só para conferir o resumo legado durante a migração; o `hmac.compare_digest` compara os dois resumos sem vazar informação pelo tempo de resposta.
+    task: |
+      Abra `services/auth_service.py`.
+
+      **1.** Troque o bloco de imports do topo:
+
+      ```python
+      import hashlib
+
+      from models.usuario import Usuario
+      from repositories.usuario_repository import UsuarioRepository
+      ```
+
+      por este (acrescenta `hmac` e as duas funções do werkzeug):
+
+      ```python
+      import hashlib
+      import hmac
+
+      from werkzeug.security import check_password_hash, generate_password_hash
+
+      from models.usuario import Usuario
+      from repositories.usuario_repository import UsuarioRepository
+      ```
+
+      **2.** Troque o método `autenticar` inteiro por este (o método `_resumo` continua como está, logo acima):
+
+      ```python
+          def autenticar(self, login: str, senha: str) -> Usuario | None:
+              encontrado = self._repositorio.buscar_por_login(login.strip().lower())
+              if encontrado is None:
+                  return None
+              usuario, senha_hash = encontrado
+              if senha_hash.startswith(("scrypt:", "pbkdf2:")):
+                  # Conta já no formato forte: o werkzeug confere o hash (com sal e custo).
+                  return usuario if check_password_hash(senha_hash, senha) else None
+              # Conta ainda no formato legado: confere o resumo antigo e, se bater, regrava no formato forte.
+              if not hmac.compare_digest(self._resumo(senha), senha_hash):
+                  return None
+              self._repositorio.atualizar_senha(usuario.id, generate_password_hash(senha))
+              return usuario
+      ```
+
+      Salve com **Ctrl+S**. A aplicação reinicia e o banco volta ao estado inicial (contas no formato legado). Então:
+
+      1. na aba **Aplicação**, clique em **Sair** e entre de novo com `diego.farias` e a senha `Diego#Pindorama26` (as credenciais da etapa 1): é esse login que migra a sua senha para o formato forte;
+      2. no **Portal do Colaborador**, o aviso passa de "formato antigo" para **"formato reforçado"**;
+      3. clique em **Validar**.
+    explore: |
+      **Se algo não funcionar depois de salvar.** Um recuo errado ou um import faltando derruba a aplicação. No **Terminal**:
+
+      ```bash
+      grep -iE "error|traceback" /tmp/app.log | tail -n 15
+      ```
+
+      **O que procurar.** `NameError: name 'hmac'` ou `name 'generate_password_hash'` indicam import faltando. `IndentationError` aponta a linha com recuo diferente: os métodos ficam com 4 espaços; o corpo deles, com 8.
+
+      **Conferir a migração no banco.** Depois de entrar de novo, o resumo da sua conta deve começar com `scrypt:`:
+
+      ```bash
+      python -c "import sqlite3; print(sqlite3.connect('/tmp/pindorama.db').execute(\"SELECT senha_hash FROM usuarios WHERE login='diego.farias'\").fetchone())"
+      ```
+    concept: Adoção de hash forte (werkzeug/scrypt) com migração no login
+    validatorRef: senha/python-flask/password-hashing-ind-v1
+    hints:
+      - level: 1
+        text: 'São duas mudanças, as duas em `services/auth_service.py`: os imports e o método `autenticar`.'
+      - level: 2
+        text: 'Contas no formato forte começam com `scrypt:` ou `pbkdf2:`; as demais são legadas e precisam migrar no login.'
+      - level: 3
+        text: Copie os dois trechos da tarefa sem mudar o recuo. O método `autenticar` fica com 4 espaços antes de `def`.
+    points: 45
+policy:
+  sequentialUnlock: true
+  allowStepRetry: true
+  persistProgressAcrossReset: true
+  allowSolutionReveal: false
+  finalPassingScore: 100

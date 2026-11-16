@@ -328,6 +328,53 @@ const ILLUSTRATIONS: Record<string, { caption: string; body: () => ReactNode }> 
       />
     ),
   },
+  "senha-resumo": {
+    caption: "A senha nunca é guardada como texto: o sistema guarda e compara um resumo (hash).",
+    body: () => (
+      <Flow
+        steps={[
+          { who: "Usuário", what: "digita a senha no login", tone: "vit" },
+          { who: "Aplicação", what: <>calcula o resumo da senha digitada ({c("resumo = hash(senha)")})</>, tone: "app" },
+          { who: "Banco", what: <>guarda só o resumo, nunca a senha; o login compara resumo com resumo</>, tone: "app" },
+          { who: "Observação", what: "o resumo certo depende de COMO ele é calculado — é aí que está a falha", tone: "bad" },
+        ]}
+      />
+    ),
+  },
+  "senha-sem-sal": {
+    caption: "MD5 sem sal × hash forte: o que muda quando duas pessoas usam a mesma senha.",
+    body: () => (
+      <Compare
+        bad={[
+          "MD5 sem sal (rápido)",
+          <>
+            <span>Mesma senha → mesmo resumo: dá para agrupar contas iguais.</span>
+            <span>Rápido e sem sal: uma tabela pronta reverte senhas comuns na hora.</span>
+          </>,
+        ]}
+        good={[
+          "Hash forte (com sal e custo)",
+          <>
+            <span>Sal único por senha: mesma senha → resumos diferentes.</span>
+            <span>Custo alto por tentativa: a força bruta fica cara e a tabela pronta não serve.</span>
+          </>,
+        ]}
+      />
+    ),
+  },
+  "senha-migracao": {
+    caption: "Migração no login: a conta legada passa ao formato forte na próxima vez que o usuário entra.",
+    body: () => (
+      <Flow
+        steps={[
+          { who: "Usuário legado", what: "entra com a senha; a conta ainda está em MD5", tone: "vit" },
+          { who: "Aplicação", what: <>confere o resumo antigo uma última vez; se bate, chama {c("generate_password_hash")}</>, tone: "app" },
+          { who: "Banco", what: <>regrava a senha no formato forte ({c("scrypt:…")})</>, tone: "app" },
+          { who: "Próximo login", what: <>já confere pelo formato forte com {c("check_password_hash")}</>, tone: "ok" },
+        ]}
+      />
+    ),
+  },
 };
 
 export function hasIllustration(name: string): boolean {

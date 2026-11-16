@@ -70,6 +70,7 @@ class LabUnderTest:
             app_port=self.port,
             checks=suite.probe_checks(),
             logins=suite.probe_logins(),
+            inspections=suite.probe_inspections(),
             cpu_millicores=self.resources.cpu_millicores,
             memory_mib=self.resources.memory_mib,
             pids_max=self.resources.pids_max,

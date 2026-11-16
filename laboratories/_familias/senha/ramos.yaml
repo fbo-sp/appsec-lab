@@ -1,0 +1,132 @@
+# Família A4 senha (ADR-021): o que muda por ramo de atividade. O modelo comum está em ./modelo.
+# Depois de editar, rode:  uv run python scripts/gerar-familia.py senha
+# Logins, senhas e respostas estão espelhados em apps/backend/app/validation/suites_familias.py
+# (registro protegido); os testes Docker conferem os dois. As contas [[conta_c]]/[[conta_d]] têm, de
+# propósito, a MESMA senha (hash repetido); [[conta_teste]] usa a senha padrão do legado (Trocar@123).
+ramos:
+  - destino: LAB-017-senha-cooperativa
+    vars:
+      lab_id: LAB-017
+      versao: 1.0.0
+      codigo: A4-FIN
+      ramo: fin
+      setor: financeiro
+      imagem: lab-017-senha
+      titulo: as senhas MD5 herdadas da fusão
+      empresa: Cooperativa Credimova
+      marca: "◆ Credimova"
+      app_nome: Acesso Cooperado
+      cor: "#1d4ed8"
+      papel: Pessoa desenvolvedora da squad de canais digitais da Cooperativa Credimova
+      aplicacao: portal Acesso Cooperado, onde o cooperado entra para ver conta e serviços
+      contexto: Na fusão com uma cooperativa menor, as contas do portal foram importadas do sistema legado "Cooperar 2000", com os hashes de senha como estavam lá. Um teste de invasão alertou que esses hashes são MD5 sem sal e que várias senhas já apareciam em listas de vazamento público.
+      missao: Confirmar como as senhas estão guardadas e corrigir o armazenamento sem derrubar o login dos cooperados
+      banco: credimova
+      sistema_legado: Cooperar 2000
+      painel_titulo: Área do Cooperado
+      painel_desc: Seu acesso ao Acesso Cooperado da Credimova.
+      login_desc: Entre com as credenciais do cooperado para acessar o portal.
+      login_a: marina.gomes
+      senha_a: "Marina#Cred26"
+      nome_a: Marina Aguiar Gomes
+      cliente_desc: Cooperada Marina Aguiar Gomes
+      conta_c: helena.prado
+      conta_d: paulo.reis
+      hash_repetido: c8adf383bd545d654573301c5dc2dcac
+      conta_teste: teste.legado
+      senha_padrao: "Trocar@123"
+      hash_padrao: 49c572f76b3c1d9172fe2a6b75f06cf0
+      login_b: rodrigo.sena
+      senha_b: "Rodrigo#Cred26"
+      nome_b: Rodrigo Sena Vilela
+      historia_abertura: 'Você está na squad de canais digitais da Credimova. Depois da fusão com uma cooperativa menor, as contas do portal vieram do sistema legado "Cooperar 2000". O time de segurança abriu um chamado para você: os hashes de senha importados são MD5 sem sal, e um teste de invasão mostrou que dá para reverter as senhas mais fracas direto de uma lista pronta.'
+      seed_usuarios:
+        - [1, marina.gomes, Marina Aguiar Gomes, "Marina#Cred26"]
+        - [2, rodrigo.sena, Rodrigo Sena Vilela, "Rodrigo#Cred26"]
+        - [3, helena.prado, Helena Prado Antunes, "Cooperado@2024"]
+        - [4, paulo.reis, Paulo Reis Macedo, "Cooperado@2024"]
+        - [5, teste.legado, Conta de teste (migração), "Trocar@123"]
+  - destino: LAB-018-senha-laboratorio
+    vars:
+      lab_id: LAB-018
+      versao: 1.0.0
+      codigo: A4-SAU
+      ramo: sau
+      setor: saude
+      imagem: lab-018-senha
+      titulo: o portal do paciente com senhas em MD5
+      empresa: Laboratórios Helios
+      marca: "✚ Helios"
+      app_nome: Portal do Paciente
+      cor: "#0e7490"
+      papel: Pessoa desenvolvedora do time de produtos digitais dos Laboratórios Helios
+      aplicacao: Portal do Paciente, onde o paciente entra para ver resultados de exames
+      contexto: As contas do Portal do Paciente foram migradas do sistema de agendamento antigo "Agenda Saúde", com os hashes de senha como estavam lá. Numa auditoria, a equipe de privacidade (DPO) classificou como risco de LGPD o fato de as senhas estarem guardadas em MD5 sem sal, depois que uma cópia de backup circulou fora do ambiente.
+      missao: Confirmar como as senhas estão guardadas e corrigir o armazenamento sem derrubar o login dos pacientes
+      banco: helios
+      sistema_legado: Agenda Saúde
+      painel_titulo: Portal do Paciente
+      painel_desc: Seu acesso aos resultados de exames dos Laboratórios Helios.
+      login_desc: Entre com as credenciais do paciente para acessar o portal.
+      login_a: rafael.antunes
+      senha_a: "Rafael#Helios26"
+      nome_a: Rafael Antunes Barreto
+      cliente_desc: Paciente Rafael Antunes Barreto
+      conta_c: bruno.dias
+      conta_d: sofia.lemos
+      hash_repetido: de2f270e4dd8cb84d56af14073f34d7c
+      conta_teste: teste.legado
+      senha_padrao: "Trocar@123"
+      hash_padrao: 49c572f76b3c1d9172fe2a6b75f06cf0
+      login_b: carla.menezes
+      senha_b: "Carla#Helios26"
+      nome_b: Carla Menezes Pires
+      historia_abertura: 'Você é do time de produtos digitais dos Laboratórios Helios. As contas do Portal do Paciente foram migradas do sistema de agendamento antigo "Agenda Saúde". Depois que uma cópia de backup circulou fora do ambiente, a DPO abriu um incidente de LGPD: as senhas dos pacientes estão guardadas em MD5 sem sal e podem ser revertidas a partir de listas públicas.'
+      seed_usuarios:
+        - [1, rafael.antunes, Rafael Antunes Barreto, "Rafael#Helios26"]
+        - [2, carla.menezes, Carla Menezes Pires, "Carla#Helios26"]
+        - [3, bruno.dias, Bruno Dias Correia, "Paciente@2024"]
+        - [4, sofia.lemos, Sofia Lemos Tavares, "Paciente@2024"]
+        - [5, teste.legado, Conta de teste (migração), "Trocar@123"]
+  - destino: LAB-019-senha-siderurgica
+    vars:
+      lab_id: LAB-019
+      versao: 1.0.0
+      codigo: A4-IND
+      ramo: ind
+      setor: industria-energia
+      imagem: lab-019-senha
+      titulo: o portal do colaborador com senhas em MD5
+      empresa: Siderúrgica Pindorama
+      marca: "⬢ Pindorama"
+      app_nome: Portal do Colaborador
+      cor: "#9a3412"
+      papel: Pessoa desenvolvedora do time de sistemas internos da Siderúrgica Pindorama
+      aplicacao: Portal do Colaborador, onde o funcionário entra para holerite, férias e benefícios
+      contexto: O login do Portal do Colaborador foi herdado de um sistema de RH legado, o "RH Mainframe", com os hashes de senha importados como estavam lá. Antes da certificação ISO/IEC 27001, uma auditoria apontou que as senhas estão em MD5 sem sal, um achado de alta severidade.
+      missao: Confirmar como as senhas estão guardadas e corrigir o armazenamento sem derrubar o login dos colaboradores
+      banco: pindorama
+      sistema_legado: RH Mainframe
+      painel_titulo: Portal do Colaborador
+      painel_desc: Seu acesso a holerite, férias e benefícios na Siderúrgica Pindorama.
+      login_desc: Entre com as credenciais do colaborador para acessar o portal.
+      login_a: diego.farias
+      senha_a: "Diego#Pindorama26"
+      nome_a: Diego Farias Lobo
+      cliente_desc: Colaborador Diego Farias Lobo
+      conta_c: marcos.vidal
+      conta_d: ellen.souza
+      hash_repetido: 2d2c46d6061df0dbe5786bea484f8e66
+      conta_teste: teste.legado
+      senha_padrao: "Trocar@123"
+      hash_padrao: 49c572f76b3c1d9172fe2a6b75f06cf0
+      login_b: tania.rocha
+      senha_b: "Tania#Pindorama26"
+      nome_b: Tânia Rocha Sampaio
+      historia_abertura: 'Você é do time de sistemas internos da Siderúrgica Pindorama. O login do Portal do Colaborador veio de um RH legado, o "RH Mainframe". Na preparação para a certificação ISO/IEC 27001, a auditoria classificou como alto risco o fato de as senhas estarem guardadas em MD5 sem sal, reversíveis a partir de listas de senhas vazadas.'
+      seed_usuarios:
+        - [1, diego.farias, Diego Farias Lobo, "Diego#Pindorama26"]
+        - [2, tania.rocha, Tânia Rocha Sampaio, "Tania#Pindorama26"]
+        - [3, marcos.vidal, Marcos Vidal Nunes, "Colaborador@2024"]
+        - [4, ellen.souza, Ellen Souza Prado, "Colaborador@2024"]
+        - [5, teste.legado, Conta de teste (migração), "Trocar@123"]

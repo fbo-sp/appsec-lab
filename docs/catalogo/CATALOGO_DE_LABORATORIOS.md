@@ -53,6 +53,9 @@ Indicado como primeira atividade de qualquer turma, antes do primeiro laboratór
 | LAB-011 | A2-FIN · CSRF: a chave PIX trocada pelo e-mail de campanha | 1.0.0 | CWE-352 | A01 Broken Access Control (2025) | #3 CWE-352 Cross-Site Request Forgery (CSRF) (2025) | Iniciante | 40 min |
 | LAB-012 | A2-SAU · CSRF: o laudo que foi para o e-mail errado | 1.0.0 | CWE-352 | A01 Broken Access Control (2025) | #3 CWE-352 Cross-Site Request Forgery (CSRF) (2025) | Iniciante | 40 min |
 | LAB-013 | A2-IND · CSRF: o alarme da comporta que foi para outro celular | 1.0.0 | CWE-352 | A01 Broken Access Control (2025) | #3 CWE-352 Cross-Site Request Forgery (CSRF) (2025) | Iniciante | 40 min |
+| LAB-017 | A4-FIN · Senhas: as senhas MD5 herdadas da fusão | 1.0.0 | CWE-916 | A04 Cryptographic Failures (2025) | Não se enquadra; use o CWE (2025) | Iniciante | 40 min |
+| LAB-018 | A4-SAU · Senhas: o portal do paciente com senhas em MD5 | 1.0.0 | CWE-916 | A04 Cryptographic Failures (2025) | Não se enquadra; use o CWE (2025) | Iniciante | 40 min |
+| LAB-019 | A4-IND · Senhas: o portal do colaborador com senhas em MD5 | 1.0.0 | CWE-916 | A04 Cryptographic Failures (2025) | Não se enquadra; use o CWE (2025) | Iniciante | 40 min |
 
 ## LAB-001 · SQL Injection: a busca que expõe pacientes
 
@@ -586,3 +589,123 @@ Indicado como primeira atividade de qualquer turma, antes do primeiro laboratór
 | Versão | Criada em | Obsoleta em | Situação | O que mudou |
 |---|---|---|---|---|
 | 1.0.0 | 2026-11-16 | — | vigente | Primeira versão (CSRF na troca do celular do plantão de alarmes, Correnteza Geração; família csrf, ramo Indústria e Energia). |
+
+## LAB-017 · A4-FIN · Senhas: as senhas MD5 herdadas da fusão
+
+- Versão vigente: 1.0.0
+- Cenário: portal Acesso Cooperado, onde o cooperado entra para ver conta e serviços
+- Papel do aluno: Pessoa desenvolvedora da squad de canais digitais da Cooperativa Credimova
+- Linguagem / stack: python / flask
+- Nível: Iniciante · duração estimada: 40 min
+- Família: senha
+- Ramo: Financeiro
+- Módulo do curso: Foundation, Trained
+
+### Classificação
+
+- CWE: CWE-916 (principal), CWE-759, CWE-327
+- OWASP Top 10 2025: A04 Cryptographic Failures
+- OWASP Top 10 2021: A02 Cryptographic Failures
+- SANS CWE Top 25 2025: Não se enquadra; use o CWE
+- SANS CWE Top 25 2024: Não se enquadra; use o CWE
+
+### Objetivos
+
+- Entender por que uma senha nunca é guardada como texto, e sim como um resumo (hash)
+- Reconhecer por que MD5 (rápido e sem sal) não serve para senha
+- Confirmar, no banco, que senhas iguais viram hashes iguais e que o resumo legado é reversível na prática
+- Corrigir adotando um hash forte (com sal e custo) e migrando as contas antigas sem quebrar o login
+
+### Etapas
+
+1. Conhecer o login e achar onde a senha é conferida (10 pts)
+2. Ver por que esse resumo não protege (15 pts)
+3. Confirmar que o resumo legado é reversível na prática (15 pts)
+4. Escolher o resumo certo para senha (15 pts)
+5. Corrigir o armazenamento da senha (45 pts)
+
+### Histórico de versões
+
+| Versão | Criada em | Obsoleta em | Situação | O que mudou |
+|---|---|---|---|---|
+| 1.0.0 | 2026-11-16 | — | vigente | Primeira versão (armazenamento inseguro de senha em MD5, Cooperativa Credimova; família senha, ramo Financeiro). |
+
+## LAB-018 · A4-SAU · Senhas: o portal do paciente com senhas em MD5
+
+- Versão vigente: 1.0.0
+- Cenário: Portal do Paciente, onde o paciente entra para ver resultados de exames
+- Papel do aluno: Pessoa desenvolvedora do time de produtos digitais dos Laboratórios Helios
+- Linguagem / stack: python / flask
+- Nível: Iniciante · duração estimada: 40 min
+- Família: senha
+- Ramo: Saúde
+- Módulo do curso: Foundation, Trained
+
+### Classificação
+
+- CWE: CWE-916 (principal), CWE-759, CWE-327
+- OWASP Top 10 2025: A04 Cryptographic Failures
+- OWASP Top 10 2021: A02 Cryptographic Failures
+- SANS CWE Top 25 2025: Não se enquadra; use o CWE
+- SANS CWE Top 25 2024: Não se enquadra; use o CWE
+
+### Objetivos
+
+- Entender por que uma senha nunca é guardada como texto, e sim como um resumo (hash)
+- Reconhecer por que MD5 (rápido e sem sal) não serve para senha
+- Confirmar, no banco, que senhas iguais viram hashes iguais e que o resumo legado é reversível na prática
+- Corrigir adotando um hash forte (com sal e custo) e migrando as contas antigas sem quebrar o login
+
+### Etapas
+
+1. Conhecer o login e achar onde a senha é conferida (10 pts)
+2. Ver por que esse resumo não protege (15 pts)
+3. Confirmar que o resumo legado é reversível na prática (15 pts)
+4. Escolher o resumo certo para senha (15 pts)
+5. Corrigir o armazenamento da senha (45 pts)
+
+### Histórico de versões
+
+| Versão | Criada em | Obsoleta em | Situação | O que mudou |
+|---|---|---|---|---|
+| 1.0.0 | 2026-11-16 | — | vigente | Primeira versão (armazenamento inseguro de senha em MD5, Laboratórios Helios; família senha, ramo Saúde). |
+
+## LAB-019 · A4-IND · Senhas: o portal do colaborador com senhas em MD5
+
+- Versão vigente: 1.0.0
+- Cenário: Portal do Colaborador, onde o funcionário entra para holerite, férias e benefícios
+- Papel do aluno: Pessoa desenvolvedora do time de sistemas internos da Siderúrgica Pindorama
+- Linguagem / stack: python / flask
+- Nível: Iniciante · duração estimada: 40 min
+- Família: senha
+- Ramo: Indústria e Energia
+- Módulo do curso: Foundation, Trained
+
+### Classificação
+
+- CWE: CWE-916 (principal), CWE-759, CWE-327
+- OWASP Top 10 2025: A04 Cryptographic Failures
+- OWASP Top 10 2021: A02 Cryptographic Failures
+- SANS CWE Top 25 2025: Não se enquadra; use o CWE
+- SANS CWE Top 25 2024: Não se enquadra; use o CWE
+
+### Objetivos
+
+- Entender por que uma senha nunca é guardada como texto, e sim como um resumo (hash)
+- Reconhecer por que MD5 (rápido e sem sal) não serve para senha
+- Confirmar, no banco, que senhas iguais viram hashes iguais e que o resumo legado é reversível na prática
+- Corrigir adotando um hash forte (com sal e custo) e migrando as contas antigas sem quebrar o login
+
+### Etapas
+
+1. Conhecer o login e achar onde a senha é conferida (10 pts)
+2. Ver por que esse resumo não protege (15 pts)
+3. Confirmar que o resumo legado é reversível na prática (15 pts)
+4. Escolher o resumo certo para senha (15 pts)
+5. Corrigir o armazenamento da senha (45 pts)
+
+### Histórico de versões
+
+| Versão | Criada em | Obsoleta em | Situação | O que mudou |
+|---|---|---|---|---|
+| 1.0.0 | 2026-11-16 | — | vigente | Primeira versão (armazenamento inseguro de senha em MD5, Siderúrgica Pindorama; família senha, ramo Indústria e Energia). |
