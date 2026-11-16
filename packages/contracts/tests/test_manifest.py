@@ -242,3 +242,41 @@ def test_invalid_classification_is_rejected(manifest: dict[str, Any], item: dict
     manifest["metadata"]["classifications"] = [item]
     with pytest.raises(ManifestValidationError):
         validate_manifest(manifest)
+
+
+def test_family_sectors_and_modules_are_optional_and_keep_digests(manifest: dict[str, Any]) -> None:
+    """ADR-021: os campos novos não aparecem quando ausentes, então o digest dos labs atuais não muda."""
+    dumped = canonical_manifest_json_for(manifest)
+    assert '"family":' not in dumped and '"sectors":' not in dumped and '"courseModules":' not in dumped
+
+
+def test_family_sectors_and_modules_are_accepted(manifest: dict[str, Any]) -> None:
+    manifest["metadata"]["family"] = "xss"
+    manifest["metadata"]["sectors"] = ["financeiro"]
+    manifest["metadata"]["courseModules"] = ["trained", "master"]
+    m = validate_manifest(manifest)
+    assert m.metadata.family == "xss"
+    assert [s.value for s in m.metadata.sectors or ()] == ["financeiro"]
+    assert [c.value for c in m.metadata.course_modules or ()] == ["trained", "master"]
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("sectors", ["varejo"]),
+        ("sectors", []),
+        ("courseModules", ["avancado"]),
+        ("family", "XSS Refletido"),
+    ],
+)
+def test_invalid_family_sector_or_module_is_rejected(manifest: dict[str, Any], field: str, value: Any) -> None:
+    manifest["metadata"][field] = value
+    with pytest.raises(ManifestValidationError):
+        validate_manifest(manifest)
+
+
+def test_attacker_interface_is_accepted(manifest: dict[str, Any]) -> None:
+    """ADR-022: variante com site do atacante (porta 8090 do contêiner, servida pelo gateway)."""
+    manifest["variants"][0]["interfaces"] = ["editor", "terminal", "web", "attacker"]
+    m = validate_manifest(manifest)
+    assert "attacker" in [i.value for i in m.variants[0].interfaces]

@@ -23,6 +23,7 @@ from enum import StrEnum
 class Purpose(StrEnum):
     WORKSPACE = "workspace"
     PREVIEW = "preview"
+    ATTACKER = "attacker"  # site do atacante (ADR-022)
 
 
 class Audience(StrEnum):

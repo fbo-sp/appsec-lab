@@ -60,6 +60,26 @@ class Interface(StrEnum):
     EDITOR = "editor"
     TERMINAL = "terminal"
     WEB = "web"
+    # Site do atacante (ADR-022): página fictícia servida pelo gateway em origem própria, a partir da
+    # porta 8090 do contêiner do lab. Só para labs cujo ataque parte de outra página (ex.: CSRF).
+    ATTACKER = "attacker"
+
+
+class Sector(StrEnum):
+    """Ramo de atividade do cenário (ADR-021), usado para o aluno escolher labs do seu setor."""
+
+    FINANCEIRO = "financeiro"
+    SAUDE = "saude"
+    INDUSTRIA_ENERGIA = "industria-energia"
+
+
+class CourseModule(StrEnum):
+    """Módulo do curso Security Engineer coberto pelo lab (ADR-021)."""
+
+    FOUNDATION = "foundation"
+    TRAINED = "trained"
+    EXPERT = "expert"
+    MASTER = "master"
 
 
 Edition = Annotated[str, StringConstraints(pattern=r"^[0-9]{4}$")]
@@ -85,6 +105,13 @@ class Metadata(_Strict):
     secondary_cwes: tuple[Cwe, ...] = Field(default=(), alias="secondaryCwes", max_length=5)
     # Opcional e sem valor padrão serializado, para não alterar o digest de manifestos existentes.
     classifications: tuple[Classification, ...] | None = Field(default=None, max_length=12)
+    # ADR-021: família (mesma mecânica e validador em vários ramos), ramos e módulos do curso. Opcionais
+    # e sem valor padrão serializado, para não alterar o digest de manifestos existentes.
+    family: Slug | None = None
+    sectors: tuple[Sector, ...] | None = Field(default=None, min_length=1, max_length=3)
+    course_modules: tuple[CourseModule, ...] | None = Field(
+        default=None, alias="courseModules", min_length=1, max_length=4
+    )
 
 
 class Story(_Strict):
@@ -159,7 +186,7 @@ class LabVariant(_Strict):
     resources: Resources
     session: SessionPolicy
     network: Network = Network()
-    interfaces: tuple[Interface, ...] = Field(min_length=1, max_length=3)
+    interfaces: tuple[Interface, ...] = Field(min_length=1, max_length=4)
 
 
 class Hint(_Strict):

@@ -109,6 +109,23 @@ function useActivity(
   return () => void send.current();
 }
 
+/** Site do atacante (ADR-022): ticket de uso único e nova aba, como um link recebido por e-mail. */
+async function openAttackerSite(id: string) {
+  // A aba abre já no clique (bloqueadores de pop-up), e o endereço chega quando o ticket voltar.
+  const tab = window.open("about:blank", "_blank");
+  try {
+    const { url } = await api.ticket(id, "attacker");
+    if (tab) {
+      tab.opener = null;
+      tab.location.href = url;
+    } else {
+      window.open(url, "_blank", "noopener");
+    }
+  } catch {
+    tab?.close();
+  }
+}
+
 export function SessionView({ id }: { id: string }) {
   const [session, setSession] = useState<LabSession>();
   const [error, setError] = useState<string>();
@@ -493,6 +510,15 @@ export function SessionView({ id }: { id: string }) {
                     >
                       abrir em nova aba
                     </a>
+                    {session.interfaces?.includes("attacker") && (
+                      <button
+                        className="link attacker-link"
+                        title="Abre, em nova aba, a página fictícia do atacante usada nesta etapa (ADR-022)"
+                        onClick={() => void openAttackerSite(id)}
+                      >
+                        site do atacante
+                      </button>
+                    )}
                   </>
                 )}
                 <button

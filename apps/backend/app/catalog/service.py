@@ -147,6 +147,13 @@ def register_release(
     return RegistrationResult(release, created=True)
 
 
+def _variant_interfaces(manifest: dict[str, Any], variant_key: str) -> list[str]:
+    for v in manifest.get("variants", []):
+        if v.get("id") == variant_key:
+            return list(v.get("interfaces", []))
+    return []
+
+
 def public_release_view(db: Session, release: LabRelease) -> dict[str, Any]:
     """Visão pública: narrativa, CWE, objetivos, variantes e metadados de etapas.
 
@@ -168,6 +175,10 @@ def public_release_view(db: Session, release: LabRelease) -> dict[str, Any]:
         "primaryCwe": m["metadata"]["primaryCwe"],
         "secondaryCwes": m["metadata"].get("secondaryCwes", []),
         "classifications": m["metadata"].get("classifications", []),
+        # ADR-021: família, ramos e módulos do curso (filtros do painel); vazios em labs anteriores.
+        "family": m["metadata"].get("family"),
+        "sectors": m["metadata"].get("sectors", []),
+        "courseModules": m["metadata"].get("courseModules", []),
         "learning": {
             "difficulty": m["learning"]["difficulty"],
             "estimatedMinutes": m["learning"]["estimatedMinutes"],
@@ -181,6 +192,7 @@ def public_release_view(db: Session, release: LabRelease) -> dict[str, Any]:
                 "framework": v.framework,
                 "ttlMinutes": v.ttl_minutes,
                 "maxRenewals": v.max_renewals,
+                "interfaces": _variant_interfaces(m, v.variant_key),
             }
             for v in variants
         ],

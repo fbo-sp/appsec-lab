@@ -1,4 +1,4 @@
-"""Processo do gateway: ``python -m app.gateway.run`` (workspace :8001, preview :8002)."""
+"""Processo do gateway: ``python -m app.gateway.run`` (workspace :8001, preview :8002, atacante :8003)."""
 
 from __future__ import annotations
 
@@ -10,7 +10,7 @@ from aiohttp import web
 
 from app.config import ConfigError, Settings
 from app.db.engine import make_engine, make_session_factory
-from app.gateway.app import GatewayConfig, build_apps
+from app.gateway.app import GatewayConfig, build_gateway_apps
 from app.gateway.resolver import SqlSessionResolver
 from app.shared.logging import configure_logging
 
@@ -28,11 +28,12 @@ async def _serve() -> None:
         web_dist=Path(settings.web_dist_dir) if settings.web_dist_dir else None,
     )
     resolver = SqlSessionResolver(make_session_factory(make_engine(settings.database_url)))
-    workspace, preview = build_apps(config, resolver)
+    workspace, preview, attacker = build_gateway_apps(config, resolver)
     runners = []
     for app, port in (
         (workspace, int(os.environ.get("GATEWAY_WORKSPACE_PORT", "8001"))),
         (preview, int(os.environ.get("GATEWAY_PREVIEW_PORT", "8002"))),
+        (attacker, int(os.environ.get("GATEWAY_ATTACKER_PORT", "8003"))),
     ):
         runner = web.AppRunner(app, access_log=None)
         await runner.setup()

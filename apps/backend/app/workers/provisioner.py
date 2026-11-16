@@ -330,6 +330,7 @@ def _evaluate(ctx: WorkerContext, job: ClaimedJob) -> None:
             app_port=base.exposed_port,
             checks=suite.probe_checks(),
             logins=suite.probe_logins(),
+            inspections=suite.probe_inspections(),
             cpu_millicores=base.resources.cpu_millicores,
             memory_mib=base.resources.memory_mib,
             pids_max=base.resources.pids_max,
@@ -389,7 +390,7 @@ def _evaluate(ctx: WorkerContext, job: ClaimedJob) -> None:
         else:
             criteria = [
                 {"id": c.id, "description": c.description, "passed": bool(outcome.results.get(c.id, False))}
-                for c in suite.checks
+                for c in suite.criteria()
             ]
             passed = all(c["passed"] for c in criteria)
             sub.snapshot_digest = outcome.snapshot_digest

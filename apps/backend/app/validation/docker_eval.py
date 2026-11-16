@@ -6,7 +6,9 @@
    ``internal`` exclusiva da avaliação, com o mesmo endurecimento do runtime (ADR-008).
 3. Probe confiável: contêiner efêmero (sem segredos, sem socket) que executa as verificações da suíte
    protegida contra a cópia e devolve um JSON; nada roda dentro do workspace editável.
-4. Limpeza garantida de contêineres, rede e volume da avaliação.
+4. Inspeção do banco (ADR-023), se a suíte pedir: o arquivo é lido da cópia com ``cat`` da imagem
+   (somente leitura, nunca código do aluno) e analisado num contêiner efêmero confiável SEM rede.
+5. Limpeza garantida de contêineres, rede e volume da avaliação.
 """
 
 from __future__ import annotations
@@ -28,6 +30,7 @@ from app.runtime.docker_local import EVAL_LABEL, PLATFORM_LABEL, PLATFORM_VALUE
 from app.validation.port import EvaluationOutcome, EvaluationRequest
 
 MAX_SNAPSHOT = 20 * 1024 * 1024
+MAX_DB_FILE = 8 * 1024 * 1024
 LOG_TAIL_LINES = 15
 LOG_TAIL_CHARS = 2000
 
@@ -64,6 +67,50 @@ class DockerEvaluator:
     ) -> None:
         self._client = client or docker.from_env()
         self._probe_image = probe_image
+
+    def _inspect(
+        self, name: str, labels: dict[str, str], app: Any, request: EvaluationRequest, created: list[Any]
+    ) -> dict[str, bool]:
+        """Inspeções do banco (ADR-023). Qualquer falha reprova as inspeções (fail closed), sem ERROR."""
+        failed = {str(i["id"]): False for i in request.inspections}
+        files: dict[str, bytes] = {}
+        mapping: dict[str, str] = {}
+        for path in sorted({str(i["db_path"]) for i in request.inspections}):
+            # ``cat`` da imagem (raiz somente leitura), sem shell, como o usuário do lab e fora do workspace.
+            code, (out, _err) = app.exec_run(["cat", path], user="10001", workdir="/", demux=True)
+            if code != 0 or not out or len(out) > MAX_DB_FILE:
+                continue
+            fname = f"probe/db/{len(files)}.sqlite"
+            files[fname] = out
+            mapping[path] = "/" + fname
+        spec = {"files": mapping, "inspections": request.inspections}
+        script = resources.files("app.validation").joinpath("inspect_db.py").read_bytes()
+        insp = self._client.containers.create(
+            self._probe_image,
+            entrypoint=["python", "-I", "/probe/inspect_db.py", "/probe/inspect.json"],
+            command=[],
+            name=f"{name}-inspect",
+            labels=labels,
+            network_disabled=True,
+            user="10001",
+            cap_drop=["ALL"],
+            security_opt=["no-new-privileges:true"],
+            pids_limit=16,
+            mem_limit="160m",
+            environment={},
+        )
+        created.append(insp)
+        insp.put_archive(
+            "/",
+            _tar({"probe/inspect_db.py": script, "probe/inspect.json": json.dumps(spec).encode(), **files}),
+        )
+        insp.start()
+        status = insp.wait(timeout=60)
+        out_lines = insp.logs(stdout=True, stderr=False).decode("utf-8", "replace").strip().splitlines()
+        if status.get("StatusCode") != 0 or not out_lines:
+            return failed
+        got = json.loads(out_lines[-1]).get("results", {})
+        return {k: bool(got.get(k, False)) for k in failed}
 
     def evaluate(self, request: EvaluationRequest) -> EvaluationOutcome:
         name = f"cecyber-eval-{request.submission_id}"
@@ -154,6 +201,8 @@ class DockerEvaluator:
                 tail = app.logs(stdout=True, stderr=True, tail=LOG_TAIL_LINES).decode("utf-8", "replace")
                 return EvaluationOutcome(digest, {}, app_started=False, app_log_tail=tail[-LOG_TAIL_CHARS:])
             results = {str(k): bool(v) for k, v in parsed.get("results", {}).items()}
+            if request.inspections:
+                results.update(self._inspect(name, labels, app, request, created))
             return EvaluationOutcome(digest, results)
         except (DockerException, ValueError, KeyError, tarfile.TarError) as exc:
             return EvaluationOutcome(digest, {}, f"falha técnica na avaliação: {type(exc).__name__}")

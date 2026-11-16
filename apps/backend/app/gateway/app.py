@@ -1,8 +1,10 @@
 """Gateway de workspace LOCAL (IMP-302, ADR-009): único caminho do navegador até a sessão.
 
-Duas origens distintas:
+Três origens distintas:
 - **workspace** (padrão :8001): interface de editor/terminal e API de arquivos em ``/s/{sid}/``;
-- **preview** (padrão :8002): aplicação do laboratório servida na raiz, sessão definida por cookie.
+- **preview** (padrão :8002): aplicação do laboratório servida na raiz, sessão definida por cookie;
+- **atacante** (padrão :8003, ADR-022): site fictício do atacante, servido da porta 8090 do contêiner do
+  lab, só para variantes com a interface ``attacker`` (ex.: CSRF). Não recebe cookies do navegador.
 A aplicação (potencialmente vulnerável) nunca compartilha origem com o portal nem com o workspace.
 
 Regras:
@@ -20,6 +22,7 @@ import asyncio
 import contextlib
 import logging
 import time
+import urllib.parse
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
@@ -34,9 +37,11 @@ from app.gateway.tickets import Audience, Claims, Purpose, TokenError, issue, ve
 _log = logging.getLogger("app.gateway")
 
 AGENT_PORT = 7681
+ATTACKER_PORT = 8090
 ALLOWED_STATUSES = frozenset({"READY", "ACTIVE"})
 WS_COOKIE = "cecyber_ws"
 PV_COOKIE = "cecyber_pv"
+AT_COOKIE = "cecyber_at"
 WS_HEADER = "X-Cecyber-Workspace"
 GRANT_MAX_SECONDS = 8 * 3600
 RECHECK_SECONDS = 5.0
@@ -68,6 +73,7 @@ class GatewayConfig:
     web_dist: Path | None = None
     secure_cookies: bool = False
     agent_port: int = AGENT_PORT
+    attacker_port: int = ATTACKER_PORT
 
 
 @dataclass
@@ -194,7 +200,9 @@ def _redirect(location: str, cookie: str, token: str, path: str, max_age: int, s
     return resp
 
 
-def _forward_headers(request: web.Request, drop_cookie: str) -> dict[str, str]:
+def _forward_headers(
+    request: web.Request, drop_cookie: str, *, forward_cookies: bool = True
+) -> dict[str, str]:
     out: dict[str, str] = {}
     for k, v in request.headers.items():
         lk = k.lower()
@@ -205,8 +213,9 @@ def _forward_headers(request: web.Request, drop_cookie: str) -> dict[str, str]:
         ):
             continue
         out[k] = v
-    cookies = [f"{k}={v}" for k, v in request.cookies.items() if k not in (WS_COOKIE, PV_COOKIE, drop_cookie)]
-    if cookies:
+    platform = (WS_COOKIE, PV_COOKIE, AT_COOKIE, drop_cookie)
+    cookies = [f"{k}={v}" for k, v in request.cookies.items() if k not in platform]
+    if cookies and forward_cookies:
         out["Cookie"] = "; ".join(cookies)
     return out
 
@@ -218,10 +227,11 @@ async def _proxy_http(
     drop_cookie: str,
     extra_headers: dict[str, str] | None = None,
     frame_ancestors: str | None = None,
+    forward_cookies: bool = True,
 ) -> web.StreamResponse:
     st = request.app[STATE]
     assert st.http is not None
-    headers = _forward_headers(request, drop_cookie)
+    headers = _forward_headers(request, drop_cookie, forward_cookies=forward_cookies)
     headers["Host"] = request.host
     try:
         async with st.http.request(
@@ -392,6 +402,38 @@ async def pv_proxy(request: web.Request) -> web.StreamResponse:
     )
 
 
+# -- origem do site do atacante (ADR-022) ---------------------------------------------------------
+async def at_auth(request: web.Request) -> web.StreamResponse:
+    res = await _exchange(request, None, Purpose.ATTACKER)
+    if isinstance(res, web.Response):
+        return res
+    token, _sid, max_age = res
+    cfg = request.app[STATE].config
+    # A página do atacante descobre o alvo (a origem do preview) pela query string, sem dados do navegador.
+    alvo = urllib.parse.quote(cfg.preview_origin, safe="")
+    return _redirect(f"/?alvo={alvo}", AT_COOKIE, token, "/", max_age, cfg.secure_cookies)
+
+
+async def at_proxy(request: web.Request) -> web.StreamResponse:
+    t = await _authorize(request, "", Purpose.ATTACKER, AT_COOKIE)
+    if t is None:
+        return _deny()
+    st = request.app[STATE]
+    if request.method not in ("GET", "HEAD"):
+        return _deny(405, "O site do atacante só serve páginas.")
+    await st.activity(t.session_id)
+    url = f"http://{t.host}:{st.config.attacker_port}{request.rel_url}"
+    # Nenhum cookie do navegador chega ao site do atacante: ele só serve páginas estáticas.
+    return await _proxy_http(
+        request,
+        url,
+        drop_cookie=AT_COOKIE,
+        extra_headers={"Cache-Control": "no-store"},
+        frame_ancestors="'none'",
+        forward_cookies=False,
+    )
+
+
 # -- montagem ----------------------------------------------------------------------------------------
 @web.middleware
 async def _access_log(request: web.Request, handler: Any) -> web.StreamResponse:
@@ -421,6 +463,14 @@ def _base_app(state: _State) -> web.Application:
 
 
 def build_apps(config: GatewayConfig, resolver: SessionResolver) -> tuple[web.Application, web.Application]:
+    """Workspace e preview (compatibilidade); ``build_gateway_apps`` inclui o site do atacante."""
+    workspace, preview, _attacker = build_gateway_apps(config, resolver)
+    return workspace, preview
+
+
+def build_gateway_apps(
+    config: GatewayConfig, resolver: SessionResolver
+) -> tuple[web.Application, web.Application, web.Application]:
     state = _State(config, resolver)
 
     async def _start(_: web.Application) -> None:
@@ -447,4 +497,9 @@ def build_apps(config: GatewayConfig, resolver: SessionResolver) -> tuple[web.Ap
     preview.on_startup.append(_start)
     preview.router.add_get("/__cecyber/auth", pv_auth)
     preview.router.add_route("*", "/{tail:.*}", pv_proxy)
-    return workspace, preview
+
+    attacker = _base_app(state)
+    attacker.on_startup.append(_start)
+    attacker.router.add_get("/__cecyber/auth", at_auth)
+    attacker.router.add_route("*", "/{tail:.*}", at_proxy)
+    return workspace, preview, attacker

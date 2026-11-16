@@ -41,6 +41,8 @@ class Settings:
     gateway_ticket_secret: str | None = None
     gateway_workspace_url: str = "http://127.0.0.1:8001"
     gateway_preview_url: str = "http://127.0.0.1:8002"
+    # Site do atacante (ADR-022): origem própria, diferente do preview e do workspace.
+    gateway_attacker_url: str = "http://127.0.0.1:8003"
     portal_origin: str = "http://127.0.0.1:8000"
     web_dist_dir: str | None = None
     # Imagem do probe confiável de validação comportamental (ADR-010).
@@ -66,6 +68,7 @@ class Settings:
                 gateway_ticket_secret=e.get("GATEWAY_TICKET_SECRET") or None,
                 gateway_workspace_url=e.get("GATEWAY_WORKSPACE_URL", "http://127.0.0.1:8001").rstrip("/"),
                 gateway_preview_url=e.get("GATEWAY_PREVIEW_URL", "http://127.0.0.1:8002").rstrip("/"),
+                gateway_attacker_url=e.get("GATEWAY_ATTACKER_URL", "http://127.0.0.1:8003").rstrip("/"),
                 portal_origin=e.get("PORTAL_ORIGIN", "http://127.0.0.1:8000").rstrip("/"),
                 web_dist_dir=e.get("WEB_DIST_DIR") or None,
                 validator_probe_image=e.get("VALIDATOR_PROBE_IMAGE", "cecyber-labs/base-python:local"),

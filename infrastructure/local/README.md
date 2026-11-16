@@ -93,7 +93,7 @@ contêiner da sessão, com o mesmo alcance do terminal do aluno (ADR-015).
 O progresso fica na tentativa do usuário: encerrar e iniciar de novo retoma as etapas já concluídas. Para
 recomeçar do zero, use outro usuário de teste.
 
-Portas (todas só em 127.0.0.1): 8000 portal + API, 8001 workspace (editor/terminal), 8002 aplicação do lab.
+Portas (todas só em 127.0.0.1): 8000 portal + API, 8001 workspace (editor/terminal), 8002 aplicação do lab, 8003 site fictício do atacante (só labs com a interface `attacker`, ADR-022).
 
 - O socket Docker é montado **somente no worker**; laboratórios rodam em rede interna própria, sem
   portas no host, como usuário não-root e com raiz somente leitura. O gateway é o único outro participante

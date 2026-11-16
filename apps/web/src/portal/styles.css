@@ -355,3 +355,16 @@ label { font-weight: 600; font-size: 0.9rem; }
 .ill-code { margin: 0; padding: 0.3rem 0.4rem; display: flex; flex-direction: column; border: 1px solid var(--border); border-radius: 5px; background: var(--surface); font-size: 0.7rem; overflow: hidden; }
 .ill-added { background: color-mix(in srgb, var(--ok) 18%, transparent); border-radius: 2px; }
 .ill-result { grid-column: 1 / -1; color: var(--ok); font-weight: 600; }
+
+/* Filtro do painel por ramo e módulo (ADR-021) */
+.catalog-filters { display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-end; margin: 0.5rem 0 1rem; }
+.catalog-filters label { display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.85rem; color: var(--muted); }
+.catalog-filters select { min-width: 11rem; padding: 0.35rem 0.5rem; border-radius: 6px; border: 1px solid var(--border); background: var(--surface); color: var(--text); font: inherit; }
+.lab-sectors { display: flex; flex-wrap: wrap; gap: 0.35rem; margin: 0.25rem 0 0.6rem; }
+.tag-financeiro { background: color-mix(in srgb, var(--ok) 15%, var(--surface)); color: var(--ok); }
+.tag-saude { background: color-mix(in srgb, var(--accent) 15%, var(--surface)); color: var(--accent); }
+.tag-industria-energia { background: color-mix(in srgb, var(--warn) 18%, var(--surface)); color: var(--warn); }
+.tag-module { background: var(--chip-bg); color: var(--muted); }
+
+/* Site do atacante (ADR-022) */
+.attacker-link { color: var(--danger); font-weight: 600; }

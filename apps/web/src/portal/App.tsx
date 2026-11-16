@@ -1,5 +1,6 @@
 import { Fragment, useCallback, useEffect, useState } from "react";
 import { api, ApiError, currentUser, setUser, type Lab, type LabSession } from "./api";
+import { isTutorial, MODULES, matchesFilter, readPref, SECTORS, writePref } from "./catalogFilter";
 import { SessionView } from "./SessionView";
 
 type Route = { name: "catalog" } | { name: "lab"; labId: string; version: string } | { name: "session"; id: string };
@@ -99,6 +100,9 @@ const DIFFICULTY: Record<string, string> = {
 function Catalog() {
   const labs = useAsync(() => api.labs(), []);
   const sessions = useAsync(() => api.sessions(), []);
+  const [sector, setSector] = useState(() => readPref("cecyber.filtro.ramo"));
+  const [module, setModule] = useState(() => readPref("cecyber.filtro.modulo"));
+  const visible = (labs.data?.items ?? []).filter((l) => matchesFilter(l, sector, module));
   return (
     <main className="page">
       <h1>Laboratórios</h1>
@@ -123,8 +127,52 @@ function Catalog() {
           Nenhum laboratório publicado. Registre o LAB-000 com <code>scripts/lab-local.ps1</code>.
         </div>
       )}
+      {labs.data && labs.data.items.length > 0 && (
+        <div className="catalog-filters" role="group" aria-label="Filtrar laboratórios">
+          <label>
+            Ramo de atividade
+            <select
+              value={sector}
+              onChange={(e) => {
+                setSector(e.target.value);
+                writePref("cecyber.filtro.ramo", e.target.value);
+              }}
+            >
+              <option value="">Todos</option>
+              {Object.entries(SECTORS).map(([k, v]) => (
+                <option key={k} value={k}>
+                  {v}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Módulo do curso
+            <select
+              value={module}
+              onChange={(e) => {
+                setModule(e.target.value);
+                writePref("cecyber.filtro.modulo", e.target.value);
+              }}
+            >
+              <option value="">Todos</option>
+              {Object.entries(MODULES).map(([k, v]) => (
+                <option key={k} value={k}>
+                  {v}
+                </option>
+              ))}
+            </select>
+          </label>
+          <span className="muted small">
+            {visible.length} de {labs.data.items.length}
+          </span>
+        </div>
+      )}
+      {labs.data && labs.data.items.length > 0 && visible.length === 0 && (
+        <div className="card empty">Nenhum laboratório para esse filtro.</div>
+      )}
       <div className="grid">
-        {labs.data?.items.map((lab) => (
+        {visible.map((lab) => (
           <article className="card lab-card" key={`${lab.labId}@${lab.version}`}>
             <div className="lab-card-head">
               <span className="lab-id">{lab.labId}</span>
@@ -137,6 +185,15 @@ function Catalog() {
               {DIFFICULTY[lab.learning.difficulty] ?? lab.learning.difficulty} · ~{lab.learning.estimatedMinutes} min ·{" "}
               {lab.steps.length} {lab.steps.length === 1 ? "etapa" : "etapas"}
             </p>
+            {(lab.sectors?.length ?? 0) > 0 && (
+              <p className="lab-sectors">
+                {lab.sectors!.map((s) => (
+                  <span key={s} className={`tag tag-sector tag-${s}`}>
+                    {SECTORS[s] ?? s}
+                  </span>
+                ))}
+              </p>
+            )}
             <button className="primary" onClick={() => go(`/labs/${lab.labId}/${lab.version}`)}>
               Abrir
             </button>
@@ -185,6 +242,20 @@ function LabIntro({ labId, version }: { labId: string; version: string }) {
         {l.labId} · versão {l.version} · {isTutorial(l) ? "tutorial, sem vulnerabilidade" : l.primaryCwe}
       </p>
       <h1>{l.title}</h1>
+      {((l.sectors?.length ?? 0) > 0 || (l.courseModules?.length ?? 0) > 0) && (
+        <p className="lab-sectors">
+          {(l.sectors ?? []).map((s) => (
+            <span key={s} className={`tag tag-sector tag-${s}`}>
+              {SECTORS[s] ?? s}
+            </span>
+          ))}
+          {(l.courseModules ?? []).map((m) => (
+            <span key={m} className="tag tag-module">
+              {MODULES[m] ?? m}
+            </span>
+          ))}
+        </p>
+      )}
       <section className="card story">
         <h2>Sua missão</h2>
         <dl>
@@ -240,10 +311,6 @@ function LabIntro({ labId, version }: { labId: string; version: string }) {
   );
 }
 
-/** CWE-1000 (raiz da visão "Research Concepts") marca um lab sem vulnerabilidade: o tutorial (ADR-018). */
-function isTutorial(lab: Lab): boolean {
-  return lab.primaryCwe === "CWE-1000";
-}
 
 /** Bloco final da página de abertura (ADR-017): CWE e enquadramento em OWASP e SANS CWE Top 25. */
 function Classification({ lab }: { lab: Lab }) {

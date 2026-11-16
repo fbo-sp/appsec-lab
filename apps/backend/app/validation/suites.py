@@ -7,7 +7,9 @@ critério e se passou.
 Tipos:
 - ``answer``: o aluno informa um valor observado no ambiente; comparação no backend.
 - ``http``: verificações comportamentais contra uma CÓPIA isolada do workspace do aluno
-  (snapshot), executadas por um probe confiável em rede efêmera própria (ADR-010).
+  (snapshot), executadas por um probe confiável em rede efêmera própria (ADR-010). Desde o ADR-023,
+  uma verificação pode exigir cabeçalhos na resposta, capturar um valor (ex.: token anti-CSRF) para
+  as seguintes, enviar arquivo (multipart) e a suíte pode inspecionar o banco da cópia (``inspections``).
 """
 
 from __future__ import annotations
@@ -35,6 +37,13 @@ class HttpCheck:
     headers: dict[str, str] | None = None  # ex.: token forjado pela própria suíte
     json: dict[str, object] | None = None  # corpo JSON (alternativa a ``form``)
     expect_status_in: tuple[int, ...] = ()  # se informado, substitui ``expect_status``
+    # ADR-023. Cabeçalho (nome sem diferenciar maiúsculas) -> trecho exigido no valor (sem diferenciar).
+    expect_headers: dict[str, str] | None = None
+    # Variável -> regex com um grupo aplicada ao corpo; o valor vale para as verificações seguintes, que o
+    # usam como ``{{variavel}}`` em path, form, json, headers e conteúdo do arquivo. Sem casamento, falha.
+    capture: dict[str, str] | None = None
+    # Envio multipart: {"field", "filename", "content_type", "content"}; ``form`` vira campos extras.
+    multipart: dict[str, str] | None = None
 
     def to_probe(self) -> dict[str, object]:
         return {
@@ -49,7 +58,32 @@ class HttpCheck:
             "contains": list(self.contains),
             "not_contains": list(self.not_contains),
             "as_user": self.as_user,
+            "expect_headers": self.expect_headers,
+            "capture": self.capture,
+            "multipart": self.multipart,
         }
+
+
+@dataclass(frozen=True, slots=True)
+class InspectCheck:
+    """Inspeção do banco SQLite da CÓPIA avaliada (ADR-023), feita depois das verificações HTTP.
+
+    O worker lê o arquivo do contêiner da cópia com ``cat`` da imagem (nunca código do aluno) e a análise
+    roda num contêiner efêmero confiável, sem rede. ``query`` devolve linhas ``(chave, valor)``.
+    """
+
+    id: str
+    description: str  # texto público mostrado ao aluno
+    db_path: str
+    query: str
+    min_rows: int = 1
+    all_match: str | None = None  # regex que TODO valor deve casar
+    none_match: str | None = None  # regex que NENHUM valor pode casar
+    # chave -> senha fictícia: o valor da linha deve ser um hash do Werkzeug que confere com ela.
+    verify_passwords: dict[str, str] | None = None
+
+    def to_probe(self) -> dict[str, object]:
+        return asdict(self)
 
 
 @dataclass(frozen=True, slots=True)
@@ -89,12 +123,19 @@ class HttpSuite:
     failure_feedback: str = "Algumas verificações falharam. Ajuste o código e valide novamente."
     extra: dict[str, str] = field(default_factory=dict)
     logins: tuple[HttpLogin, ...] = ()
+    inspections: tuple[InspectCheck, ...] = ()  # ADR-023
 
     def probe_checks(self) -> list[dict[str, object]]:
         return [c.to_probe() for c in self.checks]
 
     def probe_logins(self) -> list[dict[str, object]]:
         return [lg.to_probe() for lg in self.logins]
+
+    def probe_inspections(self) -> list[dict[str, object]]:
+        return [i.to_probe() for i in self.inspections]
+
+    def criteria(self) -> tuple[HttpCheck | InspectCheck, ...]:
+        return (*self.checks, *self.inspections)
 
 
 Suite = AnswerSuite | HttpSuite
@@ -105,8 +146,17 @@ def normalize_answer(value: str) -> str:
     return re.sub(r"\s+", " ", text)[:200]
 
 
+# Campos do ADR-023: fora do digest quando vazios, para não mudar o digest das suítes anteriores.
+_OPTIONAL_KEYS = frozenset({"expect_headers", "capture", "multipart", "inspections"})
+
+
+def _digest_dict(items: list[tuple[str, object]]) -> dict[str, object]:
+    return {k: v for k, v in items if not (k in _OPTIONAL_KEYS and not v)}
+
+
 def suite_digest(suite: Suite) -> str:
-    raw = json.dumps(asdict(suite), sort_keys=True, ensure_ascii=False, default=str).encode()
+    data = asdict(suite, dict_factory=_digest_dict)
+    raw = json.dumps(data, sort_keys=True, ensure_ascii=False, default=str).encode()
     return "sha256:" + hashlib.sha256(raw).hexdigest()
 
 

@@ -145,6 +145,8 @@ Não há HTML.
 Campos opcionais:
 - `steps[].references[]` (`title`, `url` https, até 8);
 - `steps[].explore` (Markdown restrito): estudo complementar opcional da etapa (ADR-019), aberto pelo botão "Explorar mais". Não vale pontos e não é preciso para concluir a etapa;
+- `metadata.family`, `metadata.sectors` e `metadata.courseModules` (ADR-021): família da vulnerabilidade (slug), ramos de atividade do cenário (`financeiro`, `saude`, `industria-energia`) e módulos do curso (`foundation`, `trained`, `expert`, `master`). Opcionais; alimentam o filtro do painel e o catálogo;
+- `variants[].interfaces` aceita `attacker` (ADR-022): o lab publica páginas estáticas fictícias na porta 8090 do contêiner e o gateway as serve numa origem própria (site do atacante). Só para labs cujo ataque parte de outra página, como CSRF;
 - `learning.wrapUp` (`text` em Markdown e `references`), exibido como "Para ir além" ao concluir o laboratório.
 
 ## 5. Pipeline mínimo de publicação

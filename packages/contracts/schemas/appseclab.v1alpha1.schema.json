@@ -63,6 +63,17 @@
       "title": "Classification",
       "type": "object"
     },
+    "CourseModule": {
+      "description": "Módulo do curso Security Engineer coberto pelo lab (ADR-021).",
+      "enum": [
+        "foundation",
+        "trained",
+        "expert",
+        "master"
+      ],
+      "title": "CourseModule",
+      "type": "string"
+    },
     "Difficulty": {
       "enum": [
         "beginner",
@@ -99,7 +110,8 @@
       "enum": [
         "editor",
         "terminal",
-        "web"
+        "web",
+        "attacker"
       ],
       "title": "Interface",
       "type": "string"
@@ -271,7 +283,7 @@
           "items": {
             "$ref": "#/$defs/Interface"
           },
-          "maxItems": 3,
+          "maxItems": 4,
           "minItems": 1,
           "title": "Interfaces",
           "type": "array"
@@ -396,6 +408,37 @@
           "default": null,
           "title": "Classifications"
         },
+        "courseModules": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/CourseModule"
+              },
+              "maxItems": 4,
+              "minItems": 1,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Coursemodules"
+        },
+        "family": {
+          "anyOf": [
+            {
+              "maxLength": 63,
+              "pattern": "^[a-z][a-z0-9]*(-[a-z0-9]+)*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Family"
+        },
         "id": {
           "pattern": "^LAB-[0-9]{3}$",
           "title": "Id",
@@ -415,6 +458,23 @@
           "maxItems": 5,
           "title": "Secondarycwes",
           "type": "array"
+        },
+        "sectors": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/Sector"
+              },
+              "maxItems": 3,
+              "minItems": 1,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Sectors"
         },
         "title": {
           "maxLength": 200,
@@ -542,6 +602,16 @@
       ],
       "title": "Resources",
       "type": "object"
+    },
+    "Sector": {
+      "description": "Ramo de atividade do cenário (ADR-021), usado para o aluno escolher labs do seu setor.",
+      "enum": [
+        "financeiro",
+        "saude",
+        "industria-energia"
+      ],
+      "title": "Sector",
+      "type": "string"
     },
     "SessionPolicy": {
       "additionalProperties": false,

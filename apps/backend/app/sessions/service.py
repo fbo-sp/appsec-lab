@@ -333,6 +333,13 @@ def renew_session(db: Session, *, principal: Principal, session_id: uuid.UUID, n
     return s
 
 
+def variant_interfaces(release: LabRelease, variant_key: str) -> list[str]:
+    for v in release.manifest.get("variants", []):
+        if v.get("id") == variant_key:
+            return list(v.get("interfaces", []))
+    return []
+
+
 def session_view(db: Session, s: LabSession) -> dict[str, Any]:
     release = db.get(LabRelease, s.release_id)
     variant = db.get(LabVariant, s.variant_id)
@@ -343,6 +350,8 @@ def session_view(db: Session, s: LabSession) -> dict[str, Any]:
         "labId": release.lab_id,
         "version": release.version,
         "variantId": variant.variant_key,
+        # Interfaces da variante (ex.: "attacker" habilita o site do atacante, ADR-022).
+        "interfaces": variant_interfaces(release, variant.variant_key),
         "expiresAt": s.expires_at.isoformat(),
         "ttlMinutes": variant.ttl_minutes,
         "renewals": s.renewals,
@@ -383,6 +392,17 @@ def issue_gateway_ticket(
     if status is SessionStatus.READY:
         apply_event(db, s, SessionEvent.FIRST_CONNECTION, now=now, actor_id=str(principal.user_id))
     pur = Purpose(purpose)
+    if pur is Purpose.ATTACKER:
+        # Site do atacante (ADR-022) só existe em variantes que o declaram no manifesto.
+        release = db.get(LabRelease, s.release_id)
+        variant = db.get(LabVariant, s.variant_id)
+        if (
+            release is None
+            or variant is None
+            or "attacker" not in variant_interfaces(release, variant.variant_key)
+        ):
+            db.rollback()
+            raise ApiError(409, "ATTACKER_SITE_UNAVAILABLE", "Este laboratório não tem site do atacante.")
     token, claims = issue(
         secret,
         sid=str(s.id),

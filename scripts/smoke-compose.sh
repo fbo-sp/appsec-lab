@@ -21,6 +21,9 @@ API=http://127.0.0.1:8000
 trap '"${COMPOSE[@]}" logs --no-color api worker | tail -40; "${COMPOSE[@]}" down -v >/dev/null 2>&1 || true' EXIT
 "${COMPOSE[@]}" up -d --wait "${BUILD[@]}"
 json() { python3 -c "import json,sys; print(json.load(sys.stdin)$1)"; }
+# Site do atacante (ADR-022): sem grant, nada é servido; ticket inválido é recusado.
+[ "$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8003/)" = "403" ]
+[ "$(curl -s -o /dev/null -w "%{http_code}" "http://127.0.0.1:8003/__cecyber/auth?ticket=x")" = "401" ]
 # Versão do LAB-000 lida do próprio manifesto, para o smoke não quebrar a cada bump de versão.
 LAB000_VERSION="$(grep -E '^  version:' "$ROOT/laboratories/LAB-000-hello-benign/manifest.yaml" | head -1 | sed -E 's/.*version:[[:space:]]*"?([^"[:space:]]+)"?.*/\1/')"
 wait_status() {

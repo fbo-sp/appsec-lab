@@ -63,7 +63,7 @@ def create_session(
 
 class TicketBody(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    purpose: Literal["workspace", "preview"]
+    purpose: Literal["workspace", "preview", "attacker"]
 
 
 @router.get("")
@@ -98,6 +98,8 @@ def gateway_ticket(
     response.headers["Cache-Control"] = "no-store"
     if body.purpose == "workspace":
         url = f"{settings.gateway_workspace_url}/s/{s.id}/__cecyber/auth?ticket={token}"
+    elif body.purpose == "attacker":
+        url = f"{settings.gateway_attacker_url}/__cecyber/auth?ticket={token}"
     else:
         url = f"{settings.gateway_preview_url}/__cecyber/auth?ticket={token}"
     return {"url": url, "expiresInSeconds": service.TICKET_TTL_SECONDS, "status": s.status}

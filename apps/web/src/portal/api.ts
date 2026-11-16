@@ -8,13 +8,17 @@ export type Lab = {
   primaryCwe: string;
   secondaryCwes: string[];
   classifications?: { framework: string; edition: string; entries: string[] }[];
+  // ADR-021: família, ramos de atividade e módulos do curso (vazios em labs anteriores).
+  family?: string | null;
+  sectors?: string[];
+  courseModules?: string[];
   learning: {
     difficulty: string;
     estimatedMinutes: number;
     objectives: string[];
     story: { role: string; application: string; context: string; mission: string };
   };
-  variants: { id: string; language: string; framework: string; ttlMinutes: number }[];
+  variants: { id: string; language: string; framework: string; ttlMinutes: number; interfaces?: string[] }[];
   steps: { id: string; order: number; title: string; points: number }[];
 };
 
@@ -24,6 +28,7 @@ export type LabSession = {
   labId: string;
   version: string;
   variantId: string;
+  interfaces?: string[]; // "attacker" = laboratório com site do atacante (ADR-022)
   expiresAt: string;
   lastErrorCode: string | null;
   ttlMinutes: number;
@@ -168,7 +173,7 @@ export const api = {
   activity: (id: string) => call<LabSession>(`/api/v1/sessions/${id}/activity`, { method: "POST" }),
   renew: (id: string) => call<LabSession>(`/api/v1/sessions/${id}/renewals`, { method: "POST" }),
   terminate: (id: string) => call<LabSession>(`/api/v1/sessions/${id}`, { method: "DELETE" }),
-  ticket: (id: string, purpose: "workspace" | "preview") =>
+  ticket: (id: string, purpose: "workspace" | "preview" | "attacker") =>
     call<{ url: string }>(`/api/v1/sessions/${id}/gateway-ticket`, {
       method: "POST",
       body: JSON.stringify({ purpose }),
