@@ -1,0 +1,15 @@
+<!doctype html>
+<!-- ARQUIVO FORJADO DE DEMONSTRAÇÃO (laboratório [[lab_id]], CECyber AppSec Labs). -->
+<!-- Parece [[um_documento]], mas é uma página HTML com JavaScript. -->
+<html lang="pt-BR">
+<head><meta charset="utf-8"><title>[[documento_titulo]]</title></head>
+<body style="font-family: sans-serif; max-width: 640px; margin: 2rem auto">
+  <h1>[[documento_titulo]]</h1>
+  <p>Carregando o documento…</p>
+  <p id="vazado" style="background:#fff1b8; padding:.5rem"></p>
+  <script>
+    // Roda com a sessão de quem abriu o arquivo, na origem da aplicação: lê os cookies sem HttpOnly.
+    document.getElementById("vazado").textContent = "Cookies de quem abriu: " + document.cookie;
+  </script>
+</body>
+</html>

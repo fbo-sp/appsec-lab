@@ -289,6 +289,45 @@ const ILLUSTRATIONS: Record<string, { caption: string; body: () => ReactNode }> 
       />
     ),
   },
+  "upload-tipo-informado": {
+    caption: "Upload irrestrito: o servidor confere o rótulo que o cliente escreveu, e o arquivo vira uma página da aplicação.",
+    body: () => (
+      <Flow
+        steps={[
+          { who: "Atacante", what: <>envia {c("comprovante.html")} dizendo {c("Content-Type: image/png")}</>, tone: "atk" },
+          { who: "Aplicação", what: <>confere só o rótulo, que está na lista, e grava o nome original</>, tone: "app" },
+          { who: "Equipe interna", what: <>abre o anexo em {c("/anexos/comprovante.html")}</>, tone: "vit" },
+          { who: "Navegador", what: "recebe text/html da própria aplicação e roda o script do arquivo", tone: "vit" },
+          { who: "Resultado", what: "o script lê o que a sessão da equipe vê, como os cookies sem HttpOnly", tone: "bad" },
+        ]}
+      />
+    ),
+  },
+  "assinatura-arquivo": {
+    caption: "Rótulo × conteúdo: o tipo que vale é o dos primeiros bytes do arquivo, não o que o cliente declarou.",
+    body: () => (
+      <Compare
+        bad={[
+          "Confiar no rótulo",
+          <>
+            <span>{c("arquivo.mimetype")} vem do cliente: o curl escreve o que quiser.</span>
+            <span>{c("comprovante.html")} gravado com o nome original vira página HTML.</span>
+          </>,
+        ]}
+        good={[
+          "Conferir a assinatura",
+          <>
+            <span>
+              PDF começa com {c("%PDF-")}, PNG com {c("89 50 4E 47")}, JPEG com {c("FF D8 FF")}.
+            </span>
+            <span>
+              Nome novo ({c("uuid4().hex + \".pdf\"")}) e {c("X-Content-Type-Options: nosniff")}.
+            </span>
+          </>,
+        ]}
+      />
+    ),
+  },
 };
 
 export function hasIllustration(name: string): boolean {

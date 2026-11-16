@@ -5,3 +5,4 @@
 # Arquivos copiados para imagens Linux de laboratório: sempre LF (shebang com CRLF quebra a execução).
 laboratories/**/runtime/planta/** text eol=lf
 Dockerfile text eol=lf
+laboratories/**/amostras/** -text
