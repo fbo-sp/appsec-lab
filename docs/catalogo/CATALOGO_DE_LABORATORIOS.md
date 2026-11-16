@@ -47,6 +47,9 @@ Indicado como primeira atividade de qualquer turma, antes do primeiro laboratór
 | LAB-005 | A1-FIN · XSS: a busca de favorecidos que rouba a sessão | 1.0.0 | CWE-79 | A05 Injection (2025) | #1 CWE-79 Cross-site Scripting (2025) | Iniciante | 40 min |
 | LAB-006 | A1-SAU · XSS: a busca de exames que rouba o acesso aos laudos | 1.0.0 | CWE-79 | A05 Injection (2025) | #1 CWE-79 Cross-site Scripting (2025) | Iniciante | 40 min |
 | LAB-007 | A1-IND · XSS: a ordem de serviço que executa no centro de operação | 1.0.0 | CWE-79 | A05 Injection (2025) | #1 CWE-79 Cross-site Scripting (2025) | Iniciante | 40 min |
+| LAB-008 | A5-FIN · Mass Assignment: o perfil que vira analista de crédito | 1.0.0 | CWE-915 | A08 Software or Data Integrity Failures (2025) | Não se enquadra; use o CWE (2025) | Iniciante | 35 min |
+| LAB-009 | A5-SAU · Mass Assignment: o beneficiário que trocou o próprio plano | 1.0.0 | CWE-915 | A08 Software or Data Integrity Failures (2025) | Não se enquadra; use o CWE (2025) | Iniciante | 35 min |
+| LAB-010 | A5-IND · Mass Assignment: o fornecedor que se aprovou sozinho | 1.0.0 | CWE-915 | A08 Software or Data Integrity Failures (2025) | Não se enquadra; use o CWE (2025) | Iniciante | 35 min |
 
 ## LAB-001 · SQL Injection: a busca que expõe pacientes
 
@@ -334,3 +337,129 @@ Indicado como primeira atividade de qualquer turma, antes do primeiro laboratór
 | Versão | Criada em | Obsoleta em | Situação | O que mudou |
 |---|---|---|---|---|
 | 1.0.0 | 2026-11-16 | — | vigente | Primeira versão (XSS refletido e armazenado, Voltera Distribuidora de Energia; família xss, ramo Indústria e Energia). |
+
+## LAB-008 · A5-FIN · Mass Assignment: o perfil que vira analista de crédito
+
+- Versão vigente: 1.0.0
+- Cenário: App Trilha Pay, tela "Meu perfil" e a API /api/perfil
+- Papel do aluno: Desenvolvedor(a) do squad de conta digital da Trilha Pay
+- Linguagem / stack: python / flask
+- Nível: Iniciante · duração estimada: 35 min
+- Família: mass-assignment
+- Ramo: Financeiro
+- Módulo do curso: MASTER
+
+### Classificação
+
+- CWE: CWE-915
+- OWASP Top 10 2025: A08 Software or Data Integrity Failures
+- OWASP Top 10 2021: A08 Software and Data Integrity Failures
+- OWASP API Security Top 10 2023: API3 Broken Object Property Level Authorization
+- OWASP API Security Top 10 2019: API6 Mass Assignment
+- SANS CWE Top 25 2025: Não se enquadra; use o CWE
+- SANS CWE Top 25 2024: Não se enquadra; use o CWE
+
+### Objetivos
+
+- Ler uma API JSON e descobrir quais campos o servidor guarda para cada usuário
+- Entender por que repassar o corpo inteiro da requisição para o banco permite alterar campos protegidos
+- Elevar o próprio benefício e o próprio perfil de acesso com uma única requisição, com dados fictícios
+- Corrigir a falha com uma lista de campos permitidos no serviço, sem quebrar a edição legítima
+
+### Etapas
+
+1. Conhecer a tela Meu perfil (10 pts)
+2. Seguir o JSON até o banco (15 pts)
+3. Mudar o próprio pacote da conta (20 pts)
+4. Virar analista (15 pts)
+5. Corrigir com uma lista de campos permitidos (40 pts)
+
+### Histórico de versões
+
+| Versão | Criada em | Obsoleta em | Situação | O que mudou |
+|---|---|---|---|---|
+| 1.0.0 | 2026-11-16 | — | vigente | Primeira versão (Mass Assignment na API de perfil, Trilha Pay; família mass-assignment, ramo Financeiro). |
+
+## LAB-009 · A5-SAU · Mass Assignment: o beneficiário que trocou o próprio plano
+
+- Versão vigente: 1.0.0
+- Cenário: Portal do Beneficiário, tela "Meu perfil" e a API /api/perfil
+- Papel do aluno: Desenvolvedor(a) do time de canais digitais da Sereno Saúde
+- Linguagem / stack: python / flask
+- Nível: Iniciante · duração estimada: 35 min
+- Família: mass-assignment
+- Ramo: Saúde
+- Módulo do curso: MASTER
+
+### Classificação
+
+- CWE: CWE-915
+- OWASP Top 10 2025: A08 Software or Data Integrity Failures
+- OWASP Top 10 2021: A08 Software and Data Integrity Failures
+- OWASP API Security Top 10 2023: API3 Broken Object Property Level Authorization
+- OWASP API Security Top 10 2019: API6 Mass Assignment
+- SANS CWE Top 25 2025: Não se enquadra; use o CWE
+- SANS CWE Top 25 2024: Não se enquadra; use o CWE
+
+### Objetivos
+
+- Ler uma API JSON e descobrir quais campos o servidor guarda para cada usuário
+- Entender por que repassar o corpo inteiro da requisição para o banco permite alterar campos protegidos
+- Elevar o próprio benefício e o próprio perfil de acesso com uma única requisição, com dados fictícios
+- Corrigir a falha com uma lista de campos permitidos no serviço, sem quebrar a edição legítima
+
+### Etapas
+
+1. Conhecer a tela Meu perfil (10 pts)
+2. Seguir o JSON até o banco (15 pts)
+3. Mudar o próprio plano (20 pts)
+4. Virar auditor (15 pts)
+5. Corrigir com uma lista de campos permitidos (40 pts)
+
+### Histórico de versões
+
+| Versão | Criada em | Obsoleta em | Situação | O que mudou |
+|---|---|---|---|---|
+| 1.0.0 | 2026-11-16 | — | vigente | Primeira versão (Mass Assignment na API de perfil, Sereno Saúde; família mass-assignment, ramo Saúde). |
+
+## LAB-010 · A5-IND · Mass Assignment: o fornecedor que se aprovou sozinho
+
+- Versão vigente: 1.0.0
+- Cenário: Portal de Fornecedores, tela "Meu perfil" e a API /api/perfil
+- Papel do aluno: Desenvolvedor(a) do time de sistemas corporativos da Termoverde Geração
+- Linguagem / stack: python / flask
+- Nível: Iniciante · duração estimada: 35 min
+- Família: mass-assignment
+- Ramo: Indústria e Energia
+- Módulo do curso: MASTER
+
+### Classificação
+
+- CWE: CWE-915
+- OWASP Top 10 2025: A08 Software or Data Integrity Failures
+- OWASP Top 10 2021: A08 Software and Data Integrity Failures
+- OWASP API Security Top 10 2023: API3 Broken Object Property Level Authorization
+- OWASP API Security Top 10 2019: API6 Mass Assignment
+- SANS CWE Top 25 2025: Não se enquadra; use o CWE
+- SANS CWE Top 25 2024: Não se enquadra; use o CWE
+
+### Objetivos
+
+- Ler uma API JSON e descobrir quais campos o servidor guarda para cada usuário
+- Entender por que repassar o corpo inteiro da requisição para o banco permite alterar campos protegidos
+- Elevar o próprio benefício e o próprio perfil de acesso com uma única requisição, com dados fictícios
+- Corrigir a falha com uma lista de campos permitidos no serviço, sem quebrar a edição legítima
+
+### Etapas
+
+1. Conhecer a tela Meu perfil (10 pts)
+2. Seguir o JSON até o banco (15 pts)
+3. Mudar o próprio categoria do fornecedor (20 pts)
+4. Virar comprador (15 pts)
+5. Corrigir com uma lista de campos permitidos (40 pts)
+
+### Histórico de versões
+
+| Versão | Criada em | Obsoleta em | Situação | O que mudou |
+|---|---|---|---|---|
+| 1.0.0 | 2026-11-16 | — | vigente | Primeira versão (Mass Assignment na API de perfil, Termoverde Geração; família mass-assignment, ramo Indústria e Energia). |

@@ -5,6 +5,8 @@
 ramos:
   - destino: LAB-005-xss-banco
     vars:
+      historia_refletido: "No Banco Aurora, o golpe mais provável é um SMS do tipo \"Seu PIX foi bloqueado, confira aqui\", com um link para a busca de favorecidos do próprio Internet Banking. O endereço é legítimo, por isso o cliente confia e clica."
+      historia_armazenado: "No Banco Aurora, quem abre o painel antifraude é a gerente Renata, várias vezes por dia. Com o código rodando no navegador dela, o atacante levaria a chave que aprova PIX acima do limite dos clientes."
       lab_id: LAB-005
       versao: 1.0.0
       codigo: A1-FIN
@@ -72,6 +74,8 @@ ramos:
         - [2, Escola Pequeno Saber Ltda, financeiro@pequenosaber.example, Mensalidade]
   - destino: LAB-006-xss-saude
     vars:
+      historia_refletido: "Na Rede Lumina, o golpe típico é uma mensagem \"Seu laudo está disponível\", com um link para a busca de exames do portal verdadeiro. O paciente vê o endereço da Lumina e entra sem desconfiar."
+      historia_armazenado: "Na Rede Lumina, a atendente Carla confere o painel de coleta a cada agendamento. Com a credencial dela, o atacante veria exames e observações de saúde de outros pacientes, dados sensíveis pela LGPD."
       lab_id: LAB-006
       versao: 1.0.0
       codigo: A1-SAU
@@ -139,6 +143,8 @@ ramos:
         - [2, Hemograma completo, Unidade Paulista, ""]
   - destino: LAB-007-xss-energia
     vars:
+      historia_refletido: "Na Voltera, o golpe mais provável é uma mensagem para o técnico de campo, \"Ordem urgente no alimentador 04\", com um link para a busca de ordens do próprio sistema, aberto no tablet de campo."
+      historia_armazenado: "Na Voltera, a operadora Helena acompanha o painel do Centro de Operação o turno inteiro. Com o código de manobra dela, o atacante poderia pedir manobras na rede elétrica em nome do COD."
       lab_id: LAB-007
       versao: 1.0.0
       codigo: A1-IND

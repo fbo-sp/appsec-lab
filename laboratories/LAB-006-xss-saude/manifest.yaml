@@ -127,6 +127,10 @@ steps:
     explanation: |
       Depois de um teste de invasão, o time criou `limpar_texto`, que remove a tag `<script>` do que o usuário digita. É uma **lista de bloqueio**: tenta adivinhar o que é perigoso e apagar.
 
+      ```ilustracao
+      xss-lista-bloqueio
+      ```
+
       O Jinja2, que monta as páginas do Flask, já tem uma proteção melhor ligada por padrão, o **autoescape**: ao imprimir `{{ termo }}`, ele troca `<` por `&lt;` e `>` por `&gt;`. O navegador mostra os sinais na tela, mas não os interpreta como tags.
 
       Essa proteção pode ser desligada em um ponto específico com o filtro `|safe`, que diz ao Jinja2 que o texto é HTML confiável e pode ir para a página como está.
@@ -178,6 +182,12 @@ steps:
       O código troca a própria imagem pelo conteúdo de `document.cookie`, os **cookies que o JavaScript da página consegue ler**. Este é um **XSS refletido**: o ataque vem na própria requisição (aqui, no parâmetro `q` do endereço). Um atacante mandaria o link pronto para a vítima, por e-mail ou mensagem.
 
       Ao entrar, o Portal do Paciente grava o cookie `app_paciente`, o token do aplicativo que libera a visualização de laudos sem pedir a senha de novo. Ele foi criado **sem HttpOnly**, para o front-end antigo ler.
+
+      Na Rede Lumina, o golpe típico é uma mensagem "Seu laudo está disponível", com um link para a busca de exames do portal verdadeiro. O paciente vê o endereço da Lumina e entra sem desconfiar.
+
+      ```ilustracao
+      xss-refletido
+      ```
     task: |
       Na aba **Aplicação**, ainda logado com `julia.andrade`, busque por:
 
@@ -212,9 +222,15 @@ steps:
     explanation: |
       No XSS **armazenado**, o código malicioso fica gravado no banco e roda para **todo mundo** que abre a página onde ele aparece, sem precisar de link.
 
+      ```ilustracao
+      xss-armazenado
+      ```
+
       Na tela da atendente Carla, o campo **Observação para a coleta** de cada exame é impresso com `|safe` em `templates/painel.html`, porque alguém quis permitir formatação. O texto vem de qualquer usuário do Portal do Paciente.
 
       O impacto é maior: a equipe interna tem mais privilégios. O cookie `credencial_atendente` guarda a credencial do atendente, que permite alterar cadastros e liberar laudos.
+
+      Na Rede Lumina, a atendente Carla confere o painel de coleta a cada agendamento. Com a credencial dela, o atacante veria exames e observações de saúde de outros pacientes, dados sensíveis pela LGPD.
     task: |
       1. Na aba **Aplicação**, ainda logado com `julia.andrade`, use o formulário **Agendar exame**: preencha **Exame** com qualquer texto e **Observação para a coleta** com:
 
@@ -254,6 +270,10 @@ steps:
       **Por que a falha existe.** O texto do usuário vira HTML porque dois templates desligam o autoescape com `|safe`. A limpeza no serviço tenta bloquear um único formato de ataque, e existem centenas.
 
       **A correção: codificar a saída.** Deixe o Jinja2 fazer o trabalho dele. Sem `|safe`, `<img src=x onerror=...>` vira `&lt;img src=x onerror=...&gt;`: o usuário vê exatamente o que digitou, e o navegador não executa nada. Essa é a regra principal contra XSS: **codificar o dado no momento em que ele é inserido na página**, de acordo com o contexto (aqui, HTML).
+
+      ```ilustracao
+      xss-codificacao-saida
+      ```
 
       **Por que não melhorar a lista de bloqueio?** Porque sempre falta um caso: `<svg onload=...>`, `<details open ontoggle=...>`, letras maiúsculas e minúsculas misturadas. A validação desta etapa testa várias dessas formas.
     task: |

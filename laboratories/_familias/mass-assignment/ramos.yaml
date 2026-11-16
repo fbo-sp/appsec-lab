@@ -1,0 +1,146 @@
+# Família A5 Mass Assignment (ADR-021): o que muda por ramo de atividade. O modelo comum está em ./modelo.
+# Depois de editar, rode:  uv run python scripts/gerar-familia.py mass-assignment
+# Logins, valores de campos e respostas estão espelhados em apps/backend/app/validation/suites_familias.py
+# (registro protegido); os testes Docker conferem os dois.
+ramos:
+  - destino: LAB-008-massa-fintech
+    vars:
+      historia_beneficio: "Na Trilha Pay, o pacote Private libera PIX de até R$ 250 mil por dia. Para um golpista que controla a conta de uma vítima, ou para uma conta laranja, é a diferença entre um prejuízo pequeno e um grande."
+      historia_perfil: "Na Trilha Pay, o analista de crédito aprova aumentos de limite. Um cliente com esse perfil aprovaria o próprio limite e veria o cadastro de todos os clientes."
+      lab_id: LAB-008
+      versao: 1.0.0
+      codigo: A5-FIN
+      ramo: fin
+      setor: financeiro
+      imagem: lab-008-massa
+      titulo: o perfil que vira analista de crédito
+      empresa: Trilha Pay
+      marca: "◆ Trilha Pay"
+      app_nome: App Trilha Pay
+      cor: "#3b2a8f"
+      papel: Desenvolvedor(a) do squad de conta digital da Trilha Pay
+      aplicacao: App Trilha Pay, tela "Meu perfil" e a API /api/perfil
+      contexto: O app de celular e o site da Trilha Pay usam a mesma API de perfil. Um cliente comentou no suporte que o pacote da conta "mudou sozinho" para Private, e o time de fraude quer saber se isso é possível antes de abrir um incidente.
+      missao: Descobrir quais campos a API aceita, demonstrar o impacto e corrigir o serviço
+      banco: trilhapay
+      cliente_login: bruno.sales
+      cliente_senha: Bruno@2026
+      cliente_desc: Cliente Bruno Sales Teixeira
+      cliente_papel: cliente
+      perfil_comum: cliente
+      perfil_priv: analista
+      perfil_priv_desc: analista de crédito, que aprova aumentos de limite
+      rota_priv: backoffice
+      area_priv_titulo: Backoffice de crédito
+      area_priv_desc: Tela interna em que os analistas aprovam aumentos de limite e veem os dados cadastrais de todos os clientes.
+      chave_priv_nome: codigo_aprovacao_turno
+      chave_priv_label: Código de aprovação de limite do turno
+      chave_priv: TRP-LIM-6630-PZ
+      campo: pacote
+      campo_label: Pacote da conta
+      campo_label_minusculo: pacote da conta
+      campo_desc: pacote contratado, que define limites e tarifas
+      valor_original: essencial
+      valor_ataque: private
+      beneficio_original: limite de PIX de R$ 2.000,00 por dia
+      beneficio_ataque: limite de PIX de R$ 250.000,00 por dia, sem tarifas
+      resposta_beneficio_pergunta: o novo limite diário de PIX, só com números (por exemplo, 5000)
+      resposta_beneficio: "250000"
+      seed_usuarios:
+        - [1, bruno.sales, Bruno Sales Teixeira, bruno.sales@email.example, "+55 11 98888-1020", cliente, essencial, Bruno@2026]
+        - [2, lia.moura, Lia Moura Campos, lia.moura@email.example, "+55 21 97777-3344", cliente, private, Lia@2026]
+        - [3, otavio.analista, Otávio Reis Nogueira, otavio.reis@trilhapay.example, "+55 11 3000-4410", analista, private, "Analista#Trilha26"]
+  - destino: LAB-009-massa-saude
+    vars:
+      historia_beneficio: "Na Sereno Saúde, o plano nacional premium reembolsa até R$ 1.800,00 por consulta. Cada reembolso pago a quem não contratou o plano é prejuízo direto para a operadora e encarece o plano de todos."
+      historia_perfil: "Na Sereno Saúde, a auditoria médica libera procedimentos caros. Um beneficiário com esse perfil liberaria os próprios pedidos e veria os contatos de toda a carteira, dados protegidos pela LGPD."
+      lab_id: LAB-009
+      versao: 1.0.0
+      codigo: A5-SAU
+      ramo: sau
+      setor: saude
+      imagem: lab-009-massa
+      titulo: o beneficiário que trocou o próprio plano
+      empresa: Sereno Saúde
+      marca: "✚ Sereno Saúde"
+      app_nome: Portal do Beneficiário
+      cor: "#0d6e7a"
+      papel: Desenvolvedor(a) do time de canais digitais da Sereno Saúde
+      aplicacao: Portal do Beneficiário, tela "Meu perfil" e a API /api/perfil
+      contexto: O Portal do Beneficiário e o app usam a mesma API de cadastro. A auditoria encontrou reembolsos de plano nacional pedidos por beneficiários do plano regional e pediu ao time de desenvolvimento que verificasse a API de perfil.
+      missao: Provar como o plano foi alterado, medir o impacto e corrigir o serviço
+      banco: sereno
+      cliente_login: paula.mendes
+      cliente_senha: Paula@2026
+      cliente_desc: Beneficiária Paula Mendes Rocha
+      cliente_papel: beneficiário
+      perfil_comum: beneficiario
+      perfil_priv: auditor
+      perfil_priv_desc: auditoria médica, que libera procedimentos
+      rota_priv: auditoria
+      area_priv_titulo: Auditoria médica
+      area_priv_desc: Tela interna em que os auditores liberam procedimentos e veem os dados de contato de todos os beneficiários.
+      chave_priv_nome: senha_liberacao_dia
+      chave_priv_label: Senha de liberação de procedimentos do dia
+      chave_priv: SER-AUD-3381-MV
+      campo: plano
+      campo_label: Plano
+      campo_label_minusculo: plano
+      campo_desc: plano contratado, que define rede e reembolso
+      valor_original: regional
+      valor_ataque: nacional-premium
+      beneficio_original: rede regional, sem reembolso de consultas
+      beneficio_ataque: rede nacional com reembolso de até R$ 1.800,00 por consulta
+      resposta_beneficio_pergunta: o valor máximo de reembolso por consulta, só com números (por exemplo, 500)
+      resposta_beneficio: "1800"
+      seed_usuarios:
+        - [1, paula.mendes, Paula Mendes Rocha, paula.mendes@email.example, "+55 31 98123-4455", beneficiario, regional, Paula@2026]
+        - [2, jorge.batista, Jorge Batista Lins, jorge.batista@email.example, "+55 31 99654-7788", beneficiario, nacional-premium, Jorge@2026]
+        - [3, silvia.auditora, Sílvia Andrade Prado, silvia.prado@serenosaude.example, "+55 31 3200-1180", auditor, nacional-premium, "Auditoria#Sereno26"]
+  - destino: LAB-010-massa-energia
+    vars:
+      historia_beneficio: "Na Termoverde, um fornecedor estratégico fatura pedidos de até R$ 750 mil sem passar pela mesa de compras. É o atalho para notas superfaturadas sem nenhuma aprovação."
+      historia_perfil: "Na Termoverde, o comprador aprova pedidos. Um fornecedor com esse perfil aprovaria os próprios pedidos e veria os contatos e as categorias dos concorrentes."
+      lab_id: LAB-010
+      versao: 1.0.0
+      codigo: A5-IND
+      ramo: ind
+      setor: industria-energia
+      imagem: lab-010-massa
+      titulo: o fornecedor que se aprovou sozinho
+      empresa: Termoverde Geração
+      marca: "⚡ Termoverde"
+      app_nome: Portal de Fornecedores
+      cor: "#2f6b1f"
+      papel: Desenvolvedor(a) do time de sistemas corporativos da Termoverde Geração
+      aplicacao: Portal de Fornecedores, tela "Meu perfil" e a API /api/perfil
+      contexto: Fornecedores atualizam o próprio cadastro pelo Portal de Fornecedores, que usa a API de perfil. O time de compras estranhou um fornecedor pequeno faturando pedidos grandes sem aprovação e pediu uma análise da API.
+      missao: Descobrir como a categoria mudou, demonstrar o impacto e corrigir o serviço
+      banco: termoverde
+      cliente_login: rafael.dutra
+      cliente_senha: Rafael@2026
+      cliente_desc: Fornecedor Rafael Dutra, da Dutra Manutenção Elétrica
+      cliente_papel: fornecedor
+      perfil_comum: fornecedor
+      perfil_priv: comprador
+      perfil_priv_desc: comprador, que aprova pedidos
+      rota_priv: compras
+      area_priv_titulo: Mesa de compras
+      area_priv_desc: Tela interna em que os compradores aprovam pedidos e veem os contatos de todos os fornecedores cadastrados.
+      chave_priv_nome: codigo_aprovacao_pedidos
+      chave_priv_label: Código de aprovação de pedidos do turno
+      chave_priv: TMV-CMP-9054-RL
+      campo: categoria
+      campo_label: Categoria do fornecedor
+      campo_label_minusculo: categoria do fornecedor
+      campo_desc: categoria do fornecedor, que define alçada e prazo de pagamento
+      valor_original: padrao
+      valor_ataque: estrategico
+      beneficio_original: pedidos de até R$ 5.000,00 sem aprovação de compras
+      beneficio_ataque: pedidos de até R$ 750.000,00 sem aprovação de compras, com pagamento antecipado
+      resposta_beneficio_pergunta: o novo valor máximo de pedido sem aprovação, só com números (por exemplo, 5000)
+      resposta_beneficio: "750000"
+      seed_usuarios:
+        - [1, rafael.dutra, Rafael Dutra, comercial@dutraeletrica.example, "+55 51 99210-3030", fornecedor, padrao, Rafael@2026]
+        - [2, vanessa.lobo, Vanessa Lobo, vendas@loboturbinas.example, "+55 41 98877-6655", fornecedor, estrategico, Vanessa@2026]
+        - [3, marcos.compras, Marcos Teles Barros, marcos.barros@termoverde.example, "+55 51 3100-2290", comprador, estrategico, "Compras#Termo26"]

@@ -368,3 +368,23 @@ label { font-weight: 600; font-size: 0.9rem; }
 
 /* Site do atacante (ADR-022) */
 .attacker-link { color: var(--danger); font-weight: 600; }
+
+/* Diagramas conceituais das etapas (Illustrations.tsx). */
+.ill-flow { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.9rem; }
+.ill-node { position: relative; display: flex; flex-direction: column; gap: 0.15rem; padding: 0.35rem 0.5rem; border: 1px solid var(--border); border-left-width: 4px; border-radius: 5px; background: var(--surface); }
+.ill-node > span { color: var(--text); }
+.ill-flow .ill-node + .ill-node::before { content: "↓"; position: absolute; top: -0.95rem; left: 1rem; color: var(--muted); font-size: 0.8rem; }
+.ill-atk { border-left-color: var(--danger); }
+.ill-app { border-left-color: var(--accent); }
+.ill-vit { border-left-color: var(--warn); }
+.ill-bad { border-left-color: var(--danger); background: color-mix(in srgb, var(--danger) 8%, var(--surface)); }
+.ill-ok { border-left-color: var(--ok); background: color-mix(in srgb, var(--ok) 8%, var(--surface)); }
+.ill-mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.68rem; overflow-wrap: anywhere; }
+.ill-compare { display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem; }
+.ill-table { display: flex; flex-direction: column; gap: 0.35rem; }
+.ill-table ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 0.15rem; }
+.ill-blocked::before { content: "✗ "; color: var(--ok); font-weight: 700; }
+.ill-passed::before { content: "→ "; color: var(--danger); font-weight: 700; }
+.ill-passed { color: var(--danger); }
+@media (max-width: 480px) { .ill-compare { grid-template-columns: 1fr; } }
+.ill ol.ill-flow { padding-left: 0; margin: 0; }

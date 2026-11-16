@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block conteudo %}
+<h1>[[area_priv_titulo]]</h1>
+<p class="ajuda">[[area_priv_desc]]</p>
+<p>[[chave_priv_label]]: <span class="chave">{{ chave }}</span></p>
+<table class="lista">
+  <tr><th>Nome</th><th>Usuário</th><th>E-mail</th><th>Telefone</th><th>Perfil</th><th>[[campo_label]]</th></tr>
+  {% for u in usuarios %}
+  <tr><td>{{ u.nome }}</td><td>{{ u.login }}</td><td>{{ u.email }}</td><td>{{ u.telefone }}</td><td>{{ u.perfil }}</td><td>{{ u.[[campo]] }}</td></tr>
+  {% endfor %}
+</table>
+{% endblock %}

@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block conteudo %}
+<h1>Auditoria médica</h1>
+<p class="ajuda">Tela interna em que os auditores liberam procedimentos e veem os dados de contato de todos os beneficiários.</p>
+<p>Senha de liberação de procedimentos do dia: <span class="chave">{{ chave }}</span></p>
+<table class="lista">
+  <tr><th>Nome</th><th>Usuário</th><th>E-mail</th><th>Telefone</th><th>Perfil</th><th>Plano</th></tr>
+  {% for u in usuarios %}
+  <tr><td>{{ u.nome }}</td><td>{{ u.login }}</td><td>{{ u.email }}</td><td>{{ u.telefone }}</td><td>{{ u.perfil }}</td><td>{{ u.plano }}</td></tr>
+  {% endfor %}
+</table>
+{% endblock %}

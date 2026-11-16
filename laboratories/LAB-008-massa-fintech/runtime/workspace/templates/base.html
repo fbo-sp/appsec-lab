@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block titulo %}Trilha Pay{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='estilo.css') }}">
+</head>
+<body>
+  <header class="topo">
+    <span class="marca">◆ Trilha Pay</span>
+    <span class="sub">App Trilha Pay</span>
+    {% if usuario %}
+    <nav>
+      <a href="{{ url_for('perfil.ver') }}">Meu perfil</a>
+      {% if usuario.eh_privilegiado %}<a href="{{ url_for('area.listar') }}">Backoffice de crédito</a>{% endif %}
+    </nav>
+    <span class="usuario">{{ usuario.nome }} · <a href="{{ url_for('auth.sair') }}">Sair</a></span>
+    {% endif %}
+  </header>
+  <main>{% block conteudo %}{% endblock %}</main>
+  <footer>Ambiente de treinamento CECyber · dados fictícios</footer>
+</body>
+</html>

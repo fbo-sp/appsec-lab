@@ -96,3 +96,15 @@ labs:
     - version: 1.0.0
       published: 2026-11-16
       summary: Primeira versão (XSS refletido e armazenado, Voltera Distribuidora de Energia; família xss, ramo Indústria e Energia).
+  LAB-008:
+    - version: 1.0.0
+      published: 2026-11-16
+      summary: Primeira versão (Mass Assignment na API de perfil, Trilha Pay; família mass-assignment, ramo Financeiro).
+  LAB-009:
+    - version: 1.0.0
+      published: 2026-11-16
+      summary: Primeira versão (Mass Assignment na API de perfil, Sereno Saúde; família mass-assignment, ramo Saúde).
+  LAB-010:
+    - version: 1.0.0
+      published: 2026-11-16
+      summary: Primeira versão (Mass Assignment na API de perfil, Termoverde Geração; família mass-assignment, ramo Indústria e Energia).

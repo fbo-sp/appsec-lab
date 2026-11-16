@@ -7,6 +7,40 @@ import type { ReactNode } from "react";
  * desenho da própria tela, feito só com elementos React e CSS: nada vem de fora nem do manifesto além
  * do nome. Nome desconhecido continua aparecendo como bloco de código.
  */
+type Tone = "atk" | "app" | "vit" | "bad" | "ok";
+
+/** Fluxo vertical (o painel da etapa é estreito): quem faz o quê, com setas entre os passos. */
+function Flow({ steps }: { steps: { who: string; what: ReactNode; tone: Tone }[] }) {
+  return (
+    <ol className="ill-flow">
+      {steps.map((st, i) => (
+        <li key={i} className={`ill-node ill-${st.tone}`}>
+          <b>{st.who}</b>
+          <span>{st.what}</span>
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+/** Antes e depois lado a lado: o código vulnerável e o corrigido. */
+function Compare({ bad, good }: { bad: [string, ReactNode]; good: [string, ReactNode] }) {
+  return (
+    <div className="ill-compare">
+      <div className="ill-node ill-bad">
+        <b>✗ {bad[0]}</b>
+        {bad[1]}
+      </div>
+      <div className="ill-node ill-ok">
+        <b>✓ {good[0]}</b>
+        {good[1]}
+      </div>
+    </div>
+  );
+}
+
+const c = (t: string) => <code className="ill-mono">{t}</code>;
+
 const ILLUSTRATIONS: Record<string, { caption: string; body: () => ReactNode }> = {
   tela: {
     caption: "As duas áreas da tela: o painel da etapa à esquerda e o ambiente com as abas à direita.",
@@ -103,6 +137,100 @@ const ILLUSTRATIONS: Record<string, { caption: string; body: () => ReactNode }> 
         </pre>
         <div className="ill-result">✓ Aprovado na validação</div>
       </div>
+    ),
+  },
+  // Diagramas conceituais dos laboratórios (genéricos: servem a todos os ramos de uma família).
+  "xss-lista-bloqueio": {
+    caption: "Uma lista de bloqueio só pega o formato que o time imaginou. Outras tags com eventos passam.",
+    body: () => (
+      <div className="ill-table">
+        <div className="ill-node ill-app">
+          <b>limpar_texto remove só {"<script>"}</b>
+        </div>
+        <ul>
+          <li className="ill-blocked">{c("<script>alert(1)</script>")} bloqueado</li>
+          <li className="ill-passed">{c("<b>negrito</b>")} passa</li>
+          <li className="ill-passed">{c("<img src=x onerror=…>")} passa</li>
+          <li className="ill-passed">{c("<svg onload=…>")} passa</li>
+          <li className="ill-passed">{c("<details open ontoggle=…>")} passa</li>
+        </ul>
+      </div>
+    ),
+  },
+  "xss-refletido": {
+    caption: "XSS refletido: o código vai no próprio link e volta na resposta para quem abrir esse link.",
+    body: () => (
+      <Flow
+        steps={[
+          { who: "Atacante", what: <>monta um link com código na busca: {c("?q=<img src=x onerror=…>")}</>, tone: "atk" },
+          { who: "Vítima", what: "clica no link recebido por e-mail ou mensagem, já logada na aplicação", tone: "vit" },
+          { who: "Aplicação", what: <>repete o termo na página sem codificar: {c("{{ termo|safe }}")}</>, tone: "app" },
+          { who: "Navegador da vítima", what: <>cria a tag {c("<img>")}, a imagem falha e o {c("onerror")} roda</>, tone: "vit" },
+          { who: "Resultado", what: "o JavaScript lê os cookies sem HttpOnly e poderia enviá-los ao atacante", tone: "bad" },
+        ]}
+      />
+    ),
+  },
+  "xss-armazenado": {
+    caption: "XSS armazenado: o código fica no banco e roda para cada pessoa que abre a tela, sem precisar de link.",
+    body: () => (
+      <Flow
+        steps={[
+          { who: "Usuário comum", what: "cadastra um registro com código no campo livre", tone: "atk" },
+          { who: "Banco de dados", what: "guarda o texto exatamente como chegou", tone: "app" },
+          { who: "Equipe interna", what: <>abre o painel; o template imprime o campo com {c("|safe")}</>, tone: "vit" },
+          { who: "Resultado", what: "o código roda no navegador da equipe, com o acesso e os cookies dela", tone: "bad" },
+        ]}
+      />
+    ),
+  },
+  "xss-codificacao-saida": {
+    caption: "Codificar a saída: o mesmo texto vira tag com |safe e vira texto sem ele.",
+    body: () => (
+      <Compare
+        bad={[
+          "Com |safe",
+          <>
+            {c("{{ termo|safe }}")}
+            <span>HTML enviado: {c("<img src=x onerror=…>")}</span>
+            <span>O navegador cria a tag e executa o código.</span>
+          </>,
+        ]}
+        good={[
+          "Autoescape do Jinja2",
+          <>
+            {c("{{ termo }}")}
+            <span>HTML enviado: {c("&lt;img src=x onerror=…&gt;")}</span>
+            <span>O navegador mostra o texto, sem executar.</span>
+          </>,
+        ]}
+      />
+    ),
+  },
+  "mass-assignment": {
+    caption: "Atribuição em massa: o servidor grava todo campo que chega, inclusive os que a tela não oferece.",
+    body: () => (
+      <Flow
+        steps={[
+          { who: "Usuário", what: <>{c("PATCH /api/perfil")} com {c('{"telefone": "…", "perfil": "…"}')}</>, tone: "atk" },
+          { who: "Serviço", what: <>valida o telefone e repassa o dicionário inteiro: {c("atualizar(id, dados)")}</>, tone: "app" },
+          { who: "Repositório", what: <>{c("UPDATE usuarios SET telefone = ?, perfil = ?")}</>, tone: "app" },
+          { who: "Resultado", what: "o próprio usuário alterou um campo que só a empresa deveria mudar", tone: "bad" },
+        ]}
+      />
+    ),
+  },
+  "lista-permissao-campos": {
+    caption: "Lista de permissão: só os campos que a regra de negócio permite chegam ao banco; o resto é descartado.",
+    body: () => (
+      <Flow
+        steps={[
+          { who: "JSON recebido", what: c('{"email": …, "telefone": …, "perfil": …, "login": …}'), tone: "atk" },
+          { who: "Serviço", what: <>{c('CAMPOS_EDITAVEIS = ("email", "telefone")')} filtra o dicionário</>, tone: "app" },
+          { who: "Repositório", what: <>{c("UPDATE usuarios SET email = ?, telefone = ?")}</>, tone: "ok" },
+          { who: "Descartados", what: <>{c("perfil")}, {c("login")} e qualquer coluna criada no futuro</>, tone: "ok" },
+        ]}
+      />
     ),
   },
 };

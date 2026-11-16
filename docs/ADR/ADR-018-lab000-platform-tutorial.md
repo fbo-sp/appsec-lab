@@ -29,3 +29,5 @@ O LAB-000 nasceu como laboratório benigno para homologar o motor e "não deveri
 ## Adendo: ilustrações da interface (2026-11-15)
 
 O PO pediu pequenas visualizações que exemplifiquem o texto das etapas. O Markdown restrito (ADR-012) ganhou um único caso: um bloco cercado com a linguagem `ilustracao` e um **nome de uma lista fixa** (`tela`, `barra-endereco`, `terminal`, `dicas`, `editar-validar`) é desenhado pelo portal com elementos React e CSS, sem imagens nem conteúdo externo. Um nome desconhecido continua aparecendo como bloco de código, então o manifesto não consegue injetar nada. Novos desenhos exigem mudança no portal (`apps/web/src/portal/Illustrations.tsx`).
+
+**Adendo (2026-11-16, primeira leva).** A pedido do PO ("quando achar necessário, inclua visualizações nas explicações dos passos"), a lista fixa ganhou diagramas conceituais genéricos, reutilizados por todos os ramos de uma família (ADR-021): `xss-lista-bloqueio`, `xss-refletido`, `xss-armazenado`, `xss-codificacao-saida`, `mass-assignment` e `lista-permissao-campos`. A regra não muda: o manifesto só escolhe o nome, e o desenho e a legenda ficam no portal.
