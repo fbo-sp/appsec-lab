@@ -50,6 +50,9 @@ Indicado como primeira atividade de qualquer turma, antes do primeiro laboratór
 | LAB-008 | A5-FIN · Mass Assignment: o perfil que vira analista de crédito | 1.0.0 | CWE-915 | A08 Software or Data Integrity Failures (2025) | Não se enquadra; use o CWE (2025) | Iniciante | 35 min |
 | LAB-009 | A5-SAU · Mass Assignment: o beneficiário que trocou o próprio plano | 1.0.0 | CWE-915 | A08 Software or Data Integrity Failures (2025) | Não se enquadra; use o CWE (2025) | Iniciante | 35 min |
 | LAB-010 | A5-IND · Mass Assignment: o fornecedor que se aprovou sozinho | 1.0.0 | CWE-915 | A08 Software or Data Integrity Failures (2025) | Não se enquadra; use o CWE (2025) | Iniciante | 35 min |
+| LAB-011 | A2-FIN · CSRF: a chave PIX trocada pelo e-mail de campanha | 1.0.0 | CWE-352 | A01 Broken Access Control (2025) | #3 CWE-352 Cross-Site Request Forgery (CSRF) (2025) | Iniciante | 40 min |
+| LAB-012 | A2-SAU · CSRF: o laudo que foi para o e-mail errado | 1.0.0 | CWE-352 | A01 Broken Access Control (2025) | #3 CWE-352 Cross-Site Request Forgery (CSRF) (2025) | Iniciante | 40 min |
+| LAB-013 | A2-IND · CSRF: o alarme da comporta que foi para outro celular | 1.0.0 | CWE-352 | A01 Broken Access Control (2025) | #3 CWE-352 Cross-Site Request Forgery (CSRF) (2025) | Iniciante | 40 min |
 
 ## LAB-001 · SQL Injection: a busca que expõe pacientes
 
@@ -463,3 +466,123 @@ Indicado como primeira atividade de qualquer turma, antes do primeiro laboratór
 | Versão | Criada em | Obsoleta em | Situação | O que mudou |
 |---|---|---|---|---|
 | 1.0.0 | 2026-11-16 | — | vigente | Primeira versão (Mass Assignment na API de perfil, Termoverde Geração; família mass-assignment, ramo Indústria e Energia). |
+
+## LAB-011 · A2-FIN · CSRF: a chave PIX trocada pelo e-mail de campanha
+
+- Versão vigente: 1.0.0
+- Cenário: Portal do Segurado, tela "Conta para indenização"
+- Papel do aluno: Desenvolvedor(a) da squad do Portal do Segurado da Vínculo Seguros
+- Linguagem / stack: python / flask
+- Nível: Iniciante · duração estimada: 40 min
+- Família: csrf
+- Ramo: Financeiro
+- Módulo do curso: Trained
+
+### Classificação
+
+- CWE: CWE-352
+- OWASP Top 10 2025: A01 Broken Access Control
+- OWASP Top 10 2021: A01 Broken Access Control
+- SANS CWE Top 25 2025: #3 CWE-352 Cross-Site Request Forgery (CSRF)
+- SANS CWE Top 25 2024: #4 CWE-352 Cross-Site Request Forgery (CSRF)
+
+### Objetivos
+
+- Entender por que o navegador envia o cookie de sessão em requisições que o usuário não pediu
+- Diferenciar site de origem e saber o que o atributo SameSite protege e o que não protege
+- Demonstrar CSRF com uma página fictícia de atacante e achar a evidência no log
+- Corrigir a falha com um token anti-CSRF por sessão, sem quebrar o uso legítimo
+
+### Etapas
+
+1. Conhecer a tela Conta para indenização (10 pts)
+2. Entender a proteção que o time colocou (15 pts)
+3. Abrir a página do atacante (20 pts)
+4. Achar a evidência no log (15 pts)
+5. Corrigir com um token anti-CSRF (40 pts)
+
+### Histórico de versões
+
+| Versão | Criada em | Obsoleta em | Situação | O que mudou |
+|---|---|---|---|---|
+| 1.0.0 | 2026-11-16 | — | vigente | Primeira versão (CSRF na troca da chave PIX de indenização, Vínculo Seguros; família csrf, ramo Financeiro). |
+
+## LAB-012 · A2-SAU · CSRF: o laudo que foi para o e-mail errado
+
+- Versão vigente: 1.0.0
+- Cenário: Portal do Paciente, tela "Envio de laudos"
+- Papel do aluno: Desenvolvedor(a) do time de canais digitais da Vitalis Hospitais
+- Linguagem / stack: python / flask
+- Nível: Iniciante · duração estimada: 40 min
+- Família: csrf
+- Ramo: Saúde
+- Módulo do curso: Trained
+
+### Classificação
+
+- CWE: CWE-352
+- OWASP Top 10 2025: A01 Broken Access Control
+- OWASP Top 10 2021: A01 Broken Access Control
+- SANS CWE Top 25 2025: #3 CWE-352 Cross-Site Request Forgery (CSRF)
+- SANS CWE Top 25 2024: #4 CWE-352 Cross-Site Request Forgery (CSRF)
+
+### Objetivos
+
+- Entender por que o navegador envia o cookie de sessão em requisições que o usuário não pediu
+- Diferenciar site de origem e saber o que o atributo SameSite protege e o que não protege
+- Demonstrar CSRF com uma página fictícia de atacante e achar a evidência no log
+- Corrigir a falha com um token anti-CSRF por sessão, sem quebrar o uso legítimo
+
+### Etapas
+
+1. Conhecer a tela Envio de laudos (10 pts)
+2. Entender a proteção que o time colocou (15 pts)
+3. Abrir a página do atacante (20 pts)
+4. Achar a evidência no log (15 pts)
+5. Corrigir com um token anti-CSRF (40 pts)
+
+### Histórico de versões
+
+| Versão | Criada em | Obsoleta em | Situação | O que mudou |
+|---|---|---|---|---|
+| 1.0.0 | 2026-11-16 | — | vigente | Primeira versão (CSRF na troca do e-mail de laudos, Vitalis Hospitais; família csrf, ramo Saúde). |
+
+## LAB-013 · A2-IND · CSRF: o alarme da comporta que foi para outro celular
+
+- Versão vigente: 1.0.0
+- Cenário: Supervisório web da PCH Rio Claro, tela "Plantão de alarmes"
+- Papel do aluno: Desenvolvedor(a) do time de automação da Correnteza Geração
+- Linguagem / stack: python / flask
+- Nível: Iniciante · duração estimada: 40 min
+- Família: csrf
+- Ramo: Indústria e Energia
+- Módulo do curso: Trained
+
+### Classificação
+
+- CWE: CWE-352
+- OWASP Top 10 2025: A01 Broken Access Control
+- OWASP Top 10 2021: A01 Broken Access Control
+- SANS CWE Top 25 2025: #3 CWE-352 Cross-Site Request Forgery (CSRF)
+- SANS CWE Top 25 2024: #4 CWE-352 Cross-Site Request Forgery (CSRF)
+
+### Objetivos
+
+- Entender por que o navegador envia o cookie de sessão em requisições que o usuário não pediu
+- Diferenciar site de origem e saber o que o atributo SameSite protege e o que não protege
+- Demonstrar CSRF com uma página fictícia de atacante e achar a evidência no log
+- Corrigir a falha com um token anti-CSRF por sessão, sem quebrar o uso legítimo
+
+### Etapas
+
+1. Conhecer a tela Plantão de alarmes (10 pts)
+2. Entender a proteção que o time colocou (15 pts)
+3. Abrir a página do atacante (20 pts)
+4. Achar a evidência no log (15 pts)
+5. Corrigir com um token anti-CSRF (40 pts)
+
+### Histórico de versões
+
+| Versão | Criada em | Obsoleta em | Situação | O que mudou |
+|---|---|---|---|---|
+| 1.0.0 | 2026-11-16 | — | vigente | Primeira versão (CSRF na troca do celular do plantão de alarmes, Correnteza Geração; família csrf, ramo Indústria e Energia). |

@@ -108,3 +108,15 @@ labs:
     - version: 1.0.0
       published: 2026-11-16
       summary: Primeira versão (Mass Assignment na API de perfil, Termoverde Geração; família mass-assignment, ramo Indústria e Energia).
+  LAB-011:
+    - version: 1.0.0
+      published: 2026-11-16
+      summary: Primeira versão (CSRF na troca da chave PIX de indenização, Vínculo Seguros; família csrf, ramo Financeiro).
+  LAB-012:
+    - version: 1.0.0
+      published: 2026-11-16
+      summary: Primeira versão (CSRF na troca do e-mail de laudos, Vitalis Hospitais; família csrf, ramo Saúde).
+  LAB-013:
+    - version: 1.0.0
+      published: 2026-11-16
+      summary: Primeira versão (CSRF na troca do celular do plantão de alarmes, Correnteza Geração; família csrf, ramo Indústria e Energia).

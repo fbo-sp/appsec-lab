@@ -380,6 +380,166 @@ def _massa(r: MassaRamo) -> tuple[Suite, ...]:
     )
 
 
-SUITES_FAMILIAS: tuple[Suite, ...] = tuple(s for r in XSS_RAMOS for s in _xss(r)) + tuple(
-    s for r in MASSA_RAMOS for s in _massa(r)
+# --------------------------------------------------------------------------------------------------
+# A2 CSRF (LAB-011 a LAB-013)
+
+
+@dataclass(frozen=True, slots=True)
+class CsrfRamo:
+    ramo: str
+    rota: str
+    campo: str
+    login_a: tuple[str, str]  # vítima (fictícia)
+    login_b: tuple[str, str]  # outra conta, para testar token de outra sessão
+    valor_ataque: str
+    valor_validacao: str  # valor legítimo que a suíte grava com o token certo
+
+
+CSRF_RAMOS = (
+    CsrfRamo(
+        "fin",
+        "conta-indenizacao",
+        "chave_pix",
+        ("carolina.reis", "Carolina@2026"),
+        ("andre.matos", "Andre@2026"),
+        "recebimentos@seguro-agil.example",
+        "validacao.csrf@email.example",
+    ),
+    CsrfRamo(
+        "sau",
+        "laudos/envio",
+        "email_laudos",
+        ("beatriz.lima", "Beatriz@2026"),
+        ("joao.pedro", "JoaoP@2026"),
+        "arquivo.laudos@caixa-segura.example",
+        "validacao.csrf@email.example",
+    ),
+    CsrfRamo(
+        "ind",
+        "alarmes/plantao",
+        "celular_plantao",
+        ("leandro.vieira", "Leandro@2026"),
+        ("silvana.couto", "Silvana@2026"),
+        "+5511900006666",
+        "+5551911112222",
+    ),
+)
+
+_TOKEN_RE = r'name="csrf_token"\s+value="([^"]+)"'  # noqa: S105 - regex do campo do formulário, não um segredo
+_RECUSADO = (400, 403)
+
+
+def _csrf(r: CsrfRamo) -> tuple[Suite, ...]:
+    pagina = f"/{r.rota}"
+
+    def login(nome: str, cred: tuple[str, str]) -> HttpLogin:
+        return HttpLogin(name=nome, path="/login", form={"login": cred[0], "senha": cred[1]})
+
+    def nao_gravou(check_id: str, descricao: str) -> HttpCheck:
+        return HttpCheck(
+            id=check_id, description=descricao, path=pagina, as_user="vitima", not_contains=(r.valor_ataque,)
+        )
+
+    return (
+        AnswerSuite(
+            ref=f"csrf/answer/field-name-{r.ramo}-v1",
+            version="1.0.0",
+            prompt="Nome do campo do formulário",
+            accepted=(r.campo, f'"{r.campo}"', f'name="{r.campo}"'),
+            success_feedback="Isso. O POST leva só esse campo e o cookie de sessão: nada mais prova que foi você.",
+            failure_feedback="Ainda não. No template, procure o atributo name do único input de texto do form.",
+        ),
+        AnswerSuite(
+            ref=f"csrf/answer/samesite-{r.ramo}-v1",
+            version="1.0.0",
+            prompt="Valor do SameSite do cookie de sessão",
+            accepted=("Lax", '"Lax"'),
+            success_feedback="Isso. Agora veja se o Lax segura um ataque vindo do mesmo site.",
+            failure_feedback="Não é esse. Abra config.py e leia o valor de SESSION_COOKIE_SAMESITE.",
+        ),
+        AnswerSuite(
+            ref=f"csrf/answer/forged-value-{r.ramo}-v1",
+            version="1.0.0",
+            prompt="Valor gravado pelo ataque",
+            accepted=(r.valor_ataque,),
+            success_feedback="A página do atacante alterou seu cadastro sem você clicar em Salvar.",
+            failure_feedback="Ainda não. Abra o site do atacante, espere a barra completar e recarregue a aplicação.",
+        ),
+        AnswerSuite(
+            ref=f"csrf/answer/fetch-site-{r.ramo}-v1",
+            version="1.0.0",
+            prompt="Valor de origem no log do ataque",
+            accepted=("same-site", "origem=same-site"),
+            success_feedback="Exato: mesmo site, outra origem. Por isso o SameSite=Lax não barrou o cookie.",
+            failure_feedback="Não é esse. Use a linha do log com o valor gravado pelo atacante, não a sua.",
+        ),
+        HttpSuite(
+            ref=f"csrf/python-flask/synchronizer-token-{r.ramo}-v1",
+            version="1.0.0",
+            logins=(login("vitima", r.login_a), login("outra", r.login_b)),
+            checks=(
+                HttpCheck(
+                    id="formulario-com-token",
+                    description="O formulário traz um campo escondido csrf_token com o token da sessão.",
+                    path=pagina,
+                    as_user="vitima",
+                    capture={"token_vitima": _TOKEN_RE},
+                ),
+                HttpCheck(
+                    id="sem-token-recusado",
+                    description="Um POST sem o token, como o da página do atacante, é recusado (400 ou 403).",
+                    path=pagina,
+                    method="POST",
+                    as_user="vitima",
+                    form={r.campo: r.valor_ataque},
+                    expect_status=None,
+                    expect_status_in=_RECUSADO,
+                ),
+                nao_gravou("sem-token-nao-gravou", "O POST sem token não alterou o cadastro."),
+                HttpCheck(
+                    id="token-outra-conta",
+                    description="Outra conta também recebe um token no formulário.",
+                    path=pagina,
+                    as_user="outra",
+                    capture={"token_outra": _TOKEN_RE},
+                ),
+                HttpCheck(
+                    id="token-de-outra-sessao-recusado",
+                    description="O token de outra sessão é recusado: um valor fixo no código não serve.",
+                    path=pagina,
+                    method="POST",
+                    as_user="vitima",
+                    form={r.campo: r.valor_ataque, "csrf_token": "{{token_outra}}"},
+                    expect_status=None,
+                    expect_status_in=_RECUSADO,
+                ),
+                nao_gravou(
+                    "outra-sessao-nao-gravou", "O POST com token de outra sessão não alterou o cadastro."
+                ),
+                HttpCheck(
+                    id="alteracao-legitima",
+                    description="A alteração pelo próprio formulário, com o token certo, continua funcionando.",
+                    path=pagina,
+                    method="POST",
+                    as_user="vitima",
+                    form={r.campo: r.valor_validacao, "csrf_token": "{{token_vitima}}"},
+                    contains=(r.valor_validacao,),
+                ),
+            ),
+            success_feedback=(
+                "Correção validada numa cópia isolada do seu workspace: só o formulário da própria aplicação, "
+                "com o token da sessão, consegue alterar o cadastro."
+            ),
+            failure_feedback=(
+                "Algumas verificações falharam. Confira cada item abaixo, ajuste o controller ou o template e "
+                "valide de novo."
+            ),
+        ),
+    )
+
+
+SUITES_FAMILIAS: tuple[Suite, ...] = (
+    tuple(s for r in XSS_RAMOS for s in _xss(r))
+    + tuple(s for r in MASSA_RAMOS for s in _massa(r))
+    + tuple(s for r in CSRF_RAMOS for s in _csrf(r))
 )

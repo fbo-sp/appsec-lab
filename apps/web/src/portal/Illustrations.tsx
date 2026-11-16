@@ -233,6 +233,62 @@ const ILLUSTRATIONS: Record<string, { caption: string; body: () => ReactNode }> 
       />
     ),
   },
+  "site-vs-origem": {
+    caption: "Origem é esquema + endereço + porta. Site é o domínio registrável. SameSite olha o site.",
+    body: () => (
+      <div className="ill-table">
+        <div className="ill-node ill-app">
+          <b>Mesmo site: empresa.example</b>
+          <span>
+            {c("https://portal.empresa.example")} e {c("https://campanhas.empresa.example")}
+          </span>
+          <span>origens diferentes, mesmo site: o cookie SameSite=Lax vai junto</span>
+        </div>
+        <div className="ill-node ill-ok">
+          <b>Outro site</b>
+          <span>
+            {c("https://portal.empresa.example")} e {c("https://golpe.example")}
+          </span>
+          <span>sites diferentes: com SameSite=Lax o cookie não vai no POST</span>
+        </div>
+      </div>
+    ),
+  },
+  "csrf-fluxo": {
+    caption: "CSRF: a página do atacante faz o navegador da vítima enviar o pedido, e o cookie vai junto sozinho.",
+    body: () => (
+      <Flow
+        steps={[
+          { who: "Vítima", what: "está logada na aplicação; o navegador guarda o cookie de sessão", tone: "vit" },
+          { who: "Página do atacante", what: <>formulário escondido com o campo já preenchido e {c("form.submit()")}</>, tone: "atk" },
+          { who: "Navegador da vítima", what: <>envia o {c("POST")} e anexa o cookie de sessão (mesmo site)</>, tone: "vit" },
+          { who: "Aplicação", what: "vê um usuário logado e aceita a alteração", tone: "app" },
+          { who: "Resultado", what: "o dado muda em nome da vítima, sem ela clicar em Salvar", tone: "bad" },
+        ]}
+      />
+    ),
+  },
+  "csrf-token": {
+    caption: "Token anti-CSRF: só a página da própria aplicação conhece o valor da sessão.",
+    body: () => (
+      <Compare
+        bad={[
+          "Página do atacante",
+          <>
+            <span>POST sem {c("csrf_token")} (não consegue ler o HTML da aplicação)</span>
+            <span>Aplicação compara com a sessão: diferente, responde 400.</span>
+          </>,
+        ]}
+        good={[
+          "Formulário da aplicação",
+          <>
+            <span>{c('<input type="hidden" name="csrf_token" value="a9F…">')}</span>
+            <span>Valor igual ao da sessão: alteração aceita.</span>
+          </>,
+        ]}
+      />
+    ),
+  },
 };
 
 export function hasIllustration(name: string): boolean {

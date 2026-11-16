@@ -1,0 +1,311 @@
+# [[lab_id]] ([[codigo]]): Cross-Site Request Forgery (CWE-352) no [[app_nome]] da [[empresa]] (Flask + SQLite).
+# CONTÉM VULNERABILIDADE INTENCIONAL. Uso exclusivo no runtime Docker LOCAL (ADR-008), em rede
+# interna da sessão. Dados 100% fictícios (domínio .example). Família A2 csrf (ADR-021): gerado por
+# scripts/gerar-familia.py a partir de laboratories/_familias/csrf; não edite este arquivo à mão.
+# O site do atacante (ADR-022) é uma página estática da imagem, publicada pelo gateway em outra origem.
+#
+# ATENÇÃO: o digest abaixo é uma FIXTURE (sha256 de um texto fixo), não uma imagem publicada.
+# scripts/lab-local.sh e .ps1 trocam pela imagem construída localmente antes de registrar.
+apiVersion: labs.cecyber.io/v1alpha1
+kind: AppSecLab
+metadata:
+  id: [[lab_id]]
+  version: [[versao]]
+  title: "[[codigo]] · CSRF: [[titulo]]"
+  primaryCwe: CWE-352
+  secondaryCwes: []
+  family: csrf
+  sectors: [[[setor]]]
+  courseModules: [trained]
+  classifications:
+    - framework: OWASP Top 10
+      edition: "2025"
+      entries:
+        - "A01 Broken Access Control"
+    - framework: OWASP Top 10
+      edition: "2021"
+      entries:
+        - "A01 Broken Access Control"
+    - framework: SANS CWE Top 25
+      edition: "2025"
+      entries:
+        - "#3 CWE-352 Cross-Site Request Forgery (CSRF)"
+    - framework: SANS CWE Top 25
+      edition: "2024"
+      entries:
+        - "#4 CWE-352 Cross-Site Request Forgery (CSRF)"
+learning:
+  singleVulnerability: true
+  estimatedMinutes: 40
+  difficulty: beginner
+  objectives:
+    - Entender por que o navegador envia o cookie de sessão em requisições que o usuário não pediu
+    - Diferenciar site de origem e saber o que o atributo SameSite protege e o que não protege
+    - Demonstrar CSRF com uma página fictícia de atacante e achar a evidência no log
+    - Corrigir a falha com um token anti-CSRF por sessão, sem quebrar o uso legítimo
+  story:
+    role: [[papel]]
+    application: [[aplicacao]]
+    context: >-
+      [[contexto]]
+    mission: [[missao]]
+  wrapUp:
+    text: |
+      Agora só um formulário montado pela própria aplicação consegue alterar [[o_campo]]: o token aleatório da sessão não está em nenhuma outra página. Em um sistema real, vale reforçar outras camadas:
+
+      - **Use o que o framework já traz.** No Flask, a extensão `Flask-WTF` (`CSRFProtect`) faz exatamente o que você escreveu, para todos os formulários. Django, Rails, Spring Security e ASP.NET têm proteção equivalente ligada por padrão: o erro comum é desligá-la.
+      - **SameSite ajuda, mas não basta.** `Lax` bloqueia formulários vindos de **outros sites**, não de outros sistemas do **mesmo site**, como você viu. `Strict` protege mais, mas quebra quem chega por um link de e-mail já logado.
+      - **Fetch Metadata como segunda barreira.** Recusar `POST` com `Sec-Fetch-Site` diferente de `same-origin` barra a página do atacante sem token nenhum. Navegadores antigos não enviam o cabeçalho, por isso ele complementa o token, não o substitui.
+      - **Operações críticas pedem confirmação.** [[reforco_critico]]
+      - **APIs com token no cabeçalho.** Se a autenticação viaja em `Authorization: Bearer`, e não em cookie, o navegador não a envia sozinho e o CSRF clássico não funciona.
+    references:
+      - title: "OWASP Cheat Sheet: Cross-Site Request Forgery Prevention"
+        url: https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html
+      - title: "OWASP Top 10:2025: A01 Broken Access Control"
+        url: https://owasp.org/Top10/2025/A01_2025-Broken_Access_Control/
+      - title: "CWE-352: Cross-Site Request Forgery (CSRF)"
+        url: https://cwe.mitre.org/data/definitions/352.html
+      - title: "MDN: cookies e o atributo SameSite"
+        url: https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Cookies#controlling_third-party_cookies_with_samesite
+      - title: "web.dev: Fetch Metadata (Sec-Fetch-Site)"
+        url: https://web.dev/articles/fetch-metadata
+variants:
+  - id: python-flask
+    language: python
+    framework: flask
+    image: registry.local/labs/[[imagem]]@sha256:[[digest_fixture]]
+    runtimeProfile: web-basic
+    workspacePath: /workspace
+    startup:
+      # A página do atacante (8090) roda em segundo plano; a saída da aplicação também vai para /tmp/app.log.
+      command: ["sh", "-c", "python -m http.server 8090 -b 0.0.0.0 -d /opt/atacante >/dev/null 2>&1 & python -u -m flask --app app run --host 0.0.0.0 --port 8080 --reload --no-debugger 2>&1 | tee -a /tmp/app.log"]
+      port: 8080
+    resources:
+      cpuMillicores: 500
+      memoryMiB: 512
+      storageMiB: 256
+      pidsMax: 64
+    session:
+      ttlMinutes: 45
+      maxRenewals: 2
+    interfaces: [editor, terminal, web, attacker]
+steps:
+  - id: conhecer
+    order: 1
+    title: Conhecer a tela [[tela_titulo]]
+    explanation: |
+      [[historia_abertura]]
+
+      A tela **[[tela_titulo]]** é um formulário comum: o usuário digita o novo valor e clica em **Salvar**. O navegador envia um `POST /[[rota]]` com o campo do formulário e, **automaticamente**, o cookie de sessão que prova quem está logado.
+
+      Siga o pedido pelas camadas:
+
+      1. **Template** (`templates/[[modulo]].html`): o formulário com o campo que vai para o servidor.
+      2. **Controller** (`controllers/[[modulo]]_controller.py`): a função `alterar` lê o campo e chama o serviço.
+      3. **Serviço** (`services/[[modulo]]_service.py`): confere o formato, grava e registra no histórico e no log.
+
+      As credenciais de teste deste laboratório são:
+
+      - [[cliente_desc]]: usuário `[[cliente_login]]`, senha `[[cliente_senha]]`.
+    task: |
+      1. Na aba **Aplicação**, entre com o usuário `[[cliente_login]]` e a senha `[[cliente_senha]]`.
+      2. Na tela **[[tela_titulo]]**, troque [[o_campo]] por `[[valor_legitimo]]` e clique em **Salvar**. A alteração aparece no **Histórico de alterações**.
+      3. Na aba **Código**, abra `templates/[[modulo]].html` e encontre o `<form>`.
+
+      Informe abaixo o valor do atributo `name` do campo de texto do formulário.
+    concept: Requisição que altera estado, autenticada só pelo cookie
+    validatorRef: csrf/answer/field-name-[[ramo]]-v1
+    hints:
+      - level: 1
+        text: 'O formulário tem um único `<input>`. Procure, dentro dele, o atributo `name="..."`.'
+      - level: 2
+        text: O mesmo nome aparece no controller, em `request.form.get(...)`.
+      - level: 3
+        text: O valor é `[[campo]]`.
+    points: 10
+  - id: samesite
+    order: 2
+    title: Entender a proteção que o time colocou
+    explanation: |
+      No **Cross-Site Request Forgery (CSRF)**, uma página do atacante faz o navegador da vítima enviar um pedido para a aplicação em que ela está logada. O navegador junta o cookie de sessão sozinho, e o servidor não consegue distinguir esse pedido de um clique legítimo.
+
+      Depois do último teste de invasão, o time incluiu `SESSION_COOKIE_SAMESITE = "Lax"` no `config.py`. Com `Lax`, o navegador **não** envia o cookie em um `POST` vindo de **outro site**. Parece resolver, mas depende do que o navegador entende por *site*:
+
+      - **Origem** é esquema + endereço + porta: `https://[[dominio_app]]` e `https://[[dominio_irmao]]` são origens diferentes.
+      - **Site** é o domínio registrável: os dois endereços acima são do **mesmo site**, `[[dominio_site]]`.
+
+      ```ilustracao
+      site-vs-origem
+      ```
+
+      SameSite olha o **site**. Um formulário vindo de outro sistema da mesma empresa é *same-site*, e o cookie vai junto. Neste laboratório, a aplicação e o site do atacante são duas portas do mesmo endereço, ou seja, origens diferentes no mesmo site, exatamente como [[dominio_app]] e [[dominio_irmao]].
+    task: |
+      Na aba **Código**, abra `config.py` e leia o comentário acima de `SESSION_COOKIE_SAMESITE`.
+
+      Informe abaixo o valor configurado para o atributo SameSite do cookie de sessão.
+    concept: Site não é origem; SameSite separa sites, não sistemas do mesmo domínio
+    validatorRef: csrf/answer/samesite-[[ramo]]-v1
+    hints:
+      - level: 1
+        text: É a última configuração antes de `TEMPLATES_AUTO_RELOAD`.
+      - level: 2
+        text: O valor está entre aspas e tem três letras.
+      - level: 3
+        text: O valor é `Lax`.
+    points: 15
+  - id: ataque
+    order: 3
+    title: Abrir a página do atacante
+    explanation: |
+      [[historia_ataque]]
+
+      A página do atacante tem um formulário **escondido** com o campo `[[campo]]` já preenchido e um JavaScript que o envia sozinho depois de três segundos. A vítima só precisa abrir a página, logada na aplicação em outra aba.
+
+      ```ilustracao
+      csrf-fluxo
+      ```
+
+      Na barra da aba **Aplicação**, o botão **site do atacante** abre essa página fictícia em nova aba, como se a vítima tivesse clicado no link recebido.
+    task: |
+      1. Na aba **Aplicação**, ainda logado com `[[cliente_login]]`, clique em **site do atacante** (à direita de **abrir em nova aba**).
+      2. Na nova aba, espere a barra completar. A página envia o formulário e mostra a tela **[[tela_titulo]]** da aplicação.
+      3. Volte para a aba do laboratório e clique em **recarregar** na aba **Aplicação**.
+
+      Informe abaixo [[o_campo]] que aparece agora como **[[campo_label]] atual**.
+    explore: |
+      **Por que ler o código da página do atacante.** No **Terminal**, rode:
+
+      ```bash
+      cat /opt/atacante/index.html
+      ```
+
+      **O que procurar.** O `<form>` escondido com `method="post"` e o campo `[[campo]]` preenchido, e o `form.submit()` no fim do script. Não há nada sofisticado: é HTML comum. O ataque funciona porque a aplicação aceita qualquer `POST` que chegue com o cookie de sessão.
+    concept: Formulário forjado enviado com o cookie da vítima
+    validatorRef: csrf/answer/forged-value-[[ramo]]-v1
+    hints:
+      - level: 1
+        text: Se a nova aba não abriu, confira se o navegador bloqueou pop-ups e clique de novo em **site do atacante**.
+      - level: 2
+        text: Depois de recarregar, o valor fica destacado em amarelo logo abaixo do título da tela, e o histórico ganha uma linha nova.
+      - level: 3
+        text: O valor é `[[valor_ataque]]`.
+    points: 20
+  - id: evidencia
+    order: 4
+    title: Achar a evidência no log
+    explanation: |
+      Para a aplicação, o pedido forjado é idêntico a um clique do usuário: mesmo cookie, mesmo campo. Mas o navegador conta de onde o pedido partiu no cabeçalho **`Sec-Fetch-Site`** (*Fetch Metadata*):
+
+      - `same-origin`: veio de uma página da própria aplicação;
+      - `same-site`: veio de outra origem do **mesmo site**;
+      - `cross-site`: veio de outro site.
+
+      O serviço registra esse valor no log a cada alteração. É assim que o time de resposta a incidentes separa os cliques legítimos dos forjados.
+    task: |
+      Na aba **Terminal**, filtre as alterações registradas (o `/tmp/app.log` também traz cada acesso, como `GET /[[rota]] 200`):
+
+      ```bash
+      grep "Destino alterado" /tmp/app.log
+      ```
+
+      Compare a linha da sua alteração da etapa 1 com a linha do ataque. Informe abaixo o valor de `origem=` na linha do **ataque**.
+    explore: |
+      **Por que esse valor explica a falha da etapa 2.** O ataque chegou como `same-site`: para o navegador, a página do atacante e a aplicação são do mesmo site, então o cookie com `SameSite=Lax` foi junto. Se a página estivesse em outro domínio, o valor seria `cross-site` e o `Lax` teria barrado o cookie.
+
+      **O que mais dá para fazer com isso.** Recusar `POST` com `origem` diferente de `same-origin` é uma barreira extra recomendada pela OWASP. Ela não substitui o token da próxima etapa, porque navegadores antigos e alguns clientes não enviam o cabeçalho.
+    concept: Fetch Metadata como evidência de origem do pedido
+    validatorRef: csrf/answer/fetch-site-[[ramo]]-v1
+    hints:
+      - level: 1
+        text: As linhas terminam com `origem=...`. A da etapa 1 tem `novo=[[valor_legitimo]]`.
+      - level: 2
+        text: Procure a linha com `novo=[[valor_ataque]]`.
+      - level: 3
+        text: O valor é `same-site`.
+    points: 15
+  - id: corrigir
+    order: 5
+    title: Corrigir com um token anti-CSRF
+    explanation: |
+      **Por que a falha existe.** O servidor aceita a alteração só porque o cookie de sessão chegou, e o navegador manda esse cookie em pedidos que o usuário não fez.
+
+      **A correção: token sincronizador.** Ao montar a página, a aplicação gera um valor **aleatório e secreto da sessão** e o coloca num campo escondido do formulário. No `POST`, ela só aceita a alteração se o campo chegar com o mesmo valor guardado na sessão. A página do atacante não consegue ler o HTML da aplicação (outra origem), então não sabe o token.
+
+      ```ilustracao
+      csrf-token
+      ```
+
+      Dois cuidados: o token é **por sessão** (um valor fixo no código seria igual para todo mundo e o atacante o copiaria da própria conta) e a comparação usa `secrets.compare_digest`, que não vaza informação pelo tempo de resposta.
+    task: |
+      **1.** Abra `controllers/[[modulo]]_controller.py`. Troque a linha de imports do Flask por estas duas:
+
+      ```python
+      import secrets
+
+      from flask import Blueprint, abort, current_app, flash, redirect, render_template, request, session, url_for
+      ```
+
+      **2.** No mesmo arquivo, troque a função `ver` inteira por esta (ela agora cria o token e o entrega ao template):
+
+      ```python
+      def _token_csrf() -> str:
+          """Token aleatório da sessão: só as páginas da própria aplicação o conhecem."""
+          if "csrf_token" not in session:
+              session["csrf_token"] = secrets.token_urlsafe(32)
+          return session["csrf_token"]
+
+
+      @[[modulo]]_bp.get("/[[rota]]")
+      @login_obrigatorio
+      def ver():
+          with abrir_conexao(current_app.config["CAMINHO_BANCO"]) as conexao:
+              dados, historico = _servico(conexao).obter(session["usuario_id"])
+          return render_template("[[modulo]].html", dados=dados, historico=historico, csrf_token=_token_csrf())
+      ```
+
+      **3.** Na função `alterar`, troque o comentário `# O usuário já está logado (cookie de sessão), então a alteração é aceita.` por:
+
+      ```python
+          esperado = session.get("csrf_token")
+          enviado = request.form.get("csrf_token", "")
+          if not esperado or not secrets.compare_digest(enviado, esperado):
+              abort(400)  # pedido sem o token desta sessão: não veio do nosso formulário
+      ```
+
+      **4.** Abra `templates/[[modulo]].html` e, logo abaixo da linha do `<form method="post" ...>`, acrescente:
+
+      ```html
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      ```
+
+      Salve os dois arquivos com **Ctrl+S**. A aplicação reinicia e o banco volta ao estado inicial; você continua logado. Então:
+
+      1. na aba **Aplicação**, clique em **recarregar** e troque [[o_campo]] por `[[valor_legitimo]]`: a alteração legítima funciona (se aparecer a tela de login, entre com `[[cliente_login]]` e senha `[[cliente_senha]]`, as credenciais da etapa 1);
+      2. clique em **site do atacante** e espere: a nova aba mostra **Bad Request**, e [[o_campo]] continua `[[valor_legitimo]]`;
+      3. clique em **Validar**.
+    explore: |
+      **Se algo não funcionar depois de salvar.** Um recuo errado ou um import faltando derruba a aplicação. No **Terminal**, filtre as linhas de erro (o log também traz os acessos `GET /[[rota]] 200`):
+
+      ```bash
+      grep -iE "error|traceback" /tmp/app.log | tail -n 15
+      ```
+
+      **O que procurar.** `NameError: name 'secrets' is not defined` ou `name 'abort' is not defined` indicam import faltando. `IndentationError` aponta a linha com recuo diferente: dentro de `alterar`, use 4 espaços antes de `esperado`.
+
+      **Se o seu próprio Salvar der Bad Request.** Falta o campo escondido no template, ou ele está fora do `<form>`. Abra o código-fonte da página (botão **abrir em nova aba** e Ctrl+U) e procure `csrf_token`.
+    concept: Token anti-CSRF por sessão (synchronizer token)
+    validatorRef: csrf/python-flask/synchronizer-token-[[ramo]]-v1
+    hints:
+      - level: 1
+        text: São quatro mudanças, em dois arquivos. O token nasce na função `ver`, vai para o template e volta no `POST`, onde `alterar` o confere.
+      - level: 2
+        text: 'O campo escondido precisa se chamar exatamente `csrf_token` e ficar dentro do `<form>`. A conferência usa `session.get("csrf_token")`.'
+      - level: 3
+        text: Copie os quatro trechos da tarefa sem mudar o recuo. As três linhas de conferência ficam no começo de `alterar`, com 4 espaços, antes do `try:`.
+    points: 40
+policy:
+  sequentialUnlock: true
+  allowStepRetry: true
+  persistProgressAcrossReset: true
+  allowSolutionReveal: false
+  finalPassingScore: 100

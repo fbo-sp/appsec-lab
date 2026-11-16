@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block conteudo %}
+<h1>Plantão de alarmes</h1>
+<p class="ajuda">Celular do plantonista que recebe por SMS os alarmes críticos da PCH Rio Claro (nível do reservatório, trip do gerador, falha de comporta).</p>
+<dl class="dados cartao">
+  <dt>Celular do plantão atual</dt><dd><span class="chave">{{ dados.celular_plantao }}</span></dd>
+</dl>
+
+<h2>Alterar celular do plantão</h2>
+<form method="post" action="{{ url_for('alarmes.alterar') }}" class="cartao">
+  <label>Celular do plantão <input name="celular_plantao" placeholder="+55, DDD e número, só dígitos" required></label>
+  <button type="submit">Salvar</button>
+</form>
+
+<h2>Histórico de alterações</h2>
+<table class="lista">
+  <tr><th>Quando</th><th>Antes</th><th>Depois</th></tr>
+  {% for h in historico %}
+  <tr><td>{{ h.quando }}</td><td>{{ h.valor_anterior }}</td><td>{{ h.valor_novo }}</td></tr>
+  {% endfor %}
+</table>
+{% endblock %}

@@ -57,11 +57,13 @@ def runtime() -> Iterator[tuple[Any, Any]]:
     from app.validation.docker_eval import DockerEvaluator
 
     rt = DockerRuntimeAdapter()
+    before = {owned.runtime_ref for owned in rt.list_owned()}  # não derruba sessões de outra pilha local
     try:
         yield rt, DockerEvaluator()
     finally:
         for owned in rt.list_owned():
-            rt.terminate(owned.runtime_ref)
+            if owned.runtime_ref not in before:
+                rt.terminate(owned.runtime_ref)
 
 
 def _lab(ramo: str) -> tuple[LabUnderTest, str]:
