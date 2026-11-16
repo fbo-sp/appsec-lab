@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block conteudo %}
+<h1>Painel antifraude</h1>
+<p class="ajuda">Últimos favorecidos cadastrados pelos clientes, para a análise de fraude feita pelos gerentes.</p>
+<table class="lista">
+  <thead><tr><th>Cadastrado por</th><th>Nome do favorecido</th><th>Chave PIX</th><th>Apelido</th></tr></thead>
+  <tbody>
+  {% for item, autor in recentes %}
+    {# Apelido pode ter formatação (negrito, ícones), então vai como HTML. #}
+    <tr><td>{{ autor }}</td><td>{{ item.nome }}</td><td>{{ item.detalhe }}</td><td>{{ item.nota|safe }}</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

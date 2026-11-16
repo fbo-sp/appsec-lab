@@ -269,7 +269,9 @@ def test_family_sectors_and_modules_are_accepted(manifest: dict[str, Any]) -> No
         ("family", "XSS Refletido"),
     ],
 )
-def test_invalid_family_sector_or_module_is_rejected(manifest: dict[str, Any], field: str, value: Any) -> None:
+def test_invalid_family_sector_or_module_is_rejected(
+    manifest: dict[str, Any], field: str, value: Any
+) -> None:
     manifest["metadata"][field] = value
     with pytest.raises(ManifestValidationError):
         validate_manifest(manifest)

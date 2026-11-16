@@ -84,3 +84,15 @@ labs:
     - version: 1.0.4
       published: 2026-11-15
       summary: Leitura do log usa grep da linha útil, por exemplo grep da mensagem "Executando", em vez de tail, porque os acessos GET / 200 no /tmp/app.log escondiam a linha.
+  LAB-005:
+    - version: 1.0.0
+      published: 2026-11-16
+      summary: Primeira versão (XSS refletido e armazenado, Banco Aurora Digital; família xss, ramo Financeiro).
+  LAB-006:
+    - version: 1.0.0
+      published: 2026-11-16
+      summary: Primeira versão (XSS refletido e armazenado, Rede Lumina Diagnósticos; família xss, ramo Saúde).
+  LAB-007:
+    - version: 1.0.0
+      published: 2026-11-16
+      summary: Primeira versão (XSS refletido e armazenado, Voltera Distribuidora de Energia; família xss, ramo Indústria e Energia).

@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block conteudo %}
+<h1>Fila de atendimento</h1>
+<p class="ajuda">Exames agendados pelos pacientes, com as observações para a equipe da coleta.</p>
+<table class="lista">
+  <thead><tr><th>Cadastrado por</th><th>Exame</th><th>Unidade</th><th>Observação para a coleta</th></tr></thead>
+  <tbody>
+  {% for item, autor in recentes %}
+    {# Observação para a coleta pode ter formatação (negrito, ícones), então vai como HTML. #}
+    <tr><td>{{ autor }}</td><td>{{ item.nome }}</td><td>{{ item.detalhe }}</td><td>{{ item.nota|safe }}</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

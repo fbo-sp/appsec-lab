@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
 # Constrói as imagens LOCAIS dos laboratórios e registra cada release apontando para o ID local da imagem.
 # Uso: scripts/lab-local.sh [API]   (padrão http://127.0.0.1:8000). Somente runtime Docker local (ADR-008).
-# LAB-001 a LAB-004 contêm vulnerabilidades INTENCIONAIS: rodam só na rede interna da sessão, nunca expostos.
+# Os labs LAB-001 em diante contêm vulnerabilidades INTENCIONAIS: rodam só na rede interna da sessão, nunca expostos.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 API="${1:-http://127.0.0.1:8000}"
-LABS=(LAB-000-hello-benign LAB-001-sqli-clinica LAB-002-idor-banco LAB-003-jwt-cartoes LAB-004-cmdi-industria)
+# Todos os diretórios laboratories/LAB-* (os gerados por família inclusive), em ordem.
+mapfile -t LABS < <(cd "$ROOT/laboratories" && ls -d LAB-*/ | tr -d /)
 # Base com o agente de workspace (arquivos + terminal). SKIP_BASE_BUILD=1 reaproveita uma base existente.
 if [ "${SKIP_BASE_BUILD:-0}" != 1 ]; then
   docker build -q -t cecyber-labs/base-python:local "$ROOT/laboratories/_base/python" >/dev/null

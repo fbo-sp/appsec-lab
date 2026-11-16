@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block conteudo %}
+<h1>Painel do Centro de Operação</h1>
+<p class="ajuda">Ordens de serviço abertas pelas equipes de campo, para despacho pelos operadores do Centro de Operação da Distribuição.</p>
+<table class="lista">
+  <thead><tr><th>Cadastrada por</th><th>Equipamento</th><th>Subestação</th><th>Relato do técnico</th></tr></thead>
+  <tbody>
+  {% for item, autor in recentes %}
+    {# Relato do técnico pode ter formatação (negrito, ícones), então vai como HTML. #}
+    <tr><td>{{ autor }}</td><td>{{ item.nome }}</td><td>{{ item.detalhe }}</td><td>{{ item.nota|safe }}</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

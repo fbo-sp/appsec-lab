@@ -746,6 +746,11 @@ _SUITES_LAB004: tuple[Suite, ...] = (
 
 _SUITES = _SUITES + _SUITES_LAB001 + _SUITES_LAB002 + _SUITES_LAB003 + _SUITES_LAB004
 
+# Famílias por ramo (ADR-021): importadas aqui, depois das classes, para entrar no mesmo registro.
+from app.validation.suites_familias import SUITES_FAMILIAS  # noqa: E402
+
+_SUITES = _SUITES + SUITES_FAMILIAS
+
 REGISTRY: dict[str, Suite] = {s.ref: s for s in _SUITES}
 
 

@@ -103,6 +103,22 @@ def _tutorial(manifests: list[dict], history: dict[str, list[dict]]) -> list[str
     return out
 
 
+SECTORS = {"financeiro": "Financeiro", "saude": "Saúde", "industria-energia": "Indústria e Energia"}
+MODULES = {"foundation": "Foundation", "trained": "Trained", "expert": "EXPERT", "master": "MASTER"}
+
+
+def _family_lines(meta: dict) -> list[str]:
+    """Família, ramo e módulo do curso (ADR-021), só quando o manifesto os declara."""
+    out = []
+    if meta.get("family"):
+        out.append(f"- Família: {meta['family']}")
+    if meta.get("sectors"):
+        out.append("- Ramo: " + ", ".join(SECTORS.get(s, s) for s in meta["sectors"]))
+    if meta.get("courseModules"):
+        out.append("- Módulo do curso: " + ", ".join(MODULES.get(c, c) for c in meta["courseModules"]))
+    return out
+
+
 def render() -> str:
     manifests, history = _load()
     public = [m for m in manifests if m["metadata"]["id"] not in TUTORIAL]
@@ -139,6 +155,7 @@ def render() -> str:
             f"- Linguagem / stack: {stacks}",
             f"- Nível: {DIFFICULTY.get(lr['difficulty'], lr['difficulty'])}"
             f" · duração estimada: {lr['estimatedMinutes']} min",
+            *_family_lines(md),
             "",
             "### Classificação",
             "",

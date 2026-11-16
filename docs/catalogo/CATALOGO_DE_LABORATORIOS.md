@@ -44,6 +44,9 @@ Indicado como primeira atividade de qualquer turma, antes do primeiro laboratór
 | LAB-002 | IDOR: o comprovante que não era seu | 1.0.4 | CWE-639 | A01 Broken Access Control (2025) | #4 CWE-862 Missing Authorization (2025) | Iniciante | 40 min |
 | LAB-003 | JWT: o token que ninguém conferiu | 1.0.3 | CWE-347 | A07 Authentication Failures (2025) | Não se enquadra; use o CWE (2025) | Iniciante | 45 min |
 | LAB-004 | Command Injection: o teste de rede que virou terminal | 1.0.4 | CWE-78 | A05 Injection (2025) | #9 CWE-78 OS Command Injection (2025) | Iniciante | 40 min |
+| LAB-005 | A1-FIN · XSS: a busca de favorecidos que rouba a sessão | 1.0.0 | CWE-79 | A05 Injection (2025) | #1 CWE-79 Cross-site Scripting (2025) | Iniciante | 40 min |
+| LAB-006 | A1-SAU · XSS: a busca de exames que rouba o acesso aos laudos | 1.0.0 | CWE-79 | A05 Injection (2025) | #1 CWE-79 Cross-site Scripting (2025) | Iniciante | 40 min |
+| LAB-007 | A1-IND · XSS: a ordem de serviço que executa no centro de operação | 1.0.0 | CWE-79 | A05 Injection (2025) | #1 CWE-79 Cross-site Scripting (2025) | Iniciante | 40 min |
 
 ## LAB-001 · SQL Injection: a busca que expõe pacientes
 
@@ -211,3 +214,123 @@ Indicado como primeira atividade de qualquer turma, antes do primeiro laboratór
 | 1.0.2 | 2026-11-15 | 2026-11-15 | obsoleta | Classificação OWASP e SANS CWE Top 25; referência do OWASP Top 10 atualizada para 2025. |
 | 1.0.3 | 2026-11-15 | 2026-11-15 | obsoleta | Texto das tarefas enxuto; leitura do log e solução de problemas em "Explorar mais"; ataque a repetir mostrado por extenso na etapa 5. |
 | 1.0.4 | 2026-11-15 | — | vigente | Leitura do log usa grep da linha útil, por exemplo grep da mensagem "Executando", em vez de tail, porque os acessos GET / 200 no /tmp/app.log escondiam a linha. |
+
+## LAB-005 · A1-FIN · XSS: a busca de favorecidos que rouba a sessão
+
+- Versão vigente: 1.0.0
+- Cenário: Internet Banking, telas "Meus favorecidos" e "Painel antifraude"
+- Papel do aluno: Desenvolvedor(a) do time de canais digitais do Banco Aurora Digital
+- Linguagem / stack: python / flask
+- Nível: Iniciante · duração estimada: 40 min
+- Família: xss
+- Ramo: Financeiro
+- Módulo do curso: Trained, MASTER
+
+### Classificação
+
+- CWE: CWE-79
+- OWASP Top 10 2025: A05 Injection
+- OWASP Top 10 2021: A03 Injection
+- SANS CWE Top 25 2025: #1 CWE-79 Cross-site Scripting
+- SANS CWE Top 25 2024: #1 CWE-79 Cross-site Scripting
+
+### Objetivos
+
+- Seguir o texto digitado pelo usuário desde o formulário até o HTML da resposta
+- Entender por que uma lista de bloqueio (remover <script>) não impede XSS
+- Demonstrar XSS refletido e armazenado lendo cookies sem HttpOnly, com dados fictícios
+- Corrigir a falha deixando o Jinja2 codificar a saída, sem quebrar a busca legítima
+
+### Etapas
+
+1. Conhecer a aplicação (10 pts)
+2. Testar a proteção do time (15 pts)
+3. Executar JavaScript pela busca (20 pts)
+4. Atingir a equipe com XSS armazenado (15 pts)
+5. Corrigir codificando a saída (40 pts)
+
+### Histórico de versões
+
+| Versão | Criada em | Obsoleta em | Situação | O que mudou |
+|---|---|---|---|---|
+| 1.0.0 | 2026-11-16 | — | vigente | Primeira versão (XSS refletido e armazenado, Banco Aurora Digital; família xss, ramo Financeiro). |
+
+## LAB-006 · A1-SAU · XSS: a busca de exames que rouba o acesso aos laudos
+
+- Versão vigente: 1.0.0
+- Cenário: Portal do Paciente, telas "Meus exames" e "Fila de atendimento"
+- Papel do aluno: Desenvolvedor(a) do time de produtos digitais da Rede Lumina Diagnósticos
+- Linguagem / stack: python / flask
+- Nível: Iniciante · duração estimada: 40 min
+- Família: xss
+- Ramo: Saúde
+- Módulo do curso: Trained, MASTER
+
+### Classificação
+
+- CWE: CWE-79
+- OWASP Top 10 2025: A05 Injection
+- OWASP Top 10 2021: A03 Injection
+- SANS CWE Top 25 2025: #1 CWE-79 Cross-site Scripting
+- SANS CWE Top 25 2024: #1 CWE-79 Cross-site Scripting
+
+### Objetivos
+
+- Seguir o texto digitado pelo usuário desde o formulário até o HTML da resposta
+- Entender por que uma lista de bloqueio (remover <script>) não impede XSS
+- Demonstrar XSS refletido e armazenado lendo cookies sem HttpOnly, com dados fictícios
+- Corrigir a falha deixando o Jinja2 codificar a saída, sem quebrar a busca legítima
+
+### Etapas
+
+1. Conhecer a aplicação (10 pts)
+2. Testar a proteção do time (15 pts)
+3. Executar JavaScript pela busca (20 pts)
+4. Atingir a equipe com XSS armazenado (15 pts)
+5. Corrigir codificando a saída (40 pts)
+
+### Histórico de versões
+
+| Versão | Criada em | Obsoleta em | Situação | O que mudou |
+|---|---|---|---|---|
+| 1.0.0 | 2026-11-16 | — | vigente | Primeira versão (XSS refletido e armazenado, Rede Lumina Diagnósticos; família xss, ramo Saúde). |
+
+## LAB-007 · A1-IND · XSS: a ordem de serviço que executa no centro de operação
+
+- Versão vigente: 1.0.0
+- Cenário: Portal de Chamados de Campo, telas "Minhas ordens" e "Painel do Centro de Operação"
+- Papel do aluno: Desenvolvedor(a) do time de sistemas de operação da Voltera Distribuidora de Energia
+- Linguagem / stack: python / flask
+- Nível: Iniciante · duração estimada: 40 min
+- Família: xss
+- Ramo: Indústria e Energia
+- Módulo do curso: Trained, MASTER
+
+### Classificação
+
+- CWE: CWE-79
+- OWASP Top 10 2025: A05 Injection
+- OWASP Top 10 2021: A03 Injection
+- SANS CWE Top 25 2025: #1 CWE-79 Cross-site Scripting
+- SANS CWE Top 25 2024: #1 CWE-79 Cross-site Scripting
+
+### Objetivos
+
+- Seguir o texto digitado pelo usuário desde o formulário até o HTML da resposta
+- Entender por que uma lista de bloqueio (remover <script>) não impede XSS
+- Demonstrar XSS refletido e armazenado lendo cookies sem HttpOnly, com dados fictícios
+- Corrigir a falha deixando o Jinja2 codificar a saída, sem quebrar a busca legítima
+
+### Etapas
+
+1. Conhecer a aplicação (10 pts)
+2. Testar a proteção do time (15 pts)
+3. Executar JavaScript pela busca (20 pts)
+4. Atingir a equipe com XSS armazenado (15 pts)
+5. Corrigir codificando a saída (40 pts)
+
+### Histórico de versões
+
+| Versão | Criada em | Obsoleta em | Situação | O que mudou |
+|---|---|---|---|---|
+| 1.0.0 | 2026-11-16 | — | vigente | Primeira versão (XSS refletido e armazenado, Voltera Distribuidora de Energia; família xss, ramo Indústria e Energia). |
