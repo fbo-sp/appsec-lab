@@ -1,0 +1,309 @@
+# LAB-015 (A3-SAU): upload irrestrito levando a XSS armazenado (CWE-434) no Portal de Agendamento da Clínica Sampaio (Flask + SQLite).
+# CONTÉM VULNERABILIDADE INTENCIONAL. Uso exclusivo no runtime Docker LOCAL (ADR-008), em rede
+# interna da sessão. Dados 100% fictícios (domínio .example). Família A3 upload (ADR-021): gerado por
+# scripts/gerar-familia.py a partir de laboratories/_familias/upload; não edite este arquivo à mão.
+#
+# ATENÇÃO: o digest abaixo é uma FIXTURE (sha256 de um texto fixo), não uma imagem publicada.
+# scripts/lab-local.sh e .ps1 trocam pela imagem construída localmente antes de registrar.
+apiVersion: labs.cecyber.io/v1alpha1
+kind: AppSecLab
+metadata:
+  id: LAB-015
+  version: 1.0.0
+  title: "A3-SAU · Upload: o pedido médico que virou página"
+  primaryCwe: CWE-434
+  secondaryCwes: [CWE-79]
+  family: upload
+  sectors: [saude]
+  courseModules: [foundation, trained]
+  classifications:
+    - framework: OWASP Top 10
+      edition: "2025"
+      entries:
+        - "A06 Insecure Design"
+        - "A05 Injection"
+    - framework: OWASP Top 10
+      edition: "2021"
+      entries:
+        - "A04 Insecure Design"
+        - "A03 Injection"
+    - framework: SANS CWE Top 25
+      edition: "2025"
+      entries:
+        - "#12 CWE-434 Unrestricted Upload of File with Dangerous Type"
+    - framework: SANS CWE Top 25
+      edition: "2024"
+      entries:
+        - "#10 CWE-434 Unrestricted Upload of File with Dangerous Type"
+learning:
+  singleVulnerability: true
+  estimatedMinutes: 45
+  difficulty: beginner
+  objectives:
+    - Entender por que confiar no tipo informado pelo navegador (Content-Type) não valida um arquivo
+    - Enviar um arquivo HTML disfarçado e ver a aplicação servi-lo como página na própria origem
+    - Reconhecer o impacto (XSS armazenado) de um upload servido como HTML para a equipe interna
+    - Corrigir validando o conteúdo pela assinatura do arquivo, renomeando e impedindo a interpretação como HTML
+  story:
+    role: Pessoa desenvolvedora do time de sistemas da Clínica Sampaio
+    application: Portal de Agendamento, onde o paciente anexa o pedido médico do exame
+    context: >-
+      Para agendar um exame, o paciente anexa a foto do pedido médico, e a recepção abre cada arquivo para conferir. A equipe de segurança alertou que o portal aceita qualquer arquivo pelo tipo informado no envio, sem olhar o conteúdo.
+    mission: Enviar um arquivo HTML disfarçado de imagem, ver a aplicação servi-lo como página e corrigir a validação
+  wrapUp:
+    text: |
+      Agora o servidor decide o tipo pelo **conteúdo** do arquivo, guarda-o com um nome próprio e manda o navegador não "adivinhar" o tipo. Um HTML disfarçado é recusado, e um arquivo salvo não vira página. Em um sistema real, vale reforçar:
+
+      - **Valide pelo conteúdo, nunca pelo que o cliente diz.** O `Content-Type` do envio e a extensão do nome vêm de quem envia. Cheque a assinatura (os primeiros bytes) e, quando possível, uma biblioteca que entenda o formato.
+      - **Tire o arquivo da origem da aplicação.** Servir anexos de outro domínio (ou de um bucket com `Content-Disposition: attachment` e `X-Content-Type-Options: nosniff`) faz o navegador baixar, não executar. Nomes gerados (um UUID) evitam ainda a troca/sobrescrita de arquivos.
+      - **Trate o upload como entrada hostil.** Limite tamanho e tipos, rode antivírus quando fizer sentido e isole o processamento. O arquivo é dado, não código.
+      - **XSS armazenado é o risco clássico.** Um HTML servido na sua origem roda com a sessão de quem o abre — aqui, a equipe interna. As mesmas defesas de XSS (origem separada, `nosniff`, CSP) valem para anexos.
+    references:
+      - title: "OWASP Cheat Sheet: File Upload"
+        url: https://cheatsheetseries.owasp.org/cheatsheets/File_Upload_Cheat_Sheet.html
+      - title: "OWASP Top 10:2025: A05 Injection"
+        url: https://top10.owasp.org/2025/A05_2025-Injection/
+      - title: "CWE-434: Unrestricted Upload of File with Dangerous Type"
+        url: https://cwe.mitre.org/data/definitions/434.html
+      - title: "MDN: X-Content-Type-Options"
+        url: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Content-Type-Options
+variants:
+  - id: python-flask
+    language: python
+    framework: flask
+    image: registry.local/labs/lab-015-upload@sha256:2ca32b4d8fcfb9fb6c39676eb843261f79ab995f7bfc5064b9e618f8329bb077
+    runtimeProfile: web-basic
+    workspacePath: /workspace
+    startup:
+      command: ["sh", "-c", "python -u -m flask --app app run --host 0.0.0.0 --port 8080 --reload --no-debugger 2>&1 | tee -a /tmp/app.log"]
+      port: 8080
+    resources:
+      cpuMillicores: 500
+      memoryMiB: 512
+      storageMiB: 256
+      pidsMax: 64
+    session:
+      ttlMinutes: 45
+      maxRenewals: 2
+    interfaces: [editor, terminal, web]
+steps:
+  - id: conhecer
+    order: 1
+    title: Conhecer o envio de pedidos médicos
+    explanation: |
+      Você é do time de sistemas da Clínica Sampaio. Pelo portal, os pacientes anexam a foto do pedido médico para agendar o exame, e a recepção abre cada arquivo para conferir. Um teste de invasão avisou que o portal decide se aceita um arquivo só pelo tipo que o navegador informa, sem olhar o conteúdo.
+
+      A tela **Enviar pedido médico** deixa o usuário anexar um pedido médico. Quem recebe os arquivos é a equipe interna (atendentes da recepção), na tela **Recepção de pedidos**, abrindo cada anexo pelo link.
+
+      Quando um arquivo é enviado, o navegador manda junto um **`Content-Type`** dizendo que tipo de arquivo seria aquele. O problema: esse rótulo é escrito por quem envia, não medido pelo servidor. Siga o envio pelas camadas:
+
+      1. **Controller** (`controllers/anexo_controller.py`): recebe o arquivo e, no fim, serve os anexos em `/anexos/<nome>`.
+      2. **Serviço** (`services/anexo_service.py`): decide se aceita o arquivo. **É aqui que está a decisão de segurança.**
+
+      As credenciais de teste deste laboratório são:
+
+      - Paciente Carla Ribeiro Nogueira: usuário `carla.ribeiro`, senha `Carla#Sampaio26`.
+      - Atendente Paula Freitas Lima (equipe): usuário `paula.freitas`, senha `Paula#Sampaio26`.
+    task: |
+      1. Na aba **Aplicação**, entre com `carla.ribeiro` e a senha `Carla#Sampaio26`.
+      2. Envie um arquivo qualquer que seja PDF, PNG ou JPEG de verdade: ele aparece na lista **Pedidos enviados**.
+      3. Na aba **Código**, abra `services/anexo_service.py` e leia o método `salvar`.
+
+      Informe abaixo o atributo do arquivo que o serviço usa para decidir se o tipo é permitido.
+    concept: Validação de upload pelo tipo que o cliente informa
+    validatorRef: upload/answer/campo-checado-sau-v1
+    hints:
+      - level: 1
+        text: 'A checagem é a linha `if arquivo.____ not in Config.TIPOS_PERMITIDOS`.'
+      - level: 2
+        text: É o tipo que o navegador informa no envio (Content-Type), um atributo do objeto `arquivo`.
+      - level: 3
+        text: O valor é `mimetype`.
+    points: 10
+  - id: forjar
+    order: 2
+    title: Enviar um HTML disfarçado de imagem
+    explanation: |
+      Como o serviço confia no `Content-Type` do envio, dá para mandar um arquivo HTML dizendo que ele é uma imagem. O navegador comum não deixa escolher o tipo, mas uma ferramenta de linha de comando deixa.
+
+      ```ilustracao
+      upload-tipo-informado
+      ```
+
+      O arquivo `amostras/comprovante.html` (já no workspace) parece um pedido médico, mas é uma página HTML. Você vai enviá-lo dizendo que é um `image/png`.
+    task: |
+      Na aba **Terminal**, primeiro entre como `carla.ribeiro` (guardando o cookie de sessão) e depois envie o arquivo forjado:
+
+      ```bash
+      curl -s --noproxy '*' -c /tmp/ck -d "login=carla.ribeiro&senha=Carla#Sampaio26" http://127.0.0.1:8080/login -o /dev/null
+      curl -s --noproxy '*' -b /tmp/ck -F "descricao=Comprovante" \
+        -F "arquivo=@/workspace/amostras/comprovante.html;type=image/png" \
+        http://127.0.0.1:8080/pedidos -o /dev/null -w "%{http_code}\n"
+      ```
+
+      O segundo comando responde `302` (envio aceito). Recarregue a aba **Aplicação**: o arquivo aparece na lista. Clique nele e repare que o endereço abre em `/anexos/...`.
+
+      Informe abaixo o caminho (começando em `/anexos/`) em que o arquivo forjado é servido.
+    explore: |
+      **Por que o `;type=image/png` importa.** Pela tela do navegador, o arquivo seria enviado como `text/html` e o serviço recusaria. O `curl` deixa você escrever o `Content-Type` à mão, e é só nesse rótulo que o serviço confia. O conteúdo continua sendo HTML.
+    concept: Content-Type forjado contorna a lista de tipos permitidos
+    validatorRef: upload/answer/caminho-servido-sau-v1
+    hints:
+      - level: 1
+        text: 'O nome do arquivo não muda: o serviço guarda com o nome que você enviou.'
+      - level: 2
+        text: O link na lista aponta para `/anexos/` seguido do nome do arquivo.
+      - level: 3
+        text: O valor é `/anexos/comprovante.html`.
+    points: 15
+  - id: executar
+    order: 3
+    title: Ver o arquivo ser servido como página
+    explanation: |
+      O arquivo guardado termina em `.html`, então, ao servi-lo, a aplicação responde com `Content-Type: text/html`. Para o navegador, isso não é um anexo para baixar: é uma **página da própria aplicação**, e o script dentro dela roda na origem do Portal de Agendamento.
+
+      > **Sobre esta demonstração.** O arquivo `comprovante.html` deste laboratório apenas comprova que o navegador o executou (ele escreve um aviso "XSS-OK" na página). Num sistema real, o mesmo furo permitiria a um script agir no lugar de quem abrisse o arquivo — por exemplo, a equipe interna que vê os anexos. Mantivemos a demonstração inofensiva de propósito, por restrições de segurança do ambiente — sem mudar a vulnerabilidade nem a forma de corrigi-la.
+    task: |
+      Na aba **Terminal**, veja com que tipo o servidor entrega o arquivo forjado:
+
+      ```bash
+      curl -s --noproxy '*' -b /tmp/ck -I http://127.0.0.1:8080/anexos/comprovante.html | grep -i content-type
+      ```
+
+      Para ver na prática: na aba **Aplicação**, abra o arquivo pela lista (ou, como a equipe, entre com `paula.freitas`/`Paula#Sampaio26` e abra-o na **Recepção de pedidos**). A página mostra a marca **XSS-OK**, prova de que o HTML enviado foi executado.
+
+      Informe abaixo o valor de `Content-Type` com que o servidor entrega o arquivo (só o tipo, sem o `charset`).
+    explore: |
+      **Por que isso é XSS armazenado.** O arquivo ficou guardado no servidor e é servido como página toda vez que alguém o abre. Quem mais abre os anexos é a equipe interna: o script rodaria com a sessão dela, dentro da origem da aplicação. Guardar e servir conteúdo enviado por terceiros como HTML é o caminho clássico de upload para XSS armazenado.
+    concept: Arquivo servido como text/html executa na origem da aplicação
+    validatorRef: upload/answer/tipo-servido-sau-v1
+    hints:
+      - level: 1
+        text: 'A linha do `curl -I` é `content-type: text/html; charset=utf-8`.'
+      - level: 2
+        text: Informe só o tipo, antes do ponto e vírgula.
+      - level: 3
+        text: O valor é `text/html`.
+    points: 15
+  - id: assinatura
+    order: 4
+    title: Saber como reconhecer o arquivo de verdade
+    explanation: |
+      A correção não é "proibir `.html`": a lista de proibidos nunca termina. O certo é validar pelo **conteúdo**: todo formato de arquivo começa com bytes fixos, a **assinatura** (ou *magic number*).
+
+      ```ilustracao
+      assinatura-arquivo
+      ```
+
+      Assim o servidor decide o tipo olhando os primeiros bytes, não o rótulo do cliente:
+
+      - **PDF** começa com os bytes `%PDF-`;
+      - **PNG** começa com `\x89PNG\r\n\x1a\n`;
+      - **JPEG** começa com `\xff\xd8\xff`.
+
+      Um HTML disfarçado não começa com nenhuma dessas assinaturas, então é recusado. Além disso, guardar o arquivo com um **nome próprio** (um UUID com a extensão certa) e mandar o navegador **não adivinhar** o tipo (`X-Content-Type-Options: nosniff`) fecham a brecha.
+    task: |
+      Veja o começo do arquivo forjado e de um PDF de verdade:
+
+      ```bash
+      head -c 16 /workspace/amostras/comprovante.html; echo
+      head -c 16 /workspace/amostras/documento.pdf; echo
+      ```
+
+      Informe abaixo a assinatura (os primeiros bytes, em texto) com que um arquivo PDF de verdade começa.
+    concept: Assinatura do arquivo (magic number) valida o conteúdo real
+    validatorRef: upload/answer/assinatura-pdf-sau-v1
+    hints:
+      - level: 1
+        text: O PDF de verdade começa com um sinal de porcentagem e três letras maiúsculas.
+      - level: 2
+        text: São quatro caracteres seguidos de um hífen.
+      - level: 3
+        text: O valor é `%PDF`.
+    points: 15
+  - id: corrigir
+    order: 5
+    title: Corrigir a validação do upload
+    explanation: |
+      **Por que a falha existe.** O serviço aceita o arquivo pelo `Content-Type` informado e o guarda com o nome original; um `.html` é então servido como página na origem da aplicação.
+
+      **A correção.** Validar pela assinatura do conteúdo, guardar com um nome gerado (UUID + a extensão certa) e, no download, mandar o navegador não adivinhar o tipo (`nosniff`). São duas mudanças: o serviço e o controller.
+    task: |
+      **1.** Abra `services/anexo_service.py`. Troque o topo dos imports:
+
+      ```python
+      import logging
+      import os
+
+      from werkzeug.datastructures import FileStorage
+      from werkzeug.utils import secure_filename
+      ```
+
+      por (acrescenta `uuid` e tira o `secure_filename`, que não será mais usado):
+
+      ```python
+      import logging
+      import os
+      import uuid
+
+      from werkzeug.datastructures import FileStorage
+      ```
+
+      **2.** No mesmo arquivo, troque o método `salvar` inteiro por este:
+
+      ```python
+          ASSINATURAS = {b"%PDF-": ".pdf", b"\x89PNG\r\n\x1a\n": ".png", b"\xff\xd8\xff": ".jpg"}
+
+          def salvar(self, dono_id: int, descricao: str, arquivo: FileStorage | None) -> str:
+              """Confere o conteúdo, grava com nome próprio e registra o envio. Devolve o nome gravado."""
+              if arquivo is None or not arquivo.filename:
+                  raise ValueError("Escolha um arquivo para enviar.")
+              cabecalho = arquivo.stream.read(8)
+              arquivo.stream.seek(0)
+              extensao = next((e for assinatura, e in self.ASSINATURAS.items() if cabecalho.startswith(assinatura)), None)
+              if extensao is None:
+                  raise ValueError("Envie um PDF, PNG ou JPEG de verdade.")
+              nome = uuid.uuid4().hex + extensao
+              arquivo.save(os.path.join(Config.PASTA_ANEXOS, nome))
+              self._repositorio.inserir(dono_id, descricao.strip()[:120], nome)
+              logger.info("Anexo recebido: dono=%s arquivo=%s", dono_id, nome)
+              return nome
+      ```
+
+      **3.** Abra `controllers/anexo_controller.py` e troque a função `baixar` por esta (acrescenta o cabeçalho `nosniff`):
+
+      ```python
+      @anexo_bp.get("/anexos/<nome>")
+      @login_obrigatorio
+      def baixar(nome: str):
+          """Entrega o arquivo guardado, sem deixar o navegador adivinhar o tipo."""
+          resposta = send_from_directory(Config.PASTA_ANEXOS, nome)
+          resposta.headers["X-Content-Type-Options"] = "nosniff"
+          return resposta
+      ```
+
+      Salve os dois arquivos com **Ctrl+S**. A aplicação reinicia e o banco volta ao estado inicial. Então clique em **Validar**.
+    explore: |
+      **Se algo não funcionar depois de salvar.** No **Terminal**:
+
+      ```bash
+      grep -iE "error|traceback" /tmp/app.log | tail -n 15
+      ```
+
+      **O que procurar.** `NameError: name 'uuid'` indica o import faltando; `NameError: name 'secure_filename'` indica que sobrou uma chamada à função que você removeu. `IndentationError` aponta a linha com recuo diferente: o método `salvar` fica com 4 espaços antes de `def`, e o `ASSINATURAS` no mesmo nível.
+    concept: Validação por assinatura, nome gerado e nosniff no download
+    validatorRef: upload/python-flask/file-upload-sau-v1
+    hints:
+      - level: 1
+        text: 'São duas mudanças, em dois arquivos: o método `salvar` (serviço) e a função `baixar` (controller).'
+      - level: 2
+        text: 'O `salvar` recusa o que não começa com uma assinatura conhecida e grava com `uuid4().hex` + extensão; o `baixar` acrescenta `X-Content-Type-Options: nosniff`.'
+      - level: 3
+        text: Copie os três trechos da tarefa sem mudar o recuo.
+    points: 45
+policy:
+  sequentialUnlock: true
+  allowStepRetry: true
+  persistProgressAcrossReset: true
+  allowSolutionReveal: false
+  finalPassingScore: 100

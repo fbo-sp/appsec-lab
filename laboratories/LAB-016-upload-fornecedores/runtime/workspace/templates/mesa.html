@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block conteudo %}
+<h1>Conferência de compras</h1>
+<p class="ajuda">Notas fiscais enviadas pelos fornecedores, para os compradores conferirem.</p>
+<table class="lista">
+  <tr><th>Enviado por</th><th>Descrição</th><th>Arquivo</th><th>Enviado em</th></tr>
+  {% for a in anexos %}
+  <tr><td>{{ a.dono }}</td><td>{{ a.descricao }}</td><td><a href="{{ url_for('anexo.baixar', nome=a.nome_arquivo) }}">{{ a.nome_arquivo }}</a></td><td>{{ a.enviado_em }}</td></tr>
+  {% endfor %}
+</table>
+{% endblock %}

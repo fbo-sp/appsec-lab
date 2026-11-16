@@ -10,10 +10,6 @@ from services.auth_service import AuthService
 
 auth_bp = Blueprint("auth", __name__)
 
-# Cookies que o front-end antigo lê com JavaScript, por isso SEM HttpOnly (veja "Explorar mais").
-COOKIE_CLIENTE = "[[cookie_cliente]]"  # [[segredo_cliente_desc]]
-COOKIE_EQUIPE = "[[cookie_staff]]"  # [[segredo_staff_desc]]
-
 
 def login_obrigatorio(rota):
     """Só deixa passar quem fez login. O id do usuário fica em ``session["usuario_id"]``."""
@@ -53,10 +49,7 @@ def entrar():
             session["usuario_nome"] = usuario.nome
             session["perfil"] = usuario.perfil
             destino = "mesa.listar" if usuario.eh_equipe else "anexo.enviar"
-            resposta = redirect(url_for(destino))
-            nome_cookie = COOKIE_EQUIPE if usuario.eh_equipe else COOKIE_CLIENTE
-            resposta.set_cookie(nome_cookie, usuario.segredo, httponly=False, samesite="Lax")
-            return resposta
+            return redirect(url_for(destino))
         erro = "Usuário ou senha inválidos."
     return render_template("login.html", erro=erro)
 
@@ -64,7 +57,4 @@ def entrar():
 @auth_bp.get("/sair")
 def sair():
     session.clear()
-    resposta = redirect(url_for("auth.entrar"))
-    resposta.delete_cookie(COOKIE_CLIENTE)
-    resposta.delete_cookie(COOKIE_EQUIPE)
-    return resposta
+    return redirect(url_for("auth.entrar"))

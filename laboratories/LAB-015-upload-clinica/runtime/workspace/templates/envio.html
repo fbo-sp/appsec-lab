@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block conteudo %}
+<h1>Enviar pedido médico</h1>
+<p class="ajuda">Anexe a foto ou o PDF do pedido médico (PDF, PNG ou JPEG) para agendar o exame.</p>
+<form method="post" enctype="multipart/form-data" class="cartao">
+  <label>Descrição <input name="descricao" placeholder="Ex.: pedido de hemograma" required></label>
+  <label>Arquivo (PDF, PNG ou JPEG, até 2 MB) <input name="arquivo" type="file" accept=".pdf,.png,.jpg,.jpeg" required></label>
+  {% if erro %}<p class="erro">{{ erro }}</p>{% endif %}
+  <button type="submit">Enviar</button>
+</form>
+
+<h2>Pedidos enviados</h2>
+<table class="lista">
+  <tr><th>Descrição</th><th>Arquivo</th><th>Enviado em</th></tr>
+  {% for a in anexos %}
+  <tr><td>{{ a.descricao }}</td><td><a href="{{ url_for('anexo.baixar', nome=a.nome_arquivo) }}" target="_blank">{{ a.nome_arquivo }}</a></td><td>{{ a.enviado_em }}</td></tr>
+  {% else %}
+  <tr><td colspan="3" class="vazio">Nenhum arquivo enviado ainda.</td></tr>
+  {% endfor %}
+</table>
+{% endblock %}

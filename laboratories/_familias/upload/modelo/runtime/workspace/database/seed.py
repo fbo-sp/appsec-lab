@@ -10,7 +10,7 @@ import sqlite3
 
 from werkzeug.security import generate_password_hash
 
-# (id, login, nome, perfil, senha, segredo do cookie da sessão no navegador)
+# (id, login, nome, perfil, senha)
 USUARIOS = [[py:seed_usuarios]]
 
 # (id do dono, descrição, nome do arquivo, enviado em). Os arquivos são cópias de amostras/documento.pdf.
@@ -28,8 +28,7 @@ def criar_banco(caminho: str, pasta_anexos: str) -> None:
         conexao.executescript(
             """
             CREATE TABLE usuarios (
-                id INTEGER PRIMARY KEY, login TEXT UNIQUE, nome TEXT, perfil TEXT,
-                senha_hash TEXT, segredo TEXT
+                id INTEGER PRIMARY KEY, login TEXT UNIQUE, nome TEXT, perfil TEXT, senha_hash TEXT
             );
             CREATE TABLE anexos (
                 id INTEGER PRIMARY KEY AUTOINCREMENT, dono_id INTEGER, descricao TEXT, nome_arquivo TEXT,
@@ -38,9 +37,8 @@ def criar_banco(caminho: str, pasta_anexos: str) -> None:
             """
         )
         conexao.executemany(
-            "INSERT INTO usuarios VALUES (?, ?, ?, ?, ?, ?)",
-            [(i, login, nome, perfil, generate_password_hash(senha), segredo)
-             for i, login, nome, perfil, senha, segredo in USUARIOS],
+            "INSERT INTO usuarios VALUES (?, ?, ?, ?, ?)",
+            [(i, login, nome, perfil, generate_password_hash(senha)) for i, login, nome, perfil, senha in USUARIOS],
         )
         conexao.executemany(
             "INSERT INTO anexos (dono_id, descricao, nome_arquivo, enviado_em) VALUES (?, ?, ?, ?)", ANEXOS

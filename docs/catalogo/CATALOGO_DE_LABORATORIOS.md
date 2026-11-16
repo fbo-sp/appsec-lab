@@ -53,6 +53,9 @@ Indicado como primeira atividade de qualquer turma, antes do primeiro laboratór
 | LAB-011 | A2-FIN · CSRF: a chave PIX trocada pelo e-mail de campanha | 1.0.0 | CWE-352 | A01 Broken Access Control (2025) | #3 CWE-352 Cross-Site Request Forgery (CSRF) (2025) | Iniciante | 40 min |
 | LAB-012 | A2-SAU · CSRF: o laudo que foi para o e-mail errado | 1.0.0 | CWE-352 | A01 Broken Access Control (2025) | #3 CWE-352 Cross-Site Request Forgery (CSRF) (2025) | Iniciante | 40 min |
 | LAB-013 | A2-IND · CSRF: o alarme da comporta que foi para outro celular | 1.0.0 | CWE-352 | A01 Broken Access Control (2025) | #3 CWE-352 Cross-Site Request Forgery (CSRF) (2025) | Iniciante | 40 min |
+| LAB-014 | A3-FIN · Upload: o comprovante de renda que virou página | 1.0.0 | CWE-434 | A06 Insecure Design (2025) | #12 CWE-434 Unrestricted Upload of File with Dangerous Type (2025) | Iniciante | 45 min |
+| LAB-015 | A3-SAU · Upload: o pedido médico que virou página | 1.0.0 | CWE-434 | A06 Insecure Design (2025) | #12 CWE-434 Unrestricted Upload of File with Dangerous Type (2025) | Iniciante | 45 min |
+| LAB-016 | A3-IND · Upload: a nota fiscal do fornecedor que virou página | 1.0.0 | CWE-434 | A06 Insecure Design (2025) | #12 CWE-434 Unrestricted Upload of File with Dangerous Type (2025) | Iniciante | 45 min |
 | LAB-017 | A4-FIN · Senhas: as senhas MD5 herdadas da fusão | 1.0.0 | CWE-916 | A04 Cryptographic Failures (2025) | Não se enquadra; use o CWE (2025) | Iniciante | 40 min |
 | LAB-018 | A4-SAU · Senhas: o portal do paciente com senhas em MD5 | 1.0.0 | CWE-916 | A04 Cryptographic Failures (2025) | Não se enquadra; use o CWE (2025) | Iniciante | 40 min |
 | LAB-019 | A4-IND · Senhas: o portal do colaborador com senhas em MD5 | 1.0.0 | CWE-916 | A04 Cryptographic Failures (2025) | Não se enquadra; use o CWE (2025) | Iniciante | 40 min |
@@ -589,6 +592,126 @@ Indicado como primeira atividade de qualquer turma, antes do primeiro laboratór
 | Versão | Criada em | Obsoleta em | Situação | O que mudou |
 |---|---|---|---|---|
 | 1.0.0 | 2026-11-16 | — | vigente | Primeira versão (CSRF na troca do celular do plantão de alarmes, Correnteza Geração; família csrf, ramo Indústria e Energia). |
+
+## LAB-014 · A3-FIN · Upload: o comprovante de renda que virou página
+
+- Versão vigente: 1.0.0
+- Cenário: portal Mesa de Crédito, onde o cooperado anexa comprovantes para análise
+- Papel do aluno: Pessoa desenvolvedora da squad de crédito da Cooperativa Credimova
+- Linguagem / stack: python / flask
+- Nível: Iniciante · duração estimada: 45 min
+- Família: upload
+- Ramo: Financeiro
+- Módulo do curso: Foundation, Trained
+
+### Classificação
+
+- CWE: CWE-434 (principal), CWE-79
+- OWASP Top 10 2025: A06 Insecure Design; A05 Injection
+- OWASP Top 10 2021: A04 Insecure Design; A03 Injection
+- SANS CWE Top 25 2025: #12 CWE-434 Unrestricted Upload of File with Dangerous Type
+- SANS CWE Top 25 2024: #10 CWE-434 Unrestricted Upload of File with Dangerous Type
+
+### Objetivos
+
+- Entender por que confiar no tipo informado pelo navegador (Content-Type) não valida um arquivo
+- Enviar um arquivo HTML disfarçado e ver a aplicação servi-lo como página na própria origem
+- Reconhecer o impacto (XSS armazenado) de um upload servido como HTML para a equipe interna
+- Corrigir validando o conteúdo pela assinatura do arquivo, renomeando e impedindo a interpretação como HTML
+
+### Etapas
+
+1. Conhecer o envio de comprovantes de renda (10 pts)
+2. Enviar um HTML disfarçado de imagem (15 pts)
+3. Ver o arquivo ser servido como página (15 pts)
+4. Saber como reconhecer o arquivo de verdade (15 pts)
+5. Corrigir a validação do upload (45 pts)
+
+### Histórico de versões
+
+| Versão | Criada em | Obsoleta em | Situação | O que mudou |
+|---|---|---|---|---|
+| 1.0.0 | 2026-11-16 | — | vigente | Primeira versão (upload irrestrito levando a XSS armazenado, Cooperativa Credimova; família upload, ramo Financeiro). |
+
+## LAB-015 · A3-SAU · Upload: o pedido médico que virou página
+
+- Versão vigente: 1.0.0
+- Cenário: Portal de Agendamento, onde o paciente anexa o pedido médico do exame
+- Papel do aluno: Pessoa desenvolvedora do time de sistemas da Clínica Sampaio
+- Linguagem / stack: python / flask
+- Nível: Iniciante · duração estimada: 45 min
+- Família: upload
+- Ramo: Saúde
+- Módulo do curso: Foundation, Trained
+
+### Classificação
+
+- CWE: CWE-434 (principal), CWE-79
+- OWASP Top 10 2025: A06 Insecure Design; A05 Injection
+- OWASP Top 10 2021: A04 Insecure Design; A03 Injection
+- SANS CWE Top 25 2025: #12 CWE-434 Unrestricted Upload of File with Dangerous Type
+- SANS CWE Top 25 2024: #10 CWE-434 Unrestricted Upload of File with Dangerous Type
+
+### Objetivos
+
+- Entender por que confiar no tipo informado pelo navegador (Content-Type) não valida um arquivo
+- Enviar um arquivo HTML disfarçado e ver a aplicação servi-lo como página na própria origem
+- Reconhecer o impacto (XSS armazenado) de um upload servido como HTML para a equipe interna
+- Corrigir validando o conteúdo pela assinatura do arquivo, renomeando e impedindo a interpretação como HTML
+
+### Etapas
+
+1. Conhecer o envio de pedidos médicos (10 pts)
+2. Enviar um HTML disfarçado de imagem (15 pts)
+3. Ver o arquivo ser servido como página (15 pts)
+4. Saber como reconhecer o arquivo de verdade (15 pts)
+5. Corrigir a validação do upload (45 pts)
+
+### Histórico de versões
+
+| Versão | Criada em | Obsoleta em | Situação | O que mudou |
+|---|---|---|---|---|
+| 1.0.0 | 2026-11-16 | — | vigente | Primeira versão (upload irrestrito levando a XSS armazenado, Clínica Sampaio; família upload, ramo Saúde). |
+
+## LAB-016 · A3-IND · Upload: a nota fiscal do fornecedor que virou página
+
+- Versão vigente: 1.0.0
+- Cenário: Portal de Fornecedores, onde o fornecedor anexa a nota fiscal do pedido
+- Papel do aluno: Pessoa desenvolvedora do time de compras da Siderúrgica Pindorama
+- Linguagem / stack: python / flask
+- Nível: Iniciante · duração estimada: 45 min
+- Família: upload
+- Ramo: Indústria e Energia
+- Módulo do curso: Foundation, Trained
+
+### Classificação
+
+- CWE: CWE-434 (principal), CWE-79
+- OWASP Top 10 2025: A06 Insecure Design; A05 Injection
+- OWASP Top 10 2021: A04 Insecure Design; A03 Injection
+- SANS CWE Top 25 2025: #12 CWE-434 Unrestricted Upload of File with Dangerous Type
+- SANS CWE Top 25 2024: #10 CWE-434 Unrestricted Upload of File with Dangerous Type
+
+### Objetivos
+
+- Entender por que confiar no tipo informado pelo navegador (Content-Type) não valida um arquivo
+- Enviar um arquivo HTML disfarçado e ver a aplicação servi-lo como página na própria origem
+- Reconhecer o impacto (XSS armazenado) de um upload servido como HTML para a equipe interna
+- Corrigir validando o conteúdo pela assinatura do arquivo, renomeando e impedindo a interpretação como HTML
+
+### Etapas
+
+1. Conhecer o envio de notas fiscais (10 pts)
+2. Enviar um HTML disfarçado de imagem (15 pts)
+3. Ver o arquivo ser servido como página (15 pts)
+4. Saber como reconhecer o arquivo de verdade (15 pts)
+5. Corrigir a validação do upload (45 pts)
+
+### Histórico de versões
+
+| Versão | Criada em | Obsoleta em | Situação | O que mudou |
+|---|---|---|---|---|
+| 1.0.0 | 2026-11-16 | — | vigente | Primeira versão (upload irrestrito levando a XSS armazenado, Siderúrgica Pindorama; família upload, ramo Indústria e Energia). |
 
 ## LAB-017 · A4-FIN · Senhas: as senhas MD5 herdadas da fusão
 

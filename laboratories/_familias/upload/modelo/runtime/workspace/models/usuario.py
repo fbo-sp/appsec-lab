@@ -8,8 +8,7 @@ class Usuario:
     id: int
     login: str
     nome: str
-    perfil: str  # "comum" ou "equipe" (equipe interna, com mais privilégios)
-    segredo: str
+    perfil: str  # "comum" ou "equipe" (equipe interna, que vê os anexos de todos)
 
     @property
     def eh_equipe(self) -> bool:

@@ -682,9 +682,134 @@ def _senha(r: SenhaRamo) -> tuple[Suite, ...]:
     )
 
 
+# --------------------------------------------------------------------------------------------------
+# A3 upload: upload irrestrito levando a XSS armazenado (LAB-014 a LAB-016)
+
+_PDF_DEMO = "%PDF-1.4\n%demonstracao\n1 0 obj\n<< >>\nendobj\n"  # PDF mínimo (assinatura %PDF)
+_HTML_FORJADO = "<!doctype html><title>comprovante</title><p>x</p>"  # começa com '<', nenhuma assinatura
+
+
+@dataclass(frozen=True, slots=True)
+class UploadRamo:
+    ramo: str
+    banco: str
+    rota: str
+    login_a: str
+    senha_a: str
+    msg_recebido: str  # trecho do flash de "recebido", confirma o envio aceito
+    anexo: str  # nome do anexo semeado, usado para checar o nosniff no download
+
+
+UPLOAD_RAMOS = (
+    UploadRamo("fin", "credimova", "comprovantes", "marcos.nunes", "Marcos#Cred26",
+               "Comprovante recebido", "comprovante-exemplo.pdf"),
+    UploadRamo("sau", "sampaio", "pedidos", "carla.ribeiro", "Carla#Sampaio26",
+               "Pedido médico recebido", "pedido-exemplo.pdf"),
+    UploadRamo("ind", "pindorama", "notas", "fornecedor.aco", "Fornec#Pind26",
+               "Nota fiscal recebida", "nota-exemplo.pdf"),
+)
+
+
+def _upload(r: UploadRamo) -> tuple[Suite, ...]:
+    rota = f"/{r.rota}"
+    db = f"/tmp/{r.banco}.db"  # noqa: S108 - banco da cópia efêmera do lab (ADR-008)
+
+    def envio(campo: str, filename: str, ctype: str, conteudo: str) -> dict[str, str]:
+        return {"field": "arquivo", "filename": filename, "content_type": ctype, "content": conteudo}
+
+    return (
+        AnswerSuite(
+            ref=f"upload/answer/campo-checado-{r.ramo}-v1",
+            version="1.0.0",
+            prompt="Atributo do arquivo que o serviço confere",
+            accepted=("mimetype", "arquivo.mimetype", "content-type", "content_type", "Content-Type"),
+            success_feedback="Isso. O serviço confia no tipo que o navegador informa, não no conteúdo.",
+            failure_feedback="Ainda não. Em services/anexo_service.py, veja o atributo na checagem de TIPOS_PERMITIDOS.",
+        ),
+        AnswerSuite(
+            ref=f"upload/answer/caminho-servido-{r.ramo}-v1",
+            version="1.0.0",
+            prompt="Caminho em que o arquivo forjado é servido",
+            accepted=("/anexos/comprovante.html", "anexos/comprovante.html", "comprovante.html"),
+            success_feedback="Isso. O arquivo foi guardado com o nome original e é servido em /anexos/.",
+            failure_feedback="Não é esse. Clique no arquivo na lista e veja o endereço que abre.",
+        ),
+        AnswerSuite(
+            ref=f"upload/answer/tipo-servido-{r.ramo}-v1",
+            version="1.0.0",
+            prompt="Content-Type com que o arquivo é servido",
+            accepted=("text/html", "text/html; charset=utf-8"),
+            success_feedback="Exato: servido como text/html, o navegador executa o arquivo como página.",
+            failure_feedback="Não é esse. Rode o curl -I e leia a linha content-type (só o tipo, antes do ';').",
+        ),
+        AnswerSuite(
+            ref=f"upload/answer/assinatura-pdf-{r.ramo}-v1",
+            version="1.0.0",
+            prompt="Assinatura com que um PDF começa",
+            accepted=("%PDF", "%PDF-", "25 50 44 46"),
+            success_feedback="Isso. Validar pela assinatura olha o conteúdo real, não o rótulo do cliente.",
+            failure_feedback="Ainda não. Veja o começo do documento.pdf com head -c 16; são quatro caracteres.",
+        ),
+        HttpSuite(
+            ref=f"upload/python-flask/file-upload-{r.ramo}-v1",
+            version="1.0.0",
+            logins=(HttpLogin(name="u", path="/login", form={"login": r.login_a, "senha": r.senha_a}),),
+            checks=(
+                HttpCheck(
+                    id="pdf-legitimo-aceito",
+                    description="Um PDF de verdade continua sendo aceito depois da correção.",
+                    path=rota,
+                    method="POST",
+                    as_user="u",
+                    form={"descricao": "Documento de teste"},
+                    multipart=envio("arquivo", "documento.pdf", "application/pdf", _PDF_DEMO),
+                    contains=(r.msg_recebido,),
+                ),
+                HttpCheck(
+                    id="html-forjado-recusado",
+                    description="Um HTML disfarçado de imagem é recusado (o conteúdo não é PDF/PNG/JPEG).",
+                    path=rota,
+                    method="POST",
+                    as_user="u",
+                    form={"descricao": "Comprovante"},
+                    multipart=envio("arquivo", "comprovante.html", "image/png", _HTML_FORJADO),
+                    expect_status=None,
+                    expect_status_in=(400,),
+                ),
+                HttpCheck(
+                    id="download-sem-sniff",
+                    description="O download manda o navegador não adivinhar o tipo (X-Content-Type-Options: nosniff).",
+                    path=f"/anexos/{r.anexo}",
+                    as_user="u",
+                    expect_headers={"X-Content-Type-Options": "nosniff"},
+                ),
+            ),
+            inspections=(
+                InspectCheck(
+                    id="sem-html-armazenado",
+                    description="Nenhum anexo guardado termina em .html: o HTML forjado foi recusado, não gravado.",
+                    db_path=db,
+                    query="SELECT id, nome_arquivo FROM anexos",
+                    min_rows=1,
+                    none_match=r"\.html$",
+                ),
+            ),
+            success_feedback=(
+                "Correção validada numa cópia isolada do seu workspace: um PDF de verdade é aceito, o HTML "
+                "forjado é recusado, nada é guardado como .html e o download vem com nosniff."
+            ),
+            failure_feedback=(
+                "Algumas verificações falharam. Confira cada item abaixo, ajuste o serviço ou o controller e "
+                "valide de novo."
+            ),
+        ),
+    )
+
+
 SUITES_FAMILIAS: tuple[Suite, ...] = (
     tuple(s for r in XSS_RAMOS for s in _xss(r))
     + tuple(s for r in MASSA_RAMOS for s in _massa(r))
     + tuple(s for r in CSRF_RAMOS for s in _csrf(r))
     + tuple(s for r in SENHA_RAMOS for s in _senha(r))
+    + tuple(s for r in UPLOAD_RAMOS for s in _upload(r))
 )

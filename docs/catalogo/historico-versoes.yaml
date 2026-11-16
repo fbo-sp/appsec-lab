@@ -120,6 +120,18 @@ labs:
     - version: 1.0.0
       published: 2026-11-16
       summary: Primeira versão (CSRF na troca do celular do plantão de alarmes, Correnteza Geração; família csrf, ramo Indústria e Energia).
+  LAB-014:
+    - version: 1.0.0
+      published: 2026-11-16
+      summary: Primeira versão (upload irrestrito levando a XSS armazenado, Cooperativa Credimova; família upload, ramo Financeiro).
+  LAB-015:
+    - version: 1.0.0
+      published: 2026-11-16
+      summary: Primeira versão (upload irrestrito levando a XSS armazenado, Clínica Sampaio; família upload, ramo Saúde).
+  LAB-016:
+    - version: 1.0.0
+      published: 2026-11-16
+      summary: Primeira versão (upload irrestrito levando a XSS armazenado, Siderúrgica Pindorama; família upload, ramo Indústria e Energia).
   LAB-017:
     - version: 1.0.0
       published: 2026-11-16
