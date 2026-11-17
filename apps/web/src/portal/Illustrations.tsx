@@ -494,6 +494,27 @@ const ILLUSTRATIONS: Record<string, { caption: string; body: () => ReactNode }> 
       />
     ),
   },
+  "trilha-auditoria": {
+    caption: "Registro e monitoramento: todo login, certo ou errado, deixa rastro com quem, de onde e quando, e nunca a senha.",
+    body: () => (
+      <Compare
+        bad={[
+          "Só o sucesso (hoje)",
+          <>
+            <span>O login certo grava {c("login_ok")}; a senha errada sai com {c("return None")} sem registrar.</span>
+            <span>Cem tentativas de adivinhação não deixam nenhuma linha para o monitoramento.</span>
+          </>,
+        ]}
+        good={[
+          "Sucesso e falha",
+          <>
+            <span>Todo caminho de falha grava {c("login_falhou")} com login, IP e hora.</span>
+            <span>A senha digitada nunca vai para a trilha; com as falhas registradas, dá para alertar.</span>
+          </>,
+        ]}
+      />
+    ),
+  },
   "bfla": {
     caption: "Autorização de função (BFLA): autenticar não é autorizar — cada função sensível confere o papel.",
     body: () => (

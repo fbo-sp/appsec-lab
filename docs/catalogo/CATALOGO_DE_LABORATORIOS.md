@@ -116,6 +116,9 @@ Indicado como primeira atividade de qualquer turma, antes do primeiro laboratór
 | LAB-074 | L7-FIN · Consumo de recursos: o extrato que derrubou a API no fechamento do mês | 1.0.0 | CWE-770 | A06 Insecure Design (2025) | #25 CWE-770 Allocation of Resources Without Limits or Throttling (2025) | Intermediário | 35 min |
 | LAB-075 | L7-SAU · Consumo de recursos: o histórico de atendimentos que travou o agendamento | 1.0.0 | CWE-770 | A06 Insecure Design (2025) | #25 CWE-770 Allocation of Resources Without Limits or Throttling (2025) | Intermediário | 35 min |
 | LAB-076 | L7-IND · Consumo de recursos: as leituras dos sensores que derrubaram o painel da usina | 1.0.0 | CWE-770 | A06 Insecure Design (2025) | #25 CWE-770 Allocation of Resources Without Limits or Throttling (2025) | Intermediário | 35 min |
+| LAB-077 | L2-FIN · Registro e monitoramento: as senhas erradas que ninguém viu | 1.0.0 | CWE-778 | A09 Security Logging and Alerting Failures (2025) | Não se enquadra; use o CWE (2025) | Intermediário | 35 min |
+| LAB-078 | L2-SAU · Registro e monitoramento: as senhas erradas que ninguém viu no portal do médico | 1.0.0 | CWE-778 | A09 Security Logging and Alerting Failures (2025) | Não se enquadra; use o CWE (2025) | Intermediário | 35 min |
+| LAB-079 | L2-IND · Registro e monitoramento: as senhas erradas que ninguém viu no portal de manobras | 1.0.0 | CWE-778 | A09 Security Logging and Alerting Failures (2025) | Não se enquadra; use o CWE (2025) | Intermediário | 35 min |
 
 ## LAB-001 · SQL Injection: a busca que expõe pacientes
 
@@ -3283,3 +3286,123 @@ Indicado como primeira atividade de qualquer turma, antes do primeiro laboratór
 | Versão | Criada em | Obsoleta em | Situação | O que mudou |
 |---|---|---|---|---|
 | 1.0.0 | 2026-11-17 | — | vigente | Primeira versão (API de leituras de sensores sem teto de página, Ventura Energia Eólica; família api-recursos, ramo Indústria e Energia). |
+
+## LAB-077 · L2-FIN · Registro e monitoramento: as senhas erradas que ninguém viu
+
+- Versão vigente: 1.0.0
+- Cenário: Portal do Corretor Maré Alta, onde os corretores emitem cotações, propostas e endossos de seguro auto e residencial
+- Papel do aluno: Pessoa desenvolvedora do time de canais digitais da Seguradora Maré Alta
+- Linguagem / stack: python / flask
+- Nível: Intermediário · duração estimada: 35 min
+- Família: log-auditoria
+- Ramo: Financeiro
+- Módulo do curso: Trained
+
+### Classificação
+
+- CWE: CWE-778 (principal), CWE-223
+- OWASP Top 10 2025: A09 Security Logging and Alerting Failures
+- OWASP Top 10 2021: A09 Security Logging and Monitoring Failures
+- SANS CWE Top 25 2025: Não se enquadra; use o CWE
+- SANS CWE Top 25 2024: Não se enquadra; use o CWE
+
+### Objetivos
+
+- Entender por que a trilha de auditoria é o que permite detectar e investigar um ataque
+- Mostrar que tentativas de login erradas hoje não deixam rastro
+- Saber o que um evento de segurança precisa conter (e o que nunca pode conter)
+- Corrigir registrando sucesso e falha do login, com login, IP e hora
+
+### Etapas
+
+1. Conhecer a trilha de auditoria (10 pts)
+2. Errar a senha e procurar o rastro (15 pts)
+3. Saber o que um evento precisa ter (15 pts)
+4. Encontrar onde a falha deixa de ser registrada (15 pts)
+5. Registrar sucesso e falha do login (45 pts)
+
+### Histórico de versões
+
+| Versão | Criada em | Obsoleta em | Situação | O que mudou |
+|---|---|---|---|---|
+| 1.0.0 | 2026-11-17 | — | vigente | Versão inicial (família L2 log-auditoria, ramo financeiro): login sem registro das falhas na trilha de auditoria. |
+
+## LAB-078 · L2-SAU · Registro e monitoramento: as senhas erradas que ninguém viu no portal do médico
+
+- Versão vigente: 1.0.0
+- Cenário: Sanare Prestador, onde médicos e clínicas credenciados pedem autorização de exames e consultam a elegibilidade dos beneficiários
+- Papel do aluno: Pessoa desenvolvedora do time de sistemas de rede credenciada da Operadora Sanare
+- Linguagem / stack: python / flask
+- Nível: Intermediário · duração estimada: 35 min
+- Família: log-auditoria
+- Ramo: Saúde
+- Módulo do curso: Trained
+
+### Classificação
+
+- CWE: CWE-778 (principal), CWE-223
+- OWASP Top 10 2025: A09 Security Logging and Alerting Failures
+- OWASP Top 10 2021: A09 Security Logging and Monitoring Failures
+- SANS CWE Top 25 2025: Não se enquadra; use o CWE
+- SANS CWE Top 25 2024: Não se enquadra; use o CWE
+
+### Objetivos
+
+- Entender por que a trilha de auditoria é o que permite detectar e investigar um ataque
+- Mostrar que tentativas de login erradas hoje não deixam rastro
+- Saber o que um evento de segurança precisa conter (e o que nunca pode conter)
+- Corrigir registrando sucesso e falha do login, com login, IP e hora
+
+### Etapas
+
+1. Conhecer a trilha de auditoria (10 pts)
+2. Errar a senha e procurar o rastro (15 pts)
+3. Saber o que um evento precisa ter (15 pts)
+4. Encontrar onde a falha deixa de ser registrada (15 pts)
+5. Registrar sucesso e falha do login (45 pts)
+
+### Histórico de versões
+
+| Versão | Criada em | Obsoleta em | Situação | O que mudou |
+|---|---|---|---|---|
+| 1.0.0 | 2026-11-17 | — | vigente | Versão inicial (família L2 log-auditoria, ramo saúde): login sem registro das falhas na trilha de auditoria. |
+
+## LAB-079 · L2-IND · Registro e monitoramento: as senhas erradas que ninguém viu no portal de manobras
+
+- Versão vigente: 1.0.0
+- Cenário: Luz do Vale Operação, onde os técnicos de campo e o centro de operação registram ordens de manobra na rede de distribuição
+- Papel do aluno: Pessoa desenvolvedora do time de sistemas de operação da Distribuidora Luz do Vale
+- Linguagem / stack: python / flask
+- Nível: Intermediário · duração estimada: 35 min
+- Família: log-auditoria
+- Ramo: Indústria e Energia
+- Módulo do curso: Trained
+
+### Classificação
+
+- CWE: CWE-778 (principal), CWE-223
+- OWASP Top 10 2025: A09 Security Logging and Alerting Failures
+- OWASP Top 10 2021: A09 Security Logging and Monitoring Failures
+- SANS CWE Top 25 2025: Não se enquadra; use o CWE
+- SANS CWE Top 25 2024: Não se enquadra; use o CWE
+
+### Objetivos
+
+- Entender por que a trilha de auditoria é o que permite detectar e investigar um ataque
+- Mostrar que tentativas de login erradas hoje não deixam rastro
+- Saber o que um evento de segurança precisa conter (e o que nunca pode conter)
+- Corrigir registrando sucesso e falha do login, com login, IP e hora
+
+### Etapas
+
+1. Conhecer a trilha de auditoria (10 pts)
+2. Errar a senha e procurar o rastro (15 pts)
+3. Saber o que um evento precisa ter (15 pts)
+4. Encontrar onde a falha deixa de ser registrada (15 pts)
+5. Registrar sucesso e falha do login (45 pts)
+
+### Histórico de versões
+
+| Versão | Criada em | Obsoleta em | Situação | O que mudou |
+|---|---|---|---|---|
+| 1.0.0 | 2026-11-17 | — | vigente | Versão inicial (família L2 log-auditoria, ramo indústria e energia): login sem registro das falhas na trilha de auditoria. |

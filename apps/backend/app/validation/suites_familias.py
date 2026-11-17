@@ -2765,6 +2765,133 @@ def _recursos(r: RecursosRamo) -> tuple[Suite, ...]:
     )
 
 
+# L2 log-auditoria: login sem registro das falhas (LAB-077 a LAB-079)
+
+
+@dataclass(frozen=True, slots=True)
+class AuditoriaRamo:
+    ramo: str
+    banco: str  # arquivo SQLite do lab (/tmp/<banco>.db)
+    login_a: str
+    senha_a: str
+
+
+AUDITORIA_RAMOS = (
+    AuditoriaRamo("fin", "portal_corretor", "patricia.moura", "Patricia#MareAlta26"),
+    AuditoriaRamo("sau", "sanare_prestador", "dra.helena.castro", "Helena#Sanare26"),
+    AuditoriaRamo("ind", "luz_do_vale_operacao", "marcos.teixeira", "Marcos#LuzDoVale26"),
+)
+
+# Senha errada FICTÍCIA que a suíte digita; ela não pode aparecer na trilha.
+_SENHA_ERRADA_SUITE = "Tentativa#Errada77"
+_LOGIN_INEXISTENTE_SUITE = "conta.que.nao.existe"
+
+
+def _auditoria(r: AuditoriaRamo) -> tuple[Suite, ...]:
+    banco = f"/tmp/{r.banco}.db"  # noqa: S108 - caminho do banco DENTRO do contêiner do lab
+    trilha = "SELECT id, evento || '|' || login || '|' || ip FROM auditoria"
+    return (
+        AnswerSuite(
+            ref=f"log-auditoria/answer/evento-{r.ramo}-v1",
+            version="1.0.0",
+            prompt="Evento que aparece na tabela do painel",
+            accepted=("login_ok", "login ok", "loginok"),
+            success_feedback="Isso. O login certo deixa o evento login_ok na trilha.",
+            failure_feedback="Ainda não. Copie o texto da coluna Evento da tabela do painel.",
+        ),
+        AnswerSuite(
+            ref=f"log-auditoria/answer/falhas-{r.ramo}-v1",
+            version="1.0.0",
+            prompt="Quantas tentativas com senha errada aparecem na tabela",
+            accepted=("0", "zero", "nenhuma", "nenhum"),
+            success_feedback="Exato: as tentativas erradas não deixaram rastro nenhum.",
+            failure_feedback="Ainda não. Conte as linhas da tabela que não são login_ok.",
+        ),
+        AnswerSuite(
+            ref=f"log-auditoria/answer/segredo-{r.ramo}-v1",
+            version="1.0.0",
+            prompt="Dado do formulário que nunca pode ir para a auditoria",
+            accepted=_com_variantes("senha", "a senha", "password", "senha digitada"),
+            success_feedback="Isso. Senha, certa ou errada, nunca vai para log nem auditoria.",
+            failure_feedback="Não é isso. O login pode ser registrado; pense no outro campo do formulário.",
+        ),
+        AnswerSuite(
+            ref=f"log-auditoria/answer/metodo-{r.ramo}-v1",
+            version="1.0.0",
+            prompt="Método que confere a senha e decide o que vai para a auditoria",
+            accepted=("autenticar", "autenticar()", "AuthService.autenticar"),
+            success_feedback="Isso. É em autenticar que a falha precisa ser registrada.",
+            failure_feedback="Ainda não. Veja o único método público de AuthService.",
+        ),
+        HttpSuite(
+            ref=f"log-auditoria/python-flask/auditoria-login-{r.ramo}-v1",
+            version="1.0.0",
+            logins=(HttpLogin(name="usuario", path="/login", form={"login": r.login_a, "senha": r.senha_a}),),
+            checks=(
+                HttpCheck(
+                    id="login-certo-continua",
+                    description="Quem entra com a senha certa continua chegando ao painel.",
+                    path="/painel",
+                    as_user="usuario",
+                    contains=("Atividade de segurança",),
+                ),
+                HttpCheck(
+                    id="senha-errada-recusada",
+                    description="A senha errada continua sendo recusada.",
+                    path="/login",
+                    method="POST",
+                    form={"login": r.login_a, "senha": _SENHA_ERRADA_SUITE},
+                    contains=("inválidos",),
+                ),
+                HttpCheck(
+                    id="login-inexistente-recusado",
+                    description="Um login que não existe continua sendo recusado.",
+                    path="/login",
+                    method="POST",
+                    form={"login": _LOGIN_INEXISTENTE_SUITE, "senha": _SENHA_ERRADA_SUITE},
+                    contains=("inválidos",),
+                ),
+            ),
+            inspections=(
+                InspectCheck(
+                    id="falha-registrada",
+                    description="A senha errada deixa um evento login_falhou com o login tentado.",
+                    db_path=banco,
+                    query=f"SELECT id, evento FROM auditoria WHERE login = '{r.login_a}' AND evento = 'login_falhou'",  # noqa: S608
+                ),
+                InspectCheck(
+                    id="login-inexistente-registrado",
+                    description="A tentativa com um login que não existe também é registrada.",
+                    db_path=banco,
+                    query="SELECT id, evento FROM auditoria WHERE login = 'conta.que.nao.existe' AND evento = 'login_falhou'",
+                ),
+                InspectCheck(
+                    id="sucesso-registrado",
+                    description="O login certo continua registrado como login_ok.",
+                    db_path=banco,
+                    query=f"SELECT id, evento FROM auditoria WHERE login = '{r.login_a}' AND evento = 'login_ok'",  # noqa: S608
+                ),
+                InspectCheck(
+                    id="sem-senha-na-trilha",
+                    description="Nenhuma senha, certa ou errada, aparece na trilha de auditoria.",
+                    db_path=banco,
+                    query=trilha,
+                    min_rows=1,
+                    none_match=f"{re.escape(_SENHA_ERRADA_SUITE)}|{re.escape(r.senha_a)}",
+                ),
+            ),
+            success_feedback=(
+                "Correção validada: o login certo e as tentativas erradas, inclusive de um login que não "
+                "existe, ficam na trilha com login e IP, e nenhuma senha é gravada."
+            ),
+            failure_feedback=(
+                "Algumas verificações falharam. Confira cada item abaixo e ajuste o método autenticar de "
+                "services/auth_service.py: registre login_falhou em todo caminho de falha, sem a senha."
+            ),
+        ),
+    )
+
+
 SUITES_FAMILIAS: tuple[Suite, ...] = (
     tuple(s for r in XSS_RAMOS for s in _xss(r))
     + tuple(s for r in MASSA_RAMOS for s in _massa(r))
@@ -2784,6 +2911,7 @@ SUITES_FAMILIAS: tuple[Suite, ...] = (
     + tuple(s for r in INVENTARIO_RAMOS for s in _inventario(r))
     + tuple(s for r in CONSUMO_RAMOS for s in _consumo(r))
     + tuple(s for r in RECURSOS_RAMOS for s in _recursos(r))
+    + tuple(s for r in AUDITORIA_RAMOS for s in _auditoria(r))
     + tuple(
         s
         for r in MOB_RAMOS

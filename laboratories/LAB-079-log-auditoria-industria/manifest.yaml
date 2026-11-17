@@ -1,0 +1,240 @@
+# LAB-079 (L2-IND): login sem trilha de auditoria das falhas (OWASP A09, CWE-778) no Luz do Vale Operação da Distribuidora Luz do Vale (Flask + SQLite).
+# CONTÉM VULNERABILIDADE INTENCIONAL. Uso exclusivo no runtime Docker LOCAL (ADR-008), em rede
+# interna da sessão. Dados 100% fictícios. Família L2 log-auditoria (ADR-021): gerado por
+# scripts/gerar-familia.py a partir de laboratories/_familias/log-auditoria; não edite este arquivo à mão.
+#
+# ATENÇÃO: o digest abaixo é uma FIXTURE (sha256 de um texto fixo), não uma imagem publicada.
+# scripts/lab-local.sh e .ps1 trocam pela imagem construída localmente antes de registrar.
+apiVersion: labs.cecyber.io/v1alpha1
+kind: AppSecLab
+metadata:
+  id: LAB-079
+  version: 1.0.0
+  title: "L2-IND · Registro e monitoramento: as senhas erradas que ninguém viu no portal de manobras"
+  primaryCwe: CWE-778
+  secondaryCwes: [CWE-223]
+  family: log-auditoria
+  sectors: [industria-energia]
+  courseModules: [trained]
+  classifications:
+    - framework: OWASP Top 10
+      edition: "2025"
+      entries:
+        - "A09 Security Logging and Alerting Failures"
+    - framework: OWASP Top 10
+      edition: "2021"
+      entries:
+        - "A09 Security Logging and Monitoring Failures"
+    - framework: SANS CWE Top 25
+      edition: "2025"
+      entries:
+        - "Não se enquadra; use o CWE"
+    - framework: SANS CWE Top 25
+      edition: "2024"
+      entries:
+        - "Não se enquadra; use o CWE"
+learning:
+  singleVulnerability: true
+  estimatedMinutes: 35
+  difficulty: intermediate
+  objectives:
+    - Entender por que a trilha de auditoria é o que permite detectar e investigar um ataque
+    - Mostrar que tentativas de login erradas hoje não deixam rastro
+    - Saber o que um evento de segurança precisa conter (e o que nunca pode conter)
+    - Corrigir registrando sucesso e falha do login, com login, IP e hora
+  story:
+    role: Pessoa desenvolvedora do time de sistemas de operação da Distribuidora Luz do Vale
+    application: Luz do Vale Operação, onde os técnicos de campo e o centro de operação registram ordens de manobra na rede de distribuição
+    context: >-
+      O centro de operação estranhou uma ordem de manobra criada fora do turno por uma conta de técnico. A segurança da informação pediu as tentativas de acesso àquela conta para saber se a senha foi adivinhada, e a trilha só mostra logins que deram certo.
+    mission: Mostrar que as tentativas erradas de login não deixam rastro e corrigir o serviço de autenticação para registrar sucesso e falha, sem nunca gravar a senha
+  wrapUp:
+    text: |
+      Agora toda tentativa de login, certa ou errada, deixa rastro na trilha de auditoria. Em um sistema real, vale reforçar:
+
+      - **Registre o que importa para investigar.** Login com sucesso e com falha, troca de senha, mudança de permissão, acesso negado e operações sensíveis, sempre com quem, de onde, quando e o resultado.
+      - **Nunca registre segredos.** Senha digitada, token, número completo de cartão e dados de saúde não vão para log nem auditoria. Um log com senhas vira um alvo tão valioso quanto o banco.
+      - **Log sem alerta não protege.** A OWASP 2025 renomeou o item para "Logging and Alerting": defina alertas, como muitas falhas na mesma conta ou do mesmo IP em poucos minutos, e alguém para recebê-los.
+      - **Proteja a trilha.** Envie para um repositório central (SIEM), com retenção definida e sem que a aplicação consiga apagar o que já gravou.
+    references:
+      - title: "OWASP Top 10:2025: A09 Security Logging and Alerting Failures"
+        url: https://top10.owasp.org/2025/A09_2025-Security_Logging_and_Alerting_Failures/
+      - title: "OWASP Top 10:2021: A09 Security Logging and Monitoring Failures"
+        url: https://owasp.org/Top10/A09_2021-Security_Logging_and_Monitoring_Failures/
+      - title: "CWE-778: Insufficient Logging"
+        url: https://cwe.mitre.org/data/definitions/778.html
+      - title: "OWASP Cheat Sheet: Logging"
+        url: https://cheatsheetseries.owasp.org/cheatsheets/Logging_Cheat_Sheet.html
+variants:
+  - id: python-flask
+    language: python
+    framework: flask
+    image: registry.local/labs/lab-079-log-auditoria@sha256:0bf62bd04e794f10a89e1e4d108ecd3c821670b0bf02c1ce33b73cf6ca46dfa8
+    runtimeProfile: web-basic
+    workspacePath: /workspace
+    startup:
+      command: ["sh", "-c", "python -u -m flask --app app run --host 0.0.0.0 --port 8080 --reload --no-debugger 2>&1 | tee -a /tmp/app.log"]
+      port: 8080
+    resources:
+      cpuMillicores: 500
+      memoryMiB: 512
+      storageMiB: 256
+      pidsMax: 64
+    session:
+      ttlMinutes: 45
+      maxRenewals: 2
+    interfaces: [editor, terminal, web]
+steps:
+  - id: conhecer
+    order: 1
+    title: Conhecer a trilha de auditoria
+    explanation: |
+      Você é do time de sistemas de operação da Distribuidora Luz do Vale. Na quarta-feira, às 3h12, uma ordem de manobra para abrir uma chave de alimentador foi criada pela conta do técnico Jair Monteiro, que estava de folga. O supervisor do centro de operação barrou a ordem a tempo. A segurança da informação pediu as tentativas de acesso à conta do Jair nos últimos dias, para saber se a senha foi adivinhada. A resposta da TI: a trilha só mostra os logins que deram certo.
+
+      A **trilha de auditoria** é o registro dos eventos de segurança: quem tentou entrar, de qual endereço, quando e com qual resultado. É com ela que o time de monitoramento percebe um ataque em andamento e, depois, reconstrói o que aconteceu. Quando um evento importante não é registrado, o ataque passa em silêncio: é a falha de **registro e monitoramento** (OWASP A09).
+
+      ```ilustracao
+      trilha-auditoria
+      ```
+
+      Siga o login pelas camadas:
+
+      1. **Controller** (`controllers/auth_controller.py`): recebe o formulário e passa login, senha e IP ao serviço.
+      2. **Serviço** (`services/auth_service.py`): confere a senha e decide o que registrar. **É aqui que falta registrar.**
+      3. **Repositório** (`repositories/auditoria_repository.py`): grava o evento na tabela `auditoria`.
+
+      As credenciais, neste laboratório, são:
+
+      - Técnico de campo: `marcos.teixeira`, senha `Marcos#LuzDoVale26` (Marcos Teixeira Brandão).
+    task: |
+      Na aba **Aplicação**, entre como `marcos.teixeira` / `Marcos#LuzDoVale26`. No painel, veja a tabela "Atividade de segurança da sua conta".
+
+      Informe abaixo o nome do evento que aparece na tabela.
+    concept: A trilha de auditoria registra os eventos de segurança
+    validatorRef: log-auditoria/answer/evento-ind-v1
+    hints:
+      - level: 1
+        text: Olhe a coluna "Evento" da tabela do painel.
+      - level: 2
+        text: É o evento de um login que deu certo.
+      - level: 3
+        text: A resposta é `login_ok`.
+    points: 10
+  - id: explorar
+    order: 2
+    title: Errar a senha e procurar o rastro
+    explanation: |
+      Um ataque de adivinhação testa muitas senhas numa conta. A primeira linha de defesa é perceber: muitas falhas seguidas na mesma conta, ou do mesmo endereço, é um sinal claro. Mas só dá para perceber o que foi registrado.
+    task: |
+      1. Clique em **Sair**.
+      2. Tente entrar como `marcos.teixeira` com uma senha errada (por exemplo, `teste123`), **três vezes**.
+      3. Entre de novo com a senha certa (`Marcos#LuzDoVale26`, da etapa 1) e veja a tabela do painel.
+
+      Informe abaixo quantas tentativas com senha errada aparecem na tabela.
+    explore: |
+      **Confira direto na trilha.** Pelo **Terminal**, consulte a tabela de auditoria do banco do lab:
+
+      ```bash
+      python -c "import sqlite3; print(*sqlite3.connect('/tmp/luz_do_vale_operacao.db').execute('SELECT * FROM auditoria'), sep='\n')"
+      ```
+
+      **O que procurar.** Só linhas `login_ok`. As três tentativas erradas não existem para o monitoramento: Sem esses registros, a segurança da informação não consegue dizer se a conta do técnico foi atacada, de onde vieram as tentativas, nem se outras contas estão na mira. Uma ordem de manobra indevida pode desligar alimentadores e deixar bairros inteiros sem energia, e a investigação começa no escuro.
+    concept: Tentativas erradas não deixam rastro na auditoria
+    validatorRef: log-auditoria/answer/falhas-ind-v1
+    hints:
+      - level: 1
+        text: Conte as linhas da tabela que não são `login_ok`.
+      - level: 2
+        text: Todas as linhas são de login certo.
+      - level: 3
+        text: A resposta é `0`.
+    points: 15
+  - id: conceito
+    order: 3
+    title: Saber o que um evento precisa ter
+    explanation: |
+      Um bom evento de segurança responde a quatro perguntas: **o quê** (evento e resultado), **quem** (login), **de onde** (IP) e **quando** (data e hora). E há uma regra que não se quebra: segredo não vai para registro. A senha digitada, mesmo errada, muitas vezes é a senha certa com um erro de digitação, ou a senha de outro sistema.
+    task: |
+      Que dado do formulário de login **nunca** pode ser gravado na trilha de auditoria nem no log?
+
+      Responda com uma palavra.
+    concept: Evento de segurança tem o quê, quem, de onde e quando, e nunca o segredo
+    validatorRef: log-auditoria/answer/segredo-ind-v1
+    hints:
+      - level: 1
+        text: O formulário tem dois campos.
+      - level: 2
+        text: O login pode ser registrado; o outro campo, não.
+      - level: 3
+        text: A resposta é `senha`.
+    points: 15
+  - id: onde
+    order: 4
+    title: Encontrar onde a falha deixa de ser registrada
+    explanation: |
+      Abra `services/auth_service.py`. O método de login só chama `self._auditoria.registrar` dentro do `if` da senha certa. Os dois caminhos de falha (login que não existe e senha errada) saem com `return None`, sem registrar nada.
+    task: |
+      Informe abaixo o nome do método que confere a senha e decide o que vai para a auditoria.
+    concept: O registro da falha pertence ao serviço de autenticação
+    validatorRef: log-auditoria/answer/metodo-ind-v1
+    hints:
+      - level: 1
+        text: A classe `AuthService` tem um único método público.
+      - level: 2
+        text: É o método que o controller chama ao receber o formulário.
+      - level: 3
+        text: A resposta é `autenticar`.
+    points: 15
+  - id: corrigir
+    order: 5
+    title: Registrar sucesso e falha do login
+    explanation: |
+      **Por que a falha existe.** `autenticar` só registra o login certo.
+
+      **A correção.** Registrar também a falha, com o evento `login_falhou`, o login tentado e o IP, e sem a senha. Um único ponto de saída para a falha deixa claro que todo caminho errado é registrado, inclusive o login que não existe (comum em ataques que testam listas de usuários).
+    task: |
+      Abra `services/auth_service.py` e troque o método `autenticar` inteiro por este:
+
+      ```python
+          def autenticar(self, login: str, senha: str, ip: str) -> Conta | None:
+              """Confere login e senha e registra o resultado na auditoria (nunca a senha)."""
+              login = login.strip().lower()
+              encontrado = self._contas.buscar_por_login(login)
+              if encontrado is not None and check_password_hash(encontrado[1], senha):
+                  self._auditoria.registrar("login_ok", login, ip)
+                  return encontrado[0]
+              self._auditoria.registrar("login_falhou", login, ip)
+              return None
+      ```
+
+      Salve com **Ctrl+S**. A aplicação reinicia (e a trilha volta ao início). Então:
+
+      1. erre a senha de `marcos.teixeira` algumas vezes e entre com a senha certa;
+      2. veja as linhas `login_falhou` e `login_ok` no painel;
+      3. clique em **Validar**.
+    explore: |
+      **O próximo passo: alertar.** Com as falhas registradas, o monitoramento pode criar uma regra como "5 `login_falhou` na mesma conta em 10 minutos". A família de tentativas de login (LAB-026 a LAB-028) mostra o bloqueio no próprio servidor.
+
+      **Se algo não funcionar depois de salvar.** No **Terminal**:
+
+      ```bash
+      grep -iE "error|traceback" /tmp/app.log | tail -n 15
+      ```
+
+      O `def autenticar` fica com 4 espaços; o corpo, com 8; as linhas dentro do `if`, com 12.
+    concept: Auditar sucesso e falha, com quem, de onde e quando, sem o segredo
+    validatorRef: log-auditoria/python-flask/auditoria-login-ind-v1
+    hints:
+      - level: 1
+        text: 'A mudança é só em `services/auth_service.py`, no método `autenticar`.'
+      - level: 2
+        text: Antes do `return None` final, registre o evento `login_falhou`.
+      - level: 3
+        text: Copie o método da tarefa sem mudar o recuo. O `def` fica com 4 espaços.
+    points: 45
+policy:
+  sequentialUnlock: true
+  allowStepRetry: true
+  persistProgressAcrossReset: true
+  allowSolutionReveal: false
+  finalPassingScore: 100
