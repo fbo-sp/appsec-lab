@@ -15,7 +15,7 @@ const TABS: { id: Tab; label: string }[] = [
 import { ErrorBox, StatusChip, go } from "./App";
 import { previewPathFrom } from "./previewPath";
 import { AddressHelp } from "./AddressHelp";
-import { useTema } from "./theme";
+import { useTemaEfetivo } from "./theme";
 
 const LIVE = new Set(["READY", "ACTIVE"]);
 const ENDED = new Set(["TERMINATED", "EXPIRED", "FAILED", "COMPLETED"]);
@@ -128,7 +128,7 @@ async function openAttackerSite(id: string) {
 }
 
 export function SessionView({ id }: { id: string }) {
-  const tema = useTema();
+  const tema = useTemaEfetivo();
   const [session, setSession] = useState<LabSession>();
   const [error, setError] = useState<string>();
   const [frames, setFrames] = useState<{

@@ -75,4 +75,4 @@ Labs com `variants[].platform: mobile` mantêm o layout padrão (etapas à esque
 
 ## Aparência da plataforma (ADR-026)
 
-O aluno escolhe a aparência no botão "Aparência" da barra superior: **Claro** (padrão), **Código escuro** (só o editor da aba Código fica escuro) ou **Tudo escuro** (portal e área de trabalho inteiros). A escolha fica salva no usuário (`GET/PUT /api/v1/me/preferences`) e vale em qualquer navegador. As aplicações dos laboratórios, inclusive a moldura de celular, não mudam com o tema.
+O aluno escolhe a aparência no botão "Aparência" da barra superior: **Automático** (padrão, segue o tema do sistema), **Claro**, **Código escuro** (só o editor da aba Código fica escuro) ou **Tudo escuro** (portal e área de trabalho inteiros). A escolha fica salva no usuário (`GET/PUT /api/v1/me/preferences`) e vale em qualquer navegador. As aplicações dos laboratórios, inclusive a moldura de celular, não mudam com o tema.

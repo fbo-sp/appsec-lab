@@ -15,8 +15,8 @@ from app.shared.errors import not_found
 
 router = APIRouter(prefix="/api/v1", tags=["preferences"])
 
-Theme = Literal["claro", "codigo", "escuro"]
-DEFAULT_THEME: Theme = "claro"
+Theme = Literal["auto", "claro", "codigo", "escuro"]
+DEFAULT_THEME: Theme = "auto"
 
 
 class PreferencesIn(BaseModel):

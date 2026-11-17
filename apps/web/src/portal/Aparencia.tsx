@@ -4,6 +4,7 @@ import { aplicarTema, isTema, TEMAS, useTema, type Tema } from "./theme";
 
 /** Miniatura do modo: faixa da esquerda = etapas/portal, direita = área de código. */
 const MINI: Record<Tema, [string, string]> = {
+  auto: ["#f3f5f8", "#12151c"],
   claro: ["#f3f5f8", "#ffffff"],
   codigo: ["#f3f5f8", "#161a22"],
   escuro: ["#12151c", "#1b2029"],
