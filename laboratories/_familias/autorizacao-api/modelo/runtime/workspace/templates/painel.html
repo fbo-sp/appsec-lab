@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block conteudo %}
+<h1>[[painel_titulo]]</h1>
+<p class="ajuda">[[painel_desc]]</p>
+
+<dl class="dados">
+  <dt>Titular</dt><dd>{{ conta.nome }}</dd>
+  <dt>Papel</dt><dd>{{ conta.papel }}</dd>
+</dl>
+
+<p class="ajuda">Área administrativa (só para o papel <code>admin</code>):
+  <a href="{{ url_for('painel.admin_usuarios') }}">listar todos os usuários</a>.</p>
+
+<p class="banner reforcado">Você está autenticado. Use <a href="{{ url_for('auth.sair') }}">Sair</a> para encerrar a sessão.</p>
+{% endblock %}

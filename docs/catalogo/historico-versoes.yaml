@@ -216,3 +216,15 @@ labs:
     - version: 1.0.0
       published: 2026-11-17
       summary: Primeira versão (loja confia no custo enviado pelo cliente, Voltera Distribuidora de Energia; família confianca-cliente, ramo Indústria e Energia).
+  LAB-038:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (API administrativa sem conferência de papel / BFLA, Banco Lumina; família autorizacao-api, ramo Financeiro).
+  LAB-039:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (API administrativa sem conferência de papel / BFLA, Hospital Santa Clara; família autorizacao-api, ramo Saúde).
+  LAB-040:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (API administrativa sem conferência de papel / BFLA, Petroquímica Horizonte; família autorizacao-api, ramo Indústria e Energia).

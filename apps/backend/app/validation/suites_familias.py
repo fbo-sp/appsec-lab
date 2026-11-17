@@ -1496,6 +1496,95 @@ def _confianca(r: ConfiancaRamo) -> tuple[Suite, ...]:
     )
 
 
+# A15 autorizacao-api: API administrativa sem conferência de papel / BFLA (LAB-038 a LAB-040)
+
+
+@dataclass(frozen=True, slots=True)
+class AutorizacaoRamo:
+    ramo: str
+    login_admin: str
+    senha_admin: str
+    login_a: str
+    senha_a: str
+
+
+AUTORIZACAO_RAMOS = (
+    AutorizacaoRamo("fin", "paula.couto", "Paula#Lumina26", "joao.mendes", "Joao#Lumina26"),
+    AutorizacaoRamo("sau", "sandra.rocha", "Sandra#SantaClara26", "pedro.alves", "Pedro#SantaClara26"),
+    AutorizacaoRamo("ind", "claudia.reis", "Claudia#Horizonte26", "felipe.gomes", "Felipe#Horizonte26"),
+)
+
+
+def _autorizacao(r: AutorizacaoRamo) -> tuple[Suite, ...]:
+    return (
+        AnswerSuite(
+            ref=f"autorizacao-api/answer/metodo-{r.ramo}-v1",
+            version="1.0.0",
+            prompt="Método que decide se o papel pode usar as funções administrativas",
+            accepted=("pode_administrar", "pode_administrar()"),
+            success_feedback="Isso. É em pode_administrar que deveria haver a conferência do papel.",
+            failure_feedback="Ainda não. Em services/permissao_service.py, veja o único método público.",
+        ),
+        AnswerSuite(
+            ref=f"autorizacao-api/answer/resultado-{r.ramo}-v1",
+            version="1.0.0",
+            prompt="O usuário comum conseguiu usar a API de admin ou foi barrado?",
+            accepted=("conseguiu", "consegue", "conseguiu usar", "acessou", "passou", "funcionou"),
+            success_feedback="Exato: sem conferência de papel, o usuário comum chamou a API de admin.",
+            failure_feedback="Não é isso. A lista de usuários voltou normalmente, mesmo para o comum.",
+        ),
+        AnswerSuite(
+            ref=f"autorizacao-api/answer/conceito-{r.ramo}-v1",
+            version="1.0.0",
+            prompt="Checagem que falta: não 'quem é o usuário', mas 'o que ele pode fazer'",
+            accepted=("autorização", "autorizacao", "autorização", "authorization"),
+            success_feedback="Isso. Falta a autorização: decidir o que o usuário pode fazer.",
+            failure_feedback="Ainda não. Começa com 'autor...' e é sobre permissão, não identidade.",
+        ),
+        AnswerSuite(
+            ref=f"autorizacao-api/answer/papel-{r.ramo}-v1",
+            version="1.0.0",
+            prompt="Papel exigido para usar a API administrativa",
+            accepted=("admin", "administrador", "papel admin", "administrator"),
+            success_feedback="Isso. Só o papel admin pode usar a função administrativa.",
+            failure_feedback="Ainda não. É o papel oposto de 'comum'.",
+        ),
+        HttpSuite(
+            ref=f"autorizacao-api/python-flask/autorizacao-funcao-{r.ramo}-v1",
+            version="1.0.0",
+            logins=(
+                HttpLogin(name="adm", path="/login", form={"login": r.login_admin, "senha": r.senha_admin}),
+                HttpLogin(name="comum", path="/login", form={"login": r.login_a, "senha": r.senha_a}),
+            ),
+            checks=(
+                HttpCheck(
+                    id="admin-liberado",
+                    description="O administrador continua conseguindo listar os usuários.",
+                    path="/api/admin/usuarios",
+                    as_user="adm",
+                    contains=("usuarios",),
+                ),
+                HttpCheck(
+                    id="comum-bloqueado",
+                    description="O usuário comum é barrado (403) ao chamar a API administrativa.",
+                    path="/api/admin/usuarios",
+                    as_user="comum",
+                    expect_status=403,
+                    contains=("negado",),
+                ),
+            ),
+            success_feedback=(
+                "Correção validada: o administrador continua usando a API, e o usuário comum recebe "
+                "acesso negado — a função agora confere o papel no servidor."
+            ),
+            failure_feedback=(
+                "Algumas verificações falharam. Confira cada item abaixo, ajuste "
+                "services/permissao_service.py e valide de novo. Só o papel admin pode usar a função."
+            ),
+        ),
+    )
+
+
 SUITES_FAMILIAS: tuple[Suite, ...] = (
     tuple(s for r in XSS_RAMOS for s in _xss(r))
     + tuple(s for r in MASSA_RAMOS for s in _massa(r))
@@ -1508,4 +1597,5 @@ SUITES_FAMILIAS: tuple[Suite, ...] = (
     + tuple(s for r in CORS_RAMOS for s in _cors(r))
     + tuple(s for r in PATH_RAMOS for s in _path(r))
     + tuple(s for r in CONFIANCA_RAMOS for s in _confianca(r))
+    + tuple(s for r in AUTORIZACAO_RAMOS for s in _autorizacao(r))
 )

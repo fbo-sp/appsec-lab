@@ -410,6 +410,27 @@ const ILLUSTRATIONS: Record<string, { caption: string; body: () => ReactNode }> 
       />
     ),
   },
+  "bfla": {
+    caption: "Autorização de função (BFLA): autenticar não é autorizar — cada função sensível confere o papel.",
+    body: () => (
+      <Compare
+        bad={[
+          "Só exige login (hoje)",
+          <>
+            <span>A API de admin só checa {c("login_obrigatorio")}: qualquer logado passa.</span>
+            <span>Um usuário comum chama {c("/api/admin/usuarios")} direto e recebe a lista toda.</span>
+          </>,
+        ]}
+        good={[
+          "Confere o papel na função",
+          <>
+            <span>Antes de executar, exige {c('papel == "admin"')}; o comum recebe 403.</span>
+            <span>O papel vem da sessão (do banco), não de um campo do pedido.</span>
+          </>,
+        ]}
+      />
+    ),
+  },
   "confianca-cliente": {
     caption: "Não confie em dado que o cliente controla e que o servidor pode determinar sozinho.",
     body: () => (

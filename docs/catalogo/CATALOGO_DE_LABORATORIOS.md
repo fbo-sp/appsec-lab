@@ -77,6 +77,9 @@ Indicado como primeira atividade de qualquer turma, antes do primeiro laboratór
 | LAB-035 | A10-FIN · Confiança no cliente: a loja que confia no preço do cliente | 1.0.0 | CWE-602 | A06 Insecure Design (2025) | Não se enquadra; use o CWE (2025) | Intermediário | 35 min |
 | LAB-036 | A10-SAU · Confiança no cliente: a loja que confia no preço do cliente | 1.0.0 | CWE-602 | A06 Insecure Design (2025) | Não se enquadra; use o CWE (2025) | Intermediário | 35 min |
 | LAB-037 | A10-IND · Confiança no cliente: a loja que confia no preço do cliente | 1.0.0 | CWE-602 | A06 Insecure Design (2025) | Não se enquadra; use o CWE (2025) | Intermediário | 35 min |
+| LAB-038 | A15-FIN · Autorização de função: a API de admin aberta para todos | 1.0.0 | CWE-862 | A01 Broken Access Control (2025) | #4 CWE-862 Missing Authorization (2025) | Intermediário | 35 min |
+| LAB-039 | A15-SAU · Autorização de função: a API de admin aberta para todos | 1.0.0 | CWE-862 | A01 Broken Access Control (2025) | #4 CWE-862 Missing Authorization (2025) | Intermediário | 35 min |
+| LAB-040 | A15-IND · Autorização de função: a API de admin aberta para todos | 1.0.0 | CWE-862 | A01 Broken Access Control (2025) | #4 CWE-862 Missing Authorization (2025) | Intermediário | 35 min |
 
 ## LAB-001 · SQL Injection: a busca que expõe pacientes
 
@@ -1588,3 +1591,126 @@ Indicado como primeira atividade de qualquer turma, antes do primeiro laboratór
 | Versão | Criada em | Obsoleta em | Situação | O que mudou |
 |---|---|---|---|---|
 | 1.0.0 | 2026-11-17 | — | vigente | Primeira versão (loja confia no custo enviado pelo cliente, Voltera Distribuidora de Energia; família confianca-cliente, ramo Indústria e Energia). |
+
+## LAB-038 · A15-FIN · Autorização de função: a API de admin aberta para todos
+
+- Versão vigente: 1.0.0
+- Cenário: Console Interno, onde funcionários acessam, conforme o papel, as funções de atendimento e as administrativas
+- Papel do aluno: Pessoa desenvolvedora do time de backoffice do Banco Lumina
+- Linguagem / stack: python / flask
+- Nível: Intermediário · duração estimada: 35 min
+- Família: autorizacao-api
+- Ramo: Financeiro
+- Módulo do curso: Trained
+
+### Classificação
+
+- CWE: CWE-862 (principal), CWE-863
+- OWASP Top 10 2025: A01 Broken Access Control
+- OWASP Top 10 2021: A01 Broken Access Control
+- OWASP API Security Top 10 2023: API5 Broken Function Level Authorization
+- SANS CWE Top 25 2025: #4 CWE-862 Missing Authorization
+- SANS CWE Top 25 2024: #9 CWE-862 Missing Authorization
+
+### Objetivos
+
+- Distinguir autenticação (quem é) de autorização (o que pode fazer)
+- Explorar a falha chamando a API administrativa como um usuário comum
+- Reconhecer que cada função sensível precisa conferir o papel do usuário
+- Corrigir exigindo o papel admin antes de executar a função
+
+### Etapas
+
+1. Conhecer a API administrativa e os papéis (10 pts)
+2. Chamar a API de admin como usuário comum (15 pts)
+3. Separar autenticação de autorização (15 pts)
+4. Nomear o que precisa ser conferido (15 pts)
+5. Exigir o papel admin no serviço de permissão (45 pts)
+
+### Histórico de versões
+
+| Versão | Criada em | Obsoleta em | Situação | O que mudou |
+|---|---|---|---|---|
+| 1.0.0 | 2026-11-17 | — | vigente | Primeira versão (API administrativa sem conferência de papel / BFLA, Banco Lumina; família autorizacao-api, ramo Financeiro). |
+
+## LAB-039 · A15-SAU · Autorização de função: a API de admin aberta para todos
+
+- Versão vigente: 1.0.0
+- Cenário: Console Interno, onde a equipe acessa, conforme o papel, as funções de atendimento e as administrativas
+- Papel do aluno: Pessoa desenvolvedora do time de sistemas do Hospital Santa Clara
+- Linguagem / stack: python / flask
+- Nível: Intermediário · duração estimada: 35 min
+- Família: autorizacao-api
+- Ramo: Saúde
+- Módulo do curso: Trained
+
+### Classificação
+
+- CWE: CWE-862 (principal), CWE-863
+- OWASP Top 10 2025: A01 Broken Access Control
+- OWASP Top 10 2021: A01 Broken Access Control
+- OWASP API Security Top 10 2023: API5 Broken Function Level Authorization
+- SANS CWE Top 25 2025: #4 CWE-862 Missing Authorization
+- SANS CWE Top 25 2024: #9 CWE-862 Missing Authorization
+
+### Objetivos
+
+- Distinguir autenticação (quem é) de autorização (o que pode fazer)
+- Explorar a falha chamando a API administrativa como um usuário comum
+- Reconhecer que cada função sensível precisa conferir o papel do usuário
+- Corrigir exigindo o papel admin antes de executar a função
+
+### Etapas
+
+1. Conhecer a API administrativa e os papéis (10 pts)
+2. Chamar a API de admin como usuário comum (15 pts)
+3. Separar autenticação de autorização (15 pts)
+4. Nomear o que precisa ser conferido (15 pts)
+5. Exigir o papel admin no serviço de permissão (45 pts)
+
+### Histórico de versões
+
+| Versão | Criada em | Obsoleta em | Situação | O que mudou |
+|---|---|---|---|---|
+| 1.0.0 | 2026-11-17 | — | vigente | Primeira versão (API administrativa sem conferência de papel / BFLA, Hospital Santa Clara; família autorizacao-api, ramo Saúde). |
+
+## LAB-040 · A15-IND · Autorização de função: a API de admin aberta para todos
+
+- Versão vigente: 1.0.0
+- Cenário: Console Interno, onde a equipe acessa, conforme o papel, as funções operacionais e as administrativas
+- Papel do aluno: Pessoa desenvolvedora do time digital da Petroquímica Horizonte
+- Linguagem / stack: python / flask
+- Nível: Intermediário · duração estimada: 35 min
+- Família: autorizacao-api
+- Ramo: Indústria e Energia
+- Módulo do curso: Trained
+
+### Classificação
+
+- CWE: CWE-862 (principal), CWE-863
+- OWASP Top 10 2025: A01 Broken Access Control
+- OWASP Top 10 2021: A01 Broken Access Control
+- OWASP API Security Top 10 2023: API5 Broken Function Level Authorization
+- SANS CWE Top 25 2025: #4 CWE-862 Missing Authorization
+- SANS CWE Top 25 2024: #9 CWE-862 Missing Authorization
+
+### Objetivos
+
+- Distinguir autenticação (quem é) de autorização (o que pode fazer)
+- Explorar a falha chamando a API administrativa como um usuário comum
+- Reconhecer que cada função sensível precisa conferir o papel do usuário
+- Corrigir exigindo o papel admin antes de executar a função
+
+### Etapas
+
+1. Conhecer a API administrativa e os papéis (10 pts)
+2. Chamar a API de admin como usuário comum (15 pts)
+3. Separar autenticação de autorização (15 pts)
+4. Nomear o que precisa ser conferido (15 pts)
+5. Exigir o papel admin no serviço de permissão (45 pts)
+
+### Histórico de versões
+
+| Versão | Criada em | Obsoleta em | Situação | O que mudou |
+|---|---|---|---|---|
+| 1.0.0 | 2026-11-17 | — | vigente | Primeira versão (API administrativa sem conferência de papel / BFLA, Petroquímica Horizonte; família autorizacao-api, ramo Indústria e Energia). |
