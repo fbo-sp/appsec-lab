@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block conteudo %}
+<h1>Portal de Ordens</h1>
+<p class="ajuda">Consulte suas ordens de serviço pela API GraphQL.</p>
+
+<dl class="dados">
+  <dt>Titular</dt><dd>{{ conta.nome }}</dd>
+  <dt>Usuário</dt><dd>{{ conta.login }}</dd>
+</dl>
+
+<p class="ajuda">Os pedidos são consultados pela API <code>POST /graphql</code>, com um corpo JSON como
+  <code>{"query": "{ pedido(id: 1) { descricao valor } }", "variables": {"id": 1}}</code>.</p>
+
+<p class="banner reforcado">Você está autenticado como {{ conta.nome }}. Use <a href="{{ url_for('auth.sair') }}">Sair</a> para encerrar a sessão.</p>
+{% endblock %}

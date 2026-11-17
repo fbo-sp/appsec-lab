@@ -252,3 +252,15 @@ labs:
     - version: 1.0.0
       published: 2026-11-17
       summary: Primeira versão (injeção de LDAP na busca do diretório, Aurora Energia; família ldap-injection, ramo Indústria e Energia).
+  LAB-047:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (BOLA em API GraphQL de pedidos, Fintech Pagomais; família graphql-bola, ramo Financeiro).
+  LAB-048:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (BOLA em API GraphQL de pedidos, Clínica Lumen; família graphql-bola, ramo Saúde).
+  LAB-049:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (BOLA em API GraphQL de pedidos, Aurora Energia; família graphql-bola, ramo Indústria e Energia).

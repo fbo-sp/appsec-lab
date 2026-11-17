@@ -536,6 +536,27 @@ const ILLUSTRATIONS: Record<string, { caption: string; body: () => ReactNode }> 
       />
     ),
   },
+  "graphql-bola": {
+    caption: "BOLA: a API confere o login, mas devolve o objeto pelo id sem checar o dono — troque o id e leia o de outro.",
+    body: () => (
+      <Compare
+        bad={[
+          "Resolve só pelo id (o que tem hoje)",
+          <>
+            <span>{c("pedido(id: 2)")} devolve o objeto mesmo que ele seja de outro usuário.</span>
+            <span>Logado como o dono do {c("id 1")}, um laço de {c("id = 1, 2, 3…")} baixa os objetos de todos.</span>
+          </>,
+        ]}
+        good={[
+          "Confere o dono de cada objeto",
+          <>
+            <span>O resolver compara {c("pedido.dono_id")} com o usuário logado antes de devolver.</span>
+            <span>Objeto de outro dono: {c("acesso negado")}. Estar logado não basta; cada objeto checa o dono.</span>
+          </>,
+        ]}
+      />
+    ),
+  },
   "ldap-injection": {
     caption: "Injeção de LDAP: o nome entra cru no filtro, então um * vira curinga e lista o diretório inteiro.",
     body: () => (

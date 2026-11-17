@@ -1677,6 +1677,124 @@ def _erros(r: ErrosRamo) -> tuple[Suite, ...]:
     )
 
 
+# A17 graphql-bola: resolver GraphQL que devolve o objeto sem conferir o dono / BOLA (LAB-047 a LAB-049)
+
+
+@dataclass(frozen=True, slots=True)
+class GraphqlRamo:
+    ramo: str
+    login_a: str  # dono do pedido de id 1
+    senha_a: str
+    trecho_proprio: str  # trecho da descrição do pedido 1 (do usuário logado)
+    trecho_outro: str  # trecho da descrição do pedido 2 (de OUTRO usuário); só vaza se houver BOLA
+
+
+GRAPHQL_RAMOS = (
+    GraphqlRamo("fin", "ana.ribeiro", "Ana#Pagomais26", "Vale Insumos", "Norte Logistica"),
+    GraphqlRamo("sau", "marcos.tavares", "Marcos#Lumen26", "hemograma completo", "ressonancia de joelho"),
+    GraphqlRamo("ind", "diego.campos", "Diego#Aurora26", "bomba 4", "turbina 2"),
+)
+
+
+def _graphql(r: GraphqlRamo) -> tuple[Suite, ...]:
+    return (
+        AnswerSuite(
+            ref=f"graphql-bola/answer/metodo-{r.ramo}-v1",
+            version="1.0.0",
+            prompt="Método que resolve o pedido na API GraphQL",
+            accepted=("resolver", "resolver()"),
+            success_feedback="Isso. É em resolver que falta conferir o dono do pedido.",
+            failure_feedback="Ainda não. Em services/pedido_service.py, veja o único método público da classe.",
+        ),
+        AnswerSuite(
+            ref=f"graphql-bola/answer/comportamento-{r.ramo}-v1",
+            version="1.0.0",
+            prompt="Pedindo o id de outro usuário, a API devolve o pedido ou nega?",
+            accepted=(
+                "devolve",
+                "devolve o pedido",
+                "devolve o pedido de outro",
+                "devolve de outro",
+                "devolveu",
+                "entrega",
+                "retorna",
+                "mostra",
+            ),
+            success_feedback="Exato: sem conferir o dono, a API devolve o pedido de outro usuário.",
+            failure_feedback="Não é isso. Peça o id 2 logado como o dono do id 1 e veja a descrição de outro voltar.",
+        ),
+        AnswerSuite(
+            ref=f"graphql-bola/answer/defesa-{r.ramo}-v1",
+            version="1.0.0",
+            prompt="O resolver precisa conferir o quê do pedido antes de devolvê-lo",
+            accepted=(
+                "dono",
+                "o dono",
+                "o dono do pedido",
+                "dono do pedido",
+                "proprietário",
+                "proprietario",
+                "o proprietário",
+                "o proprietario",
+                "titular",
+                "o titular",
+            ),
+            success_feedback="Isso. O resolver precisa conferir se o dono do pedido é o usuário logado.",
+            failure_feedback="Ainda não. É quem o pedido pertence (a coluna dono_id).",
+        ),
+        AnswerSuite(
+            ref=f"graphql-bola/answer/onde-{r.ramo}-v1",
+            version="1.0.0",
+            prompt="Estar logado já garante, sozinho, que você só vê os seus pedidos?",
+            accepted=(
+                "não",
+                "nao",
+                "não garante",
+                "nao garante",
+                "não basta",
+                "nao basta",
+                "não, não basta",
+            ),
+            success_feedback="Isso. Login diz quem você é; não diz a quais objetos você tem direito.",
+            failure_feedback="Ainda não. Você estava logado e mesmo assim leu o pedido de outro.",
+        ),
+        HttpSuite(
+            ref=f"graphql-bola/python-flask/resolver-protegido-{r.ramo}-v1",
+            version="1.0.0",
+            logins=(HttpLogin(name="a", path="/login", form={"login": r.login_a, "senha": r.senha_a}),),
+            checks=(
+                HttpCheck(
+                    id="proprio-ok",
+                    description="Pedir o próprio pedido (id 1) continua funcionando depois da correção.",
+                    path="/graphql",
+                    method="POST",
+                    as_user="a",
+                    json={"query": "{ pedido(id: 1) { descricao valor } }", "variables": {"id": 1}},
+                    contains=(r.trecho_proprio,),
+                ),
+                HttpCheck(
+                    id="de-outro-negado",
+                    description="Pedir o pedido de outro usuário (id 2) é negado, sem vazar a descrição.",
+                    path="/graphql",
+                    method="POST",
+                    as_user="a",
+                    json={"query": "{ pedido(id: 2) { descricao valor } }", "variables": {"id": 2}},
+                    contains=("acesso negado",),
+                    not_contains=(r.trecho_outro,),
+                ),
+            ),
+            success_feedback=(
+                "Correção validada: você continua lendo o seu pedido, e o pedido de outro usuário é "
+                "negado — o resolver agora confere o dono de cada objeto."
+            ),
+            failure_feedback=(
+                "Algumas verificações falharam. Confira cada item abaixo, ajuste services/pedido_service.py "
+                "e valide de novo. O resolver deve comparar o dono do pedido com o usuário logado."
+            ),
+        ),
+    )
+
+
 # A18 ldap-injection: busca que junta o nome cru no filtro LDAP / injeção (LAB-044 a LAB-046)
 
 
@@ -1814,4 +1932,5 @@ SUITES_FAMILIAS: tuple[Suite, ...] = (
     + tuple(s for r in AUTORIZACAO_RAMOS for s in _autorizacao(r))
     + tuple(s for r in ERROS_RAMOS for s in _erros(r))
     + tuple(s for r in LDAP_RAMOS for s in _ldap(r))
+    + tuple(s for r in GRAPHQL_RAMOS for s in _graphql(r))
 )

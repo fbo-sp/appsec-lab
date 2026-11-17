@@ -86,6 +86,9 @@ Indicado como primeira atividade de qualquer turma, antes do primeiro laboratór
 | LAB-044 | A18-FIN · Injeção de LDAP: a busca que lista o diretório inteiro | 1.0.0 | CWE-90 | A05 Injection (2025) | Não se enquadra; use o CWE (2025) | Intermediário | 35 min |
 | LAB-045 | A18-SAU · Injeção de LDAP: a busca que lista o diretório inteiro | 1.0.0 | CWE-90 | A05 Injection (2025) | Não se enquadra; use o CWE (2025) | Intermediário | 35 min |
 | LAB-046 | A18-IND · Injeção de LDAP: a busca que lista o diretório inteiro | 1.0.0 | CWE-90 | A05 Injection (2025) | Não se enquadra; use o CWE (2025) | Intermediário | 35 min |
+| LAB-047 | A17-FIN · BOLA em GraphQL: o pedido de qualquer um, só trocando o id | 1.0.0 | CWE-639 | A01 Broken Access Control (2025) | Não se enquadra; use o CWE (2025) | Intermediário | 35 min |
+| LAB-048 | A17-SAU · BOLA em GraphQL: o pedido de qualquer um, só trocando o id | 1.0.0 | CWE-639 | A01 Broken Access Control (2025) | Não se enquadra; use o CWE (2025) | Intermediário | 35 min |
+| LAB-049 | A17-IND · BOLA em GraphQL: o pedido de qualquer um, só trocando o id | 1.0.0 | CWE-639 | A01 Broken Access Control (2025) | Não se enquadra; use o CWE (2025) | Intermediário | 35 min |
 
 ## LAB-001 · SQL Injection: a busca que expõe pacientes
 
@@ -1963,3 +1966,126 @@ Indicado como primeira atividade de qualquer turma, antes do primeiro laboratór
 | Versão | Criada em | Obsoleta em | Situação | O que mudou |
 |---|---|---|---|---|
 | 1.0.0 | 2026-11-17 | — | vigente | Primeira versão (injeção de LDAP na busca do diretório, Aurora Energia; família ldap-injection, ramo Indústria e Energia). |
+
+## LAB-047 · A17-FIN · BOLA em GraphQL: o pedido de qualquer um, só trocando o id
+
+- Versão vigente: 1.0.0
+- Cenário: Portal de Pagamentos, onde o cliente consulta seus pagamentos por uma API GraphQL
+- Papel do aluno: Pessoa desenvolvedora do time de API da fintech Pagomais
+- Linguagem / stack: python / flask
+- Nível: Intermediário · duração estimada: 35 min
+- Família: graphql-bola
+- Ramo: Financeiro
+- Módulo do curso: Trained
+
+### Classificação
+
+- CWE: CWE-639 (principal), CWE-285, CWE-862
+- OWASP Top 10 2025: A01 Broken Access Control
+- OWASP Top 10 2021: A01 Broken Access Control
+- OWASP API Security Top 10 2023: API1 Broken Object Level Authorization
+- SANS CWE Top 25 2025: Não se enquadra; use o CWE
+- SANS CWE Top 25 2024: Não se enquadra; use o CWE
+
+### Objetivos
+
+- Entender que BOLA é a autorização por objeto quebrada, mesmo com o usuário autenticado
+- Explorar a falha pedindo, pela API GraphQL, o objeto de outro usuário só trocando o id
+- Reconhecer que o resolver precisa conferir o dono de cada objeto, não só se há login
+- Corrigir o resolver conferindo que o objeto pertence ao usuário logado
+
+### Etapas
+
+1. Conhecer a API GraphQL e achar o resolver do pedido (10 pts)
+2. Pedir o pedido de outro usuário só trocando o id (15 pts)
+3. Nomear o que o resolver precisa conferir (15 pts)
+4. Separar estar logado de ter direito ao objeto (15 pts)
+5. Conferir o dono do pedido no resolver (45 pts)
+
+### Histórico de versões
+
+| Versão | Criada em | Obsoleta em | Situação | O que mudou |
+|---|---|---|---|---|
+| 1.0.0 | 2026-11-17 | — | vigente | Primeira versão (BOLA em API GraphQL de pedidos, Fintech Pagomais; família graphql-bola, ramo Financeiro). |
+
+## LAB-048 · A17-SAU · BOLA em GraphQL: o pedido de qualquer um, só trocando o id
+
+- Versão vigente: 1.0.0
+- Cenário: Portal de Exames, onde o paciente consulta seus pedidos de exame por uma API GraphQL
+- Papel do aluno: Pessoa desenvolvedora do time de API da Clínica Lumen
+- Linguagem / stack: python / flask
+- Nível: Intermediário · duração estimada: 35 min
+- Família: graphql-bola
+- Ramo: Saúde
+- Módulo do curso: Trained
+
+### Classificação
+
+- CWE: CWE-639 (principal), CWE-285, CWE-862
+- OWASP Top 10 2025: A01 Broken Access Control
+- OWASP Top 10 2021: A01 Broken Access Control
+- OWASP API Security Top 10 2023: API1 Broken Object Level Authorization
+- SANS CWE Top 25 2025: Não se enquadra; use o CWE
+- SANS CWE Top 25 2024: Não se enquadra; use o CWE
+
+### Objetivos
+
+- Entender que BOLA é a autorização por objeto quebrada, mesmo com o usuário autenticado
+- Explorar a falha pedindo, pela API GraphQL, o objeto de outro usuário só trocando o id
+- Reconhecer que o resolver precisa conferir o dono de cada objeto, não só se há login
+- Corrigir o resolver conferindo que o objeto pertence ao usuário logado
+
+### Etapas
+
+1. Conhecer a API GraphQL e achar o resolver do pedido (10 pts)
+2. Pedir o pedido de outro usuário só trocando o id (15 pts)
+3. Nomear o que o resolver precisa conferir (15 pts)
+4. Separar estar logado de ter direito ao objeto (15 pts)
+5. Conferir o dono do pedido no resolver (45 pts)
+
+### Histórico de versões
+
+| Versão | Criada em | Obsoleta em | Situação | O que mudou |
+|---|---|---|---|---|
+| 1.0.0 | 2026-11-17 | — | vigente | Primeira versão (BOLA em API GraphQL de pedidos, Clínica Lumen; família graphql-bola, ramo Saúde). |
+
+## LAB-049 · A17-IND · BOLA em GraphQL: o pedido de qualquer um, só trocando o id
+
+- Versão vigente: 1.0.0
+- Cenário: Portal de Ordens, onde o operador consulta suas ordens de serviço por uma API GraphQL
+- Papel do aluno: Pessoa desenvolvedora do time de API da Aurora Energia
+- Linguagem / stack: python / flask
+- Nível: Intermediário · duração estimada: 35 min
+- Família: graphql-bola
+- Ramo: Indústria e Energia
+- Módulo do curso: Trained
+
+### Classificação
+
+- CWE: CWE-639 (principal), CWE-285, CWE-862
+- OWASP Top 10 2025: A01 Broken Access Control
+- OWASP Top 10 2021: A01 Broken Access Control
+- OWASP API Security Top 10 2023: API1 Broken Object Level Authorization
+- SANS CWE Top 25 2025: Não se enquadra; use o CWE
+- SANS CWE Top 25 2024: Não se enquadra; use o CWE
+
+### Objetivos
+
+- Entender que BOLA é a autorização por objeto quebrada, mesmo com o usuário autenticado
+- Explorar a falha pedindo, pela API GraphQL, o objeto de outro usuário só trocando o id
+- Reconhecer que o resolver precisa conferir o dono de cada objeto, não só se há login
+- Corrigir o resolver conferindo que o objeto pertence ao usuário logado
+
+### Etapas
+
+1. Conhecer a API GraphQL e achar o resolver do pedido (10 pts)
+2. Pedir o pedido de outro usuário só trocando o id (15 pts)
+3. Nomear o que o resolver precisa conferir (15 pts)
+4. Separar estar logado de ter direito ao objeto (15 pts)
+5. Conferir o dono do pedido no resolver (45 pts)
+
+### Histórico de versões
+
+| Versão | Criada em | Obsoleta em | Situação | O que mudou |
+|---|---|---|---|---|
+| 1.0.0 | 2026-11-17 | — | vigente | Primeira versão (BOLA em API GraphQL de pedidos, Aurora Energia; família graphql-bola, ramo Indústria e Energia). |
