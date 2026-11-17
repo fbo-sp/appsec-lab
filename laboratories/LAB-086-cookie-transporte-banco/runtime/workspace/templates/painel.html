@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block conteudo %}
+<h1>Meu cartão</h1>
+<p class="ajuda">Fatura atual e compras recentes do seu cartão.</p>
+
+<dl class="dados">
+  <dt>Titular</dt><dd>{{ conta.nome }}</dd>
+</dl>
+
+<h2>Compras recentes</h2>
+<table class="lista">
+  <tr><th>Data</th><th>Descrição</th><th>Valor</th></tr>
+  {% for data, descricao, valor in itens %}
+  <tr><td>{{ data }}</td><td>{{ descricao }}</td><td>{{ valor }}</td></tr>
+  {% endfor %}
+</table>
+
+<p class="banner reforcado">Use <a href="{{ url_for('auth.sair') }}">Sair</a> para encerrar a sessão.</p>
+{% endblock %}

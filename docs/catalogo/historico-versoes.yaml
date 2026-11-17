@@ -408,3 +408,15 @@ labs:
     - version: 1.0.0
       published: 2026-11-17
       summary: "Versão inicial (família L4 pacote-assinatura, ramo indústria e energia): parâmetros de linha aplicados sem conferir a assinatura HMAC."
+  LAB-086:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: "Versão inicial (família L3 cookie-transporte, ramo financeiro): cookie de sessão sem Secure, HttpOnly e SameSite e sem HSTS."
+  LAB-087:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: "Versão inicial (família L3 cookie-transporte, ramo saúde): cookie de sessão sem Secure, HttpOnly e SameSite e sem HSTS."
+  LAB-088:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: "Versão inicial (família L3 cookie-transporte, ramo indústria e energia): cookie de sessão sem Secure, HttpOnly e SameSite e sem HSTS."

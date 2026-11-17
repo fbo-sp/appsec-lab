@@ -15,6 +15,8 @@ ausente), o espelho de ``not_contains`` para cabeçalhos.
 ADR-023: ``expect_headers`` exige trechos em cabeçalhos da resposta; ``capture`` guarda um valor do corpo
 (regex com um grupo) para as verificações seguintes, que o usam como ``{{nome}}``; ``multipart`` envia um
 arquivo. Variável ausente ou captura sem casamento => a verificação falha (fail closed).
+ADR-027: ``no_redirect`` lê a resposta 3xx em si (status e cabeçalhos, como ``Set-Cookie`` do login), sem
+seguir o ``Location``.
 """
 
 from __future__ import annotations
@@ -69,10 +71,19 @@ def _multipart(fields: dict[str, Any], file: dict[str, Any]) -> tuple[bytes, str
     return out, f"multipart/form-data; boundary={boundary}"
 
 
+class _NoRedirect(urllib.request.HTTPRedirectHandler):
+    """Não segue redirecionamentos: a resposta 3xx chega como HTTPError, com status e cabeçalhos."""
+
+    def redirect_request(self, *args: Any, **kwargs: Any) -> None:
+        return None
+
+
 class _Client:
     def __init__(self) -> None:
-        self.opener = urllib.request.build_opener(
-            urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar())
+        jar = http.cookiejar.CookieJar()
+        self.opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(jar))
+        self.opener_no_redirect = urllib.request.build_opener(
+            urllib.request.HTTPCookieProcessor(jar), _NoRedirect
         )
         self.headers: dict[str, str] = {}
 
@@ -93,8 +104,9 @@ class _Client:
         req = urllib.request.Request(  # noqa: S310 - alvo interno efêmero
             url, data=data, method=str(item.get("method", "GET")), headers=headers
         )
+        opener = self.opener_no_redirect if item.get("no_redirect") else self.opener
         try:
-            with self.opener.open(req, timeout=10) as resp:
+            with opener.open(req, timeout=10) as resp:
                 hdrs = {k.lower(): v for k, v in resp.headers.items()}
                 return resp.status, resp.read(MAX_BODY).decode("utf-8", "replace"), hdrs
         except urllib.error.HTTPError as exc:

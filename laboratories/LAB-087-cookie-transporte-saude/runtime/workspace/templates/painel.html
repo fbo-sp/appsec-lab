@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block conteudo %}
+<h1>Minha agenda</h1>
+<p class="ajuda">Atendimentos agendados e guias liberadas.</p>
+
+<dl class="dados">
+  <dt>Médico</dt><dd>{{ conta.nome }}</dd>
+</dl>
+
+<h2>Próximos atendimentos</h2>
+<table class="lista">
+  <tr><th>Data</th><th>Descrição</th><th>Situação</th></tr>
+  {% for data, descricao, valor in itens %}
+  <tr><td>{{ data }}</td><td>{{ descricao }}</td><td>{{ valor }}</td></tr>
+  {% endfor %}
+</table>
+
+<p class="banner reforcado">Use <a href="{{ url_for('auth.sair') }}">Sair</a> para encerrar a sessão.</p>
+{% endblock %}

@@ -3188,6 +3188,129 @@ def _pacote(r: PacoteRamo) -> tuple[Suite, ...]:
     )
 
 
+# L3 cookie-transporte: cookie de sessão sem flags e sem HSTS (LAB-086 a LAB-088)
+
+
+@dataclass(frozen=True, slots=True)
+class CookieRamo:
+    ramo: str
+    login_a: str
+    senha_a: str
+
+
+COOKIE_RAMOS = (
+    CookieRamo("fin", "gustavo.lemos", "Gustavo#Nebula26"),
+    CookieRamo("sau", "dr.otavio.mendes", "Otavio#Alianca26"),
+    CookieRamo("ind", "leandro.siqueira", "Leandro#Ipe26"),
+)
+
+
+def _cookie(r: CookieRamo) -> tuple[Suite, ...]:
+    credenciais = {"login": r.login_a, "senha": r.senha_a}
+
+    def login(
+        check_id: str, descricao: str, exigidos: dict[str, str], proibidos: dict[str, str] | None = None
+    ) -> HttpCheck:
+        # ADR-027: lê o Set-Cookie da própria resposta 302 do login, sem seguir para o painel.
+        return HttpCheck(
+            id=check_id,
+            description=descricao,
+            path="/login",
+            method="POST",
+            form=credenciais,
+            no_redirect=True,
+            expect_status=None,
+            expect_status_in=(302, 303),
+            expect_headers=exigidos,
+            expect_absent_headers=proibidos,
+        )
+
+    return (
+        AnswerSuite(
+            ref=f"cookie-transporte/answer/nome-{r.ramo}-v1",
+            version="1.0.0",
+            prompt="Nome do cookie de sessão",
+            accepted=("session", '"session"', "cookie session"),
+            success_feedback="Isso. É o nome padrão do cookie de sessão do Flask.",
+            failure_feedback="Ainda não. Veja o valor de SESSION_COOKIE_NAME em config.py.",
+        ),
+        AnswerSuite(
+            ref=f"cookie-transporte/answer/flags-{r.ramo}-v1",
+            version="1.0.0",
+            prompt="Quantas das três flags aparecem no Set-Cookie",
+            accepted=("0", "zero", "nenhuma", "nenhum"),
+            success_feedback="Exato: o cookie sai sem nenhuma das três proteções.",
+            failure_feedback="Ainda não. Rode o curl da tarefa e procure Secure, HttpOnly e SameSite na linha.",
+        ),
+        AnswerSuite(
+            ref=f"cookie-transporte/answer/hsts-{r.ramo}-v1",
+            version="1.0.0",
+            prompt="Nome do cabeçalho HSTS",
+            accepted=("strict-transport-security", "strict transport security", "hsts"),
+            success_feedback="Isso. É o cabeçalho que faz o navegador usar sempre HTTPS.",
+            failure_feedback="Ainda não. HSTS é a sigla de HTTP Strict Transport Security; o cabeçalho usa hífens.",
+        ),
+        AnswerSuite(
+            ref=f"cookie-transporte/answer/arquivo-{r.ramo}-v1",
+            version="1.0.0",
+            prompt="Arquivo das opções do cookie e dos cabeçalhos",
+            accepted=("config.py", "config", "/workspace/config.py"),
+            success_feedback="Isso. As opções SESSION_COOKIE_* e os cabeçalhos ficam em config.py.",
+            failure_feedback="Ainda não. É o arquivo que você abriu na etapa 1.",
+        ),
+        HttpSuite(
+            ref=f"cookie-transporte/python-flask/cookie-hsts-{r.ramo}-v1",
+            version="1.0.0",
+            checks=(
+                login(
+                    "login-continua",
+                    "O login com a senha certa continua levando ao painel.",
+                    {"Location": "/painel"},
+                ),
+                login(
+                    "cookie-secure",
+                    "O cookie de sessão sai com Secure (só viaja por HTTPS).",
+                    {"Set-Cookie": "; secure"},
+                ),
+                login(
+                    "cookie-httponly",
+                    "O cookie de sessão sai com HttpOnly (o JavaScript não lê).",
+                    {"Set-Cookie": "; httponly"},
+                ),
+                login(
+                    "cookie-samesite",
+                    "O cookie de sessão sai com SameSite Lax ou Strict.",
+                    {"Set-Cookie": "samesite="},
+                    {"Set-Cookie": "samesite=none"},
+                ),
+                HttpCheck(
+                    id="hsts",
+                    description="Toda resposta manda o navegador usar sempre HTTPS (Strict-Transport-Security).",
+                    path="/login",
+                    expect_headers={"Strict-Transport-Security": "max-age="},
+                    expect_absent_headers={"Strict-Transport-Security": "max-age=0"},
+                ),
+                HttpCheck(
+                    id="senha-errada-recusada",
+                    description="A senha errada continua sendo recusada.",
+                    path="/login",
+                    method="POST",
+                    form={"login": r.login_a, "senha": "Tentativa#Errada77"},
+                    contains=("inválidos",),
+                ),
+            ),
+            success_feedback=(
+                "Correção validada: o cookie de sessão sai com Secure, HttpOnly e SameSite, e toda "
+                "resposta traz o HSTS. O login continua funcionando."
+            ),
+            failure_feedback=(
+                "Algumas verificações falharam. Confira cada item abaixo e ajuste config.py: as três "
+                "opções SESSION_COOKIE_* e o Strict-Transport-Security em CABECALHOS_SEGURANCA."
+            ),
+        ),
+    )
+
+
 SUITES_FAMILIAS: tuple[Suite, ...] = (
     tuple(s for r in XSS_RAMOS for s in _xss(r))
     + tuple(s for r in MASSA_RAMOS for s in _massa(r))
@@ -3210,6 +3333,7 @@ SUITES_FAMILIAS: tuple[Suite, ...] = (
     + tuple(s for r in AUDITORIA_RAMOS for s in _auditoria(r))
     + tuple(s for r in COMPONENTE_RAMOS for s in _componente(r))
     + tuple(s for r in PACOTE_RAMOS for s in _pacote(r))
+    + tuple(s for r in COOKIE_RAMOS for s in _cookie(r))
     + tuple(
         s
         for r in MOB_RAMOS

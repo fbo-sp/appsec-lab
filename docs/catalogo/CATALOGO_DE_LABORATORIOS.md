@@ -125,6 +125,9 @@ Indicado como primeira atividade de qualquer turma, antes do primeiro laboratór
 | LAB-083 | L4-FIN · Integridade de dados: a tabela de regras antifraude que ninguém conferiu | 1.0.0 | CWE-345 | A08 Software or Data Integrity Failures (2025) | Não se enquadra; use o CWE (2025) | Intermediário | 35 min |
 | LAB-084 | L4-SAU · Integridade de dados: a tabela de valores críticos que ninguém conferiu | 1.0.0 | CWE-345 | A08 Software or Data Integrity Failures (2025) | Não se enquadra; use o CWE (2025) | Intermediário | 35 min |
 | LAB-085 | L4-IND · Integridade de dados: o pacote de parâmetros do laminador que ninguém conferiu | 1.0.0 | CWE-345 | A08 Software or Data Integrity Failures (2025) | Não se enquadra; use o CWE (2025) | Intermediário | 35 min |
+| LAB-086 | L3-FIN · Proteção no transporte: o cookie de sessão que viajou aberto no Wi-Fi do coworking | 1.0.0 | CWE-614 | A04 Cryptographic Failures (2025) | Não se enquadra; use o CWE (2025) | Intermediário | 35 min |
+| LAB-087 | L3-SAU · Proteção no transporte: o cookie de sessão do médico que viajou aberto no Wi-Fi do hospital | 1.0.0 | CWE-614 | A04 Cryptographic Failures (2025) | Não se enquadra; use o CWE (2025) | Intermediário | 35 min |
+| LAB-088 | L3-IND · Proteção no transporte: o cookie de sessão do operador que viajou aberto na rede do campo | 1.0.0 | CWE-614 | A04 Cryptographic Failures (2025) | Não se enquadra; use o CWE (2025) | Intermediário | 35 min |
 
 ## LAB-001 · SQL Injection: a busca que expõe pacientes
 
@@ -3652,3 +3655,123 @@ Indicado como primeira atividade de qualquer turma, antes do primeiro laboratór
 | Versão | Criada em | Obsoleta em | Situação | O que mudou |
 |---|---|---|---|---|
 | 1.0.0 | 2026-11-17 | — | vigente | Versão inicial (família L4 pacote-assinatura, ramo indústria e energia): parâmetros de linha aplicados sem conferir a assinatura HMAC. |
+
+## LAB-086 · L3-FIN · Proteção no transporte: o cookie de sessão que viajou aberto no Wi-Fi do coworking
+
+- Versão vigente: 1.0.0
+- Cenário: Nébula Cartões Online, onde o cliente vê a fatura, o limite e as compras do cartão
+- Papel do aluno: Pessoa desenvolvedora do time de canais digitais da Nébula Cartões
+- Linguagem / stack: python / flask
+- Nível: Intermediário · duração estimada: 35 min
+- Família: cookie-transporte
+- Ramo: Financeiro
+- Módulo do curso: Trained
+
+### Classificação
+
+- CWE: CWE-614 (principal), CWE-1004, CWE-319, CWE-1275
+- OWASP Top 10 2025: A04 Cryptographic Failures
+- OWASP Top 10 2021: A02 Cryptographic Failures
+- SANS CWE Top 25 2025: Não se enquadra; use o CWE
+- SANS CWE Top 25 2024: Não se enquadra; use o CWE
+
+### Objetivos
+
+- Entender por que o cookie de sessão vale tanto quanto a senha
+- Ler o Set-Cookie e os cabeçalhos de uma resposta pelo Terminal
+- Saber o que Secure, HttpOnly, SameSite e HSTS protegem
+- Corrigir as opções do cookie e enviar o HSTS em toda resposta
+
+### Etapas
+
+1. Conhecer a sessão e o incidente (10 pts)
+2. Ler o cookie que o login entrega (15 pts)
+3. Pedir ao navegador que use sempre HTTPS (15 pts)
+4. Encontrar onde a sessão é configurada (15 pts)
+5. Proteger o cookie e enviar o HSTS (45 pts)
+
+### Histórico de versões
+
+| Versão | Criada em | Obsoleta em | Situação | O que mudou |
+|---|---|---|---|---|
+| 1.0.0 | 2026-11-17 | — | vigente | Versão inicial (família L3 cookie-transporte, ramo financeiro): cookie de sessão sem Secure, HttpOnly e SameSite e sem HSTS. |
+
+## LAB-087 · L3-SAU · Proteção no transporte: o cookie de sessão do médico que viajou aberto no Wi-Fi do hospital
+
+- Versão vigente: 1.0.0
+- Cenário: Aliança Médico Conveniado, onde médicos conveniados consultam a agenda e as guias de atendimento dos pacientes
+- Papel do aluno: Pessoa desenvolvedora do time de sistemas da rede credenciada da Cooperativa Médica Aliança
+- Linguagem / stack: python / flask
+- Nível: Intermediário · duração estimada: 35 min
+- Família: cookie-transporte
+- Ramo: Saúde
+- Módulo do curso: Trained
+
+### Classificação
+
+- CWE: CWE-614 (principal), CWE-1004, CWE-319, CWE-1275
+- OWASP Top 10 2025: A04 Cryptographic Failures
+- OWASP Top 10 2021: A02 Cryptographic Failures
+- SANS CWE Top 25 2025: Não se enquadra; use o CWE
+- SANS CWE Top 25 2024: Não se enquadra; use o CWE
+
+### Objetivos
+
+- Entender por que o cookie de sessão vale tanto quanto a senha
+- Ler o Set-Cookie e os cabeçalhos de uma resposta pelo Terminal
+- Saber o que Secure, HttpOnly, SameSite e HSTS protegem
+- Corrigir as opções do cookie e enviar o HSTS em toda resposta
+
+### Etapas
+
+1. Conhecer a sessão e o incidente (10 pts)
+2. Ler o cookie que o login entrega (15 pts)
+3. Pedir ao navegador que use sempre HTTPS (15 pts)
+4. Encontrar onde a sessão é configurada (15 pts)
+5. Proteger o cookie e enviar o HSTS (45 pts)
+
+### Histórico de versões
+
+| Versão | Criada em | Obsoleta em | Situação | O que mudou |
+|---|---|---|---|---|
+| 1.0.0 | 2026-11-17 | — | vigente | Versão inicial (família L3 cookie-transporte, ramo saúde): cookie de sessão sem Secure, HttpOnly e SameSite e sem HSTS. |
+
+## LAB-088 · L3-IND · Proteção no transporte: o cookie de sessão do operador que viajou aberto na rede do campo
+
+- Versão vigente: 1.0.0
+- Cenário: Ipê Telemetria de Subestações, o painel que técnicos e o centro de operação usam para acompanhar as leituras das subestações
+- Papel do aluno: Pessoa desenvolvedora do time de sistemas de operação da Transmissora Ipê Energia
+- Linguagem / stack: python / flask
+- Nível: Intermediário · duração estimada: 35 min
+- Família: cookie-transporte
+- Ramo: Indústria e Energia
+- Módulo do curso: Trained
+
+### Classificação
+
+- CWE: CWE-614 (principal), CWE-1004, CWE-319, CWE-1275
+- OWASP Top 10 2025: A04 Cryptographic Failures
+- OWASP Top 10 2021: A02 Cryptographic Failures
+- SANS CWE Top 25 2025: Não se enquadra; use o CWE
+- SANS CWE Top 25 2024: Não se enquadra; use o CWE
+
+### Objetivos
+
+- Entender por que o cookie de sessão vale tanto quanto a senha
+- Ler o Set-Cookie e os cabeçalhos de uma resposta pelo Terminal
+- Saber o que Secure, HttpOnly, SameSite e HSTS protegem
+- Corrigir as opções do cookie e enviar o HSTS em toda resposta
+
+### Etapas
+
+1. Conhecer a sessão e o incidente (10 pts)
+2. Ler o cookie que o login entrega (15 pts)
+3. Pedir ao navegador que use sempre HTTPS (15 pts)
+4. Encontrar onde a sessão é configurada (15 pts)
+5. Proteger o cookie e enviar o HSTS (45 pts)
+
+### Histórico de versões
+
+| Versão | Criada em | Obsoleta em | Situação | O que mudou |
+|---|---|---|---|---|
+| 1.0.0 | 2026-11-17 | — | vigente | Versão inicial (família L3 cookie-transporte, ramo indústria e energia): cookie de sessão sem Secure, HttpOnly e SameSite e sem HSTS. |

@@ -46,6 +46,8 @@ class HttpCheck:
     capture: dict[str, str] | None = None
     # Envio multipart: {"field", "filename", "content_type", "content"}; ``form`` vira campos extras.
     multipart: dict[str, str] | None = None
+    # ADR-027: não seguir redirecionamento (ler status e cabeçalhos da própria resposta 3xx).
+    no_redirect: bool = False
 
     def to_probe(self) -> dict[str, object]:
         return {
@@ -64,6 +66,7 @@ class HttpCheck:
             "expect_absent_headers": self.expect_absent_headers,
             "capture": self.capture,
             "multipart": self.multipart,
+            "no_redirect": self.no_redirect,
         }
 
 
@@ -150,7 +153,9 @@ def normalize_answer(value: str) -> str:
 
 
 # Campos do ADR-023: fora do digest quando vazios, para não mudar o digest das suítes anteriores.
-_OPTIONAL_KEYS = frozenset({"expect_headers", "expect_absent_headers", "capture", "multipart", "inspections"})
+_OPTIONAL_KEYS = frozenset(
+    {"expect_headers", "expect_absent_headers", "capture", "multipart", "inspections", "no_redirect"}
+)
 
 
 def _digest_dict(items: list[tuple[str, object]]) -> dict[str, object]:

@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block conteudo %}
+<h1>Telemetria da minha região</h1>
+<p class="ajuda">Últimas leituras das subestações da sua região.</p>
+
+<dl class="dados">
+  <dt>Técnico</dt><dd>{{ conta.nome }}</dd>
+</dl>
+
+<h2>Últimas leituras</h2>
+<table class="lista">
+  <tr><th>Data</th><th>Descrição</th><th>Leitura</th></tr>
+  {% for data, descricao, valor in itens %}
+  <tr><td>{{ data }}</td><td>{{ descricao }}</td><td>{{ valor }}</td></tr>
+  {% endfor %}
+</table>
+
+<p class="banner reforcado">Use <a href="{{ url_for('auth.sair') }}">Sair</a> para encerrar a sessão.</p>
+{% endblock %}

@@ -160,3 +160,45 @@ def test_expect_absent_headers(base: str) -> None:
     r = _run(base, suite)
     assert not r["reflete-malicioso"], r
     assert r["sem-cabecalho"] and r["origem-confiavel"], r
+
+
+def test_no_redirect_reads_the_3xx_response_itself(base: str) -> None:
+    # /login responde 302 com Set-Cookie e Location: /eu. Seguindo, a resposta final (/eu) não tem Set-Cookie.
+    login = {"usuario": "ana"}
+    suite = HttpSuite(
+        ref="t",
+        version="1",
+        checks=(
+            HttpCheck(
+                id="sem-seguir",
+                description="",
+                path="/login",
+                method="POST",
+                form=login,
+                no_redirect=True,
+                expect_status_in=(302,),
+                expect_headers={"Set-Cookie": "quem=ana"},
+            ),
+            HttpCheck(
+                id="seguindo",
+                description="",
+                path="/login",
+                method="POST",
+                form=login,
+                expect_headers={"Set-Cookie": "quem=ana"},
+            ),
+        ),
+    )
+    r = _run(base, suite)
+    assert r["sem-seguir"], r
+    assert not r["seguindo"], r
+
+
+def test_no_redirect_default_keeps_old_suite_digests() -> None:
+    from app.validation.suites import suite_digest
+
+    a = HttpSuite(ref="t", version="1", checks=(HttpCheck(id="x", description="", path="/"),))
+    b = HttpSuite(
+        ref="t", version="1", checks=(HttpCheck(id="x", description="", path="/", no_redirect=False),)
+    )
+    assert suite_digest(a) == suite_digest(b)

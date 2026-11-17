@@ -557,6 +557,27 @@ const ILLUSTRATIONS: Record<string, { caption: string; body: () => ReactNode }> 
       />
     ),
   },
+  "cookie-flags": {
+    caption: "Proteção no transporte: o cookie de sessão vale a senha, e as flags decidem por onde ele viaja e quem o lê.",
+    body: () => (
+      <Compare
+        bad={[
+          "Cookie sem proteção (hoje)",
+          <>
+            <span>{c("Set-Cookie: session=...; Path=/")}: viaja até por HTTP e o JavaScript lê.</span>
+            <span>Sem HSTS, o primeiro acesso por {c("http://")} entrega o cookie a quem está na rede.</span>
+          </>,
+        ]}
+        good={[
+          "Cookie protegido",
+          <>
+            <span>{c("Secure; HttpOnly; SameSite=Lax")}: só HTTPS, fora do script, sem pedidos de outros sites.</span>
+            <span>{c("Strict-Transport-Security: max-age=31536000")} faz o navegador usar sempre HTTPS.</span>
+          </>,
+        ]}
+      />
+    ),
+  },
   "bfla": {
     caption: "Autorização de função (BFLA): autenticar não é autorizar — cada função sensível confere o papel.",
     body: () => (

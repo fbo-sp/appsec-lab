@@ -1,0 +1,115 @@
+# Família L3 cookie-transporte (ADR-021): o que muda por ramo. O modelo comum está em ./modelo.
+# Depois de editar, rode:  uv run python scripts/gerar-familia.py cookie-transporte
+# Logins e senhas estão espelhados em apps/backend/app/validation/suites_familias.py (COOKIE_RAMOS);
+# os testes Docker conferem os dois.
+# A falha é de proteção no transporte (OWASP A02:2021 / A04:2025, CWE-614): config.py deixa o cookie
+# de sessão sem Secure, HttpOnly e SameSite, e CABECALHOS_SEGURANCA não tem o HSTS.
+ramos:
+  - destino: LAB-086-cookie-transporte-banco
+    vars:
+      lab_id: LAB-086
+      versao: 1.0.0
+      codigo: L3-FIN
+      ramo: fin
+      setor: financeiro
+      imagem: lab-086-cookie-transporte
+      titulo: o cookie de sessão que viajou aberto no Wi-Fi do coworking
+      empresa: Nébula Cartões
+      marca: "✧ Nébula"
+      app_nome: Nébula Cartões Online
+      cor: "#6d28d9"
+      papel: Pessoa desenvolvedora do time de canais digitais da Nébula Cartões
+      aplicacao: Nébula Cartões Online, onde o cliente vê a fatura, o limite e as compras do cartão
+      contexto: Num teste de rotina no Wi-Fi de um coworking, um analista de segurança da Nébula capturou o cookie de sessão de um colega abrindo o portal por um link antigo em HTTP, e entrou na conta dele no próprio notebook. O portal está atrás de um balanceador com HTTPS, mas o cookie não tem nenhuma proteção.
+      missao: Ler o cookie de sessão que o login entrega, entender o que falta nele e corrigir as flags do cookie e o HSTS
+      painel_titulo: Meu cartão
+      painel_desc: Fatura atual e compras recentes do seu cartão.
+      login_desc: Entre com seu usuário e senha do Nébula Cartões Online.
+      banco: nebula_cartoes
+      papel_usuario: Cliente
+      login_a: gustavo.lemos
+      senha_a: "Gustavo#Nebula26"
+      nome_a: Gustavo Lemos Farias
+      rotulo_titular: Titular
+      rotulo_valor: Valor
+      itens_titulo: Compras recentes
+      impacto: 'Num Wi-Fi aberto, quem está na mesma rede vê o tráfego HTTP em texto claro. Sem `Secure`, um único acesso por um link antigo com `http://` leva o cookie junto, e o atacante cola o cookie no próprio navegador: vê a fatura, o limite e os dados do cartão, sem precisar da senha.'
+      historia_abertura: 'Você é do time de canais digitais da Nébula Cartões. Na sexta-feira, num teste de rotina no Wi-Fi de um coworking, um analista de segurança capturou o cookie de sessão de um colega que abriu o portal por um link antigo de e-mail, ainda com `http://`. Colou o cookie no próprio navegador e entrou na conta do colega, com fatura e limite à mostra. O portal tem HTTPS no balanceador, mas o cookie de sessão sai sem nenhuma proteção.'
+      seed_contas:
+        - [1, gustavo.lemos, Gustavo Lemos Farias, "Gustavo#Nebula26", cliente]
+      seed_itens:
+        - [1, "2026-11-02", "Supermercado Bom Dia", "R$ 412,37"]
+        - [1, "2026-11-06", "Posto Estrela Guia", "R$ 230,00"]
+        - [1, "2026-11-11", "Livraria Cais", "R$ 89,90"]
+  - destino: LAB-087-cookie-transporte-saude
+    vars:
+      lab_id: LAB-087
+      versao: 1.0.0
+      codigo: L3-SAU
+      ramo: sau
+      setor: saude
+      imagem: lab-087-cookie-transporte
+      titulo: o cookie de sessão do médico que viajou aberto no Wi-Fi do hospital
+      empresa: Cooperativa Médica Aliança
+      marca: "✚ Aliança"
+      app_nome: Aliança Médico Conveniado
+      cor: "#0e7490"
+      papel: Pessoa desenvolvedora do time de sistemas da rede credenciada da Cooperativa Médica Aliança
+      aplicacao: Aliança Médico Conveniado, onde médicos conveniados consultam a agenda e as guias de atendimento dos pacientes
+      contexto: Um médico conveniado acessou o portal pelo Wi-Fi de visitantes de um hospital, por um favorito antigo em HTTP. O time de segurança, num teste no mesmo Wi-Fi, conseguiu reaproveitar o cookie de sessão e ver a agenda com nomes e procedimentos dos pacientes. O portal tem HTTPS no balanceador, mas o cookie não tem nenhuma proteção.
+      missao: Ler o cookie de sessão que o login entrega, entender o que falta nele e corrigir as flags do cookie e o HSTS
+      painel_titulo: Minha agenda
+      painel_desc: Atendimentos agendados e guias liberadas.
+      login_desc: Entre com seu usuário e senha do Aliança Médico Conveniado.
+      banco: alianca_medico
+      papel_usuario: Médico conveniado
+      login_a: dr.otavio.mendes
+      senha_a: "Otavio#Alianca26"
+      nome_a: Dr. Otávio Mendes Rocha
+      rotulo_titular: Médico
+      rotulo_valor: Situação
+      itens_titulo: Próximos atendimentos
+      impacto: 'Num Wi-Fi de visitantes, quem está na mesma rede vê o tráfego HTTP em texto claro. Sem `Secure`, um único acesso por um favorito antigo com `http://` leva o cookie junto, e o atacante cola o cookie no próprio navegador: vê a agenda com nomes e procedimentos dos pacientes, dado de saúde protegido pela LGPD.'
+      historia_abertura: 'Você é do time de sistemas da rede credenciada da Cooperativa Médica Aliança. Na quinta-feira, um médico conveniado abriu o portal pelo Wi-Fi de visitantes de um hospital, a partir de um favorito antigo, ainda com `http://`. O time de segurança, fazendo um teste no mesmo Wi-Fi, capturou o cookie de sessão e, colando-o no próprio navegador, viu a agenda do médico com nomes e procedimentos dos pacientes. O portal tem HTTPS no balanceador, mas o cookie de sessão sai sem nenhuma proteção.'
+      seed_contas:
+        - [1, dr.otavio.mendes, Dr. Otávio Mendes Rocha, "Otavio#Alianca26", medico]
+      seed_itens:
+        - [1, "2026-11-18", "Consulta de retorno · paciente M. A. S.", "Confirmada"]
+        - [1, "2026-11-18", "Ecocardiograma · paciente J. P. L.", "Guia liberada"]
+        - [1, "2026-11-19", "Primeira consulta · paciente R. C. F.", "Aguardando guia"]
+  - destino: LAB-088-cookie-transporte-industria
+    vars:
+      lab_id: LAB-088
+      versao: 1.0.0
+      codigo: L3-IND
+      ramo: ind
+      setor: industria-energia
+      imagem: lab-088-cookie-transporte
+      titulo: o cookie de sessão do operador que viajou aberto na rede do campo
+      empresa: Transmissora Ipê Energia
+      marca: "⚡ Ipê"
+      app_nome: Ipê Telemetria de Subestações
+      cor: "#15803d"
+      papel: Pessoa desenvolvedora do time de sistemas de operação da Transmissora Ipê Energia
+      aplicacao: Ipê Telemetria de Subestações, o painel que técnicos e o centro de operação usam para acompanhar as leituras das subestações
+      contexto: Técnicos de campo acessam o painel de telemetria pelo roteador 4G das viaturas, e alguns usam um favorito antigo em HTTP. Num teste, o time de segurança de TA capturou o cookie de sessão de um técnico na rede da viatura e abriu o painel com o acesso dele. O painel tem HTTPS no balanceador, mas o cookie não tem nenhuma proteção.
+      missao: Ler o cookie de sessão que o login entrega, entender o que falta nele e corrigir as flags do cookie e o HSTS
+      painel_titulo: Telemetria da minha região
+      painel_desc: Últimas leituras das subestações da sua região.
+      login_desc: Entre com seu usuário e senha do Ipê Telemetria.
+      banco: ipe_telemetria
+      papel_usuario: Técnico de campo
+      login_a: leandro.siqueira
+      senha_a: "Leandro#Ipe26"
+      nome_a: Leandro Siqueira Bastos
+      rotulo_titular: Técnico
+      rotulo_valor: Leitura
+      itens_titulo: Últimas leituras
+      impacto: 'Numa rede compartilhada, quem está nela vê o tráfego HTTP em texto claro. Sem `Secure`, um único acesso por um favorito antigo com `http://` leva o cookie junto, e o atacante cola o cookie no próprio navegador: vê a topologia e as leituras das subestações com o acesso do técnico, informação valiosa para planejar um ataque à rede elétrica.'
+      historia_abertura: 'Você é do time de sistemas de operação da Transmissora Ipê Energia. Os técnicos de campo acessam o painel de telemetria pelo roteador 4G das viaturas, e vários ainda usam um favorito antigo, com `http://`. Na terça-feira, num teste, o time de segurança de TA capturou o cookie de sessão de um técnico na rede da viatura, colou-o no próprio navegador e abriu o painel com o acesso dele. O painel tem HTTPS no balanceador, mas o cookie de sessão sai sem nenhuma proteção.'
+      seed_contas:
+        - [1, leandro.siqueira, Leandro Siqueira Bastos, "Leandro#Ipe26", tecnico]
+      seed_itens:
+        - [1, "2026-11-17", "SE Vale Verde · barra 138 kV", "137,6 kV"]
+        - [1, "2026-11-17", "SE Vale Verde · transformador T2", "71 °C"]
+        - [1, "2026-11-17", "SE Pedra Branca · disjuntor 52-3", "Fechado"]
