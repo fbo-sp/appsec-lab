@@ -2387,6 +2387,159 @@ def _mob_modo_teste(r: MobRamo) -> tuple[Suite, ...]:
     )
 
 
+# --------------------------------------------------------------------------------------------------
+# Lacunas dos Cursos OWASP. L5 api-inventario: versão 1 da API esquecida no ar (LAB-068 a LAB-070)
+
+
+def _sem_acento(texto: str) -> str:
+    import unicodedata
+
+    return "".join(c for c in unicodedata.normalize("NFD", texto) if unicodedata.category(c) != "Mn")
+
+
+def _com_variantes(*valores: str) -> tuple[str, ...]:
+    """Cada valor com e sem acento (a comparação ignora maiúsculas e espaços extras, mas não acentos)."""
+    saida: list[str] = []
+    for v in valores:
+        for w in (v, _sem_acento(v)):
+            if w not in saida:
+                saida.append(w)
+    return tuple(saida)
+
+
+@dataclass(frozen=True, slots=True)
+class InventarioRamo:
+    ramo: str
+    recurso: str  # segmento da rota: /api/v2/<recurso>/<id>
+    login_a: str
+    senha_a: str
+    doc_a: int
+    titulo_a: str  # trecho do título do documento da conta A
+    doc_b: int
+    nome_b: str  # titular do documento de outra conta
+    detalhe_b: str  # trecho do detalhe do documento de outra conta
+
+
+INVENTARIO_RAMOS = (
+    InventarioRamo(
+        "fin",
+        "comprovantes",
+        "larissa.prado",
+        "Larissa#Cobalto26",
+        101,
+        "Mercado Bom",
+        201,
+        "Rogério Tavares Lima",
+        "Lar Certo",
+    ),
+    InventarioRamo(
+        "sau",
+        "exames",
+        "beatriz.moura",
+        "Beatriz#Iris26",
+        101,
+        "Hemograma",
+        201,
+        "Otávio Ramos Bezerra",
+        "hepatite",
+    ),
+    InventarioRamo(
+        "ind",
+        "faturas",
+        "compras.metalfort",
+        "Metalfort#Serra26",
+        101,
+        "unidade Contagem",
+        201,
+        "Têxtil Vale Verde S.A.",
+        "Americana",
+    ),
+)
+
+
+def _inventario(r: InventarioRamo) -> tuple[Suite, ...]:
+    primeiro, *_, ultimo = r.nome_b.replace(" S.A.", "").split()
+    return (
+        AnswerSuite(
+            ref=f"api-inventario/answer/versao-{r.ramo}-v1",
+            version="1.0.0",
+            prompt="Versão da API que a documentação publica",
+            accepted=("v2", "2", "versão 2", "versao 2", "/api/v2", "api/v2"),
+            success_feedback="Isso. A documentação só fala da v2.",
+            failure_feedback="Ainda não. Veja o texto 'Versão publicada' no topo da documentação.",
+        ),
+        AnswerSuite(
+            ref=f"api-inventario/answer/arquivo-{r.ramo}-v1",
+            version="1.0.0",
+            prompt="Arquivo do controller da versão que não está na documentação",
+            accepted=(
+                "api_v1_controller.py",
+                "api_v1_controller",
+                "controllers/api_v1_controller.py",
+                "workspace/controllers/api_v1_controller.py",
+            ),
+            success_feedback="Isso. A v1 continua registrada em app.py, mesmo fora da documentação.",
+            failure_feedback="Ainda não. Em app.py, veja de qual arquivo vem o blueprint api_v1_bp.",
+        ),
+        AnswerSuite(
+            ref=f"api-inventario/answer/titular-{r.ramo}-v1",
+            version="1.0.0",
+            prompt="Titular que aparece na resposta da v1",
+            accepted=_com_variantes(r.nome_b, r.nome_b.replace(" S.A.", ""), f"{primeiro} {ultimo}"),
+            success_feedback="Exato: pela v1 você leu o documento de outro cliente, que a v2 recusava.",
+            failure_feedback="Ainda não. Abra a rota da v1 com o número da tarefa e copie o campo titular.",
+        ),
+        AnswerSuite(
+            ref=f"api-inventario/answer/conceito-{r.ramo}-v1",
+            version="1.0.0",
+            prompt="Nome da lista viva de APIs, versões e rotas publicadas",
+            accepted=_com_variantes(
+                "inventário", "inventário de api", "inventário de apis", "gestão de inventário", "inventory"
+            ),
+            success_feedback="Isso. Sem inventário, a v1 ficou no ar sem dono e sem data para desligar.",
+            failure_feedback="Ainda não. É a palavra do item API9 da OWASP 2023.",
+        ),
+        HttpSuite(
+            ref=f"api-inventario/python-flask/versao-antiga-{r.ramo}-v1",
+            version="1.0.0",
+            logins=(HttpLogin(name="cliente", path="/login", form={"login": r.login_a, "senha": r.senha_a}),),
+            checks=(
+                HttpCheck(
+                    id="v2-continua",
+                    description="A v2 continua entregando o documento da própria conta.",
+                    path=f"/api/v2/{r.recurso}/{r.doc_a}",
+                    as_user="cliente",
+                    contains=(r.titulo_a,),
+                ),
+                HttpCheck(
+                    id="v2-protege",
+                    description="A v2 continua recusando o documento de outra conta.",
+                    path=f"/api/v2/{r.recurso}/{r.doc_b}",
+                    as_user="cliente",
+                    expect_status=404,
+                    not_contains=(r.detalhe_b,),
+                ),
+                HttpCheck(
+                    id="v1-nao-vaza",
+                    description="A v1 não devolve mais o documento de outra conta (410, 404 ou 403).",
+                    path=f"/api/v1/{r.recurso}/{r.doc_b}",
+                    as_user="cliente",
+                    expect_status_in=(403, 404, 410),
+                    not_contains=(r.detalhe_b, r.nome_b),
+                ),
+            ),
+            success_feedback=(
+                "Correção validada: a v1 não entrega mais documentos de outros clientes, e a v2 continua "
+                "funcionando para o dono."
+            ),
+            failure_feedback=(
+                "Algumas verificações falharam. Confira cada item abaixo, ajuste "
+                "controllers/api_v1_controller.py e valide de novo. Esconder a rota da documentação não basta."
+            ),
+        ),
+    )
+
+
 SUITES_FAMILIAS: tuple[Suite, ...] = (
     tuple(s for r in XSS_RAMOS for s in _xss(r))
     + tuple(s for r in MASSA_RAMOS for s in _massa(r))
@@ -2403,6 +2556,7 @@ SUITES_FAMILIAS: tuple[Suite, ...] = (
     + tuple(s for r in ERROS_RAMOS for s in _erros(r))
     + tuple(s for r in LDAP_RAMOS for s in _ldap(r))
     + tuple(s for r in GRAPHQL_RAMOS for s in _graphql(r))
+    + tuple(s for r in INVENTARIO_RAMOS for s in _inventario(r))
     + tuple(
         s
         for r in MOB_RAMOS

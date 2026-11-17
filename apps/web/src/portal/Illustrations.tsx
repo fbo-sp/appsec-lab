@@ -431,6 +431,27 @@ const ILLUSTRATIONS: Record<string, { caption: string; body: () => ReactNode }> 
       />
     ),
   },
+  "inventario-api": {
+    caption: "Inventário de API: sair da documentação não é desligar — toda versão no ar precisa de dono e data de fim.",
+    body: () => (
+      <Compare
+        bad={[
+          "v1 esquecida no ar (hoje)",
+          <>
+            <span>A documentação mostra só {c("/api/v2")}, mas o {c("app.py")} ainda registra a {c("/api/v1")}.</span>
+            <span>A v1 busca pelo id sem conferir o dono: trocar {c("v2")} por {c("v1")} reabre o IDOR.</span>
+          </>,
+        ]}
+        good={[
+          "Inventário e aposentadoria",
+          <>
+            <span>Cada versão tem dono e data de fim; a v1 responde {c("410 Gone")}.</span>
+            <span>Se precisar conviver, a v1 passa pelo mesmo serviço que confere o dono.</span>
+          </>,
+        ]}
+      />
+    ),
+  },
   "bfla": {
     caption: "Autorização de função (BFLA): autenticar não é autorizar — cada função sensível confere o papel.",
     body: () => (

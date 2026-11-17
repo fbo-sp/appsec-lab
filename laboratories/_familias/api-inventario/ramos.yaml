@@ -1,0 +1,145 @@
+# Família L5 api-inventario (ADR-021): o que muda por ramo. O modelo comum está em ./modelo.
+# Depois de editar, rode:  uv run python scripts/gerar-familia.py api-inventario
+# Logins, senhas, rotas e o titular do documento alheio estão espelhados em
+# apps/backend/app/validation/suites_familias.py (INVENTARIO_RAMOS); os testes Docker conferem os dois.
+# A falha é de inventário (OWASP API9): controllers/api_v1_controller.py, a versão legada, saiu da
+# documentação mas continua registrada e devolve documentos de qualquer conta.
+ramos:
+  - destino: LAB-068-api-inventario-banco
+    vars:
+      lab_id: LAB-068
+      versao: 1.0.0
+      codigo: L5-FIN
+      ramo: fin
+      setor: financeiro
+      imagem: lab-068-api-inventario
+      titulo: a v1 da API de comprovantes que ninguém desligou
+      empresa: Banco Cobalto
+      marca: "◆ Cobalto"
+      app_nome: Cobalto Online
+      cor: "#1e3a8a"
+      papel: Pessoa desenvolvedora do time de APIs do Banco Cobalto
+      aplicacao: Cobalto Online, onde o cliente consulta os comprovantes de Pix pelo navegador e pelo app
+      contexto: A API de comprovantes de Pix ganhou uma v2 depois que um teste de invasão achou IDOR na v1. O app novo já usa a v2, que confere o dono do comprovante. Um analista de fraude notou acessos a /api/v1/comprovantes vindos de fora do app oficial, e ninguém sabe dizer se a v1 ainda está no ar.
+      missao: Descobrir a versão antiga que continua respondendo, mostrar que ela entrega comprovantes de outros clientes e aposentá-la no servidor
+      painel_titulo: Meus comprovantes
+      painel_desc: Comprovantes de Pix enviados e recebidos na sua conta.
+      login_desc: Entre com seu usuário e senha do Cobalto Online.
+      lista_titulo: Comprovantes de Pix
+      coluna_titulo: Comprovante
+      banco: cobalto_online
+      recurso: comprovantes
+      recurso_plural: comprovantes
+      recurso_singular: comprovante
+      ano_v1: "2022"
+      ano_v2: "2025"
+      app_movel: Cobalto 3.x
+      time_api: Plataforma de APIs
+      login_a: larissa.prado
+      senha_a: "Larissa#Cobalto26"
+      nome_a: Larissa Prado Nunes
+      nome_b: Rogério Tavares Lima
+      doc_a: "101"
+      doc_b: "201"
+      impacto: 'Um comprovante de Pix traz nome, CPF parcial, banco, valor e chave do destinatário. Em mãos erradas, vira matéria-prima para golpe do "comprovante falso" e engenharia social, e é dado pessoal protegido pela LGPD.'
+      historia_abertura: 'Você é do time de APIs do Banco Cobalto. Em 2025, depois de um teste de invasão achar IDOR na API de comprovantes, o time lançou a v2, que confere o dono, e tirou a v1 da documentação. Esta semana, um analista de fraude abriu um chamado: há acessos a /api/v1/comprovantes vindos de fora do app oficial. Ninguém sabe dizer se a v1 ainda está no ar.'
+      seed_contas:
+        - [1, larissa.prado, Larissa Prado Nunes, "Larissa#Cobalto26", cliente]
+        - [2, rogerio.tavares, Rogério Tavares Lima, "Rogerio#Cobalto26", cliente]
+      seed_documentos:
+        - [101, 1, "Pix enviado a Mercado Bom Preço", "2026-11-03", "R$ 342,90 · chave CNPJ 12.345.678/0001-90 · Banco Cobalto"]
+        - [102, 1, "Pix recebido de Ana Souza", "2026-11-09", "R$ 1.200,00 · chave e-mail ana.souza@exemplo.com"]
+        - [201, 2, "Pix enviado a Imobiliária Lar Certo", "2026-11-05", "R$ 3.850,00 · aluguel · CPF ***.481.226-**"]
+        - [202, 2, "Pix recebido de Construtora Alicerce", "2026-11-10", "R$ 12.400,00 · salário"]
+  - destino: LAB-069-api-inventario-saude
+    vars:
+      lab_id: LAB-069
+      versao: 1.0.0
+      codigo: L5-SAU
+      ramo: sau
+      setor: saude
+      imagem: lab-069-api-inventario
+      titulo: a v1 da API de exames que ninguém desligou
+      empresa: Laboratórios Íris
+      marca: "◉ Íris"
+      app_nome: Íris Resultados
+      cor: "#0f766e"
+      papel: Pessoa desenvolvedora do time de integrações dos Laboratórios Íris
+      aplicacao: Íris Resultados, onde o paciente consulta os laudos dos exames pelo navegador e pelo app
+      contexto: A API de resultados de exames ganhou uma v2, que confere se o laudo é do paciente logado. O app novo já usa a v2. Um hospital parceiro avisou que um integrador antigo ainda chama /api/v1/exames, e a área de privacidade quer saber se a v1 continua entregando laudos.
+      missao: Descobrir a versão antiga que continua respondendo, mostrar que ela entrega laudos de outros pacientes e aposentá-la no servidor
+      painel_titulo: Meus exames
+      painel_desc: Laudos liberados dos seus exames.
+      login_desc: Entre com seu usuário e senha do Íris Resultados.
+      lista_titulo: Laudos liberados
+      coluna_titulo: Exame
+      banco: iris_resultados
+      recurso: exames
+      recurso_plural: exames
+      recurso_singular: exame
+      ano_v1: "2021"
+      ano_v2: "2025"
+      app_movel: Íris 2.x
+      time_api: Integrações
+      login_a: beatriz.moura
+      senha_a: "Beatriz#Iris26"
+      nome_a: Beatriz Moura Campos
+      nome_b: Otávio Ramos Bezerra
+      doc_a: "101"
+      doc_b: "201"
+      impacto: 'Um laudo é dado pessoal sensível de saúde (LGPD, art. 11). Um resultado de sorologia ou de exame genético vazado expõe o paciente a discriminação e gera notificação obrigatória à ANPD e ao paciente.'
+      historia_abertura: 'Você é do time de integrações dos Laboratórios Íris. Em 2025 a API de resultados ganhou uma v2, que confere se o laudo é do paciente logado, e a v1 saiu da documentação. Ontem, um hospital parceiro avisou que um integrador antigo ainda chama /api/v1/exames e recebe resposta. A área de privacidade abriu um chamado para saber se a v1 continua entregando laudos.'
+      seed_contas:
+        - [1, beatriz.moura, Beatriz Moura Campos, "Beatriz#Iris26", paciente]
+        - [2, otavio.ramos, Otávio Ramos Bezerra, "Otavio#Iris26", paciente]
+      seed_documentos:
+        - [101, 1, "Hemograma completo", "2026-11-04", "Hemoglobina 13,8 g/dL · leucócitos 6.200/mm³ · dentro da referência"]
+        - [102, 1, "Glicemia de jejum", "2026-11-04", "92 mg/dL · referência 70 a 99 mg/dL"]
+        - [201, 2, "Sorologia para hepatite C", "2026-11-06", "Anti-HCV reagente · repetir com PCR · médico solicitante CRM-SP 123456"]
+        - [202, 2, "Perfil lipídico", "2026-11-06", "LDL 168 mg/dL · acima do recomendado"]
+  - destino: LAB-070-api-inventario-industria
+    vars:
+      lab_id: LAB-070
+      versao: 1.0.0
+      codigo: L5-IND
+      ramo: ind
+      setor: industria-energia
+      imagem: lab-070-api-inventario
+      titulo: a v1 da API de faturas que ninguém desligou
+      empresa: Elétrica Serra Azul
+      marca: "⚡ Serra Azul"
+      app_nome: Serra Azul Empresas
+      cor: "#b45309"
+      papel: Pessoa desenvolvedora do time digital da Elétrica Serra Azul
+      aplicacao: Serra Azul Empresas, onde clientes industriais consultam faturas e o consumo de energia pelo navegador e pelo app
+      contexto: A API de faturas de energia dos clientes industriais ganhou uma v2, que confere se a fatura é da empresa logada. Um cliente reclamou que um concorrente citou, numa negociação, o consumo exato da fábrica dele. A suspeita recai sobre a v1, que saiu da documentação em 2025.
+      missao: Descobrir a versão antiga que continua respondendo, mostrar que ela entrega faturas de outros clientes e aposentá-la no servidor
+      painel_titulo: Minhas faturas
+      painel_desc: Faturas de energia e consumo da sua unidade.
+      login_desc: Entre com o usuário e a senha da sua empresa no Serra Azul Empresas.
+      lista_titulo: Faturas de energia
+      coluna_titulo: Fatura
+      banco: serraazul_empresas
+      recurso: faturas
+      recurso_plural: faturas
+      recurso_singular: fatura
+      ano_v1: "2022"
+      ano_v2: "2025"
+      app_movel: Serra Azul Empresas 1.x
+      time_api: Canais Digitais
+      login_a: compras.metalfort
+      senha_a: "Metalfort#Serra26"
+      nome_a: Metalfort Indústria de Peças Ltda.
+      nome_b: Têxtil Vale Verde S.A.
+      doc_a: "101"
+      doc_b: "201"
+      impacto: 'Consumo, demanda contratada e valor da fatura revelam o ritmo de produção de uma fábrica. Para um concorrente, é informação estratégica; para a distribuidora, é quebra de sigilo comercial do cliente.'
+      historia_abertura: 'Você é do time digital da Elétrica Serra Azul. Em 2025 a API de faturas dos clientes industriais ganhou uma v2, que confere se a fatura é da empresa logada, e a v1 saiu da documentação. Agora um cliente reclamou que um concorrente citou, numa negociação, o consumo exato da fábrica dele. A gerência abriu um chamado para saber por onde esse dado saiu.'
+      seed_contas:
+        - [1, compras.metalfort, Metalfort Indústria de Peças Ltda., "Metalfort#Serra26", cliente]
+        - [2, energia.valeverde, Têxtil Vale Verde S.A., "ValeVerde#Serra26", cliente]
+      seed_documentos:
+        - [101, 1, "Fatura 10/2026 · unidade Contagem", "2026-11-02", "Consumo 48.300 kWh · demanda 220 kW · R$ 41.870,15"]
+        - [102, 1, "Fatura 09/2026 · unidade Contagem", "2026-10-02", "Consumo 46.950 kWh · demanda 215 kW · R$ 40.112,80"]
+        - [201, 2, "Fatura 10/2026 · fábrica Americana", "2026-11-02", "Consumo 312.400 kWh · demanda 1.150 kW · R$ 268.905,40"]
+        - [202, 2, "Fatura 09/2026 · fábrica Americana", "2026-10-02", "Consumo 298.700 kWh · demanda 1.120 kW · R$ 257.340,10"]

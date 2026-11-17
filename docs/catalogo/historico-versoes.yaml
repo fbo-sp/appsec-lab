@@ -336,3 +336,15 @@ labs:
     - version: 1.0.0
       published: 2026-11-17
       summary: Primeira versão (lab mobile, modo de teste esquecido, Aurora Energia; família mob-modo-teste, ramo Indústria e Energia).
+  LAB-068:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (versão 1 da API de comprovantes esquecida no ar, Banco Cobalto; família api-inventario, ramo Financeiro).
+  LAB-069:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (versão 1 da API de exames esquecida no ar, Laboratórios Íris; família api-inventario, ramo Saúde).
+  LAB-070:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (versão 1 da API de faturas esquecida no ar, Elétrica Serra Azul; família api-inventario, ramo Indústria e Energia).

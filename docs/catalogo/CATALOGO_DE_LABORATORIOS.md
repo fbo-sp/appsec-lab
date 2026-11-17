@@ -107,6 +107,9 @@ Indicado como primeira atividade de qualquer turma, antes do primeiro laboratór
 | LAB-065 | MOB-09-FIN · Modo de teste esquecido: o atalho de teste que ficou na produção | 1.0.0 | CWE-489 | A02 Security Misconfiguration (2025) | Não se enquadra; use o CWE (2025) | Iniciante | 30 min |
 | LAB-066 | MOB-09-SAU · Modo de teste esquecido: o atalho de teste que ficou na produção | 1.0.0 | CWE-489 | A02 Security Misconfiguration (2025) | Não se enquadra; use o CWE (2025) | Iniciante | 30 min |
 | LAB-067 | MOB-09-IND · Modo de teste esquecido: o atalho de teste que ficou na produção | 1.0.0 | CWE-489 | A02 Security Misconfiguration (2025) | Não se enquadra; use o CWE (2025) | Iniciante | 30 min |
+| LAB-068 | L5-FIN · Inventário de API: a v1 da API de comprovantes que ninguém desligou | 1.0.0 | CWE-1059 | A01 Broken Access Control (2025) | #4 CWE-862 Missing Authorization (2025) | Intermediário | 35 min |
+| LAB-069 | L5-SAU · Inventário de API: a v1 da API de exames que ninguém desligou | 1.0.0 | CWE-1059 | A01 Broken Access Control (2025) | #4 CWE-862 Missing Authorization (2025) | Intermediário | 35 min |
+| LAB-070 | L5-IND · Inventário de API: a v1 da API de faturas que ninguém desligou | 1.0.0 | CWE-1059 | A01 Broken Access Control (2025) | #4 CWE-862 Missing Authorization (2025) | Intermediário | 35 min |
 
 ## LAB-001 · SQL Injection: a busca que expõe pacientes
 
@@ -2896,3 +2899,129 @@ Indicado como primeira atividade de qualquer turma, antes do primeiro laboratór
 | Versão | Criada em | Obsoleta em | Situação | O que mudou |
 |---|---|---|---|---|
 | 1.0.0 | 2026-11-17 | — | vigente | Primeira versão (lab mobile, modo de teste esquecido, Aurora Energia; família mob-modo-teste, ramo Indústria e Energia). |
+
+## LAB-068 · L5-FIN · Inventário de API: a v1 da API de comprovantes que ninguém desligou
+
+- Versão vigente: 1.0.0
+- Cenário: Cobalto Online, onde o cliente consulta os comprovantes de Pix pelo navegador e pelo app
+- Papel do aluno: Pessoa desenvolvedora do time de APIs do Banco Cobalto
+- Linguagem / stack: python / flask
+- Nível: Intermediário · duração estimada: 35 min
+- Família: api-inventario
+- Ramo: Financeiro
+- Módulo do curso: Trained
+
+### Classificação
+
+- CWE: CWE-1059 (principal), CWE-862, CWE-639
+- OWASP Top 10 2025: A01 Broken Access Control
+- OWASP Top 10 2021: A01 Broken Access Control
+- OWASP API Security Top 10 2023: API9 Improper Inventory Management
+- OWASP API Security Top 10 2019: API9 Improper Assets Management
+- SANS CWE Top 25 2025: #4 CWE-862 Missing Authorization
+- SANS CWE Top 25 2024: #9 CWE-862 Missing Authorization
+
+### Objetivos
+
+- Entender por que toda versão publicada de uma API precisa estar no inventário
+- Descobrir uma versão antiga da API que saiu da documentação mas continua no ar
+- Explorar a versão antiga para ler dados de outro cliente
+- Corrigir aposentando a versão antiga no servidor
+
+### Etapas
+
+1. Conhecer a API e a documentação publicada (10 pts)
+2. Encontrar a versão que ficou fora da documentação (15 pts)
+3. Ler o documento de outro cliente pela v1 (15 pts)
+4. Nomear o controle que faltou (15 pts)
+5. Aposentar a versão 1 no servidor (45 pts)
+
+### Histórico de versões
+
+| Versão | Criada em | Obsoleta em | Situação | O que mudou |
+|---|---|---|---|---|
+| 1.0.0 | 2026-11-17 | — | vigente | Primeira versão (versão 1 da API de comprovantes esquecida no ar, Banco Cobalto; família api-inventario, ramo Financeiro). |
+
+## LAB-069 · L5-SAU · Inventário de API: a v1 da API de exames que ninguém desligou
+
+- Versão vigente: 1.0.0
+- Cenário: Íris Resultados, onde o paciente consulta os laudos dos exames pelo navegador e pelo app
+- Papel do aluno: Pessoa desenvolvedora do time de integrações dos Laboratórios Íris
+- Linguagem / stack: python / flask
+- Nível: Intermediário · duração estimada: 35 min
+- Família: api-inventario
+- Ramo: Saúde
+- Módulo do curso: Trained
+
+### Classificação
+
+- CWE: CWE-1059 (principal), CWE-862, CWE-639
+- OWASP Top 10 2025: A01 Broken Access Control
+- OWASP Top 10 2021: A01 Broken Access Control
+- OWASP API Security Top 10 2023: API9 Improper Inventory Management
+- OWASP API Security Top 10 2019: API9 Improper Assets Management
+- SANS CWE Top 25 2025: #4 CWE-862 Missing Authorization
+- SANS CWE Top 25 2024: #9 CWE-862 Missing Authorization
+
+### Objetivos
+
+- Entender por que toda versão publicada de uma API precisa estar no inventário
+- Descobrir uma versão antiga da API que saiu da documentação mas continua no ar
+- Explorar a versão antiga para ler dados de outro cliente
+- Corrigir aposentando a versão antiga no servidor
+
+### Etapas
+
+1. Conhecer a API e a documentação publicada (10 pts)
+2. Encontrar a versão que ficou fora da documentação (15 pts)
+3. Ler o documento de outro cliente pela v1 (15 pts)
+4. Nomear o controle que faltou (15 pts)
+5. Aposentar a versão 1 no servidor (45 pts)
+
+### Histórico de versões
+
+| Versão | Criada em | Obsoleta em | Situação | O que mudou |
+|---|---|---|---|---|
+| 1.0.0 | 2026-11-17 | — | vigente | Primeira versão (versão 1 da API de exames esquecida no ar, Laboratórios Íris; família api-inventario, ramo Saúde). |
+
+## LAB-070 · L5-IND · Inventário de API: a v1 da API de faturas que ninguém desligou
+
+- Versão vigente: 1.0.0
+- Cenário: Serra Azul Empresas, onde clientes industriais consultam faturas e o consumo de energia pelo navegador e pelo app
+- Papel do aluno: Pessoa desenvolvedora do time digital da Elétrica Serra Azul
+- Linguagem / stack: python / flask
+- Nível: Intermediário · duração estimada: 35 min
+- Família: api-inventario
+- Ramo: Indústria e Energia
+- Módulo do curso: Trained
+
+### Classificação
+
+- CWE: CWE-1059 (principal), CWE-862, CWE-639
+- OWASP Top 10 2025: A01 Broken Access Control
+- OWASP Top 10 2021: A01 Broken Access Control
+- OWASP API Security Top 10 2023: API9 Improper Inventory Management
+- OWASP API Security Top 10 2019: API9 Improper Assets Management
+- SANS CWE Top 25 2025: #4 CWE-862 Missing Authorization
+- SANS CWE Top 25 2024: #9 CWE-862 Missing Authorization
+
+### Objetivos
+
+- Entender por que toda versão publicada de uma API precisa estar no inventário
+- Descobrir uma versão antiga da API que saiu da documentação mas continua no ar
+- Explorar a versão antiga para ler dados de outro cliente
+- Corrigir aposentando a versão antiga no servidor
+
+### Etapas
+
+1. Conhecer a API e a documentação publicada (10 pts)
+2. Encontrar a versão que ficou fora da documentação (15 pts)
+3. Ler o documento de outro cliente pela v1 (15 pts)
+4. Nomear o controle que faltou (15 pts)
+5. Aposentar a versão 1 no servidor (45 pts)
+
+### Histórico de versões
+
+| Versão | Criada em | Obsoleta em | Situação | O que mudou |
+|---|---|---|---|---|
+| 1.0.0 | 2026-11-17 | — | vigente | Primeira versão (versão 1 da API de faturas esquecida no ar, Elétrica Serra Azul; família api-inventario, ramo Indústria e Energia). |
