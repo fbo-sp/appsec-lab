@@ -26,8 +26,9 @@ json() { python3 -c "import json,sys; print(json.load(sys.stdin)$1)"; }
 [ "$(curl -s -o /dev/null -w "%{http_code}" "http://127.0.0.1:8003/__cecyber/auth?ticket=x")" = "401" ]
 # Versão do LAB-000 lida do próprio manifesto, para o smoke não quebrar a cada bump de versão.
 LAB000_VERSION="$(grep -E '^  version:' "$ROOT/laboratories/LAB-000-hello-benign/manifest.yaml" | head -1 | sed -E 's/.*version:[[:space:]]*"?([^"[:space:]]+)"?.*/\1/')"
+# 60 s: com ~100 imagens de laboratório recém-construídas, o runner de CI demora mais para provisionar.
 wait_status() {
-  for _ in $(seq 1 40); do
+  for _ in $(seq 1 120); do
     st=$(curl -sf -H "X-Dev-User: smoke" "$API/api/v1/sessions/$1" | json '["status"]')
     [ "$st" = "$2" ] && { echo "$st"; return 0; }; sleep 0.5
   done; echo "esperado $2, obtido $st" >&2; return 1
