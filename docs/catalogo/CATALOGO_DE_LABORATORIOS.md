@@ -83,6 +83,9 @@ Indicado como primeira atividade de qualquer turma, antes do primeiro laboratór
 | LAB-041 | A19-FIN · Erros verbosos: a API que mostra o traceback | 1.0.0 | CWE-209 | A10 Mishandling of Exceptional Conditions (2025) | Não se enquadra; use o CWE (2025) | Intermediário | 30 min |
 | LAB-042 | A19-SAU · Erros verbosos: a API que mostra o traceback | 1.0.0 | CWE-209 | A10 Mishandling of Exceptional Conditions (2025) | Não se enquadra; use o CWE (2025) | Intermediário | 30 min |
 | LAB-043 | A19-IND · Erros verbosos: a API que mostra o traceback | 1.0.0 | CWE-209 | A10 Mishandling of Exceptional Conditions (2025) | Não se enquadra; use o CWE (2025) | Intermediário | 30 min |
+| LAB-044 | A18-FIN · Injeção de LDAP: a busca que lista o diretório inteiro | 1.0.0 | CWE-90 | A05 Injection (2025) | Não se enquadra; use o CWE (2025) | Intermediário | 35 min |
+| LAB-045 | A18-SAU · Injeção de LDAP: a busca que lista o diretório inteiro | 1.0.0 | CWE-90 | A05 Injection (2025) | Não se enquadra; use o CWE (2025) | Intermediário | 35 min |
+| LAB-046 | A18-IND · Injeção de LDAP: a busca que lista o diretório inteiro | 1.0.0 | CWE-90 | A05 Injection (2025) | Não se enquadra; use o CWE (2025) | Intermediário | 35 min |
 
 ## LAB-001 · SQL Injection: a busca que expõe pacientes
 
@@ -1840,3 +1843,123 @@ Indicado como primeira atividade de qualquer turma, antes do primeiro laboratór
 | Versão | Criada em | Obsoleta em | Situação | O que mudou |
 |---|---|---|---|---|
 | 1.0.0 | 2026-11-17 | — | vigente | Primeira versão (erros verbosos / traceback na resposta da API, Metalúrgica Delta; família erros-verbosos, ramo Indústria e Energia). |
+
+## LAB-044 · A18-FIN · Injeção de LDAP: a busca que lista o diretório inteiro
+
+- Versão vigente: 1.0.0
+- Cenário: Diretório Corporativo, onde o funcionário busca colegas pelo nome e vê nome e setor
+- Papel do aluno: Pessoa desenvolvedora do time de plataforma interna da fintech Pagomais
+- Linguagem / stack: python / flask
+- Nível: Intermediário · duração estimada: 35 min
+- Família: ldap-injection
+- Ramo: Financeiro
+- Módulo do curso: Trained
+
+### Classificação
+
+- CWE: CWE-90 (principal), CWE-74
+- OWASP Top 10 2025: A05 Injection
+- OWASP Top 10 2021: A03 Injection
+- SANS CWE Top 25 2025: Não se enquadra; use o CWE
+- SANS CWE Top 25 2024: Não se enquadra; use o CWE
+
+### Objetivos
+
+- Entender por que juntar a entrada do usuário crua em um filtro LDAP permite injeção
+- Explorar a falha buscando por um curinga e vendo o diretório inteiro vazar
+- Reconhecer que a defesa é escapar os caracteres especiais do filtro antes de montá-lo
+- Corrigir a busca escapando a entrada na camada de serviço
+
+### Etapas
+
+1. Conhecer a busca e achar o serviço que monta o filtro (10 pts)
+2. Buscar por um curinga e ver o diretório inteiro vazar (15 pts)
+3. Nomear a defesa que falta (15 pts)
+4. Decidir como a entrada passa a ser tratada (15 pts)
+5. Escapar a entrada no serviço de busca (45 pts)
+
+### Histórico de versões
+
+| Versão | Criada em | Obsoleta em | Situação | O que mudou |
+|---|---|---|---|---|
+| 1.0.0 | 2026-11-17 | — | vigente | Primeira versão (injeção de LDAP na busca do diretório, Fintech Pagomais; família ldap-injection, ramo Financeiro). |
+
+## LAB-045 · A18-SAU · Injeção de LDAP: a busca que lista o diretório inteiro
+
+- Versão vigente: 1.0.0
+- Cenário: Diretório de Profissionais, onde a equipe busca profissionais pelo nome e vê a especialidade
+- Papel do aluno: Pessoa desenvolvedora do time de produtos digitais da Clínica Lumen
+- Linguagem / stack: python / flask
+- Nível: Intermediário · duração estimada: 35 min
+- Família: ldap-injection
+- Ramo: Saúde
+- Módulo do curso: Trained
+
+### Classificação
+
+- CWE: CWE-90 (principal), CWE-74
+- OWASP Top 10 2025: A05 Injection
+- OWASP Top 10 2021: A03 Injection
+- SANS CWE Top 25 2025: Não se enquadra; use o CWE
+- SANS CWE Top 25 2024: Não se enquadra; use o CWE
+
+### Objetivos
+
+- Entender por que juntar a entrada do usuário crua em um filtro LDAP permite injeção
+- Explorar a falha buscando por um curinga e vendo o diretório inteiro vazar
+- Reconhecer que a defesa é escapar os caracteres especiais do filtro antes de montá-lo
+- Corrigir a busca escapando a entrada na camada de serviço
+
+### Etapas
+
+1. Conhecer a busca e achar o serviço que monta o filtro (10 pts)
+2. Buscar por um curinga e ver o diretório inteiro vazar (15 pts)
+3. Nomear a defesa que falta (15 pts)
+4. Decidir como a entrada passa a ser tratada (15 pts)
+5. Escapar a entrada no serviço de busca (45 pts)
+
+### Histórico de versões
+
+| Versão | Criada em | Obsoleta em | Situação | O que mudou |
+|---|---|---|---|---|
+| 1.0.0 | 2026-11-17 | — | vigente | Primeira versão (injeção de LDAP na busca do diretório, Clínica Lumen; família ldap-injection, ramo Saúde). |
+
+## LAB-046 · A18-IND · Injeção de LDAP: a busca que lista o diretório inteiro
+
+- Versão vigente: 1.0.0
+- Cenário: Diretório de Equipe, onde o operador busca colegas pelo nome e vê a unidade
+- Papel do aluno: Pessoa desenvolvedora do time de sistemas internos da Aurora Energia
+- Linguagem / stack: python / flask
+- Nível: Intermediário · duração estimada: 35 min
+- Família: ldap-injection
+- Ramo: Indústria e Energia
+- Módulo do curso: Trained
+
+### Classificação
+
+- CWE: CWE-90 (principal), CWE-74
+- OWASP Top 10 2025: A05 Injection
+- OWASP Top 10 2021: A03 Injection
+- SANS CWE Top 25 2025: Não se enquadra; use o CWE
+- SANS CWE Top 25 2024: Não se enquadra; use o CWE
+
+### Objetivos
+
+- Entender por que juntar a entrada do usuário crua em um filtro LDAP permite injeção
+- Explorar a falha buscando por um curinga e vendo o diretório inteiro vazar
+- Reconhecer que a defesa é escapar os caracteres especiais do filtro antes de montá-lo
+- Corrigir a busca escapando a entrada na camada de serviço
+
+### Etapas
+
+1. Conhecer a busca e achar o serviço que monta o filtro (10 pts)
+2. Buscar por um curinga e ver o diretório inteiro vazar (15 pts)
+3. Nomear a defesa que falta (15 pts)
+4. Decidir como a entrada passa a ser tratada (15 pts)
+5. Escapar a entrada no serviço de busca (45 pts)
+
+### Histórico de versões
+
+| Versão | Criada em | Obsoleta em | Situação | O que mudou |
+|---|---|---|---|---|
+| 1.0.0 | 2026-11-17 | — | vigente | Primeira versão (injeção de LDAP na busca do diretório, Aurora Energia; família ldap-injection, ramo Indústria e Energia). |

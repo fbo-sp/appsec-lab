@@ -1677,6 +1677,128 @@ def _erros(r: ErrosRamo) -> tuple[Suite, ...]:
     )
 
 
+# A18 ldap-injection: busca que junta o nome cru no filtro LDAP / injeção (LAB-044 a LAB-046)
+
+
+@dataclass(frozen=True, slots=True)
+class LdapRamo:
+    ramo: str
+    login_a: str  # conta de suporte que faz login (nome distinto das pessoas do diretório)
+    senha_a: str
+    cn_a: str  # cn exato de uma pessoa do diretório: a busca legítima acha só ela
+    cn_outro: str  # cn de OUTRA pessoa, que só aparece se o * vazar o diretório inteiro
+
+
+LDAP_RAMOS = (
+    LdapRamo("fin", "ti.suporte", "TI#Pagomais26", "Ana Ribeiro Teixeira", "Carlos Moura Pinto"),
+    LdapRamo("sau", "ti.suporte", "TI#Lumen26", "Marcos Tavares Lima", "Renata Borges Nunes"),
+    LdapRamo("ind", "ti.suporte", "TI#Aurora26", "Diego Campos Ferraz", "Sonia Barros Teles"),
+)
+
+
+def _ldap(r: LdapRamo) -> tuple[Suite, ...]:
+    busca_legitima = f"/buscar?nome={urllib.parse.quote(r.cn_a)}"
+    busca_curinga = f"/buscar?nome={urllib.parse.quote('*')}"
+    return (
+        AnswerSuite(
+            ref=f"ldap-injection/answer/metodo-{r.ramo}-v1",
+            version="1.0.0",
+            prompt="Método que monta o filtro e faz a busca",
+            accepted=("por_nome", "por_nome()"),
+            success_feedback="Isso. É em por_nome que o nome entra cru no filtro.",
+            failure_feedback="Ainda não. Em services/busca_service.py, veja o único método público da classe.",
+        ),
+        AnswerSuite(
+            ref=f"ldap-injection/answer/comportamento-{r.ramo}-v1",
+            version="1.0.0",
+            prompt="A busca por * devolve uma pessoa ou o diretório inteiro?",
+            accepted=(
+                "o diretório inteiro",
+                "o diretorio inteiro",
+                "diretório inteiro",
+                "diretorio inteiro",
+                "o diretório todo",
+                "o diretorio todo",
+                "todo o diretório",
+                "todo o diretorio",
+                "o diretório",
+                "o diretorio",
+                "tudo",
+                "todos",
+                "todas",
+            ),
+            success_feedback="Exato: o * virou curinga e listou o diretório inteiro de uma vez.",
+            failure_feedback="Não é isso. Busque por * e repare que aparecem todas as pessoas, não só uma.",
+        ),
+        AnswerSuite(
+            ref=f"ldap-injection/answer/defesa-{r.ramo}-v1",
+            version="1.0.0",
+            prompt="O que a busca precisa fazer com os caracteres especiais antes de montar o filtro",
+            accepted=(
+                "escapar",
+                "escapar os caracteres",
+                "escapar os caracteres especiais",
+                "escape",
+                "escapá-los",
+                "escapa-los",
+                "escapando",
+            ),
+            success_feedback="Isso. A defesa é escapar os caracteres especiais do filtro.",
+            failure_feedback="Ainda não. É o mesmo que se faz para um caractere virar texto, e não sintaxe.",
+        ),
+        AnswerSuite(
+            ref=f"ldap-injection/answer/onde-{r.ramo}-v1",
+            version="1.0.0",
+            prompt="Depois da correção, o * digitado é tratado como curinga ou como texto?",
+            accepted=(
+                "texto",
+                "como texto",
+                "um texto",
+                "dado",
+                "como dado",
+                "um dado",
+                "literal",
+                "caractere literal",
+                "caractere comum",
+            ),
+            success_feedback="Isso. Escapado, o * deixa de ser curinga e vira texto comum.",
+            failure_feedback="Ainda não. O escape tira o poder de sintaxe do caractere; ele passa a ser um valor.",
+        ),
+        HttpSuite(
+            ref=f"ldap-injection/python-flask/busca-protegida-{r.ramo}-v1",
+            version="1.0.0",
+            logins=(HttpLogin(name="a", path="/login", form={"login": r.login_a, "senha": r.senha_a}),),
+            checks=(
+                HttpCheck(
+                    id="busca-legitima",
+                    description="Buscar por um nome real continua achando a pessoa depois da correção.",
+                    path=busca_legitima,
+                    method="GET",
+                    as_user="a",
+                    contains=(r.cn_a,),
+                ),
+                HttpCheck(
+                    id="curinga-nao-vaza-tudo",
+                    description="Buscar por * não lista mais o diretório inteiro.",
+                    path=busca_curinga,
+                    method="GET",
+                    as_user="a",
+                    contains=("Nenhuma pessoa encontrada",),
+                    not_contains=(r.cn_outro,),
+                ),
+            ),
+            success_feedback=(
+                "Correção validada: buscar por um nome real continua funcionando, e buscar por * não "
+                "lista mais o diretório inteiro — a entrada agora é tratada como texto, não como filtro."
+            ),
+            failure_feedback=(
+                "Algumas verificações falharam. Confira cada item abaixo, ajuste services/busca_service.py "
+                "e valide de novo. Escape os caracteres especiais do filtro antes de montar o (cn=...)."
+            ),
+        ),
+    )
+
+
 SUITES_FAMILIAS: tuple[Suite, ...] = (
     tuple(s for r in XSS_RAMOS for s in _xss(r))
     + tuple(s for r in MASSA_RAMOS for s in _massa(r))
@@ -1691,4 +1813,5 @@ SUITES_FAMILIAS: tuple[Suite, ...] = (
     + tuple(s for r in CONFIANCA_RAMOS for s in _confianca(r))
     + tuple(s for r in AUTORIZACAO_RAMOS for s in _autorizacao(r))
     + tuple(s for r in ERROS_RAMOS for s in _erros(r))
+    + tuple(s for r in LDAP_RAMOS for s in _ldap(r))
 )

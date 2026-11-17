@@ -240,3 +240,15 @@ labs:
     - version: 1.0.0
       published: 2026-11-17
       summary: Primeira versão (erros verbosos / traceback na resposta da API, Metalúrgica Delta; família erros-verbosos, ramo Indústria e Energia).
+  LAB-044:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (injeção de LDAP na busca do diretório, Fintech Pagomais; família ldap-injection, ramo Financeiro).
+  LAB-045:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (injeção de LDAP na busca do diretório, Clínica Lumen; família ldap-injection, ramo Saúde).
+  LAB-046:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (injeção de LDAP na busca do diretório, Aurora Energia; família ldap-injection, ramo Indústria e Energia).

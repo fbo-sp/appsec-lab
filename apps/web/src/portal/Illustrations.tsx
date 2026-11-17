@@ -536,6 +536,27 @@ const ILLUSTRATIONS: Record<string, { caption: string; body: () => ReactNode }> 
       />
     ),
   },
+  "ldap-injection": {
+    caption: "Injeção de LDAP: o nome entra cru no filtro, então um * vira curinga e lista o diretório inteiro.",
+    body: () => (
+      <Compare
+        bad={[
+          "Junta o nome cru no filtro (o que tem hoje)",
+          <>
+            <span>{c('filtro = f"(cn={nome})"')} usa o texto como está.</span>
+            <span>Buscar por {c("*")} vira {c("(cn=*)")}: o curinga casa com todo mundo e vaza o diretório.</span>
+          </>,
+        ]}
+        good={[
+          "Escapa os caracteres especiais do filtro",
+          <>
+            <span>Antes de montar o filtro, troca {c("*")} por {c("\\2a")}, {c("(")} por {c("\\28")}, e assim por diante.</span>
+            <span>Escapado, o {c("*")} vira texto: {c("(cn=\\2a)")} procura o caractere literal e não casa com ninguém.</span>
+          </>,
+        ]}
+      />
+    ),
+  },
   "logica-validacao": {
     caption: "Falha de lógica: o código funciona, mas ninguém conferiu quando o valor pedido é válido.",
     body: () => (
