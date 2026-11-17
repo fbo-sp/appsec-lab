@@ -1,0 +1,93 @@
+# Família A13 tentativas-login (ADR-021): o que muda por ramo. O modelo comum está em ./modelo.
+# Depois de editar, rode:  uv run python scripts/gerar-familia.py tentativas-login
+# Logins e senhas estão espelhados em apps/backend/app/validation/suites_familias.py (registro
+# protegido); os testes Docker conferem os dois. A falha é de autenticação: services/auth_service.py
+# confere a senha mas não limita o número de tentativas seguidas por usuário (força bruta).
+ramos:
+  - destino: LAB-026-tentativas-fintech
+    vars:
+      lab_id: LAB-026
+      versao: 1.0.0
+      codigo: A13-FIN
+      ramo: fin
+      setor: financeiro
+      imagem: lab-026-login
+      titulo: o login que aceita senhas sem parar
+      empresa: Pagomais
+      marca: "₽ Pagomais"
+      app_nome: Área do Cliente
+      cor: "#1d4ed8"
+      papel: Pessoa desenvolvedora do time de contas da fintech Pagomais
+      aplicacao: Área do Cliente, onde o cliente entra com usuário e senha para acessar a própria conta
+      contexto: O cliente entra na Área do Cliente com usuário e senha. Um teste de invasão alertou que o login aceita tentativas ilimitadas de senha — dá para testar senha após senha (força bruta) sem que nada bloqueie.
+      missao: Confirmar que o login aceita tentativas ilimitadas e corrigir limitando as tentativas por usuário
+      painel_titulo: Área do Cliente
+      painel_desc: Sua conta na Pagomais.
+      login_desc: Entre com as credenciais do cliente para acessar a sua conta.
+      banco: pagomais_contas
+      login_a: ana.ribeiro
+      senha_a: "Ana#Pagomais26"
+      nome_a: Ana Ribeiro Teixeira
+      historia_abertura: 'Você está no time de contas da fintech Pagomais. O cliente entra na Área do Cliente com usuário e senha. O time de segurança abriu um chamado: o login aceita tentativas de senha ilimitadas, e um teste de invasão mostrou que dá para testar senha após senha (força bruta) sem que nada bloqueie a conta.'
+      seed_contas:
+        - [1, ana.ribeiro, Ana Ribeiro Teixeira, "Ana#Pagomais26", 0.0]
+        - [2, carlos.moura, Carlos Moura Pinto, "Carlos#Pagomais26", 0.0]
+        - [3, juliana.alves, Juliana Alves Castro, "Juliana#Pagomais26", 0.0]
+  - destino: LAB-027-tentativas-saude
+    vars:
+      lab_id: LAB-027
+      versao: 1.0.0
+      codigo: A13-SAU
+      ramo: sau
+      setor: saude
+      imagem: lab-027-login
+      titulo: o login que aceita senhas sem parar
+      empresa: Clínica Lumen
+      marca: "✚ Lumen"
+      app_nome: Portal do Paciente
+      cor: "#0e7490"
+      papel: Pessoa desenvolvedora do time de produtos digitais da Clínica Lumen
+      aplicacao: Portal do Paciente, onde o paciente entra com usuário e senha para acessar os próprios dados
+      contexto: O paciente entra no Portal do Paciente com usuário e senha. Numa auditoria, a equipe apontou que o login aceita tentativas ilimitadas de senha — dá para testar senha após senha (força bruta) sem que nada bloqueie.
+      missao: Confirmar que o login aceita tentativas ilimitadas e corrigir limitando as tentativas por usuário
+      painel_titulo: Portal do Paciente
+      painel_desc: Seu acesso à Clínica Lumen.
+      login_desc: Entre com as credenciais do paciente para acessar o portal.
+      banco: lumen_pacientes
+      login_a: marcos.tavares
+      senha_a: "Marcos#Lumen26"
+      nome_a: Marcos Tavares Lima
+      historia_abertura: 'Você é do time de produtos digitais da Clínica Lumen. O paciente entra no Portal do Paciente com usuário e senha. Numa auditoria, a equipe apontou que o login aceita tentativas de senha ilimitadas, e que dá para testar senha após senha (força bruta) sem que nada bloqueie a conta.'
+      seed_contas:
+        - [1, marcos.tavares, Marcos Tavares Lima, "Marcos#Lumen26", 0.0]
+        - [2, renata.borges, Renata Borges Pires, "Renata#Lumen26", 0.0]
+        - [3, paulo.freitas, Paulo Freitas Nunes, "Paulo#Lumen26", 0.0]
+  - destino: LAB-028-tentativas-industria
+    vars:
+      lab_id: LAB-028
+      versao: 1.0.0
+      codigo: A13-IND
+      ramo: ind
+      setor: industria-energia
+      imagem: lab-028-login
+      titulo: o login que aceita senhas sem parar
+      empresa: Metalúrgica Aurora
+      marca: "⚙ Aurora"
+      app_nome: Portal do Fornecedor
+      cor: "#9a3412"
+      papel: Pessoa desenvolvedora do time digital da Metalúrgica Aurora
+      aplicacao: Portal do Fornecedor, onde o fornecedor entra com usuário e senha para acessar pedidos e notas
+      contexto: O fornecedor entra no Portal do Fornecedor com usuário e senha. Antes de uma auditoria, a equipe apontou que o login aceita tentativas ilimitadas de senha — dá para testar senha após senha (força bruta) sem que nada bloqueie.
+      missao: Confirmar que o login aceita tentativas ilimitadas e corrigir limitando as tentativas por usuário
+      painel_titulo: Portal do Fornecedor
+      painel_desc: Seu acesso à Metalúrgica Aurora.
+      login_desc: Entre com as credenciais do fornecedor para acessar o portal.
+      banco: aurora_fornecedores
+      login_a: diego.campos
+      senha_a: "Diego#Aurora26"
+      nome_a: Diego Campos Rocha
+      historia_abertura: 'Você é do time digital da Metalúrgica Aurora. O fornecedor entra no Portal do Fornecedor com usuário e senha. A equipe apontou que o login aceita tentativas de senha ilimitadas, e que dá para testar senha após senha (força bruta) sem que nada bloqueie a conta.'
+      seed_contas:
+        - [1, diego.campos, Diego Campos Rocha, "Diego#Aurora26", 0.0]
+        - [2, sonia.barros, Sônia Barros Melo, "Sonia#Aurora26", 0.0]
+        - [3, rafael.pires, Rafael Pires Gomes, "Rafael#Aurora26", 0.0]

@@ -410,6 +410,27 @@ const ILLUSTRATIONS: Record<string, { caption: string; body: () => ReactNode }> 
       />
     ),
   },
+  "forca-bruta": {
+    caption: "Força bruta: sem limite de tentativas, o atacante testa senha após senha até acertar.",
+    body: () => (
+      <Compare
+        bad={[
+          "Sem limite (o que tem hoje)",
+          <>
+            <span>Cada senha errada responde só {c("inválido")}; ninguém conta as tentativas.</span>
+            <span>O atacante manda {c("senha1, senha2, senha3…")} direto para {c("/login")}, sem parar.</span>
+          </>,
+        ]}
+        good={[
+          "Com limite por usuário no servidor",
+          <>
+            <span>O servidor conta as falhas por usuário e bloqueia depois de {c("5")}.</span>
+            <span>A força bruta trava; um usuário diferente, que não errou, continua entrando.</span>
+          </>,
+        ]}
+      />
+    ),
+  },
   "logica-validacao": {
     caption: "Falha de lógica: o código funciona, mas ninguém conferiu quando o valor pedido é válido.",
     body: () => (

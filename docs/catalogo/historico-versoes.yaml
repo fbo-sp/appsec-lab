@@ -168,3 +168,15 @@ labs:
     - version: 1.0.0
       published: 2026-11-17
       summary: Primeira versão (falha de lógica de negócio no uso de créditos, Voltera Distribuidora de Energia; família logica-negocio, ramo Indústria e Energia).
+  LAB-026:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (login sem limite de tentativas / força bruta, Pagomais; família tentativas-login, ramo Financeiro).
+  LAB-027:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (login sem limite de tentativas / força bruta, Clínica Lumen; família tentativas-login, ramo Saúde).
+  LAB-028:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (login sem limite de tentativas / força bruta, Metalúrgica Aurora; família tentativas-login, ramo Indústria e Energia).

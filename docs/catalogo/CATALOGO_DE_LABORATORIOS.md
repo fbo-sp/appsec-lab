@@ -65,6 +65,9 @@ Indicado como primeira atividade de qualquer turma, antes do primeiro laboratór
 | LAB-023 | A8-FIN · Lógica de negócio: o resgate que aceita qualquer valor | 1.0.0 | CWE-840 | A06 Insecure Design (2025) | Não se enquadra; use o CWE (2025) | Intermediário | 35 min |
 | LAB-024 | A8-SAU · Lógica de negócio: o reembolso que aceita qualquer valor | 1.0.0 | CWE-840 | A06 Insecure Design (2025) | Não se enquadra; use o CWE (2025) | Intermediário | 35 min |
 | LAB-025 | A8-IND · Lógica de negócio: o uso de créditos que aceita qualquer valor | 1.0.0 | CWE-840 | A06 Insecure Design (2025) | Não se enquadra; use o CWE (2025) | Intermediário | 35 min |
+| LAB-026 | A13-FIN · Força bruta no login: o login que aceita senhas sem parar | 1.0.0 | CWE-307 | A07 Authentication Failures (2025) | Não se enquadra; use o CWE (2025) | Intermediário | 35 min |
+| LAB-027 | A13-SAU · Força bruta no login: o login que aceita senhas sem parar | 1.0.0 | CWE-307 | A07 Authentication Failures (2025) | Não se enquadra; use o CWE (2025) | Intermediário | 35 min |
+| LAB-028 | A13-IND · Força bruta no login: o login que aceita senhas sem parar | 1.0.0 | CWE-307 | A07 Authentication Failures (2025) | Não se enquadra; use o CWE (2025) | Intermediário | 35 min |
 
 ## LAB-001 · SQL Injection: a busca que expõe pacientes
 
@@ -1084,3 +1087,126 @@ Indicado como primeira atividade de qualquer turma, antes do primeiro laboratór
 | Versão | Criada em | Obsoleta em | Situação | O que mudou |
 |---|---|---|---|---|
 | 1.0.0 | 2026-11-17 | — | vigente | Primeira versão (falha de lógica de negócio no uso de créditos, Voltera Distribuidora de Energia; família logica-negocio, ramo Indústria e Energia). |
+
+## LAB-026 · A13-FIN · Força bruta no login: o login que aceita senhas sem parar
+
+- Versão vigente: 1.0.0
+- Cenário: Área do Cliente, onde o cliente entra com usuário e senha para acessar a própria conta
+- Papel do aluno: Pessoa desenvolvedora do time de contas da fintech Pagomais
+- Linguagem / stack: python / flask
+- Nível: Intermediário · duração estimada: 35 min
+- Família: tentativas-login
+- Ramo: Financeiro
+- Módulo do curso: Trained
+
+### Classificação
+
+- CWE: CWE-307 (principal), CWE-770
+- OWASP Top 10 2025: A07 Authentication Failures
+- OWASP Top 10 2021: A07 Identification and Authentication Failures
+- OWASP API Security Top 10 2023: API2 Broken Authentication
+- SANS CWE Top 25 2025: Não se enquadra; use o CWE
+- SANS CWE Top 25 2024: Não se enquadra; use o CWE
+
+### Objetivos
+
+- Entender por que um login sem limite de tentativas permite ataque de força bruta
+- Explorar a falha enviando várias tentativas de senha seguidas, sem bloqueio
+- Reconhecer que o limite precisa ser contado no servidor, por usuário
+- Corrigir limitando as tentativas por usuário na camada de serviço
+
+### Etapas
+
+1. Conhecer o login e achar o serviço de autenticação (10 pts)
+2. Testar várias senhas seguidas, sem bloqueio (15 pts)
+3. Nomear a defesa que falta (15 pts)
+4. Decidir onde o limite tem que valer (15 pts)
+5. Limitar as tentativas no serviço de autenticação (45 pts)
+
+### Histórico de versões
+
+| Versão | Criada em | Obsoleta em | Situação | O que mudou |
+|---|---|---|---|---|
+| 1.0.0 | 2026-11-17 | — | vigente | Primeira versão (login sem limite de tentativas / força bruta, Pagomais; família tentativas-login, ramo Financeiro). |
+
+## LAB-027 · A13-SAU · Força bruta no login: o login que aceita senhas sem parar
+
+- Versão vigente: 1.0.0
+- Cenário: Portal do Paciente, onde o paciente entra com usuário e senha para acessar os próprios dados
+- Papel do aluno: Pessoa desenvolvedora do time de produtos digitais da Clínica Lumen
+- Linguagem / stack: python / flask
+- Nível: Intermediário · duração estimada: 35 min
+- Família: tentativas-login
+- Ramo: Saúde
+- Módulo do curso: Trained
+
+### Classificação
+
+- CWE: CWE-307 (principal), CWE-770
+- OWASP Top 10 2025: A07 Authentication Failures
+- OWASP Top 10 2021: A07 Identification and Authentication Failures
+- OWASP API Security Top 10 2023: API2 Broken Authentication
+- SANS CWE Top 25 2025: Não se enquadra; use o CWE
+- SANS CWE Top 25 2024: Não se enquadra; use o CWE
+
+### Objetivos
+
+- Entender por que um login sem limite de tentativas permite ataque de força bruta
+- Explorar a falha enviando várias tentativas de senha seguidas, sem bloqueio
+- Reconhecer que o limite precisa ser contado no servidor, por usuário
+- Corrigir limitando as tentativas por usuário na camada de serviço
+
+### Etapas
+
+1. Conhecer o login e achar o serviço de autenticação (10 pts)
+2. Testar várias senhas seguidas, sem bloqueio (15 pts)
+3. Nomear a defesa que falta (15 pts)
+4. Decidir onde o limite tem que valer (15 pts)
+5. Limitar as tentativas no serviço de autenticação (45 pts)
+
+### Histórico de versões
+
+| Versão | Criada em | Obsoleta em | Situação | O que mudou |
+|---|---|---|---|---|
+| 1.0.0 | 2026-11-17 | — | vigente | Primeira versão (login sem limite de tentativas / força bruta, Clínica Lumen; família tentativas-login, ramo Saúde). |
+
+## LAB-028 · A13-IND · Força bruta no login: o login que aceita senhas sem parar
+
+- Versão vigente: 1.0.0
+- Cenário: Portal do Fornecedor, onde o fornecedor entra com usuário e senha para acessar pedidos e notas
+- Papel do aluno: Pessoa desenvolvedora do time digital da Metalúrgica Aurora
+- Linguagem / stack: python / flask
+- Nível: Intermediário · duração estimada: 35 min
+- Família: tentativas-login
+- Ramo: Indústria e Energia
+- Módulo do curso: Trained
+
+### Classificação
+
+- CWE: CWE-307 (principal), CWE-770
+- OWASP Top 10 2025: A07 Authentication Failures
+- OWASP Top 10 2021: A07 Identification and Authentication Failures
+- OWASP API Security Top 10 2023: API2 Broken Authentication
+- SANS CWE Top 25 2025: Não se enquadra; use o CWE
+- SANS CWE Top 25 2024: Não se enquadra; use o CWE
+
+### Objetivos
+
+- Entender por que um login sem limite de tentativas permite ataque de força bruta
+- Explorar a falha enviando várias tentativas de senha seguidas, sem bloqueio
+- Reconhecer que o limite precisa ser contado no servidor, por usuário
+- Corrigir limitando as tentativas por usuário na camada de serviço
+
+### Etapas
+
+1. Conhecer o login e achar o serviço de autenticação (10 pts)
+2. Testar várias senhas seguidas, sem bloqueio (15 pts)
+3. Nomear a defesa que falta (15 pts)
+4. Decidir onde o limite tem que valer (15 pts)
+5. Limitar as tentativas no serviço de autenticação (45 pts)
+
+### Histórico de versões
+
+| Versão | Criada em | Obsoleta em | Situação | O que mudou |
+|---|---|---|---|---|
+| 1.0.0 | 2026-11-17 | — | vigente | Primeira versão (login sem limite de tentativas / força bruta, Metalúrgica Aurora; família tentativas-login, ramo Indústria e Energia). |

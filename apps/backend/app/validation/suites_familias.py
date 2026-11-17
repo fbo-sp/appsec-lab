@@ -1064,6 +1064,132 @@ def _logica(r: LogicaRamo) -> tuple[Suite, ...]:
     )
 
 
+# A13 tentativas-login: login sem limite de tentativas / força bruta (LAB-026 a LAB-028)
+
+
+@dataclass(frozen=True, slots=True)
+class TentativasRamo:
+    ramo: str
+    login_a: str  # alvo da força bruta (senhas erradas)
+    login_b: str  # conta legítima, não bloqueada, para provar que o login normal segue funcionando
+    senha_b: str
+
+
+TENTATIVAS_RAMOS = (
+    TentativasRamo("fin", "ana.ribeiro", "carlos.moura", "Carlos#Pagomais26"),
+    TentativasRamo("sau", "marcos.tavares", "renata.borges", "Renata#Lumen26"),
+    TentativasRamo("ind", "diego.campos", "sonia.barros", "Sonia#Aurora26"),
+)
+
+
+def _tentativas(r: TentativasRamo) -> tuple[Suite, ...]:
+    # Cinco tentativas erradas seguidas para o mesmo usuário, depois a sexta (que deve bloquear após
+    # a correção). O contador vive no servidor por usuário, então cada requisição anônima acumula.
+    erros = tuple(
+        HttpCheck(
+            id=f"erro-{n}",
+            description=f"Tentativa {n} com senha errada é recusada como credencial inválida.",
+            path="/login",
+            method="POST",
+            form={"login": r.login_a, "senha": f"errada{n}"},
+            contains=("inválid",),
+            not_contains=("Muitas tentativas",),
+        )
+        for n in range(1, 6)
+    )
+    return (
+        AnswerSuite(
+            ref=f"tentativas-login/answer/metodo-{r.ramo}-v1",
+            version="1.0.0",
+            prompt="Método que confere o login e a senha",
+            accepted=("autenticar", "autenticar()"),
+            success_feedback="Isso. É em autenticar que deveria haver um limite de tentativas.",
+            failure_feedback="Ainda não. Em services/auth_service.py, veja o único método público da classe.",
+        ),
+        AnswerSuite(
+            ref=f"tentativas-login/answer/comportamento-{r.ramo}-v1",
+            version="1.0.0",
+            prompt="Depois de muitas tentativas erradas, o login bloqueia ou continua aceitando?",
+            accepted=(
+                "continua",
+                "continua aceitando",
+                "continua aceitando tentativas",
+                "continuou",
+                "aceita",
+                "aceitando",
+                "não bloqueia",
+                "nao bloqueia",
+            ),
+            success_feedback="Exato: sem limite, o login continua aceitando tentativas para sempre.",
+            failure_feedback="Não é isso. Por mais que você erre, a mensagem é a mesma e o login nunca trava.",
+        ),
+        AnswerSuite(
+            ref=f"tentativas-login/answer/defesa-{r.ramo}-v1",
+            version="1.0.0",
+            prompt="O login precisa limitar o número de quê por usuário",
+            accepted=(
+                "tentativas",
+                "tentativas de login",
+                "as tentativas",
+                "tentativa",
+                "número de tentativas",
+                "numero de tentativas",
+            ),
+            success_feedback="Isso. A defesa é limitar as tentativas de login por usuário.",
+            failure_feedback="Ainda não. É o que o atacante faz muitas vezes seguidas até acertar a senha.",
+        ),
+        AnswerSuite(
+            ref=f"tentativas-login/answer/onde-{r.ramo}-v1",
+            version="1.0.0",
+            prompt="Onde o limite de tentativas tem que ser contado e aplicado",
+            accepted=(
+                "servidor",
+                "no servidor",
+                "lado do servidor",
+                "no lado do servidor",
+                "backend",
+                "no backend",
+                "server-side",
+                "server side",
+            ),
+            success_feedback="Isso. O limite que vale é o que o servidor conta e aplica, não o navegador.",
+            failure_feedback="Ainda não. O atacante não usa a sua tela; a contagem tem que valer do outro lado.",
+        ),
+        HttpSuite(
+            ref=f"tentativas-login/python-flask/login-protegido-{r.ramo}-v1",
+            version="1.0.0",
+            checks=(
+                *erros,
+                HttpCheck(
+                    id="bloqueio-apos-limite",
+                    description="Depois do limite de tentativas, uma nova tentativa é bloqueada.",
+                    path="/login",
+                    method="POST",
+                    form={"login": r.login_a, "senha": "errada6"},
+                    contains=("Muitas tentativas",),
+                ),
+                HttpCheck(
+                    id="login-legitimo",
+                    description="Um usuário diferente, não bloqueado, continua conseguindo entrar.",
+                    path="/login",
+                    method="POST",
+                    form={"login": r.login_b, "senha": r.senha_b},
+                    contains=("Sair",),
+                    not_contains=("inválid", "Muitas tentativas"),
+                ),
+            ),
+            success_feedback=(
+                "Correção validada: o login bloqueia após o limite de tentativas, e um usuário diferente "
+                "continua entrando — o limite agora vale por usuário, no servidor."
+            ),
+            failure_feedback=(
+                "Algumas verificações falharam. Confira cada item abaixo, ajuste services/auth_service.py "
+                "e valide de novo. O limite deve ser por usuário (não global) e contado no servidor."
+            ),
+        ),
+    )
+
+
 SUITES_FAMILIAS: tuple[Suite, ...] = (
     tuple(s for r in XSS_RAMOS for s in _xss(r))
     + tuple(s for r in MASSA_RAMOS for s in _massa(r))
@@ -1072,4 +1198,5 @@ SUITES_FAMILIAS: tuple[Suite, ...] = (
     + tuple(s for r in UPLOAD_RAMOS for s in _upload(r))
     + tuple(s for r in SSRF_RAMOS for s in _ssrf(r))
     + tuple(s for r in LOGICA_RAMOS for s in _logica(r))
+    + tuple(s for r in TENTATIVAS_RAMOS for s in _tentativas(r))
 )
