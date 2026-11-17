@@ -80,6 +80,9 @@ Indicado como primeira atividade de qualquer turma, antes do primeiro laboratór
 | LAB-038 | A15-FIN · Autorização de função: a API de admin aberta para todos | 1.0.0 | CWE-862 | A01 Broken Access Control (2025) | #4 CWE-862 Missing Authorization (2025) | Intermediário | 35 min |
 | LAB-039 | A15-SAU · Autorização de função: a API de admin aberta para todos | 1.0.0 | CWE-862 | A01 Broken Access Control (2025) | #4 CWE-862 Missing Authorization (2025) | Intermediário | 35 min |
 | LAB-040 | A15-IND · Autorização de função: a API de admin aberta para todos | 1.0.0 | CWE-862 | A01 Broken Access Control (2025) | #4 CWE-862 Missing Authorization (2025) | Intermediário | 35 min |
+| LAB-041 | A19-FIN · Erros verbosos: a API que mostra o traceback | 1.0.0 | CWE-209 | A10 Mishandling of Exceptional Conditions (2025) | Não se enquadra; use o CWE (2025) | Intermediário | 30 min |
+| LAB-042 | A19-SAU · Erros verbosos: a API que mostra o traceback | 1.0.0 | CWE-209 | A10 Mishandling of Exceptional Conditions (2025) | Não se enquadra; use o CWE (2025) | Intermediário | 30 min |
+| LAB-043 | A19-IND · Erros verbosos: a API que mostra o traceback | 1.0.0 | CWE-209 | A10 Mishandling of Exceptional Conditions (2025) | Não se enquadra; use o CWE (2025) | Intermediário | 30 min |
 
 ## LAB-001 · SQL Injection: a busca que expõe pacientes
 
@@ -1714,3 +1717,126 @@ Indicado como primeira atividade de qualquer turma, antes do primeiro laboratór
 | Versão | Criada em | Obsoleta em | Situação | O que mudou |
 |---|---|---|---|---|
 | 1.0.0 | 2026-11-17 | — | vigente | Primeira versão (API administrativa sem conferência de papel / BFLA, Petroquímica Horizonte; família autorizacao-api, ramo Indústria e Energia). |
+
+## LAB-041 · A19-FIN · Erros verbosos: a API que mostra o traceback
+
+- Versão vigente: 1.0.0
+- Cenário: Painel de Relatórios, onde o analista gera relatórios mensais por uma API interna
+- Papel do aluno: Pessoa desenvolvedora do time de dados da Fintech Nimbo
+- Linguagem / stack: python / flask
+- Nível: Intermediário · duração estimada: 30 min
+- Família: erros-verbosos
+- Ramo: Financeiro
+- Módulo do curso: Trained
+
+### Classificação
+
+- CWE: CWE-209 (principal), CWE-755
+- OWASP Top 10 2025: A10 Mishandling of Exceptional Conditions
+- OWASP Top 10 2021: A05 Security Misconfiguration
+- OWASP API Security Top 10 2023: API8 Security Misconfiguration
+- SANS CWE Top 25 2025: Não se enquadra; use o CWE
+- SANS CWE Top 25 2024: Não se enquadra; use o CWE
+
+### Objetivos
+
+- Entender por que mensagens de erro detalhadas vazam informação útil ao atacante
+- Explorar a falha forçando um erro e lendo o traceback na resposta
+- Reconhecer que o detalhe do erro deve ir para o log, não para o cliente
+- Corrigir devolvendo uma mensagem genérica e registrando o detalhe no servidor
+
+### Etapas
+
+1. Conhecer a API de relatório e o tratamento de erro (10 pts)
+2. Forçar um erro e ler o traceback na resposta (15 pts)
+3. Decidir para onde o detalhe deve ir (15 pts)
+4. Decidir o que o cliente deve receber (15 pts)
+5. Registrar o detalhe e responder genérico no serviço (45 pts)
+
+### Histórico de versões
+
+| Versão | Criada em | Obsoleta em | Situação | O que mudou |
+|---|---|---|---|---|
+| 1.0.0 | 2026-11-17 | — | vigente | Primeira versão (erros verbosos / traceback na resposta da API, Fintech Nimbo; família erros-verbosos, ramo Financeiro). |
+
+## LAB-042 · A19-SAU · Erros verbosos: a API que mostra o traceback
+
+- Versão vigente: 1.0.0
+- Cenário: Painel de Relatórios, onde a equipe gera relatórios mensais por uma API interna
+- Papel do aluno: Pessoa desenvolvedora do time de dados da operadora Prisma
+- Linguagem / stack: python / flask
+- Nível: Intermediário · duração estimada: 30 min
+- Família: erros-verbosos
+- Ramo: Saúde
+- Módulo do curso: Trained
+
+### Classificação
+
+- CWE: CWE-209 (principal), CWE-755
+- OWASP Top 10 2025: A10 Mishandling of Exceptional Conditions
+- OWASP Top 10 2021: A05 Security Misconfiguration
+- OWASP API Security Top 10 2023: API8 Security Misconfiguration
+- SANS CWE Top 25 2025: Não se enquadra; use o CWE
+- SANS CWE Top 25 2024: Não se enquadra; use o CWE
+
+### Objetivos
+
+- Entender por que mensagens de erro detalhadas vazam informação útil ao atacante
+- Explorar a falha forçando um erro e lendo o traceback na resposta
+- Reconhecer que o detalhe do erro deve ir para o log, não para o cliente
+- Corrigir devolvendo uma mensagem genérica e registrando o detalhe no servidor
+
+### Etapas
+
+1. Conhecer a API de relatório e o tratamento de erro (10 pts)
+2. Forçar um erro e ler o traceback na resposta (15 pts)
+3. Decidir para onde o detalhe deve ir (15 pts)
+4. Decidir o que o cliente deve receber (15 pts)
+5. Registrar o detalhe e responder genérico no serviço (45 pts)
+
+### Histórico de versões
+
+| Versão | Criada em | Obsoleta em | Situação | O que mudou |
+|---|---|---|---|---|
+| 1.0.0 | 2026-11-17 | — | vigente | Primeira versão (erros verbosos / traceback na resposta da API, Operadora Prisma; família erros-verbosos, ramo Saúde). |
+
+## LAB-043 · A19-IND · Erros verbosos: a API que mostra o traceback
+
+- Versão vigente: 1.0.0
+- Cenário: Painel de Relatórios, onde a equipe gera relatórios mensais de produção por uma API interna
+- Papel do aluno: Pessoa desenvolvedora do time digital da Metalúrgica Delta
+- Linguagem / stack: python / flask
+- Nível: Intermediário · duração estimada: 30 min
+- Família: erros-verbosos
+- Ramo: Indústria e Energia
+- Módulo do curso: Trained
+
+### Classificação
+
+- CWE: CWE-209 (principal), CWE-755
+- OWASP Top 10 2025: A10 Mishandling of Exceptional Conditions
+- OWASP Top 10 2021: A05 Security Misconfiguration
+- OWASP API Security Top 10 2023: API8 Security Misconfiguration
+- SANS CWE Top 25 2025: Não se enquadra; use o CWE
+- SANS CWE Top 25 2024: Não se enquadra; use o CWE
+
+### Objetivos
+
+- Entender por que mensagens de erro detalhadas vazam informação útil ao atacante
+- Explorar a falha forçando um erro e lendo o traceback na resposta
+- Reconhecer que o detalhe do erro deve ir para o log, não para o cliente
+- Corrigir devolvendo uma mensagem genérica e registrando o detalhe no servidor
+
+### Etapas
+
+1. Conhecer a API de relatório e o tratamento de erro (10 pts)
+2. Forçar um erro e ler o traceback na resposta (15 pts)
+3. Decidir para onde o detalhe deve ir (15 pts)
+4. Decidir o que o cliente deve receber (15 pts)
+5. Registrar o detalhe e responder genérico no serviço (45 pts)
+
+### Histórico de versões
+
+| Versão | Criada em | Obsoleta em | Situação | O que mudou |
+|---|---|---|---|---|
+| 1.0.0 | 2026-11-17 | — | vigente | Primeira versão (erros verbosos / traceback na resposta da API, Metalúrgica Delta; família erros-verbosos, ramo Indústria e Energia). |

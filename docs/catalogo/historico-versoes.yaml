@@ -228,3 +228,15 @@ labs:
     - version: 1.0.0
       published: 2026-11-17
       summary: Primeira versão (API administrativa sem conferência de papel / BFLA, Petroquímica Horizonte; família autorizacao-api, ramo Indústria e Energia).
+  LAB-041:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (erros verbosos / traceback na resposta da API, Fintech Nimbo; família erros-verbosos, ramo Financeiro).
+  LAB-042:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (erros verbosos / traceback na resposta da API, Operadora Prisma; família erros-verbosos, ramo Saúde).
+  LAB-043:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (erros verbosos / traceback na resposta da API, Metalúrgica Delta; família erros-verbosos, ramo Indústria e Energia).

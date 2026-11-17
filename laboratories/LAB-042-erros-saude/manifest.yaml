@@ -1,0 +1,242 @@
+# LAB-042 (A19-SAU): erros verbosos (CWE-209) no Painel de Relatórios da Operadora Prisma (Flask + SQLite).
+# CONTÉM VULNERABILIDADE INTENCIONAL. Uso exclusivo no runtime Docker LOCAL (ADR-008), em rede
+# interna da sessão. Dados 100% fictícios. Família A19 erros-verbosos (ADR-021): gerado por
+# scripts/gerar-familia.py a partir de laboratories/_familias/erros-verbosos; não edite este arquivo à mão.
+#
+# ATENÇÃO: o digest abaixo é uma FIXTURE (sha256 de um texto fixo), não uma imagem publicada.
+# scripts/lab-local.sh e .ps1 trocam pela imagem construída localmente antes de registrar.
+apiVersion: labs.cecyber.io/v1alpha1
+kind: AppSecLab
+metadata:
+  id: LAB-042
+  version: 1.0.0
+  title: "A19-SAU · Erros verbosos: a API que mostra o traceback"
+  primaryCwe: CWE-209
+  secondaryCwes: [CWE-755]
+  family: erros-verbosos
+  sectors: [saude]
+  courseModules: [trained]
+  classifications:
+    - framework: OWASP Top 10
+      edition: "2025"
+      entries:
+        - "A10 Mishandling of Exceptional Conditions"
+    - framework: OWASP Top 10
+      edition: "2021"
+      entries:
+        - "A05 Security Misconfiguration"
+    - framework: OWASP API Security Top 10
+      edition: "2023"
+      entries:
+        - "API8 Security Misconfiguration"
+    - framework: SANS CWE Top 25
+      edition: "2025"
+      entries:
+        - "Não se enquadra; use o CWE"
+    - framework: SANS CWE Top 25
+      edition: "2024"
+      entries:
+        - "Não se enquadra; use o CWE"
+learning:
+  singleVulnerability: true
+  estimatedMinutes: 30
+  difficulty: intermediate
+  objectives:
+    - Entender por que mensagens de erro detalhadas vazam informação útil ao atacante
+    - Explorar a falha forçando um erro e lendo o traceback na resposta
+    - Reconhecer que o detalhe do erro deve ir para o log, não para o cliente
+    - Corrigir devolvendo uma mensagem genérica e registrando o detalhe no servidor
+  story:
+    role: Pessoa desenvolvedora do time de dados da operadora Prisma
+    application: Painel de Relatórios, onde a equipe gera relatórios mensais por uma API interna
+    context: >-
+      O Painel de Relatórios gera relatórios por uma API. Numa auditoria, a equipe apontou que, quando o processamento falha, a API devolve ao cliente o traceback completo — vazando caminhos de arquivos e detalhes internos do sistema.
+    mission: Confirmar que a API vaza o traceback em erros e corrigir devolvendo mensagem genérica e logando o detalhe
+  wrapUp:
+    text: |
+      Agora a API responde a erros com uma mensagem genérica e guarda o detalhe só no log do servidor. Em um sistema real, vale reforçar:
+
+      - **Mensagem de erro é informação.** Traceback, caminho de arquivo, versão de biblioteca, consulta SQL, nome de host: cada detalhe ajuda quem ataca a mapear o sistema e escolher o próximo passo. O cliente não precisa de nada disso.
+      - **Detalhe vai para o log, resposta vai genérica.** Registre a exceção completa no servidor (com um id de correlação, se possível) e devolva ao cliente só "erro interno" e, quando útil, esse id para o suporte rastrear.
+      - **Desligue o modo debug em produção.** O debugger interativo (ex.: o do Flask) expõe traceback e até um console remoto. Ele é ótimo para desenvolver e perigoso em produção.
+      - **Trate exceções de propósito.** Capturar `Exception` e repassar o texto é quase tão ruim quanto não tratar. Decida o que o cliente vê e o que fica no log.
+    references:
+      - title: "OWASP Top 10:2025: A10 Mishandling of Exceptional Conditions"
+        url: https://top10.owasp.org/2025/A10_2025-Mishandling_of_Exceptional_Conditions/
+      - title: "OWASP Top 10:2021: A05 Security Misconfiguration"
+        url: https://owasp.org/Top10/A05_2021-Security_Misconfiguration/
+      - title: "CWE-209: Generation of Error Message Containing Sensitive Information"
+        url: https://cwe.mitre.org/data/definitions/209.html
+      - title: "OWASP Cheat Sheet: Error Handling"
+        url: https://cheatsheetseries.owasp.org/cheatsheets/Error_Handling_Cheat_Sheet.html
+variants:
+  - id: python-flask
+    language: python
+    framework: flask
+    image: registry.local/labs/lab-042-erros@sha256:5c0c611ad4fd07e17f6808acd2d05ce7d1f1c7a6aef59aa0861d7bd7ba24a3ae
+    runtimeProfile: web-basic
+    workspacePath: /workspace
+    startup:
+      command: ["sh", "-c", "python -u -m flask --app app run --host 0.0.0.0 --port 8080 --reload --no-debugger 2>&1 | tee -a /tmp/app.log"]
+      port: 8080
+    resources:
+      cpuMillicores: 500
+      memoryMiB: 512
+      storageMiB: 256
+      pidsMax: 64
+    session:
+      ttlMinutes: 45
+      maxRenewals: 2
+    interfaces: [editor, terminal, web]
+steps:
+  - id: conhecer
+    order: 1
+    title: Conhecer a API de relatório e o tratamento de erro
+    explanation: |
+      Você é do time de dados da operadora Prisma. O Painel de Relatórios gera relatórios por uma API (/api/relatorio). Numa auditoria, a equipe apontou que, quando o processamento falha, a API devolve ao cliente o traceback completo, com caminhos como /workspace/... e detalhes internos do sistema.
+
+      Uma mensagem de erro detalhada é um presente para quem ataca: traceback, caminhos de arquivos, nomes de módulos e versões revelam como o sistema é por dentro. O cliente não precisa disso; o detalhe deve ir para o **log** do servidor.
+
+      ```ilustracao
+      erros-verbosos
+      ```
+
+      Siga o erro pelas camadas:
+
+      1. **Controller** (`controllers/painel_controller.py`): a rota `/api/relatorio` tenta gerar o relatório e, se falhar, chama a ErroService.
+      2. **Serviço** (`services/erro_service.py`): monta o corpo de erro para o cliente. **É aqui que o detalhe vaza.**
+
+      As credenciais, neste laboratório, são:
+
+      - Usuário `sofia.melo`, senha `Sofia#Prisma26`.
+    task: |
+      1. Na aba **Aplicação**, entre com `sofia.melo` e a senha `Sofia#Prisma26`.
+      2. Na aba **Código**, abra `services/erro_service.py`.
+
+      Informe abaixo o nome do método que monta o corpo de erro devolvido ao cliente.
+    concept: Erros verbosos — mensagens de erro que vazam detalhes internos
+    validatorRef: erros-verbosos/answer/metodo-sau-v1
+    hints:
+      - level: 1
+        text: 'Em `services/erro_service.py`, a classe `ErroService` tem um único método público.'
+      - level: 2
+        text: É o método que o controller chama quando o processamento falha.
+      - level: 3
+        text: O valor é `resposta`.
+    points: 10
+  - id: explorar
+    order: 2
+    title: Forçar um erro e ler o traceback na resposta
+    explanation: |
+      O método `resposta` devolve, no corpo da API, a mensagem da exceção **e** o traceback completo (`traceback.format_exc()`). Basta provocar um erro para ver tudo isso na resposta.
+    task: |
+      Na aba **Terminal**, chame a API com um mês inválido para forçar um erro:
+
+      ```bash
+      curl -s "http://127.0.0.1:8080/api/relatorio?mes=abc" --cookie-jar /tmp/c --cookie /tmp/c
+      ```
+
+      (faça login pela aba **Aplicação** antes, se precisar da sessão). Veja que a resposta traz um campo `detalhe` com o **traceback completo**, incluindo caminhos como `/workspace/...`. Informe abaixo se o traceback **aparece** ou **não aparece** na resposta ao cliente.
+    explore: |
+      **Por que isso é grave.** O traceback revela a estrutura de pastas, os nomes dos módulos e a tecnologia (Flask, versão do Python). Com erros assim, o atacante aprende onde o código está e o que tentar a seguir, sem precisar adivinhar.
+    concept: O traceback completo vai parar na resposta ao cliente
+    validatorRef: erros-verbosos/answer/aparece-sau-v1
+    hints:
+      - level: 1
+        text: Procure o campo `detalhe` na resposta do curl.
+      - level: 2
+        text: Ele traz o texto "Traceback (most recent call last)".
+      - level: 3
+        text: A resposta é `aparece`.
+    points: 15
+  - id: onde
+    order: 3
+    title: Decidir para onde o detalhe deve ir
+    explanation: |
+      O detalhe do erro é valioso para quem mantém o sistema — mas no lugar certo: o **log** do servidor. O cliente recebe só uma mensagem genérica. Assim, a equipe investiga pelo log, e o atacante não ganha o mapa do sistema.
+    task: |
+      Para onde o detalhe do erro (traceback) deve ir, em vez da resposta ao cliente?
+
+      Responda com uma palavra (onde o servidor registra o detalhe para a equipe investigar).
+    concept: O detalhe do erro vai para o log do servidor, não para o cliente
+    validatorRef: erros-verbosos/answer/onde-sau-v1
+    hints:
+      - level: 1
+        text: É onde o servidor registra o que aconteceu, para a equipe ler depois.
+      - level: 2
+        text: Em inglês, "log".
+      - level: 3
+        text: A resposta é `log`.
+    points: 15
+  - id: cliente
+    order: 4
+    title: Decidir o que o cliente deve receber
+    explanation: |
+      Para o cliente, a resposta certa é uma mensagem **genérica**: "erro interno ao processar a solicitação". Nada de mensagem de exceção, nada de traceback. Se precisar, inclua um id de correlação para o suporte rastrear no log.
+    task: |
+      Que tipo de mensagem o cliente deve receber no lugar do traceback?
+
+      Responda com uma palavra (uma mensagem que não revela detalhes internos).
+    concept: O cliente recebe apenas uma mensagem genérica
+    validatorRef: erros-verbosos/answer/mensagem-sau-v1
+    hints:
+      - level: 1
+        text: É o oposto de "detalhada" ou "específica".
+      - level: 2
+        text: Uma mensagem que serve para qualquer erro, sem revelar nada.
+      - level: 3
+        text: A resposta é `genérica`.
+    points: 15
+  - id: corrigir
+    order: 5
+    title: Registrar o detalhe e responder genérico no serviço
+    explanation: |
+      **Por que a falha existe.** `resposta` coloca `str(exc)` e `traceback.format_exc()` no corpo devolvido ao cliente.
+
+      **A correção.** Registrar a exceção completa no log do servidor (com `logging`) e devolver ao cliente só uma mensagem genérica.
+    task: |
+      Abra `services/erro_service.py` e substitua o conteúdo abaixo do docstring por este (troca o `import` e o método):
+
+      ```python
+      import logging
+
+      logger = logging.getLogger("erro")
+
+
+      class ErroService:
+          def resposta(self, exc: Exception) -> dict[str, str]:
+              """Monta o corpo JSON de erro para devolver ao cliente."""
+              # Registra o detalhe no servidor e devolve ao cliente só uma mensagem genérica.
+              logger.error("Falha ao processar a solicitação", exc_info=exc)
+              return {"erro": "Erro interno ao processar a solicitação."}
+      ```
+
+      Salve com **Ctrl+S**. A aplicação reinicia. Então, na aba **Terminal**:
+
+      1. repita o `curl` com `mes=abc` e veja que a resposta agora traz só `{"erro": "Erro interno ao processar a solicitação."}`, **sem** traceback;
+      2. confira que o detalhe foi para o log: `grep -i "Falha ao processar" /tmp/app.log`;
+      3. clique em **Validar**.
+    explore: |
+      **Se algo não funcionar depois de salvar.** Um recuo errado derruba a aplicação. No **Terminal**:
+
+      ```bash
+      grep -iE "error|traceback" /tmp/app.log | tail -n 15
+      ```
+
+      **O que procurar.** `IndentationError` aponta a linha com recuo diferente: o `def resposta` fica com 4 espaços; o corpo, com 8. O `import logging` e o `logger = ...` ficam sem recuo (nível do módulo).
+    concept: Correção dos erros verbosos com log no servidor e mensagem genérica
+    validatorRef: erros-verbosos/python-flask/erro-generico-sau-v1
+    hints:
+      - level: 1
+        text: 'A mudança é só em `services/erro_service.py`.'
+      - level: 2
+        text: "Use logging para registrar a exceção e devolva só uma mensagem genérica."
+      - level: 3
+        text: Copie o bloco da tarefa sem mudar o recuo. O `def resposta` fica com 4 espaços.
+    points: 45
+policy:
+  sequentialUnlock: true
+  allowStepRetry: true
+  persistProgressAcrossReset: true
+  allowSolutionReveal: false
+  finalPassingScore: 100

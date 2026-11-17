@@ -1,0 +1,93 @@
+# Família A19 erros-verbosos (ADR-021): o que muda por ramo. O modelo comum está em ./modelo.
+# Depois de editar, rode:  uv run python scripts/gerar-familia.py erros-verbosos
+# Logins e senhas estão espelhados em apps/backend/app/validation/suites_familias.py (registro
+# protegido); os testes Docker conferem os dois. A falha é de erros verbosos: services/erro_service.py
+# devolve ao cliente a mensagem interna da exceção e o traceback completo, em vez de uma mensagem genérica.
+ramos:
+  - destino: LAB-041-erros-fintech
+    vars:
+      lab_id: LAB-041
+      versao: 1.0.0
+      codigo: A19-FIN
+      ramo: fin
+      setor: financeiro
+      imagem: lab-041-erros
+      titulo: a API que mostra o traceback
+      empresa: Fintech Nimbo
+      marca: "◇ Nimbo"
+      app_nome: Painel de Relatórios
+      cor: "#1d4ed8"
+      papel: Pessoa desenvolvedora do time de dados da Fintech Nimbo
+      aplicacao: Painel de Relatórios, onde o analista gera relatórios mensais por uma API interna
+      contexto: O Painel de Relatórios gera relatórios por uma API. Um teste de invasão alertou que, quando o processamento falha, a API devolve ao cliente o traceback completo — vazando caminhos de arquivos e detalhes internos do sistema.
+      missao: Confirmar que a API vaza o traceback em erros e corrigir devolvendo mensagem genérica e logando o detalhe
+      painel_titulo: Painel de Relatórios
+      painel_desc: Gere relatórios mensais na Fintech Nimbo.
+      login_desc: Entre com as credenciais do analista para acessar o painel.
+      banco: nimbo_relatorios
+      login_a: andre.luz
+      senha_a: "Andre#Nimbo26"
+      nome_a: André Luz Barroso
+      historia_abertura: 'Você está no time de dados da Fintech Nimbo. O Painel de Relatórios gera relatórios por uma API (/api/relatorio). O time de segurança abriu um chamado: quando o processamento falha, a API devolve ao cliente o traceback completo, com caminhos como /workspace/... e detalhes internos do sistema.'
+      seed_contas:
+        - [1, andre.luz, André Luz Barroso, "Andre#Nimbo26", 0.0]
+        - [2, lilian.sa, Lilian Sá Moreira, "Lilian#Nimbo26", 0.0]
+        - [3, gustavo.rma, Gustavo Rocha Maia, "Gustavo#Nimbo26", 0.0]
+  - destino: LAB-042-erros-saude
+    vars:
+      lab_id: LAB-042
+      versao: 1.0.0
+      codigo: A19-SAU
+      ramo: sau
+      setor: saude
+      imagem: lab-042-erros
+      titulo: a API que mostra o traceback
+      empresa: Operadora Prisma
+      marca: "✚ Prisma"
+      app_nome: Painel de Relatórios
+      cor: "#0e7490"
+      papel: Pessoa desenvolvedora do time de dados da operadora Prisma
+      aplicacao: Painel de Relatórios, onde a equipe gera relatórios mensais por uma API interna
+      contexto: O Painel de Relatórios gera relatórios por uma API. Numa auditoria, a equipe apontou que, quando o processamento falha, a API devolve ao cliente o traceback completo — vazando caminhos de arquivos e detalhes internos do sistema.
+      missao: Confirmar que a API vaza o traceback em erros e corrigir devolvendo mensagem genérica e logando o detalhe
+      painel_titulo: Painel de Relatórios
+      painel_desc: Gere relatórios mensais na Operadora Prisma.
+      login_desc: Entre com as credenciais da equipe para acessar o painel.
+      banco: prisma_relatorios
+      login_a: sofia.melo
+      senha_a: "Sofia#Prisma26"
+      nome_a: Sofia Melo Tavares
+      historia_abertura: 'Você é do time de dados da operadora Prisma. O Painel de Relatórios gera relatórios por uma API (/api/relatorio). Numa auditoria, a equipe apontou que, quando o processamento falha, a API devolve ao cliente o traceback completo, com caminhos como /workspace/... e detalhes internos do sistema.'
+      seed_contas:
+        - [1, sofia.melo, Sofia Melo Tavares, "Sofia#Prisma26", 0.0]
+        - [2, henrique.sa, Henrique Sá Vilar, "Henrique#Prisma26", 0.0]
+        - [3, luana.reis, Luana Reis Pacheco, "Luana#Prisma26", 0.0]
+  - destino: LAB-043-erros-industria
+    vars:
+      lab_id: LAB-043
+      versao: 1.0.0
+      codigo: A19-IND
+      ramo: ind
+      setor: industria-energia
+      imagem: lab-043-erros
+      titulo: a API que mostra o traceback
+      empresa: Metalúrgica Delta
+      marca: "⬡ Delta"
+      app_nome: Painel de Relatórios
+      cor: "#9a3412"
+      papel: Pessoa desenvolvedora do time digital da Metalúrgica Delta
+      aplicacao: Painel de Relatórios, onde a equipe gera relatórios mensais de produção por uma API interna
+      contexto: O Painel de Relatórios gera relatórios por uma API. Antes de uma auditoria, a equipe apontou que, quando o processamento falha, a API devolve ao cliente o traceback completo — vazando caminhos de arquivos e detalhes internos do sistema.
+      missao: Confirmar que a API vaza o traceback em erros e corrigir devolvendo mensagem genérica e logando o detalhe
+      painel_titulo: Painel de Relatórios
+      painel_desc: Gere relatórios mensais na Metalúrgica Delta.
+      login_desc: Entre com as credenciais da equipe para acessar o painel.
+      banco: delta_relatorios
+      login_a: rogerio.pena
+      senha_a: "Rogerio#Delta26"
+      nome_a: Rogério Pena Castro
+      historia_abertura: 'Você é do time digital da Metalúrgica Delta. O Painel de Relatórios gera relatórios por uma API (/api/relatorio). A equipe apontou que, quando o processamento falha, a API devolve ao cliente o traceback completo, com caminhos como /workspace/... e detalhes internos do sistema.'
+      seed_contas:
+        - [1, rogerio.pena, Rogério Pena Castro, "Rogerio#Delta26", 0.0]
+        - [2, debora.lima, Débora Lima Fontes, "Debora#Delta26", 0.0]
+        - [3, marcos.aguiar, Marcos Aguiar Pinto, "Marcos#Delta26", 0.0]

@@ -410,6 +410,27 @@ const ILLUSTRATIONS: Record<string, { caption: string; body: () => ReactNode }> 
       />
     ),
   },
+  "erros-verbosos": {
+    caption: "Erro verboso: o traceback na resposta entrega ao atacante o mapa interno do sistema.",
+    body: () => (
+      <Compare
+        bad={[
+          "Devolve o traceback (hoje)",
+          <>
+            <span>Em erro, a API responde {c('{"erro": str(exc), "detalhe": traceback}')}.</span>
+            <span>O cliente vê caminhos como {c("/workspace/...")}, módulos e a tecnologia usada.</span>
+          </>,
+        ]}
+        good={[
+          "Loga o detalhe, responde genérico",
+          <>
+            <span>O servidor registra a exceção no log e devolve só {c('{"erro": "Erro interno..."}')}.</span>
+            <span>A equipe investiga pelo log; o atacante não ganha o mapa do sistema.</span>
+          </>,
+        ]}
+      />
+    ),
+  },
   "bfla": {
     caption: "Autorização de função (BFLA): autenticar não é autorizar — cada função sensível confere o papel.",
     body: () => (

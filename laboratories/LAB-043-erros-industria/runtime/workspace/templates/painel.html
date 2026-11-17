@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block conteudo %}
+<h1>Painel de Relatórios</h1>
+<p class="ajuda">Gere relatórios mensais na Metalúrgica Delta.</p>
+
+<dl class="dados">
+  <dt>Titular</dt><dd>{{ conta.nome }}</dd>
+</dl>
+
+<p class="ajuda">API de relatório:
+  <a href="{{ url_for('painel.relatorio', mes='3') }}">relatório do mês 3</a>
+  · <a href="{{ url_for('painel.relatorio', mes='abc') }}">mês inválido (força um erro)</a>.</p>
+
+<p class="banner reforcado">Você está autenticado. Use <a href="{{ url_for('auth.sair') }}">Sair</a> para encerrar a sessão.</p>
+{% endblock %}

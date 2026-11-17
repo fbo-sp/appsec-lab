@@ -1585,6 +1585,98 @@ def _autorizacao(r: AutorizacaoRamo) -> tuple[Suite, ...]:
     )
 
 
+# A19 erros-verbosos: a API devolve o traceback completo em erros (LAB-041 a LAB-043)
+
+
+@dataclass(frozen=True, slots=True)
+class ErrosRamo:
+    ramo: str
+    login_a: str
+    senha_a: str
+
+
+ERROS_RAMOS = (
+    ErrosRamo("fin", "andre.luz", "Andre#Nimbo26"),
+    ErrosRamo("sau", "sofia.melo", "Sofia#Prisma26"),
+    ErrosRamo("ind", "rogerio.pena", "Rogerio#Delta26"),
+)
+
+
+def _erros(r: ErrosRamo) -> tuple[Suite, ...]:
+    return (
+        AnswerSuite(
+            ref=f"erros-verbosos/answer/metodo-{r.ramo}-v1",
+            version="1.0.0",
+            prompt="Método que monta o corpo de erro devolvido ao cliente",
+            accepted=("resposta", "resposta()"),
+            success_feedback="Isso. É em resposta que o detalhe do erro vaza para o cliente.",
+            failure_feedback="Ainda não. Em services/erro_service.py, veja o único método público.",
+        ),
+        AnswerSuite(
+            ref=f"erros-verbosos/answer/aparece-{r.ramo}-v1",
+            version="1.0.0",
+            prompt="O traceback aparece ou não aparece na resposta ao cliente?",
+            accepted=("aparece", "aparece sim", "sim", "apareceu", "vaza", "vazou"),
+            success_feedback="Exato: o traceback completo apareceu no corpo da resposta.",
+            failure_feedback="Não é isso. Procure o campo detalhe na resposta do curl: ele traz o traceback.",
+        ),
+        AnswerSuite(
+            ref=f"erros-verbosos/answer/onde-{r.ramo}-v1",
+            version="1.0.0",
+            prompt="Para onde o detalhe do erro deve ir, em vez da resposta ao cliente",
+            accepted=("log", "no log", "logs", "nos logs", "log do servidor", "registro"),
+            success_feedback="Isso. O detalhe vai para o log do servidor.",
+            failure_feedback="Ainda não. É onde o servidor registra o que aconteceu, para a equipe ler depois.",
+        ),
+        AnswerSuite(
+            ref=f"erros-verbosos/answer/mensagem-{r.ramo}-v1",
+            version="1.0.0",
+            prompt="Que tipo de mensagem o cliente deve receber no lugar do traceback",
+            accepted=(
+                "genérica",
+                "generica",
+                "mensagem genérica",
+                "mensagem generica",
+                "genérico",
+                "generico",
+            ),
+            success_feedback="Isso. O cliente recebe apenas uma mensagem genérica.",
+            failure_feedback="Ainda não. É o oposto de detalhada: serve para qualquer erro, sem revelar nada.",
+        ),
+        HttpSuite(
+            ref=f"erros-verbosos/python-flask/erro-generico-{r.ramo}-v1",
+            version="1.0.0",
+            logins=(HttpLogin(name="a", path="/login", form={"login": r.login_a, "senha": r.senha_a}),),
+            checks=(
+                HttpCheck(
+                    id="relatorio-ok",
+                    description="Um relatório com mês válido continua funcionando.",
+                    path="/api/relatorio?mes=3",
+                    as_user="a",
+                    contains=("ok",),
+                ),
+                HttpCheck(
+                    id="erro-sem-traceback",
+                    description="Um erro responde com mensagem genérica, sem traceback nem detalhe interno.",
+                    path="/api/relatorio?mes=abc",
+                    as_user="a",
+                    expect_status=500,
+                    contains=("Erro interno",),
+                    not_contains=("Traceback", "/workspace/"),
+                ),
+            ),
+            success_feedback=(
+                "Correção validada: o relatório válido funciona, e um erro responde com mensagem "
+                "genérica, sem traceback nem caminhos internos (o detalhe fica no log do servidor)."
+            ),
+            failure_feedback=(
+                "Algumas verificações falharam. Confira cada item abaixo, ajuste services/erro_service.py "
+                "e valide de novo. O cliente só pode receber uma mensagem genérica; o detalhe vai para o log."
+            ),
+        ),
+    )
+
+
 SUITES_FAMILIAS: tuple[Suite, ...] = (
     tuple(s for r in XSS_RAMOS for s in _xss(r))
     + tuple(s for r in MASSA_RAMOS for s in _massa(r))
@@ -1598,4 +1690,5 @@ SUITES_FAMILIAS: tuple[Suite, ...] = (
     + tuple(s for r in PATH_RAMOS for s in _path(r))
     + tuple(s for r in CONFIANCA_RAMOS for s in _confianca(r))
     + tuple(s for r in AUTORIZACAO_RAMOS for s in _autorizacao(r))
+    + tuple(s for r in ERROS_RAMOS for s in _erros(r))
 )
