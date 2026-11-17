@@ -1,0 +1,259 @@
+# LAB-063 (MOB-08-SAU): API do app que devolve dados pessoais que a tela não usa (CWE-359) no App Lumen Saúde da Clínica Lumen (app mobile simulado, Flask + SQLite).
+# CONTÉM VULNERABILIDADE INTENCIONAL. Uso exclusivo no runtime Docker LOCAL (ADR-008), em rede
+# interna da sessão. Dados 100% fictícios. Família MOB-08 mob-dados-demais (ADR-021, ADR-025): gerado por
+# scripts/gerar-familia.py a partir de laboratories/_familias/mob-dados-demais; não edite este arquivo à mão.
+#
+# ATENÇÃO: o digest abaixo é uma FIXTURE (sha256 de um texto fixo), não uma imagem publicada.
+# scripts/lab-local.sh e .ps1 trocam pela imagem construída localmente antes de registrar.
+apiVersion: labs.cecyber.io/v1alpha1
+kind: AppSecLab
+metadata:
+  id: LAB-063
+  version: 1.0.0
+  title: "MOB-08-SAU · API que devolve dados demais: a tela mostra pouco, a API entrega tudo"
+  primaryCwe: CWE-359
+  secondaryCwes: [CWE-213]
+  family: mob-dados-demais
+  sectors: [saude]
+  courseModules: [foundation]
+  classifications:
+    - framework: OWASP Top 10
+      edition: "2025"
+      entries:
+        - "A01 Broken Access Control"
+    - framework: OWASP Top 10
+      edition: "2021"
+      entries:
+        - "A01 Broken Access Control"
+    - framework: OWASP API Security Top 10
+      edition: "2023"
+      entries:
+        - "API3 Broken Object Property Level Authorization"
+    - framework: SANS CWE Top 25
+      edition: "2025"
+      entries:
+        - "Não se enquadra; use o CWE"
+    - framework: SANS CWE Top 25
+      edition: "2024"
+      entries:
+        - "Não se enquadra; use o CWE"
+    - framework: OWASP Mobile Top 10
+      edition: "2024"
+      entries:
+        - "M6 Inadequate Privacy Controls"
+    - framework: OWASP Mobile Top 10
+      edition: "2016"
+      entries:
+        - "Não se enquadra; use o CWE"
+    - framework: OWASP MASVS
+      edition: "2023"
+      entries:
+        - "MASVS-PRIVACY-1"
+learning:
+  singleVulnerability: true
+  estimatedMinutes: 30
+  difficulty: beginner
+  objectives:
+    - Entender que o que a tela esconde continua visível na resposta da API
+    - Comparar o que o app mostra com o que a API entrega ao aparelho
+    - Reconhecer o princípio da minimização de dados
+    - Corrigir o serviço para devolver só os campos que a tela usa
+  story:
+    role: >-
+      Pessoa desenvolvedora do time de apps da Clínica Lumen
+    application: >-
+      App Lumen Saúde, o app em que o paciente consulta os exames e o próprio perfil
+    context: >-
+      A tela Perfil do app do paciente da Clínica Lumen mostra nome e resumo, mas a API devolve o registro inteiro da conta, com dados pessoais.
+    mission: >-
+      Comparar a tela com a resposta da API e corrigir a API para devolver só o que a tela usa
+  wrapUp:
+    text: |
+      Agora a API devolve só o nome e o resumo, que é o que a tela usa. Em um app real, vale reforçar:
+
+      - **A tela não é o filtro.** Tudo o que chega ao aparelho pode ser visto num proxy, num log ou num app modificado. Esconder um campo na interface não protege o dado.
+      - **Minimização desde a API.** Monte respostas com uma lista explícita de campos (DTO, serializer), nunca com o registro inteiro do banco. Campo novo no banco não deve aparecer na API sem decisão.
+      - **Privacidade é requisito.** Dado pessoal ou sensível (documento, renda, diagnóstico, endereço) só sai do servidor quando a tela precisa dele, e só para o dono.
+      - **Logs e caches também contam.** Respostas grandes vão parar em cache HTTP, logs de depuração e ferramentas de monitoramento.
+    references:
+      - title: "OWASP Mobile Top 10 2024: M6 Inadequate Privacy Controls"
+        url: https://owasp.org/www-project-mobile-top-10/2023-risks/m6-inadequate-privacy-controls
+      - title: "OWASP API Security Top 10 2023: API3 Broken Object Property Level Authorization"
+        url: https://owasp.org/API-Security/editions/2023/en/0xa3-broken-object-property-level-authorization/
+      - title: "OWASP MASVS"
+        url: https://mas.owasp.org/MASVS/
+      - title: "CWE-359: Exposure of Private Personal Information to an Unauthorized Actor"
+        url: https://cwe.mitre.org/data/definitions/359.html
+variants:
+  - id: python-flask
+    language: python
+    framework: flask
+    image: registry.local/labs/lab-063-mobile@sha256:96f14ac0901c78ab6f40a3f6714677052b117fdc863f680fbf5f2e309c936a66
+    runtimeProfile: web-basic
+    workspacePath: /workspace
+    startup:
+      command: ["sh", "-c", "python -u -m flask --app app run --host 0.0.0.0 --port 8080 --reload --no-debugger 2>&1 | tee -a /tmp/app.log"]
+      port: 8080
+    resources:
+      cpuMillicores: 500
+      memoryMiB: 512
+      storageMiB: 256
+      pidsMax: 64
+    session:
+      ttlMinutes: 45
+      maxRenewals: 2
+    interfaces: [editor, terminal, web]
+    platform: mobile
+steps:
+  - id: conhecer
+    order: 1
+    title: "Conhecer a tela Perfil e o serviço por trás dela"
+    explanation: |
+      Você está no time de apps da Clínica Lumen. A tela Perfil do app do paciente da Clínica Lumen mostra só o nome e um resumo. Numa revisão de privacidade, o time de segurança interceptou o tráfego do app e viu que a API entrega bem mais do que isso ao aparelho.
+
+      **Um laboratório mobile.** Na aba **Aplicação**, o app aparece numa moldura de celular. Ele é um app **simulado** (não há emulador), mas fala com a API do servidor do mesmo jeito que um app Android ou iOS. Toda falha de app mobile termina numa decisão de segurança: quem a toma, o aparelho ou o servidor?
+
+      ```ilustracao
+      mob-dados-demais
+      ```
+
+      Siga a tela Perfil pelas camadas:
+
+      1. **App** (`static/app.js`): a aba **Perfil** chama `GET /api/perfil` e mostra o nome e o resumo.
+      2. **Controller** (`controllers/api_controller.py`): recebe `GET /api/perfil` e chama o serviço.
+      3. **Serviço** (`services/perfil_service.py`): monta os dados do perfil. **É aqui que está a falha.**
+
+      As credenciais de teste deste laboratório são:
+
+      - Usuário `marcos.tavares`, senha `Marcos#Lumen26` (Marcos Tavares Lima).
+    task: |
+      1. Na aba **Aplicação**, entre no app do celular com `marcos.tavares` e a senha `Marcos#Lumen26`. Toque em **Perfil**, na barra de baixo, e veja o que a tela mostra.
+      2. Na aba **Código**, abra `services/perfil_service.py`.
+
+      Informe abaixo o nome do método que monta os dados do perfil.
+    concept: "A tela mostra pouco; a API decide o que sai do servidor"
+    validatorRef: mob-dados-demais/answer/metodo-sau-v1
+    hints:
+      - level: 1
+        text: "A classe `PerfilService` tem um método público além de `__init__`."
+      - level: 2
+        text: "É o método chamado em `GET /api/perfil`."
+      - level: 3
+        text: "O valor é `perfil`."
+    points: 10
+  - id: explorar
+    order: 2
+    title: "Comparar a tela com a resposta da API"
+    explanation: |
+      Você viu o que a tela Perfil mostra. Agora veja o que a API entrega ao aparelho, como faria quem intercepta o tráfego do app.
+    task: |
+      No **Terminal**, entre pela API e guarde o token:
+
+      ```bash
+      TOKEN=$(curl -s -X POST http://127.0.0.1:8080/api/login \
+        -H "Content-Type: application/json" \
+        -d '{"login":"marcos.tavares","senha":"Marcos#Lumen26"}' \
+        | python3 -c "import sys, json; print(json.load(sys.stdin)['token'])")
+      echo "$TOKEN"
+      ```
+
+      Agora peça o perfil:
+
+      ```bash
+      curl -s http://127.0.0.1:8080/api/perfil -H "Authorization: Bearer $TOKEN"
+      ```
+
+      A resposta traz dados pessoais que a tela não mostra? Responda **sim** ou **não**.
+    explore: |
+      **Como isso aparece num app de verdade.** Com um proxy (Burp, mitmproxy) e o certificado instalado no aparelho de teste, cada resposta da API fica legível. Respostas também acabam em caches HTTP, logs de depuração e ferramentas de monitoramento de erro. Neste ramo, o dado extra é CPF e diagnóstico (CID).
+    concept: "A resposta da API vai além da tela"
+    validatorRef: mob-dados-demais/answer/comportamento-sau-v1
+    hints:
+      - level: 1
+        text: "Compare os campos da resposta com o que a aba Perfil mostrou."
+      - level: 2
+        text: "Procure `documento` e `dado_pessoal`."
+      - level: 3
+        text: "A resposta é `sim`."
+    points: 15
+  - id: medida
+    order: 3
+    title: "Nomear o princípio"
+    explanation: |
+      A API deveria entregar só os dados de que a tela precisa para funcionar. Esse princípio de privacidade aparece na LGPD e no MASVS-PRIVACY: coletar, guardar e transmitir o mínimo necessário.
+    task: |
+      Qual é o nome desse princípio? Responda com uma palavra.
+    concept: "Minimização de dados"
+    validatorRef: mob-dados-demais/answer/defesa-sau-v1
+    hints:
+      - level: 1
+        text: "É o princípio de usar o mínimo necessário."
+      - level: 2
+        text: "Começa com \"mini\"."
+      - level: 3
+        text: "A resposta é `minimização`."
+    points: 15
+  - id: onde
+    order: 4
+    title: "Decidir se esconder na tela basta"
+    explanation: |
+      Uma correção tentadora é garantir que a tela nunca mostre os campos extras. Mas a tela não é o único lugar por onde a resposta passa.
+    task: |
+      Esconder os campos na tela do app resolve a falha?
+
+      Responda **sim** ou **não**.
+    concept: "Esconder na tela não protege o dado"
+    validatorRef: mob-dados-demais/answer/onde-sau-v1
+    hints:
+      - level: 1
+        text: "Você leu os campos com `curl`, sem tela nenhuma."
+      - level: 2
+        text: "O dado já tinha saído do servidor."
+      - level: 3
+        text: "A resposta é `não`."
+    points: 15
+  - id: corrigir
+    order: 5
+    title: "Devolver só os campos da tela"
+    explanation: |
+      **Por que a falha existe.** `perfil` devolve o dicionário inteiro de `perfil_completo`, com documento e dado pessoal.
+
+      **A correção.** Montar a resposta com uma lista explícita de campos: só `nome` e `resumo`.
+    task: |
+      Abra `services/perfil_service.py` e troque as duas linhas do corpo de `perfil` (a partir do comentário) por estas:
+
+      ```python
+              # Devolve só o que a tela usa (minimização): nome e resumo.
+              perfil = self._repositorio.perfil_completo(conta_id)
+              return {"nome": perfil["nome"], "resumo": perfil["resumo"]}
+      ```
+
+      Salve com **Ctrl+S**. A aplicação reinicia. Então:
+
+      1. na aba **Aplicação**, entre de novo e abra **Perfil**: a tela continua igual;
+      2. no **Terminal**, refaça o `curl` e veja que só voltam `nome` e `resumo`;
+      3. clique em **Validar**.
+    explore: |
+      **Se algo não funcionar depois de salvar.** Um recuo errado derruba a aplicação e o app no celular para de responder. No **Terminal**:
+
+      ```bash
+      grep -iE "error|traceback" /tmp/app.log | tail -n 15
+      ```
+
+      **O que procurar.** `IndentationError` aponta a linha com recuo diferente: o corpo do método fica com 8 espaços e o que está dentro de um `if`, com 12. Copie o bloco da tarefa sem mudar o recuo.
+    concept: "Correção: a API devolve só o que a tela usa"
+    validatorRef: mob-dados-demais/python-flask/perfil-minimo-sau-v1
+    hints:
+      - level: 1
+        text: "A mudança é só em `services/perfil_service.py`, no método `perfil`."
+      - level: 2
+        text: "Tirar só o `documento` não basta: o dado pessoal também sai."
+      - level: 3
+        text: "Copie o bloco da tarefa sem mudar o recuo: 8 espaços."
+    points: 45
+policy:
+  sequentialUnlock: true
+  allowStepRetry: true
+  persistProgressAcrossReset: true
+  allowSolutionReveal: false
+  finalPassingScore: 100

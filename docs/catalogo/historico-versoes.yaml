@@ -264,3 +264,75 @@ labs:
     - version: 1.0.0
       published: 2026-11-17
       summary: Primeira versão (BOLA em API GraphQL de pedidos, Aurora Energia; família graphql-bola, ramo Indústria e Energia).
+  LAB-050:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (lab mobile, chave de api embutida no app, Pagomais; família mob-chave-embutida, ramo Financeiro).
+  LAB-051:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (lab mobile, chave de api embutida no app, Clínica Lumen; família mob-chave-embutida, ramo Saúde).
+  LAB-052:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (lab mobile, chave de api embutida no app, Aurora Energia; família mob-chave-embutida, ramo Indústria e Energia).
+  LAB-053:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (lab mobile, senha guardada no aparelho, Pagomais; família mob-dados-locais, ramo Financeiro).
+  LAB-054:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (lab mobile, senha guardada no aparelho, Clínica Lumen; família mob-dados-locais, ramo Saúde).
+  LAB-055:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (lab mobile, senha guardada no aparelho, Aurora Energia; família mob-dados-locais, ramo Indústria e Energia).
+  LAB-056:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (lab mobile, biometria conferida só no app, Pagomais; família mob-biometria-cliente, ramo Financeiro).
+  LAB-057:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (lab mobile, biometria conferida só no app, Clínica Lumen; família mob-biometria-cliente, ramo Saúde).
+  LAB-058:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (lab mobile, biometria conferida só no app, Aurora Energia; família mob-biometria-cliente, ramo Indústria e Energia).
+  LAB-059:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (lab mobile, sessão que não morre no logout, Pagomais; família mob-sessao-logout, ramo Financeiro).
+  LAB-060:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (lab mobile, sessão que não morre no logout, Clínica Lumen; família mob-sessao-logout, ramo Saúde).
+  LAB-061:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (lab mobile, sessão que não morre no logout, Aurora Energia; família mob-sessao-logout, ramo Indústria e Energia).
+  LAB-062:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (lab mobile, api que devolve dados demais, Pagomais; família mob-dados-demais, ramo Financeiro).
+  LAB-063:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (lab mobile, api que devolve dados demais, Clínica Lumen; família mob-dados-demais, ramo Saúde).
+  LAB-064:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (lab mobile, api que devolve dados demais, Aurora Energia; família mob-dados-demais, ramo Indústria e Energia).
+  LAB-065:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (lab mobile, modo de teste esquecido, Pagomais; família mob-modo-teste, ramo Financeiro).
+  LAB-066:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (lab mobile, modo de teste esquecido, Clínica Lumen; família mob-modo-teste, ramo Saúde).
+  LAB-067:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (lab mobile, modo de teste esquecido, Aurora Energia; família mob-modo-teste, ramo Indústria e Energia).

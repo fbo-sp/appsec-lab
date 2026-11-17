@@ -1,0 +1,261 @@
+# LAB-061 (MOB-05-IND): token que continua valendo depois do logout (CWE-613) no App Aurora Campo da Aurora Energia (app mobile simulado, Flask + SQLite).
+# CONTÉM VULNERABILIDADE INTENCIONAL. Uso exclusivo no runtime Docker LOCAL (ADR-008), em rede
+# interna da sessão. Dados 100% fictícios. Família MOB-05 mob-sessao-logout (ADR-021, ADR-025): gerado por
+# scripts/gerar-familia.py a partir de laboratories/_familias/mob-sessao-logout; não edite este arquivo à mão.
+#
+# ATENÇÃO: o digest abaixo é uma FIXTURE (sha256 de um texto fixo), não uma imagem publicada.
+# scripts/lab-local.sh e .ps1 trocam pela imagem construída localmente antes de registrar.
+apiVersion: labs.cecyber.io/v1alpha1
+kind: AppSecLab
+metadata:
+  id: LAB-061
+  version: 1.0.0
+  title: "MOB-05-IND · Sessão que não morre no logout: sair do app não encerra a sessão"
+  primaryCwe: CWE-613
+  secondaryCwes: [CWE-287]
+  family: mob-sessao-logout
+  sectors: [industria-energia]
+  courseModules: [foundation]
+  classifications:
+    - framework: OWASP Top 10
+      edition: "2025"
+      entries:
+        - "A07 Authentication Failures"
+    - framework: OWASP Top 10
+      edition: "2021"
+      entries:
+        - "A07 Identification and Authentication Failures"
+    - framework: OWASP API Security Top 10
+      edition: "2023"
+      entries:
+        - "API2 Broken Authentication"
+    - framework: SANS CWE Top 25
+      edition: "2025"
+      entries:
+        - "Não se enquadra; use o CWE"
+    - framework: SANS CWE Top 25
+      edition: "2024"
+      entries:
+        - "Não se enquadra; use o CWE"
+    - framework: OWASP Mobile Top 10
+      edition: "2024"
+      entries:
+        - "M3 Insecure Authentication/Authorization"
+    - framework: OWASP Mobile Top 10
+      edition: "2016"
+      entries:
+        - "M4 Insecure Authentication"
+    - framework: OWASP MASVS
+      edition: "2023"
+      entries:
+        - "MASVS-AUTH-1"
+learning:
+  singleVulnerability: true
+  estimatedMinutes: 30
+  difficulty: beginner
+  objectives:
+    - Entender que sair do app precisa encerrar a sessão no servidor, não só na tela
+    - Explorar a falha reusando o token depois do logout
+    - Reconhecer que o servidor precisa revogar o token no logout
+    - Corrigir o serviço de sessão revogando o token
+  story:
+    role: >-
+      Pessoa desenvolvedora do time de apps da Aurora Energia
+    application: >-
+      App Aurora Campo, o app em que o técnico de campo consulta as ordens de serviço
+    context: >-
+      Ao tocar em Sair, o app de campo da Aurora Energia esquece o token, mas o servidor continua aceitando o mesmo token.
+    mission: >-
+      Reusar o token depois do logout e corrigir a API para revogar a sessão no servidor
+  wrapUp:
+    text: |
+      Agora o logout revoga o token no servidor, e um token antigo não abre mais a conta. Em um app real, vale reforçar:
+
+      - **Logout é do servidor.** Apagar o token do aparelho protege só aquele aparelho. Uma cópia do token (proxy, backup, log, malware) continua valendo até o servidor revogar.
+      - **Tokens curtos e renováveis.** Token de acesso com poucos minutos de vida e token de renovação que o servidor controla limitam o estrago de um token vazado.
+      - **Revogar tudo quando preciso.** Troca de senha, "sair de todos os aparelhos" e suspeita de fraude devem invalidar todas as sessões da conta.
+      - **JWT também precisa de revogação.** Token autocontido não é revogável sozinho: use validade curta, lista de revogação ou versão de sessão na conta.
+    references:
+      - title: "OWASP Mobile Top 10 2024: M3 Insecure Authentication/Authorization"
+        url: https://owasp.org/www-project-mobile-top-10/2023-risks/m3-insecure-authentication-authorization
+      - title: "OWASP MASVS"
+        url: https://mas.owasp.org/MASVS/
+      - title: "OWASP Cheat Sheet: Session Management"
+        url: https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html
+      - title: "CWE-613: Insufficient Session Expiration"
+        url: https://cwe.mitre.org/data/definitions/613.html
+variants:
+  - id: python-flask
+    language: python
+    framework: flask
+    image: registry.local/labs/lab-061-mobile@sha256:bacdc44df3c8a16c612feb13fef3616b804d852829a563f4c1786d9540006d19
+    runtimeProfile: web-basic
+    workspacePath: /workspace
+    startup:
+      command: ["sh", "-c", "python -u -m flask --app app run --host 0.0.0.0 --port 8080 --reload --no-debugger 2>&1 | tee -a /tmp/app.log"]
+      port: 8080
+    resources:
+      cpuMillicores: 500
+      memoryMiB: 512
+      storageMiB: 256
+      pidsMax: 64
+    session:
+      ttlMinutes: 45
+      maxRenewals: 2
+    interfaces: [editor, terminal, web]
+    platform: mobile
+steps:
+  - id: conhecer
+    order: 1
+    title: "Conhecer o app e achar o logout"
+    explanation: |
+      Você está no time de apps da Aurora Energia. Um técnico de campo usou o app de campo da Aurora Energia num celular emprestado, tocou em Sair e devolveu o aparelho. Dias depois, alguém acessou a conta dele com o token copiado daquele celular. O time de segurança quer saber por que o token ainda valia.
+
+      **Um laboratório mobile.** Na aba **Aplicação**, o app aparece numa moldura de celular. Ele é um app **simulado** (não há emulador), mas fala com a API do servidor do mesmo jeito que um app Android ou iOS. Toda falha de app mobile termina numa decisão de segurança: quem a toma, o aparelho ou o servidor?
+
+      ```ilustracao
+      mob-sessao-logout
+      ```
+
+      Siga o logout pelas camadas:
+
+      1. **App** (`static/app.js`): o botão **Sair** chama `POST /api/sair` e esquece o token.
+      2. **Controller** (`controllers/api_controller.py`): recebe `POST /api/sair` e chama o serviço de sessão.
+      3. **Serviço** (`services/sessao_service.py`): encerra a sessão. **É aqui que está a falha.**
+
+      As credenciais de teste deste laboratório são:
+
+      - Usuário `diego.campos`, senha `Diego#Aurora26` (Diego Campos Ferraz).
+    task: |
+      1. Na aba **Aplicação**, entre no app do celular com `diego.campos` e a senha `Diego#Aurora26`. Depois toque em **Sair**.
+      2. Na aba **Código**, abra `services/sessao_service.py`.
+
+      Informe abaixo o nome do método que encerra a sessão.
+    concept: "Logout: quem encerra a sessão de verdade?"
+    validatorRef: mob-sessao-logout/answer/metodo-ind-v1
+    hints:
+      - level: 1
+        text: "A classe `SessaoService` tem um método público além de `__init__`."
+      - level: 2
+        text: "É o método chamado em `POST /api/sair`."
+      - level: 3
+        text: "O valor é `sair`."
+    points: 10
+  - id: explorar
+    order: 2
+    title: "Reusar o token depois de sair"
+    explanation: |
+      Faça o papel de quem copiou o token antes do logout: entre, guarde o token, saia e tente usar o mesmo token.
+    task: |
+      No **Terminal**, entre pela API e guarde o token:
+
+      ```bash
+      TOKEN=$(curl -s -X POST http://127.0.0.1:8080/api/login \
+        -H "Content-Type: application/json" \
+        -d '{"login":"diego.campos","senha":"Diego#Aurora26"}' \
+        | python3 -c "import sys, json; print(json.load(sys.stdin)['token'])")
+      echo "$TOKEN"
+      ```
+
+      Saia (como o app faz) e depois use o token antigo:
+
+      ```bash
+      curl -s -X POST http://127.0.0.1:8080/api/sair -H "Authorization: Bearer $TOKEN" -o /dev/null -w "%{http_code}\n"
+      curl -s http://127.0.0.1:8080/api/conta -H "Authorization: Bearer $TOKEN"
+      ```
+
+      Depois do logout, o token antigo ainda abriu a conta? Responda **sim** ou **não**.
+    explore: |
+      **De onde vêm cópias do token.** Um proxy de depuração, um backup do aparelho, um log que imprime cabeçalhos, um app malicioso com acessibilidade ou o próprio celular emprestado. Por isso o logout precisa valer para **todas** as cópias, não só para a que o app guardou.
+    concept: "O token continua valendo depois de sair"
+    validatorRef: mob-sessao-logout/answer/comportamento-ind-v1
+    hints:
+      - level: 1
+        text: "Veja se a última resposta traz o seu nome."
+      - level: 2
+        text: "O logout respondeu 204, mas o token seguiu ativo."
+      - level: 3
+        text: "A resposta é `sim`."
+    points: 15
+  - id: medida
+    order: 3
+    title: "Nomear o que o servidor faz no logout"
+    explanation: |
+      O token é um valor guardado no servidor, com a marca de ativo. Para que nenhuma cópia funcione mais, o servidor precisa desativá-lo.
+    task: |
+      Complete: no logout, o servidor precisa ___ o token.
+
+      Responda com um verbo.
+    concept: "No logout, o servidor revoga o token"
+    validatorRef: mob-sessao-logout/answer/defesa-ind-v1
+    hints:
+      - level: 1
+        text: "Veja os métodos de `repositories/token_repository.py`."
+      - level: 2
+        text: "Um deles marca o token como inativo."
+      - level: 3
+        text: "A resposta é `revogar`."
+    points: 15
+  - id: onde
+    order: 4
+    title: "Decidir se apagar no aparelho basta"
+    explanation: |
+      Apagar o token do aparelho evita que **aquele** app continue logado. Mas o token não vive só no aparelho.
+    task: |
+      Apagar o token só no aparelho encerra a sessão?
+
+      Responda **sim** ou **não**.
+    concept: "Apagar no aparelho não encerra a sessão"
+    validatorRef: mob-sessao-logout/answer/onde-ind-v1
+    hints:
+      - level: 1
+        text: "Você usou o token depois de o app esquecê-lo."
+      - level: 2
+        text: "O servidor ainda o aceitava."
+      - level: 3
+        text: "A resposta é `não`."
+    points: 15
+  - id: corrigir
+    order: 5
+    title: "Revogar o token no logout"
+    explanation: |
+      **Por que a falha existe.** `sair` só devolve `None`: nada muda no servidor.
+
+      **A correção.** Chamar `self._tokens.revogar(token)`, que marca o token como inativo. Depois disso, `conta_do_token` não o reconhece mais e a API responde `401`.
+    task: |
+      Abra `services/sessao_service.py` e troque as duas linhas do corpo de `sair` (a partir do comentário) por estas:
+
+      ```python
+              # Revoga o token no servidor: depois do logout ele não abre mais nada.
+              self._tokens.revogar(token)
+      ```
+
+      Salve com **Ctrl+S**. A aplicação reinicia. Então:
+
+      1. na aba **Aplicação**, entre e saia de novo: o app continua funcionando;
+      2. no **Terminal**, refaça o login, o logout e o uso do token antigo, e veja `nao autorizado`;
+      3. clique em **Validar**.
+    explore: |
+      **Se algo não funcionar depois de salvar.** Um recuo errado derruba a aplicação e o app no celular para de responder. No **Terminal**:
+
+      ```bash
+      grep -iE "error|traceback" /tmp/app.log | tail -n 15
+      ```
+
+      **O que procurar.** `IndentationError` aponta a linha com recuo diferente: o corpo do método fica com 8 espaços e o que está dentro de um `if`, com 12. Copie o bloco da tarefa sem mudar o recuo.
+    concept: "Correção: o logout revoga o token no servidor"
+    validatorRef: mob-sessao-logout/python-flask/logout-revoga-ind-v1
+    hints:
+      - level: 1
+        text: "A mudança é só em `services/sessao_service.py`, no método `sair`."
+      - level: 2
+        text: "Use `self._tokens.revogar(token)`."
+      - level: 3
+        text: "Copie o bloco da tarefa sem mudar o recuo: 8 espaços."
+    points: 45
+policy:
+  sequentialUnlock: true
+  allowStepRetry: true
+  persistProgressAcrossReset: true
+  allowSolutionReveal: false
+  finalPassingScore: 100

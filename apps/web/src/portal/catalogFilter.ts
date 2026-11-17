@@ -21,6 +21,8 @@ export const FRAMEWORKS: Record<string, string> = {
   "OWASP Top 10": "OWASP Top 10 (Web)",
   "OWASP API Security Top 10": "OWASP API Security Top 10",
   "SANS CWE Top 25": "SANS CWE Top 25",
+  "OWASP Mobile Top 10": "OWASP Mobile Top 10",
+  "OWASP MASVS": "OWASP MASVS",
 };
 
 /** Uma entrada "Não se enquadra; use o CWE" não conta como pertencer à lista. */

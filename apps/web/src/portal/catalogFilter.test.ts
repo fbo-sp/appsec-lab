@@ -56,6 +56,17 @@ describe("matchesFilter (ADR-021)", () => {
     expect(labFrameworks(api)).toEqual(["OWASP Top 10", "OWASP API Security Top 10"]);
     expect(matchesFilter(api, "", "", "SANS CWE Top 25")).toBe(false);
   });
+  it("reconhece as listas mobile (ADR-025)", () => {
+    const mob = lab({
+      classifications: [
+        { framework: "OWASP Mobile Top 10", edition: "2024", entries: ["M9 Insecure Data Storage"] },
+        { framework: "OWASP MASVS", edition: "2023", entries: ["MASVS-STORAGE-1"] },
+      ],
+    });
+    expect(matchesFilter(mob, "", "", "OWASP Mobile Top 10")).toBe(true);
+    expect(matchesFilter(mob, "", "", "OWASP MASVS")).toBe(true);
+    expect(matchesFilter(api, "", "", "OWASP Mobile Top 10")).toBe(false);
+  });
   it("classificação combina com os outros filtros e o tutorial ignora tudo", () => {
     expect(matchesFilter(api, "", "", "")).toBe(true);
     expect(matchesFilter(tutorial, "", "", "OWASP API Security Top 10")).toBe(true);

@@ -557,6 +557,132 @@ const ILLUSTRATIONS: Record<string, { caption: string; body: () => ReactNode }> 
       />
     ),
   },
+  "mob-chave-embutida": {
+    caption: "Chave embutida: o pacote do app é público, então a chave que vem nele abre a API para qualquer um.",
+    body: () => (
+      <Compare
+        bad={[
+          "Libera pela chave do pacote (o que tem hoje)",
+          <>
+            <span>O app manda {c("X-Api-Key")} igual para todo mundo; ela está em {c("cliente/config.json")}.</span>
+            <span>Quem abre o pacote chama {c("/api/itens?conta=2")} só com a chave e lê a conta de outro.</span>
+          </>,
+        ]}
+        good={[
+          "Exige o token do usuário",
+          <>
+            <span>O servidor identifica o usuário pelo {c("token")} emitido no login.</span>
+            <span>Só devolve a lista se a conta pedida for a dona do token; a chave do pacote não vale nada sozinha.</span>
+          </>,
+        ]}
+      />
+    ),
+  },
+  "mob-dados-locais": {
+    caption: "Armazenamento inseguro: o que o app grava no aparelho pode ser copiado e lido por quem pegar o celular.",
+    body: () => (
+      <Compare
+        bad={[
+          "Grava a senha no aparelho (o que tem hoje)",
+          <>
+            <span>Depois do login, {c("prefs")} recebe {c("senha = ...")} em texto puro.</span>
+            <span>Perícia, backup ou malware copiam os arquivos do app e leem a senha.</span>
+          </>,
+        ]}
+        good={[
+          "Guarda só o token",
+          <>
+            <span>O app grava só {c("login")} e {c("token")}; a senha não sai da tela de login.</span>
+            <span>O token é curto e o servidor pode revogá-lo; a senha nunca fica no aparelho.</span>
+          </>,
+        ]}
+      />
+    ),
+  },
+  "mob-biometria-cliente": {
+    caption: "Biometria só no cliente: a tela pede a digital, mas a API executa sem conferir prova nenhuma.",
+    body: () => (
+      <Compare
+        bad={[
+          "Confia na tela do app (o que tem hoje)",
+          <>
+            <span>O app mostra {c("Confirme com a digital")} e depois chama {c("POST /api/acao")}.</span>
+            <span>Quem chama a API direto, com o token, pula a digital e a operação é executada.</span>
+          </>,
+        ]}
+        good={[
+          "O servidor exige a prova",
+          <>
+            <span>A operação só roda com {c("X-Prova-Biometria")} válida, desta conta e com menos de 60 s.</span>
+            <span>Sem prova, prova velha ou inventada: {c("401")}.</span>
+          </>,
+        ]}
+      />
+    ),
+  },
+  "mob-sessao-logout": {
+    caption: "Sessão que não morre: o app esquece o token no logout, mas o servidor continua aceitando.",
+    body: () => (
+      <Compare
+        bad={[
+          "Só o app esquece (o que tem hoje)",
+          <>
+            <span>{c("POST /api/sair")} responde 204, mas o token segue ativo no banco.</span>
+            <span>Quem copiou o token chama {c("/api/conta")} e entra na conta depois do logout.</span>
+          </>,
+        ]}
+        good={[
+          "O servidor revoga",
+          <>
+            <span>No logout, o servidor marca o token como revogado.</span>
+            <span>Token antigo: {c("401")}. Sair encerra a sessão para todo mundo que tinha o token.</span>
+          </>,
+        ]}
+      />
+    ),
+  },
+  "mob-dados-demais": {
+    caption: "Dados demais: a tela mostra só o nome, mas a API entrega o registro inteiro ao aparelho.",
+    body: () => (
+      <Compare
+        bad={[
+          "Devolve o registro inteiro (o que tem hoje)",
+          <>
+            <span>{c("GET /api/perfil")} traz {c("documento")} e {c("dado_pessoal")} junto com o nome.</span>
+            <span>A tela esconde, mas um proxy ou um log mostra tudo.</span>
+          </>,
+        ]}
+        good={[
+          "Só o que a tela usa",
+          <>
+            <span>A API monta a resposta com {c("nome")} e {c("resumo")}, campo por campo.</span>
+            <span>O que não sai do servidor não vaza pelo aparelho, pela rede nem por um log.</span>
+          </>,
+        ]}
+      />
+    ),
+  },
+  "mob-modo-teste": {
+    caption: "Modo de teste esquecido: um cabeçalho do app de homologação ainda pula o login na produção.",
+    body: () => (
+      <Compare
+        bad={[
+          "Atalho de teste ativo (o que tem hoje)",
+          <>
+            <span>{c("X-Debug: 1")} faz a API tratar o pedido como da conta 1.</span>
+            <span>Sem login nenhum, {c("/api/conta")} devolve os dados de outra pessoa.</span>
+          </>,
+        ]}
+        good={[
+          "Só o token identifica",
+          <>
+            <span>O atalho sai do build de produção.</span>
+            <span>Sem token válido: {c("401")}, com ou sem {c("X-Debug")}.</span>
+          </>,
+        ]}
+      />
+    ),
+  },
   "ldap-injection": {
     caption: "Injeção de LDAP: o nome entra cru no filtro, então um * vira curinga e lista o diretório inteiro.",
     body: () => (

@@ -8,6 +8,7 @@ de cada família conferem os dois lados.
 
 from __future__ import annotations
 
+import re
 import urllib.parse
 from dataclasses import dataclass
 
@@ -1917,6 +1918,475 @@ def _ldap(r: LdapRamo) -> tuple[Suite, ...]:
     )
 
 
+# Labs mobile (ADR-025): MOB-01, 02, 04, 05, 08, 09 x 3 ramos (LAB-050 a LAB-067)
+
+
+@dataclass(frozen=True, slots=True)
+class MobRamo:
+    ramo: str
+    login_a: str  # conta 1 (dona dos itens 1 e 2)
+    senha_a: str
+    nome_a: str  # trecho ASCII do nome da conta 1
+    trecho_proprio: str  # trecho de um item da conta 1
+    trecho_outro: str  # trecho de um item da conta 2; só vaza se houver falha
+    chave_app: str  # chave embutida no pacote (MOB-01)
+    doc_a: str  # documento da conta 1 (MOB-08)
+    extra_a: str  # dado pessoal da conta 1 (MOB-08)
+
+
+MOB_RAMOS = (
+    MobRamo(
+        "fin",
+        "ana.ribeiro",
+        "Ana#Pagomais26",
+        "Ana Ribeiro",
+        "Vale Insumos",
+        "Norte Transportes",
+        "PGM-APP-KEY-7F3A91C2",
+        "111.444.777-35",
+        "Renda mensal R$ 9.800",
+    ),
+    MobRamo(
+        "sau",
+        "marcos.tavares",
+        "Marcos#Lumen26",
+        "Marcos Tavares",
+        "Hemograma completo",
+        "joelho",
+        "LUM-APP-KEY-3B71E0C9",
+        "333.666.999-57",
+        "CID J45 asma",
+    ),
+    MobRamo(
+        "ind",
+        "diego.campos",
+        "Diego#Aurora26",
+        "Diego Campos",
+        "bomba 4",
+        "turbina 2",
+        "AUR-APP-KEY-C40D92B1",
+        "MAT-40213",
+        "Rua das Turbinas 120",
+    ),
+)
+
+_SIM = ("sim", "s", "sim, devolveu", "sim devolveu", "yes")
+_NAO = ("não", "nao", "n", "não resolve", "nao resolve", "não basta", "nao basta", "no")
+
+
+def _mob_login(r: MobRamo) -> HttpLogin:
+    return HttpLogin(
+        name="a",
+        path="/api/login",
+        json={"login": r.login_a, "senha": r.senha_a},
+        token_field="token",  # noqa: S106 - nome do campo JSON, não é senha
+    )
+
+
+def _mob_respostas(
+    fam: str,
+    r: MobRamo,
+    metodo: str,
+    comp: tuple[str, ...],
+    defesa: tuple[str, ...],
+    onde: tuple[str, ...],
+    textos: tuple[str, str, str, str],
+) -> tuple[Suite, ...]:
+    """As quatro etapas de resposta de uma família mobile (método, comportamento, defesa, onde)."""
+    ok = ("Isso.", "Exato.", "Isso.", "Isso.")
+    return tuple(
+        AnswerSuite(
+            ref=f"{fam}/answer/{nome}-{r.ramo}-v1",
+            version="1.0.0",
+            prompt=prompt,
+            accepted=aceitos,
+            success_feedback=f"{ok[i]} {sucesso}",
+            failure_feedback="Ainda não. Releia a etapa e use as dicas, se precisar.",
+        )
+        for i, (nome, aceitos, (prompt, sucesso)) in enumerate(
+            zip(
+                ("metodo", "comportamento", "defesa", "onde"),
+                ((metodo, f"{metodo}()"), comp, defesa, onde),
+                (t.split("|", 1) for t in textos),
+                strict=True,
+            )
+        )
+    )
+
+
+def _mob_chave(r: MobRamo) -> tuple[Suite, ...]:
+    fam = "mob-chave-embutida"
+    return (
+        *_mob_respostas(
+            fam,
+            r,
+            "conta_autorizada",
+            _SIM,
+            (
+                "token",
+                "o token",
+                "token do usuário",
+                "token do usuario",
+                "token de sessão",
+                "token de sessao",
+                "bearer",
+                "token bearer",
+            ),
+            _NAO,
+            (
+                "Método que decide se o pedido pode ler a lista da conta|É em conta_autorizada que a chave do pacote vale para qualquer conta.",
+                "A API devolveu a conta 2 só com a chave, sem login?|Só com a chave do pacote, a API entregou a conta de outra pessoa.",
+                "O que o servidor deve exigir no lugar da chave fixa|O token do login identifica o usuário; a chave do app não.",
+                "Ofuscar a chave no app resolve?|Quem tem o app consegue montar a chave; a decisão precisa estar no servidor.",
+            ),
+        ),
+        HttpSuite(
+            ref=f"{fam}/python-flask/acesso-por-token-{r.ramo}-v1",
+            version="1.0.0",
+            logins=(_mob_login(r),),
+            checks=(
+                HttpCheck(
+                    id="propria-lista-ok",
+                    description="O app, com o token do login, continua lendo a lista da própria conta.",
+                    path="/api/itens?conta=1",
+                    as_user="a",
+                    headers={"X-Api-Key": r.chave_app},
+                    contains=(r.trecho_proprio,),
+                ),
+                HttpCheck(
+                    id="so-chave-negada",
+                    description="Só com a chave do pacote, sem login, a lista de outra conta é negada.",
+                    path="/api/itens?conta=2",
+                    headers={"X-Api-Key": r.chave_app},
+                    expect_status_in=(401, 403),
+                    not_contains=(r.trecho_outro,),
+                ),
+                HttpCheck(
+                    id="outra-conta-negada",
+                    description="Com o token de um usuário, a lista de OUTRA conta é negada.",
+                    path="/api/itens?conta=2",
+                    as_user="a",
+                    headers={"X-Api-Key": r.chave_app},
+                    expect_status_in=(401, 403),
+                    not_contains=(r.trecho_outro,),
+                ),
+            ),
+            success_feedback=(
+                "Correção validada: o app continua lendo a própria lista, e a chave do pacote não abre mais "
+                "nenhuma conta; só o token do dono libera."
+            ),
+            failure_feedback=(
+                "Algumas verificações falharam. Ajuste services/acesso_service.py: exija o token e confira que "
+                "a conta pedida é a dona dele."
+            ),
+        ),
+    )
+
+
+def _mob_dados_locais(r: MobRamo) -> tuple[Suite, ...]:
+    fam = "mob-dados-locais"
+    db = "/tmp/dispositivo.db"  # noqa: S108 - caminho do aparelho simulado no contêiner do lab
+    return (
+        *_mob_respostas(
+            fam,
+            r,
+            "guardar",
+            ("senha", "a senha", "senha do usuário", "senha do usuario", "password"),
+            ("token", "o token", "token de sessão", "token de sessao", "token do login"),
+            _NAO,
+            (
+                "Método que guarda a sessão no aparelho|É em guardar que o app grava a senha no aparelho.",
+                "Qual dado sensível aparece por extenso no aparelho?|A senha ficou escrita por extenso nas preferências do app.",
+                "O que basta guardar para manter a sessão|O token mantém a sessão; a senha não precisa ficar no aparelho.",
+                "O app precisa guardar a senha no aparelho?|A senha só serve no login; depois, o token basta.",
+            ),
+        ),
+        HttpSuite(
+            ref=f"{fam}/python-flask/sem-senha-no-aparelho-{r.ramo}-v1",
+            version="1.0.0",
+            logins=(_mob_login(r),),
+            checks=(
+                HttpCheck(
+                    id="login-ok",
+                    description="Entrar no app continua funcionando.",
+                    path="/api/conta",
+                    as_user="a",
+                    contains=(r.nome_a,),
+                ),
+            ),
+            inspections=(
+                InspectCheck(
+                    id="token-guardado-sem-senha",
+                    description="O aparelho guarda a sessão (há preferências gravadas) e nenhum valor é a senha.",
+                    db_path=db,
+                    query="SELECT chave, valor FROM prefs",
+                    min_rows=1,
+                    none_match=re.escape(r.senha_a),
+                ),
+                InspectCheck(
+                    id="sem-chave-de-senha",
+                    description="Nenhuma preferência guarda a senha de outra forma (nem hash, nem cifrada).",
+                    db_path=db,
+                    query="SELECT chave, valor FROM prefs WHERE lower(chave) LIKE '%senha%' OR lower(chave) LIKE '%pass%'",
+                    min_rows=0,
+                    none_match=r"[\s\S]",
+                ),
+            ),
+            success_feedback=(
+                "Correção validada: o login continua funcionando e o aparelho guarda só o token, sem a senha."
+            ),
+            failure_feedback=(
+                "Algumas verificações falharam. Ajuste dispositivo/sessao_local.py: grave só o login e o token."
+            ),
+        ),
+    )
+
+
+def _mob_biometria(r: MobRamo) -> tuple[Suite, ...]:
+    fam = "mob-biometria-cliente"
+    return (
+        *_mob_respostas(
+            fam,
+            r,
+            "executar",
+            _SIM,
+            (
+                "prova",
+                "a prova",
+                "prova da biometria",
+                "prova de biometria",
+                "a prova da biometria",
+                "prova da digital",
+                "assinatura",
+            ),
+            ("servidor", "o servidor", "backend", "o backend", "a api", "api"),
+            (
+                "Método que executa a operação|É em executar que falta conferir a prova da digital.",
+                "A operação foi executada sem a digital?|Sem conferir no servidor, a digital vira enfeite.",
+                "O que o servidor precisa conferir antes de executar|O servidor confere a prova da biometria.",
+                "Quem deve decidir se a digital foi exigida?|O app está nas mãos do atacante; quem decide é o servidor.",
+            ),
+        ),
+        HttpSuite(
+            ref=f"{fam}/python-flask/prova-exigida-{r.ramo}-v1",
+            version="1.0.0",
+            logins=(_mob_login(r),),
+            checks=(
+                HttpCheck(
+                    id="pede-prova",
+                    description="Depois da digital, o app recebe a prova da biometria.",
+                    path="/api/biometria/prova",
+                    method="POST",
+                    as_user="a",
+                    capture={"prova": r'"prova"\s*:\s*"([0-9a-f]+)"'},
+                ),
+                HttpCheck(
+                    id="com-prova-ok",
+                    description="Com a prova válida da biometria, a operação continua funcionando.",
+                    path="/api/acao",
+                    method="POST",
+                    as_user="a",
+                    headers={"X-Prova-Biometria": "{{prova}}"},
+                    contains=("executada",),
+                ),
+                HttpCheck(
+                    id="sem-prova-negada",
+                    description="Sem a prova da biometria, o servidor recusa a operação.",
+                    path="/api/acao",
+                    method="POST",
+                    as_user="a",
+                    expect_status_in=(401, 403),
+                    not_contains=("executada",),
+                ),
+                HttpCheck(
+                    id="prova-falsa-negada",
+                    description="Com uma prova inventada, o servidor recusa a operação.",
+                    path="/api/acao",
+                    method="POST",
+                    as_user="a",
+                    headers={"X-Prova-Biometria": "00000000000000000000000000000000"},
+                    expect_status_in=(401, 403),
+                    not_contains=("executada",),
+                ),
+            ),
+            success_feedback=(
+                "Correção validada: com a prova da digital a operação funciona; sem prova ou com prova inventada, "
+                "o servidor recusa."
+            ),
+            failure_feedback=(
+                "Algumas verificações falharam. Ajuste services/acao_service.py: confira a prova com "
+                "self._provas.valida antes de executar."
+            ),
+        ),
+    )
+
+
+def _mob_logout(r: MobRamo) -> tuple[Suite, ...]:
+    fam = "mob-sessao-logout"
+    return (
+        *_mob_respostas(
+            fam,
+            r,
+            "sair",
+            _SIM,
+            (
+                "revogar",
+                "revogá-lo",
+                "revoga-lo",
+                "revoga",
+                "invalidar",
+                "invalida",
+                "inativar",
+                "desativar",
+                "cancelar",
+                "expirar",
+                "apagar",
+            ),
+            _NAO,
+            (
+                "Método que encerra a sessão|É em sair que o servidor deveria encerrar a sessão.",
+                "Depois do logout, o token antigo abriu a conta?|O token continuou valendo depois do logout.",
+                "O que o servidor faz com o token no logout|No logout, o servidor revoga o token.",
+                "Apagar o token só no aparelho encerra a sessão?|Cópias do token continuam valendo até o servidor revogar.",
+            ),
+        ),
+        HttpSuite(
+            ref=f"{fam}/python-flask/logout-revoga-{r.ramo}-v1",
+            version="1.0.0",
+            logins=(_mob_login(r),),
+            checks=(
+                HttpCheck(
+                    id="antes-ok",
+                    description="Com a sessão aberta, o app lê a conta normalmente.",
+                    path="/api/conta",
+                    as_user="a",
+                    contains=(r.nome_a,),
+                ),
+                HttpCheck(
+                    id="logout",
+                    description="O app pede o logout.",
+                    path="/api/sair",
+                    method="POST",
+                    as_user="a",
+                    expect_status_in=(200, 204),
+                ),
+                HttpCheck(
+                    id="token-antigo-negado",
+                    description="Depois do logout, o mesmo token é recusado.",
+                    path="/api/conta",
+                    as_user="a",
+                    expect_status_in=(401, 403),
+                    not_contains=(r.nome_a,),
+                ),
+            ),
+            success_feedback="Correção validada: depois do logout, o token antigo não abre mais a conta.",
+            failure_feedback=(
+                "Algumas verificações falharam. Ajuste services/sessao_service.py: revogue o token no logout."
+            ),
+        ),
+    )
+
+
+def _mob_dados_demais(r: MobRamo) -> tuple[Suite, ...]:
+    fam = "mob-dados-demais"
+    return (
+        *_mob_respostas(
+            fam,
+            r,
+            "perfil",
+            _SIM,
+            (
+                "minimização",
+                "minimizacao",
+                "minimização de dados",
+                "minimizacao de dados",
+                "minimizar",
+                "princípio da minimização",
+                "principio da minimizacao",
+                "necessidade",
+            ),
+            _NAO,
+            (
+                "Método que monta os dados do perfil|É em perfil que a API devolve o registro inteiro.",
+                "A resposta traz dados que a tela não mostra?|A API entrega ao aparelho bem mais do que a tela mostra.",
+                "Nome do princípio de privacidade|Minimização: só sai do servidor o que a tela precisa.",
+                "Esconder os campos na tela resolve?|O dado já saiu do servidor; a tela não é o filtro.",
+            ),
+        ),
+        HttpSuite(
+            ref=f"{fam}/python-flask/perfil-minimo-{r.ramo}-v1",
+            version="1.0.0",
+            logins=(_mob_login(r),),
+            checks=(
+                HttpCheck(
+                    id="tela-ok",
+                    description="A tela Perfil continua recebendo o nome e o resumo.",
+                    path="/api/perfil",
+                    as_user="a",
+                    contains=(r.nome_a, '"resumo"'),
+                ),
+                HttpCheck(
+                    id="sem-dados-pessoais",
+                    description="A resposta não traz o documento nem o dado pessoal da conta.",
+                    path="/api/perfil",
+                    as_user="a",
+                    not_contains=(r.doc_a, r.extra_a),
+                ),
+            ),
+            success_feedback="Correção validada: a API entrega só nome e resumo, sem dados pessoais.",
+            failure_feedback=(
+                "Algumas verificações falharam. Ajuste services/perfil_service.py: devolva só nome e resumo."
+            ),
+        ),
+    )
+
+
+def _mob_modo_teste(r: MobRamo) -> tuple[Suite, ...]:
+    fam = "mob-modo-teste"
+    return (
+        *_mob_respostas(
+            fam,
+            r,
+            "identificar",
+            _SIM,
+            ("x-debug", "x-debug: 1", "x-debug:1", "cabeçalho x-debug", "cabecalho x-debug"),
+            _NAO,
+            (
+                "Método que identifica o usuário do pedido|É em identificar que ficou o atalho de homologação.",
+                "Sem login e com X-Debug: 1, a API devolveu uma conta?|O atalho de teste abriu uma conta sem login.",
+                "Cabeçalho que liga o atalho|X-Debug é escrito por quem envia o pedido, inclusive o atacante.",
+                "O atalho deveria existir em produção?|Atalho de teste fica fora do build de produção.",
+            ),
+        ),
+        HttpSuite(
+            ref=f"{fam}/python-flask/sem-atalho-{r.ramo}-v1",
+            version="1.0.0",
+            logins=(_mob_login(r),),
+            checks=(
+                HttpCheck(
+                    id="login-ok",
+                    description="Com o token do login, o app lê a conta normalmente.",
+                    path="/api/conta",
+                    as_user="a",
+                    contains=(r.nome_a,),
+                ),
+                HttpCheck(
+                    id="atalho-negado",
+                    description="Sem login, com X-Debug: 1, a API recusa o pedido.",
+                    path="/api/conta",
+                    headers={"X-Debug": "1"},
+                    expect_status_in=(401, 403),
+                    not_contains=(r.nome_a,),
+                ),
+            ),
+            success_feedback="Correção validada: o login continua funcionando e o X-Debug não abre mais conta nenhuma.",
+            failure_feedback=(
+                "Algumas verificações falharam. Ajuste services/identidade_service.py: remova o atalho do X-Debug."
+            ),
+        ),
+    )
+
+
 SUITES_FAMILIAS: tuple[Suite, ...] = (
     tuple(s for r in XSS_RAMOS for s in _xss(r))
     + tuple(s for r in MASSA_RAMOS for s in _massa(r))
@@ -1933,4 +2403,17 @@ SUITES_FAMILIAS: tuple[Suite, ...] = (
     + tuple(s for r in ERROS_RAMOS for s in _erros(r))
     + tuple(s for r in LDAP_RAMOS for s in _ldap(r))
     + tuple(s for r in GRAPHQL_RAMOS for s in _graphql(r))
+    + tuple(
+        s
+        for r in MOB_RAMOS
+        for fn in (
+            _mob_chave,
+            _mob_dados_locais,
+            _mob_biometria,
+            _mob_logout,
+            _mob_dados_demais,
+            _mob_modo_teste,
+        )
+        for s in fn(r)
+    )
 )

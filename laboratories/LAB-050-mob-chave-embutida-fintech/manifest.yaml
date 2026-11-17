@@ -1,0 +1,259 @@
+# LAB-050 (MOB-01-FIN): chave de API embutida no pacote do app (CWE-798) no App Pagomais da Pagomais (app mobile simulado, Flask + SQLite).
+# CONTÉM VULNERABILIDADE INTENCIONAL. Uso exclusivo no runtime Docker LOCAL (ADR-008), em rede
+# interna da sessão. Dados 100% fictícios. Família MOB-01 mob-chave-embutida (ADR-021, ADR-025): gerado por
+# scripts/gerar-familia.py a partir de laboratories/_familias/mob-chave-embutida; não edite este arquivo à mão.
+#
+# ATENÇÃO: o digest abaixo é uma FIXTURE (sha256 de um texto fixo), não uma imagem publicada.
+# scripts/lab-local.sh e .ps1 trocam pela imagem construída localmente antes de registrar.
+apiVersion: labs.cecyber.io/v1alpha1
+kind: AppSecLab
+metadata:
+  id: LAB-050
+  version: 1.0.0
+  title: "MOB-01-FIN · Chave de API embutida no app: a chave que vem no pacote abre qualquer conta"
+  primaryCwe: CWE-798
+  secondaryCwes: [CWE-522, CWE-639]
+  family: mob-chave-embutida
+  sectors: [financeiro]
+  courseModules: [trained]
+  classifications:
+    - framework: OWASP Top 10
+      edition: "2025"
+      entries:
+        - "A07 Authentication Failures"
+    - framework: OWASP Top 10
+      edition: "2021"
+      entries:
+        - "A07 Identification and Authentication Failures"
+    - framework: OWASP API Security Top 10
+      edition: "2023"
+      entries:
+        - "API2 Broken Authentication"
+    - framework: SANS CWE Top 25
+      edition: "2025"
+      entries:
+        - "Não se enquadra; use o CWE"
+    - framework: SANS CWE Top 25
+      edition: "2024"
+      entries:
+        - "Não se enquadra; use o CWE"
+    - framework: OWASP Mobile Top 10
+      edition: "2024"
+      entries:
+        - "M1 Improper Credential Usage"
+    - framework: OWASP Mobile Top 10
+      edition: "2016"
+      entries:
+        - "M2 Insecure Data Storage (segredo guardado no pacote)"
+    - framework: OWASP MASVS
+      edition: "2023"
+      entries:
+        - "MASVS-AUTH-1"
+        - "MASVS-STORAGE-1"
+learning:
+  singleVulnerability: true
+  estimatedMinutes: 35
+  difficulty: intermediate
+  objectives:
+    - Entender que tudo o que vai dentro do pacote do app pode ser lido por qualquer pessoa
+    - Explorar a falha chamando a API só com a chave tirada do pacote, sem login
+    - Reconhecer que o servidor precisa identificar o usuário por um token emitido no login
+    - Corrigir o serviço de acesso exigindo o token e conferindo a conta pedida
+  story:
+    role: >-
+      Pessoa desenvolvedora do time de apps do banco digital Pagomais
+    application: >-
+      App Pagomais, o app em que o cliente consulta o extrato
+    context: >-
+      O app de contas da Pagomais manda uma chave de API fixa, gravada no pacote, em todo pedido. O servidor confia nessa chave para liberar o extrato de qualquer conta.
+    mission: >-
+      Mostrar que a chave do pacote abre a conta de outro cliente e corrigir a API para exigir o token do usuário
+  wrapUp:
+    text: |
+      Agora a API só responde a quem tem o token emitido no login, e só para a conta dona do token. Em um app real, vale reforçar:
+
+      - **O pacote do app é público.** APK e IPA são baixados por qualquer pessoa e abertos com ferramentas comuns (apktool, jadx, strings). Chave de API, senha de serviço ou token fixo dentro dele deixam de ser segredo no primeiro download.
+      - **Ofuscar não resolve.** Esconder a chave em código nativo, partir em pedaços ou cifrar com outra chave do próprio app só atrasa: o app precisa montar o valor para usar, e quem tem o app também consegue.
+      - **Quem autoriza é o servidor.** Identifique o usuário por um token emitido no login (de preferência curto, com renovação) e confira, a cada pedido, se o recurso pertence a ele.
+      - **Chaves de terceiros vão para trás do seu backend.** Se o app precisa de um serviço pago (mapas, SMS), o servidor chama o serviço; o app chama o seu servidor com o token do usuário.
+    references:
+      - title: "OWASP Mobile Top 10 2024: M1 Improper Credential Usage"
+        url: https://owasp.org/www-project-mobile-top-10/2023-risks/m1-improper-credential-usage
+      - title: "OWASP MASTG: Testing for Sensitive Data in the App Package"
+        url: https://mas.owasp.org/MASTG/
+      - title: "OWASP MASVS"
+        url: https://mas.owasp.org/MASVS/
+      - title: "OWASP API Security Top 10 2023: API2 Broken Authentication"
+        url: https://owasp.org/API-Security/editions/2023/en/0xa2-broken-authentication/
+      - title: "CWE-798: Use of Hard-coded Credentials"
+        url: https://cwe.mitre.org/data/definitions/798.html
+variants:
+  - id: python-flask
+    language: python
+    framework: flask
+    image: registry.local/labs/lab-050-mobile@sha256:105c15a296c0fdd83f64ff73895a93af61689bee06d155eb649e99b1bdb0402a
+    runtimeProfile: web-basic
+    workspacePath: /workspace
+    startup:
+      command: ["sh", "-c", "python -u -m flask --app app run --host 0.0.0.0 --port 8080 --reload --no-debugger 2>&1 | tee -a /tmp/app.log"]
+      port: 8080
+    resources:
+      cpuMillicores: 500
+      memoryMiB: 512
+      storageMiB: 256
+      pidsMax: 64
+    session:
+      ttlMinutes: 45
+      maxRenewals: 2
+    interfaces: [editor, terminal, web]
+    platform: mobile
+steps:
+  - id: conhecer
+    order: 1
+    title: "Conhecer o app e achar quem decide o acesso"
+    explanation: |
+      Você está no time de apps do banco digital Pagomais. O app de contas da Pagomais lê o extrato pela API. Um teste de invasão mostrou que alguém abriu o pacote do app, copiou a chave de API que o app usa e passou a consultar o extrato de qualquer cliente direto pela API, sem abrir o app e sem login.
+
+      **Um laboratório mobile.** Na aba **Aplicação**, o app aparece numa moldura de celular. Ele é um app **simulado** (não há emulador), mas fala com a API do servidor do mesmo jeito que um app Android ou iOS. Toda falha de app mobile termina numa decisão de segurança: quem a toma, o aparelho ou o servidor?
+
+      ```ilustracao
+      mob-chave-embutida
+      ```
+
+      Siga um pedido do app pelas camadas:
+
+      1. **Pacote do app** (`cliente/config.json`): a configuração que vai dentro do APK/IPA. O app lê dela a chave de API e a envia no cabeçalho `X-Api-Key`.
+      2. **Controller** (`controllers/api_controller.py`): recebe `GET /api/itens?conta=N` e pergunta ao serviço de acesso se pode entregar.
+      3. **Serviço** (`services/acesso_service.py`): decide se o pedido pode ler a lista da conta. **É aqui que está a falha.**
+
+      As credenciais de teste deste laboratório são:
+
+      - Usuário `ana.ribeiro`, senha `Ana#Pagomais26` (Ana Ribeiro Teixeira).
+    task: |
+      1. Na aba **Aplicação**, entre no app do celular com `ana.ribeiro` e a senha `Ana#Pagomais26`. Veja a tela **Extrato**.
+      2. Na aba **Código**, abra `services/acesso_service.py`.
+
+      Informe abaixo o nome do método que decide se o pedido pode ler a lista da conta.
+    concept: "Chave de API no pacote: todo mundo que baixa o app tem a chave"
+    validatorRef: mob-chave-embutida/answer/metodo-fin-v1
+    hints:
+      - level: 1
+        text: "A classe `AcessoService` tem um único método público."
+      - level: 2
+        text: "É o método que o controller chama antes de entregar a lista."
+      - level: 3
+        text: "O valor é `conta_autorizada`."
+    points: 10
+  - id: explorar
+    order: 2
+    title: "Chamar a API só com a chave do pacote"
+    explanation: |
+      Quem baixa o app consegue abrir o pacote e ler `cliente/config.json`. No laboratório, esse arquivo está no seu workspace. Você vai fazer o que um atacante faria: pegar a chave e chamar a API **sem login**, pedindo a lista de **outra** conta (id `2`).
+    task: |
+      No **Terminal**:
+
+      ```bash
+      cat cliente/config.json
+      curl -s -H "X-Api-Key: PGM-APP-KEY-7F3A91C2" "http://127.0.0.1:8080/api/itens?conta=2"
+      ```
+
+      O primeiro comando mostra a chave empacotada no app. O segundo pede a lista da conta `2` só com ela, sem token nenhum.
+
+      A API devolveu a lista da conta `2` só com a chave, sem login? Responda **sim** ou **não**.
+    explore: |
+      **Como isso acontece com um app de verdade.** Um APK é um arquivo zip: `apktool d app.apk` ou `jadx` mostram recursos e código; `strings` acha textos dentro de bibliotecas nativas. Em iOS, o IPA também é um zip. Ferramentas como MobSF fazem essa varredura automaticamente e listam chaves, URLs e tokens encontrados.
+
+      **Por que é grave.** A chave é a mesma para todos os usuários: um vazamento afeta a base inteira e trocar a chave obriga a publicar uma versão nova do app.
+    concept: "A chave do pacote abre a conta de qualquer usuário"
+    validatorRef: mob-chave-embutida/answer/comportamento-fin-v1
+    hints:
+      - level: 1
+        text: "Veja se a resposta tem a palavra `itens` com dados."
+      - level: 2
+        text: "A conta `2` não é sua e você não fez login."
+      - level: 3
+        text: "A resposta é `sim`."
+    points: 15
+  - id: medida
+    order: 3
+    title: "Nomear o que o servidor deve exigir"
+    explanation: |
+      A chave do app identifica **o app**, não **a pessoa**. Para decidir se um pedido pode ler uma conta, o servidor precisa saber quem é o usuário. Isso vem do login: ao conferir usuário e senha, a API emite um valor aleatório e único para aquela sessão, que o app envia em `Authorization: Bearer ...`.
+    task: |
+      Complete: no lugar da chave fixa do app, o servidor deve exigir o ___ do usuário, emitido no login.
+
+      Responda com uma palavra.
+    concept: "O servidor identifica o usuário pelo token do login"
+    validatorRef: mob-chave-embutida/answer/defesa-fin-v1
+    hints:
+      - level: 1
+        text: "Veja o que `POST /api/login` devolve."
+      - level: 2
+        text: "É o valor que o app manda em `Authorization: Bearer`."
+      - level: 3
+        text: "A resposta é `token`."
+    points: 15
+  - id: onde
+    order: 4
+    title: "Separar esconder a chave de proteger a API"
+    explanation: |
+      Uma reação comum é tentar esconder melhor a chave: cifrar, ofuscar, mover para código nativo. Mas o app precisa montar a chave para usá-la, e o atacante tem o app inteiro nas mãos.
+    task: |
+      Ofuscar ou esconder melhor a chave dentro do app resolve a falha?
+
+      Responda **sim** ou **não**.
+    concept: "Segredo no app não é segredo"
+    validatorRef: mob-chave-embutida/answer/onde-fin-v1
+    hints:
+      - level: 1
+        text: "Quem tem o app consegue executar o mesmo código que monta a chave."
+      - level: 2
+        text: "A decisão de acesso precisa estar no servidor."
+      - level: 3
+        text: "A resposta é `não`."
+    points: 15
+  - id: corrigir
+    order: 5
+    title: "Exigir o token do usuário no serviço de acesso"
+    explanation: |
+      **Por que a falha existe.** `conta_autorizada` compara só a chave do app e devolve `True` para qualquer `conta_id`.
+
+      **A correção.** Ignorar a chave como critério de acesso: descobrir a conta dona do token enviado e liberar só se ela for a conta pedida. O app continua funcionando, porque ele já envia o token recebido no login.
+    task: |
+      Abra `services/acesso_service.py` e troque as duas linhas do corpo de `conta_autorizada` (a partir do comentário) por estas:
+
+      ```python
+              # Exige o token do usuário (emitido no login) e confere que a conta pedida é a dele.
+              dono = self._tokens.conta_do_token(token) if token else None
+              return dono is not None and dono == conta_id
+      ```
+
+      Salve com **Ctrl+S**. A aplicação reinicia. Então:
+
+      1. na aba **Aplicação**, entre de novo e veja que a sua lista continua aparecendo;
+      2. no **Terminal**, repita o `curl` só com a chave e veja que agora a resposta é `nao autorizado`;
+      3. clique em **Validar**.
+    explore: |
+      **Se algo não funcionar depois de salvar.** Um recuo errado derruba a aplicação e o app no celular para de responder. No **Terminal**:
+
+      ```bash
+      grep -iE "error|traceback" /tmp/app.log | tail -n 15
+      ```
+
+      **O que procurar.** `IndentationError` aponta a linha com recuo diferente: o corpo do método fica com 8 espaços e o que está dentro de um `if`, com 12. Copie o bloco da tarefa sem mudar o recuo.
+    concept: "Correção: o token do usuário decide, a chave do pacote não"
+    validatorRef: mob-chave-embutida/python-flask/acesso-por-token-fin-v1
+    hints:
+      - level: 1
+        text: "A mudança é só em `services/acesso_service.py`, no método `conta_autorizada`."
+      - level: 2
+        text: "Use `self._tokens.conta_do_token(token)` e compare com `conta_id`."
+      - level: 3
+        text: "Copie o bloco da tarefa sem mudar o recuo: 8 espaços."
+    points: 45
+policy:
+  sequentialUnlock: true
+  allowStepRetry: true
+  persistProgressAcrossReset: true
+  allowSolutionReveal: false
+  finalPassingScore: 100

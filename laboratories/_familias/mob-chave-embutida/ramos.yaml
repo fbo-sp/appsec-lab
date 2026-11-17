@@ -1,0 +1,179 @@
+# Família MOB-01 mob-chave-embutida (ADR-021, ADR-025): o que muda por ramo. O modelo comum está em ./modelo.
+# Depois de editar, rode:  uv run python scripts/gerar-familia.py mob-chave-embutida
+# Logins, senhas e trechos dos dados fictícios estão espelhados em
+# apps/backend/app/validation/suites_familias.py (MOB_RAMOS); os testes Docker conferem os dois lados.
+ramos:
+- destino: LAB-050-mob-chave-embutida-fintech
+  vars:
+    lab_id: LAB-050
+    versao: 1.0.0
+    codigo: MOB-01-FIN
+    ramo: fin
+    setor: financeiro
+    imagem: lab-050-mobile
+    banco: pagomais_mobile
+    titulo: a chave que vem no pacote abre qualquer conta
+    empresa: Pagomais
+    marca: Pagomais
+    app_nome: App Pagomais
+    cor: '#1d4ed8'
+    lista_titulo: Extrato
+    acao_titulo: Transferir R$ 500,00 por PIX
+    papel: Pessoa desenvolvedora do time de apps do banco digital Pagomais
+    aplicacao: App Pagomais, o app em que o cliente consulta o extrato
+    contexto: O app de contas da Pagomais manda uma chave de API fixa, gravada no pacote, em todo pedido. O servidor confia nessa chave para liberar o extrato de qualquer conta.
+    missao: Mostrar que a chave do pacote abre a conta de outro cliente e corrigir a API para exigir o token do usuário
+    historia_abertura: Você está no time de apps do banco digital Pagomais. O app de contas da Pagomais lê o extrato pela API. Um teste de invasão mostrou que alguém abriu o pacote do app, copiou a chave de API que o app usa e passou a consultar o extrato de qualquer cliente direto pela API, sem abrir o app e sem login.
+    login_a: ana.ribeiro
+    senha_a: Ana#Pagomais26
+    nome_a: Ana Ribeiro Teixeira
+    chave_app: PGM-APP-KEY-7F3A91C2
+    doc_rotulo: CPF
+    extra_rotulo: renda mensal
+    seed_contas:
+    - - 1
+      - ana.ribeiro
+      - Ana Ribeiro Teixeira
+      - Ana#Pagomais26
+      - Saldo R$ 4.820,15
+      - 111.444.777-35
+      - Renda mensal R$ 9.800
+    - - 2
+      - carlos.moura
+      - Carlos Moura Pinto
+      - Carlos#Pagomais26
+      - Saldo R$ 12.310,00
+      - 222.555.888-46
+      - Renda mensal R$ 15.200
+    seed_itens:
+    - - 1
+      - 1
+      - PIX recebido
+      - Vale Insumos
+      - + R$ 1.250,00
+    - - 2
+      - 1
+      - Cartão final 4410
+      - Mercado Norte
+      - '- R$ 212,90'
+    - - 3
+      - 2
+      - PIX enviado
+      - Norte Transportes
+      - '- R$ 2.300,00'
+- destino: LAB-051-mob-chave-embutida-saude
+  vars:
+    lab_id: LAB-051
+    versao: 1.0.0
+    codigo: MOB-01-SAU
+    ramo: sau
+    setor: saude
+    imagem: lab-051-mobile
+    banco: lumen_mobile
+    titulo: a chave que vem no pacote abre qualquer conta
+    empresa: Clínica Lumen
+    marca: Lumen
+    app_nome: App Lumen Saúde
+    cor: '#0e7490'
+    lista_titulo: Meus exames
+    acao_titulo: Compartilhar laudo com o Dr. Paulo Reis
+    papel: Pessoa desenvolvedora do time de apps da Clínica Lumen
+    aplicacao: App Lumen Saúde, o app em que o paciente consulta os exames
+    contexto: O app do paciente da Clínica Lumen manda uma chave de API fixa, gravada no pacote, em todo pedido. O servidor confia nessa chave para liberar os exames de qualquer conta.
+    missao: Mostrar que a chave do pacote abre a conta de outro paciente e corrigir a API para exigir o token do usuário
+    historia_abertura: Você está no time de apps da Clínica Lumen. O app do paciente da Clínica Lumen lê os exames pela API. Um teste de invasão mostrou que alguém abriu o pacote do app, copiou a chave de API que o app usa e passou a consultar os exames de qualquer paciente direto pela API, sem abrir o app e sem login.
+    login_a: marcos.tavares
+    senha_a: Marcos#Lumen26
+    nome_a: Marcos Tavares Lima
+    chave_app: LUM-APP-KEY-3B71E0C9
+    doc_rotulo: CPF
+    extra_rotulo: diagnóstico (CID)
+    seed_contas:
+    - - 1
+      - marcos.tavares
+      - Marcos Tavares Lima
+      - Marcos#Lumen26
+      - Próxima consulta 20/11 às 14h30
+      - 333.666.999-57
+      - CID J45 asma
+    - - 2
+      - renata.borges
+      - Renata Borges Nunes
+      - Renata#Lumen26
+      - Próxima consulta 02/12 às 9h
+      - 444.777.000-68
+      - CID E11 diabetes
+    seed_itens:
+    - - 1
+      - 1
+      - Hemograma completo
+      - Resultado disponível
+      - 12/11
+    - - 2
+      - 1
+      - Consulta cardiologia
+      - Agendada
+      - 20/11
+    - - 3
+      - 2
+      - Ressonância de joelho
+      - Laudo em análise
+      - 08/11
+- destino: LAB-052-mob-chave-embutida-industria
+  vars:
+    lab_id: LAB-052
+    versao: 1.0.0
+    codigo: MOB-01-IND
+    ramo: ind
+    setor: industria-energia
+    imagem: lab-052-mobile
+    banco: aurora_mobile
+    titulo: a chave que vem no pacote abre qualquer conta
+    empresa: Aurora Energia
+    marca: Aurora
+    app_nome: App Aurora Campo
+    cor: '#b45309'
+    lista_titulo: Ordens de serviço
+    acao_titulo: Liberar manobra no disjuntor 7
+    papel: Pessoa desenvolvedora do time de apps da Aurora Energia
+    aplicacao: App Aurora Campo, o app em que o técnico de campo consulta as ordens de serviço
+    contexto: O app de campo da Aurora Energia manda uma chave de API fixa, gravada no pacote, em todo pedido. O servidor confia nessa chave para liberar as ordens de serviço de qualquer conta.
+    missao: Mostrar que a chave do pacote abre a conta de outro técnico de campo e corrigir a API para exigir o token do usuário
+    historia_abertura: Você está no time de apps da Aurora Energia. O app de campo da Aurora Energia lê as ordens de serviço pela API. Um teste de invasão mostrou que alguém abriu o pacote do app, copiou a chave de API que o app usa e passou a consultar as ordens de serviço de qualquer técnico de campo direto pela API, sem abrir o app e sem login.
+    login_a: diego.campos
+    senha_a: Diego#Aurora26
+    nome_a: Diego Campos Ferraz
+    chave_app: AUR-APP-KEY-C40D92B1
+    doc_rotulo: matrícula
+    extra_rotulo: endereço residencial
+    seed_contas:
+    - - 1
+      - diego.campos
+      - Diego Campos Ferraz
+      - Diego#Aurora26
+      - 3 ordens em aberto hoje
+      - MAT-40213
+      - Rua das Turbinas 120
+    - - 2
+      - sonia.barros
+      - Sonia Barros Teles
+      - Sonia#Aurora26
+      - 1 ordem em aberto hoje
+      - MAT-40877
+      - Avenida da Usina 45
+    seed_itens:
+    - - 1
+      - 1
+      - OS 4821
+      - Manutenção da bomba 4
+      - Hoje
+    - - 2
+      - 1
+      - OS 4822
+      - Inspeção da subestação 2
+      - Amanhã
+    - - 3
+      - 2
+      - OS 4825
+      - Parada da turbina 2
+      - 19/11

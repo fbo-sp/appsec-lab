@@ -89,6 +89,24 @@ Indicado como primeira atividade de qualquer turma, antes do primeiro laboratór
 | LAB-047 | A17-FIN · BOLA em GraphQL: o pedido de qualquer um, só trocando o id | 1.0.0 | CWE-639 | A01 Broken Access Control (2025) | Não se enquadra; use o CWE (2025) | Intermediário | 35 min |
 | LAB-048 | A17-SAU · BOLA em GraphQL: o pedido de qualquer um, só trocando o id | 1.0.0 | CWE-639 | A01 Broken Access Control (2025) | Não se enquadra; use o CWE (2025) | Intermediário | 35 min |
 | LAB-049 | A17-IND · BOLA em GraphQL: o pedido de qualquer um, só trocando o id | 1.0.0 | CWE-639 | A01 Broken Access Control (2025) | Não se enquadra; use o CWE (2025) | Intermediário | 35 min |
+| LAB-050 | MOB-01-FIN · Chave de API embutida no app: a chave que vem no pacote abre qualquer conta | 1.0.0 | CWE-798 | A07 Authentication Failures (2025) | Não se enquadra; use o CWE (2025) | Intermediário | 35 min |
+| LAB-051 | MOB-01-SAU · Chave de API embutida no app: a chave que vem no pacote abre qualquer conta | 1.0.0 | CWE-798 | A07 Authentication Failures (2025) | Não se enquadra; use o CWE (2025) | Intermediário | 35 min |
+| LAB-052 | MOB-01-IND · Chave de API embutida no app: a chave que vem no pacote abre qualquer conta | 1.0.0 | CWE-798 | A07 Authentication Failures (2025) | Não se enquadra; use o CWE (2025) | Intermediário | 35 min |
+| LAB-053 | MOB-02-FIN · Senha guardada no aparelho: a senha do usuário escrita no aparelho | 1.0.0 | CWE-312 | A04 Cryptographic Failures (2025) | Não se enquadra; use o CWE (2025) | Iniciante | 30 min |
+| LAB-054 | MOB-02-SAU · Senha guardada no aparelho: a senha do usuário escrita no aparelho | 1.0.0 | CWE-312 | A04 Cryptographic Failures (2025) | Não se enquadra; use o CWE (2025) | Iniciante | 30 min |
+| LAB-055 | MOB-02-IND · Senha guardada no aparelho: a senha do usuário escrita no aparelho | 1.0.0 | CWE-312 | A04 Cryptographic Failures (2025) | Não se enquadra; use o CWE (2025) | Iniciante | 30 min |
+| LAB-056 | MOB-04-FIN · Biometria conferida só no app: a digital pedida só na tela | 1.0.0 | CWE-603 | A07 Authentication Failures (2025) | Não se enquadra; use o CWE (2025) | Intermediário | 35 min |
+| LAB-057 | MOB-04-SAU · Biometria conferida só no app: a digital pedida só na tela | 1.0.0 | CWE-603 | A07 Authentication Failures (2025) | Não se enquadra; use o CWE (2025) | Intermediário | 35 min |
+| LAB-058 | MOB-04-IND · Biometria conferida só no app: a digital pedida só na tela | 1.0.0 | CWE-603 | A07 Authentication Failures (2025) | Não se enquadra; use o CWE (2025) | Intermediário | 35 min |
+| LAB-059 | MOB-05-FIN · Sessão que não morre no logout: sair do app não encerra a sessão | 1.0.0 | CWE-613 | A07 Authentication Failures (2025) | Não se enquadra; use o CWE (2025) | Iniciante | 30 min |
+| LAB-060 | MOB-05-SAU · Sessão que não morre no logout: sair do app não encerra a sessão | 1.0.0 | CWE-613 | A07 Authentication Failures (2025) | Não se enquadra; use o CWE (2025) | Iniciante | 30 min |
+| LAB-061 | MOB-05-IND · Sessão que não morre no logout: sair do app não encerra a sessão | 1.0.0 | CWE-613 | A07 Authentication Failures (2025) | Não se enquadra; use o CWE (2025) | Iniciante | 30 min |
+| LAB-062 | MOB-08-FIN · API que devolve dados demais: a tela mostra pouco, a API entrega tudo | 1.0.0 | CWE-359 | A01 Broken Access Control (2025) | Não se enquadra; use o CWE (2025) | Iniciante | 30 min |
+| LAB-063 | MOB-08-SAU · API que devolve dados demais: a tela mostra pouco, a API entrega tudo | 1.0.0 | CWE-359 | A01 Broken Access Control (2025) | Não se enquadra; use o CWE (2025) | Iniciante | 30 min |
+| LAB-064 | MOB-08-IND · API que devolve dados demais: a tela mostra pouco, a API entrega tudo | 1.0.0 | CWE-359 | A01 Broken Access Control (2025) | Não se enquadra; use o CWE (2025) | Iniciante | 30 min |
+| LAB-065 | MOB-09-FIN · Modo de teste esquecido: o atalho de teste que ficou na produção | 1.0.0 | CWE-489 | A02 Security Misconfiguration (2025) | Não se enquadra; use o CWE (2025) | Iniciante | 30 min |
+| LAB-066 | MOB-09-SAU · Modo de teste esquecido: o atalho de teste que ficou na produção | 1.0.0 | CWE-489 | A02 Security Misconfiguration (2025) | Não se enquadra; use o CWE (2025) | Iniciante | 30 min |
+| LAB-067 | MOB-09-IND · Modo de teste esquecido: o atalho de teste que ficou na produção | 1.0.0 | CWE-489 | A02 Security Misconfiguration (2025) | Não se enquadra; use o CWE (2025) | Iniciante | 30 min |
 
 ## LAB-001 · SQL Injection: a busca que expõe pacientes
 
@@ -2089,3 +2107,792 @@ Indicado como primeira atividade de qualquer turma, antes do primeiro laboratór
 | Versão | Criada em | Obsoleta em | Situação | O que mudou |
 |---|---|---|---|---|
 | 1.0.0 | 2026-11-17 | — | vigente | Primeira versão (BOLA em API GraphQL de pedidos, Aurora Energia; família graphql-bola, ramo Indústria e Energia). |
+
+## LAB-050 · MOB-01-FIN · Chave de API embutida no app: a chave que vem no pacote abre qualquer conta
+
+- Versão vigente: 1.0.0
+- Cenário: App Pagomais, o app em que o cliente consulta o extrato
+- Papel do aluno: Pessoa desenvolvedora do time de apps do banco digital Pagomais
+- Linguagem / stack: python / flask
+- Nível: Intermediário · duração estimada: 35 min
+- Família: mob-chave-embutida
+- Ramo: Financeiro
+- Módulo do curso: Trained
+
+### Classificação
+
+- CWE: CWE-798 (principal), CWE-522, CWE-639
+- OWASP Top 10 2025: A07 Authentication Failures
+- OWASP Top 10 2021: A07 Identification and Authentication Failures
+- OWASP API Security Top 10 2023: API2 Broken Authentication
+- SANS CWE Top 25 2025: Não se enquadra; use o CWE
+- SANS CWE Top 25 2024: Não se enquadra; use o CWE
+- OWASP Mobile Top 10 2024: M1 Improper Credential Usage
+- OWASP Mobile Top 10 2016: M2 Insecure Data Storage (segredo guardado no pacote)
+- OWASP MASVS 2023: MASVS-AUTH-1; MASVS-STORAGE-1
+
+### Objetivos
+
+- Entender que tudo o que vai dentro do pacote do app pode ser lido por qualquer pessoa
+- Explorar a falha chamando a API só com a chave tirada do pacote, sem login
+- Reconhecer que o servidor precisa identificar o usuário por um token emitido no login
+- Corrigir o serviço de acesso exigindo o token e conferindo a conta pedida
+
+### Etapas
+
+1. Conhecer o app e achar quem decide o acesso (10 pts)
+2. Chamar a API só com a chave do pacote (15 pts)
+3. Nomear o que o servidor deve exigir (15 pts)
+4. Separar esconder a chave de proteger a API (15 pts)
+5. Exigir o token do usuário no serviço de acesso (45 pts)
+
+### Histórico de versões
+
+| Versão | Criada em | Obsoleta em | Situação | O que mudou |
+|---|---|---|---|---|
+| 1.0.0 | 2026-11-17 | — | vigente | Primeira versão (lab mobile, chave de api embutida no app, Pagomais; família mob-chave-embutida, ramo Financeiro). |
+
+## LAB-051 · MOB-01-SAU · Chave de API embutida no app: a chave que vem no pacote abre qualquer conta
+
+- Versão vigente: 1.0.0
+- Cenário: App Lumen Saúde, o app em que o paciente consulta os exames
+- Papel do aluno: Pessoa desenvolvedora do time de apps da Clínica Lumen
+- Linguagem / stack: python / flask
+- Nível: Intermediário · duração estimada: 35 min
+- Família: mob-chave-embutida
+- Ramo: Saúde
+- Módulo do curso: Trained
+
+### Classificação
+
+- CWE: CWE-798 (principal), CWE-522, CWE-639
+- OWASP Top 10 2025: A07 Authentication Failures
+- OWASP Top 10 2021: A07 Identification and Authentication Failures
+- OWASP API Security Top 10 2023: API2 Broken Authentication
+- SANS CWE Top 25 2025: Não se enquadra; use o CWE
+- SANS CWE Top 25 2024: Não se enquadra; use o CWE
+- OWASP Mobile Top 10 2024: M1 Improper Credential Usage
+- OWASP Mobile Top 10 2016: M2 Insecure Data Storage (segredo guardado no pacote)
+- OWASP MASVS 2023: MASVS-AUTH-1; MASVS-STORAGE-1
+
+### Objetivos
+
+- Entender que tudo o que vai dentro do pacote do app pode ser lido por qualquer pessoa
+- Explorar a falha chamando a API só com a chave tirada do pacote, sem login
+- Reconhecer que o servidor precisa identificar o usuário por um token emitido no login
+- Corrigir o serviço de acesso exigindo o token e conferindo a conta pedida
+
+### Etapas
+
+1. Conhecer o app e achar quem decide o acesso (10 pts)
+2. Chamar a API só com a chave do pacote (15 pts)
+3. Nomear o que o servidor deve exigir (15 pts)
+4. Separar esconder a chave de proteger a API (15 pts)
+5. Exigir o token do usuário no serviço de acesso (45 pts)
+
+### Histórico de versões
+
+| Versão | Criada em | Obsoleta em | Situação | O que mudou |
+|---|---|---|---|---|
+| 1.0.0 | 2026-11-17 | — | vigente | Primeira versão (lab mobile, chave de api embutida no app, Clínica Lumen; família mob-chave-embutida, ramo Saúde). |
+
+## LAB-052 · MOB-01-IND · Chave de API embutida no app: a chave que vem no pacote abre qualquer conta
+
+- Versão vigente: 1.0.0
+- Cenário: App Aurora Campo, o app em que o técnico de campo consulta as ordens de serviço
+- Papel do aluno: Pessoa desenvolvedora do time de apps da Aurora Energia
+- Linguagem / stack: python / flask
+- Nível: Intermediário · duração estimada: 35 min
+- Família: mob-chave-embutida
+- Ramo: Indústria e Energia
+- Módulo do curso: Trained
+
+### Classificação
+
+- CWE: CWE-798 (principal), CWE-522, CWE-639
+- OWASP Top 10 2025: A07 Authentication Failures
+- OWASP Top 10 2021: A07 Identification and Authentication Failures
+- OWASP API Security Top 10 2023: API2 Broken Authentication
+- SANS CWE Top 25 2025: Não se enquadra; use o CWE
+- SANS CWE Top 25 2024: Não se enquadra; use o CWE
+- OWASP Mobile Top 10 2024: M1 Improper Credential Usage
+- OWASP Mobile Top 10 2016: M2 Insecure Data Storage (segredo guardado no pacote)
+- OWASP MASVS 2023: MASVS-AUTH-1; MASVS-STORAGE-1
+
+### Objetivos
+
+- Entender que tudo o que vai dentro do pacote do app pode ser lido por qualquer pessoa
+- Explorar a falha chamando a API só com a chave tirada do pacote, sem login
+- Reconhecer que o servidor precisa identificar o usuário por um token emitido no login
+- Corrigir o serviço de acesso exigindo o token e conferindo a conta pedida
+
+### Etapas
+
+1. Conhecer o app e achar quem decide o acesso (10 pts)
+2. Chamar a API só com a chave do pacote (15 pts)
+3. Nomear o que o servidor deve exigir (15 pts)
+4. Separar esconder a chave de proteger a API (15 pts)
+5. Exigir o token do usuário no serviço de acesso (45 pts)
+
+### Histórico de versões
+
+| Versão | Criada em | Obsoleta em | Situação | O que mudou |
+|---|---|---|---|---|
+| 1.0.0 | 2026-11-17 | — | vigente | Primeira versão (lab mobile, chave de api embutida no app, Aurora Energia; família mob-chave-embutida, ramo Indústria e Energia). |
+
+## LAB-053 · MOB-02-FIN · Senha guardada no aparelho: a senha do usuário escrita no aparelho
+
+- Versão vigente: 1.0.0
+- Cenário: App Pagomais, o app em que o cliente consulta o extrato
+- Papel do aluno: Pessoa desenvolvedora do time de apps do banco digital Pagomais
+- Linguagem / stack: python / flask
+- Nível: Iniciante · duração estimada: 30 min
+- Família: mob-dados-locais
+- Ramo: Financeiro
+- Módulo do curso: Foundation
+
+### Classificação
+
+- CWE: CWE-312 (principal), CWE-922, CWE-256
+- OWASP Top 10 2025: A04 Cryptographic Failures
+- OWASP Top 10 2021: A02 Cryptographic Failures
+- SANS CWE Top 25 2025: Não se enquadra; use o CWE
+- SANS CWE Top 25 2024: Não se enquadra; use o CWE
+- OWASP Mobile Top 10 2024: M9 Insecure Data Storage
+- OWASP Mobile Top 10 2016: M2 Insecure Data Storage
+- OWASP MASVS 2023: MASVS-STORAGE-1
+
+### Objetivos
+
+- Entender o que um app guarda no aparelho e quem consegue ler esses arquivos
+- Encontrar a senha do usuário gravada em texto puro nas preferências do app
+- Reconhecer que, para manter a sessão, basta guardar um token de curta duração
+- Corrigir o armazenamento local para nunca gravar a senha
+
+### Etapas
+
+1. Conhecer o app e achar o que ele grava no aparelho (10 pts)
+2. Ler o que o app gravou no aparelho (15 pts)
+3. Nomear o que basta guardar (15 pts)
+4. Decidir se a senha precisa ficar no aparelho (15 pts)
+5. Guardar só o login e o token (45 pts)
+
+### Histórico de versões
+
+| Versão | Criada em | Obsoleta em | Situação | O que mudou |
+|---|---|---|---|---|
+| 1.0.0 | 2026-11-17 | — | vigente | Primeira versão (lab mobile, senha guardada no aparelho, Pagomais; família mob-dados-locais, ramo Financeiro). |
+
+## LAB-054 · MOB-02-SAU · Senha guardada no aparelho: a senha do usuário escrita no aparelho
+
+- Versão vigente: 1.0.0
+- Cenário: App Lumen Saúde, o app em que o paciente consulta os exames
+- Papel do aluno: Pessoa desenvolvedora do time de apps da Clínica Lumen
+- Linguagem / stack: python / flask
+- Nível: Iniciante · duração estimada: 30 min
+- Família: mob-dados-locais
+- Ramo: Saúde
+- Módulo do curso: Foundation
+
+### Classificação
+
+- CWE: CWE-312 (principal), CWE-922, CWE-256
+- OWASP Top 10 2025: A04 Cryptographic Failures
+- OWASP Top 10 2021: A02 Cryptographic Failures
+- SANS CWE Top 25 2025: Não se enquadra; use o CWE
+- SANS CWE Top 25 2024: Não se enquadra; use o CWE
+- OWASP Mobile Top 10 2024: M9 Insecure Data Storage
+- OWASP Mobile Top 10 2016: M2 Insecure Data Storage
+- OWASP MASVS 2023: MASVS-STORAGE-1
+
+### Objetivos
+
+- Entender o que um app guarda no aparelho e quem consegue ler esses arquivos
+- Encontrar a senha do usuário gravada em texto puro nas preferências do app
+- Reconhecer que, para manter a sessão, basta guardar um token de curta duração
+- Corrigir o armazenamento local para nunca gravar a senha
+
+### Etapas
+
+1. Conhecer o app e achar o que ele grava no aparelho (10 pts)
+2. Ler o que o app gravou no aparelho (15 pts)
+3. Nomear o que basta guardar (15 pts)
+4. Decidir se a senha precisa ficar no aparelho (15 pts)
+5. Guardar só o login e o token (45 pts)
+
+### Histórico de versões
+
+| Versão | Criada em | Obsoleta em | Situação | O que mudou |
+|---|---|---|---|---|
+| 1.0.0 | 2026-11-17 | — | vigente | Primeira versão (lab mobile, senha guardada no aparelho, Clínica Lumen; família mob-dados-locais, ramo Saúde). |
+
+## LAB-055 · MOB-02-IND · Senha guardada no aparelho: a senha do usuário escrita no aparelho
+
+- Versão vigente: 1.0.0
+- Cenário: App Aurora Campo, o app em que o técnico de campo consulta as ordens de serviço
+- Papel do aluno: Pessoa desenvolvedora do time de apps da Aurora Energia
+- Linguagem / stack: python / flask
+- Nível: Iniciante · duração estimada: 30 min
+- Família: mob-dados-locais
+- Ramo: Indústria e Energia
+- Módulo do curso: Foundation
+
+### Classificação
+
+- CWE: CWE-312 (principal), CWE-922, CWE-256
+- OWASP Top 10 2025: A04 Cryptographic Failures
+- OWASP Top 10 2021: A02 Cryptographic Failures
+- SANS CWE Top 25 2025: Não se enquadra; use o CWE
+- SANS CWE Top 25 2024: Não se enquadra; use o CWE
+- OWASP Mobile Top 10 2024: M9 Insecure Data Storage
+- OWASP Mobile Top 10 2016: M2 Insecure Data Storage
+- OWASP MASVS 2023: MASVS-STORAGE-1
+
+### Objetivos
+
+- Entender o que um app guarda no aparelho e quem consegue ler esses arquivos
+- Encontrar a senha do usuário gravada em texto puro nas preferências do app
+- Reconhecer que, para manter a sessão, basta guardar um token de curta duração
+- Corrigir o armazenamento local para nunca gravar a senha
+
+### Etapas
+
+1. Conhecer o app e achar o que ele grava no aparelho (10 pts)
+2. Ler o que o app gravou no aparelho (15 pts)
+3. Nomear o que basta guardar (15 pts)
+4. Decidir se a senha precisa ficar no aparelho (15 pts)
+5. Guardar só o login e o token (45 pts)
+
+### Histórico de versões
+
+| Versão | Criada em | Obsoleta em | Situação | O que mudou |
+|---|---|---|---|---|
+| 1.0.0 | 2026-11-17 | — | vigente | Primeira versão (lab mobile, senha guardada no aparelho, Aurora Energia; família mob-dados-locais, ramo Indústria e Energia). |
+
+## LAB-056 · MOB-04-FIN · Biometria conferida só no app: a digital pedida só na tela
+
+- Versão vigente: 1.0.0
+- Cenário: App Pagomais, o app em que o cliente consulta o extrato e faz operações sensíveis
+- Papel do aluno: Pessoa desenvolvedora do time de apps do banco digital Pagomais
+- Linguagem / stack: python / flask
+- Nível: Intermediário · duração estimada: 35 min
+- Família: mob-biometria-cliente
+- Ramo: Financeiro
+- Módulo do curso: Trained
+
+### Classificação
+
+- CWE: CWE-603 (principal), CWE-287, CWE-306
+- OWASP Top 10 2025: A07 Authentication Failures
+- OWASP Top 10 2021: A07 Identification and Authentication Failures
+- OWASP API Security Top 10 2023: API2 Broken Authentication
+- SANS CWE Top 25 2025: Não se enquadra; use o CWE
+- SANS CWE Top 25 2024: Não se enquadra; use o CWE
+- OWASP Mobile Top 10 2024: M3 Insecure Authentication/Authorization
+- OWASP Mobile Top 10 2016: M4 Insecure Authentication
+- OWASP MASVS 2023: MASVS-AUTH-2; MASVS-AUTH-3
+
+### Objetivos
+
+- Entender a diferença entre a tela pedir a digital e o servidor exigir a digital
+- Explorar a falha chamando a operação sensível direto na API, sem passar pela biometria
+- Reconhecer que o servidor precisa receber e validar uma prova da biometria
+- Corrigir o serviço da operação exigindo uma prova válida e recente
+
+### Etapas
+
+1. Conhecer o app e achar quem executa a operação (10 pts)
+2. Executar a operação sem a digital (15 pts)
+3. Nomear o que o servidor precisa receber (15 pts)
+4. Decidir quem exige a digital (15 pts)
+5. Exigir a prova da biometria no servidor (45 pts)
+
+### Histórico de versões
+
+| Versão | Criada em | Obsoleta em | Situação | O que mudou |
+|---|---|---|---|---|
+| 1.0.0 | 2026-11-17 | — | vigente | Primeira versão (lab mobile, biometria conferida só no app, Pagomais; família mob-biometria-cliente, ramo Financeiro). |
+
+## LAB-057 · MOB-04-SAU · Biometria conferida só no app: a digital pedida só na tela
+
+- Versão vigente: 1.0.0
+- Cenário: App Lumen Saúde, o app em que o paciente consulta os exames e faz operações sensíveis
+- Papel do aluno: Pessoa desenvolvedora do time de apps da Clínica Lumen
+- Linguagem / stack: python / flask
+- Nível: Intermediário · duração estimada: 35 min
+- Família: mob-biometria-cliente
+- Ramo: Saúde
+- Módulo do curso: Trained
+
+### Classificação
+
+- CWE: CWE-603 (principal), CWE-287, CWE-306
+- OWASP Top 10 2025: A07 Authentication Failures
+- OWASP Top 10 2021: A07 Identification and Authentication Failures
+- OWASP API Security Top 10 2023: API2 Broken Authentication
+- SANS CWE Top 25 2025: Não se enquadra; use o CWE
+- SANS CWE Top 25 2024: Não se enquadra; use o CWE
+- OWASP Mobile Top 10 2024: M3 Insecure Authentication/Authorization
+- OWASP Mobile Top 10 2016: M4 Insecure Authentication
+- OWASP MASVS 2023: MASVS-AUTH-2; MASVS-AUTH-3
+
+### Objetivos
+
+- Entender a diferença entre a tela pedir a digital e o servidor exigir a digital
+- Explorar a falha chamando a operação sensível direto na API, sem passar pela biometria
+- Reconhecer que o servidor precisa receber e validar uma prova da biometria
+- Corrigir o serviço da operação exigindo uma prova válida e recente
+
+### Etapas
+
+1. Conhecer o app e achar quem executa a operação (10 pts)
+2. Executar a operação sem a digital (15 pts)
+3. Nomear o que o servidor precisa receber (15 pts)
+4. Decidir quem exige a digital (15 pts)
+5. Exigir a prova da biometria no servidor (45 pts)
+
+### Histórico de versões
+
+| Versão | Criada em | Obsoleta em | Situação | O que mudou |
+|---|---|---|---|---|
+| 1.0.0 | 2026-11-17 | — | vigente | Primeira versão (lab mobile, biometria conferida só no app, Clínica Lumen; família mob-biometria-cliente, ramo Saúde). |
+
+## LAB-058 · MOB-04-IND · Biometria conferida só no app: a digital pedida só na tela
+
+- Versão vigente: 1.0.0
+- Cenário: App Aurora Campo, o app em que o técnico de campo consulta as ordens de serviço e faz operações sensíveis
+- Papel do aluno: Pessoa desenvolvedora do time de apps da Aurora Energia
+- Linguagem / stack: python / flask
+- Nível: Intermediário · duração estimada: 35 min
+- Família: mob-biometria-cliente
+- Ramo: Indústria e Energia
+- Módulo do curso: Trained
+
+### Classificação
+
+- CWE: CWE-603 (principal), CWE-287, CWE-306
+- OWASP Top 10 2025: A07 Authentication Failures
+- OWASP Top 10 2021: A07 Identification and Authentication Failures
+- OWASP API Security Top 10 2023: API2 Broken Authentication
+- SANS CWE Top 25 2025: Não se enquadra; use o CWE
+- SANS CWE Top 25 2024: Não se enquadra; use o CWE
+- OWASP Mobile Top 10 2024: M3 Insecure Authentication/Authorization
+- OWASP Mobile Top 10 2016: M4 Insecure Authentication
+- OWASP MASVS 2023: MASVS-AUTH-2; MASVS-AUTH-3
+
+### Objetivos
+
+- Entender a diferença entre a tela pedir a digital e o servidor exigir a digital
+- Explorar a falha chamando a operação sensível direto na API, sem passar pela biometria
+- Reconhecer que o servidor precisa receber e validar uma prova da biometria
+- Corrigir o serviço da operação exigindo uma prova válida e recente
+
+### Etapas
+
+1. Conhecer o app e achar quem executa a operação (10 pts)
+2. Executar a operação sem a digital (15 pts)
+3. Nomear o que o servidor precisa receber (15 pts)
+4. Decidir quem exige a digital (15 pts)
+5. Exigir a prova da biometria no servidor (45 pts)
+
+### Histórico de versões
+
+| Versão | Criada em | Obsoleta em | Situação | O que mudou |
+|---|---|---|---|---|
+| 1.0.0 | 2026-11-17 | — | vigente | Primeira versão (lab mobile, biometria conferida só no app, Aurora Energia; família mob-biometria-cliente, ramo Indústria e Energia). |
+
+## LAB-059 · MOB-05-FIN · Sessão que não morre no logout: sair do app não encerra a sessão
+
+- Versão vigente: 1.0.0
+- Cenário: App Pagomais, o app em que o cliente consulta o extrato
+- Papel do aluno: Pessoa desenvolvedora do time de apps do banco digital Pagomais
+- Linguagem / stack: python / flask
+- Nível: Iniciante · duração estimada: 30 min
+- Família: mob-sessao-logout
+- Ramo: Financeiro
+- Módulo do curso: Foundation
+
+### Classificação
+
+- CWE: CWE-613 (principal), CWE-287
+- OWASP Top 10 2025: A07 Authentication Failures
+- OWASP Top 10 2021: A07 Identification and Authentication Failures
+- OWASP API Security Top 10 2023: API2 Broken Authentication
+- SANS CWE Top 25 2025: Não se enquadra; use o CWE
+- SANS CWE Top 25 2024: Não se enquadra; use o CWE
+- OWASP Mobile Top 10 2024: M3 Insecure Authentication/Authorization
+- OWASP Mobile Top 10 2016: M4 Insecure Authentication
+- OWASP MASVS 2023: MASVS-AUTH-1
+
+### Objetivos
+
+- Entender que sair do app precisa encerrar a sessão no servidor, não só na tela
+- Explorar a falha reusando o token depois do logout
+- Reconhecer que o servidor precisa revogar o token no logout
+- Corrigir o serviço de sessão revogando o token
+
+### Etapas
+
+1. Conhecer o app e achar o logout (10 pts)
+2. Reusar o token depois de sair (15 pts)
+3. Nomear o que o servidor faz no logout (15 pts)
+4. Decidir se apagar no aparelho basta (15 pts)
+5. Revogar o token no logout (45 pts)
+
+### Histórico de versões
+
+| Versão | Criada em | Obsoleta em | Situação | O que mudou |
+|---|---|---|---|---|
+| 1.0.0 | 2026-11-17 | — | vigente | Primeira versão (lab mobile, sessão que não morre no logout, Pagomais; família mob-sessao-logout, ramo Financeiro). |
+
+## LAB-060 · MOB-05-SAU · Sessão que não morre no logout: sair do app não encerra a sessão
+
+- Versão vigente: 1.0.0
+- Cenário: App Lumen Saúde, o app em que o paciente consulta os exames
+- Papel do aluno: Pessoa desenvolvedora do time de apps da Clínica Lumen
+- Linguagem / stack: python / flask
+- Nível: Iniciante · duração estimada: 30 min
+- Família: mob-sessao-logout
+- Ramo: Saúde
+- Módulo do curso: Foundation
+
+### Classificação
+
+- CWE: CWE-613 (principal), CWE-287
+- OWASP Top 10 2025: A07 Authentication Failures
+- OWASP Top 10 2021: A07 Identification and Authentication Failures
+- OWASP API Security Top 10 2023: API2 Broken Authentication
+- SANS CWE Top 25 2025: Não se enquadra; use o CWE
+- SANS CWE Top 25 2024: Não se enquadra; use o CWE
+- OWASP Mobile Top 10 2024: M3 Insecure Authentication/Authorization
+- OWASP Mobile Top 10 2016: M4 Insecure Authentication
+- OWASP MASVS 2023: MASVS-AUTH-1
+
+### Objetivos
+
+- Entender que sair do app precisa encerrar a sessão no servidor, não só na tela
+- Explorar a falha reusando o token depois do logout
+- Reconhecer que o servidor precisa revogar o token no logout
+- Corrigir o serviço de sessão revogando o token
+
+### Etapas
+
+1. Conhecer o app e achar o logout (10 pts)
+2. Reusar o token depois de sair (15 pts)
+3. Nomear o que o servidor faz no logout (15 pts)
+4. Decidir se apagar no aparelho basta (15 pts)
+5. Revogar o token no logout (45 pts)
+
+### Histórico de versões
+
+| Versão | Criada em | Obsoleta em | Situação | O que mudou |
+|---|---|---|---|---|
+| 1.0.0 | 2026-11-17 | — | vigente | Primeira versão (lab mobile, sessão que não morre no logout, Clínica Lumen; família mob-sessao-logout, ramo Saúde). |
+
+## LAB-061 · MOB-05-IND · Sessão que não morre no logout: sair do app não encerra a sessão
+
+- Versão vigente: 1.0.0
+- Cenário: App Aurora Campo, o app em que o técnico de campo consulta as ordens de serviço
+- Papel do aluno: Pessoa desenvolvedora do time de apps da Aurora Energia
+- Linguagem / stack: python / flask
+- Nível: Iniciante · duração estimada: 30 min
+- Família: mob-sessao-logout
+- Ramo: Indústria e Energia
+- Módulo do curso: Foundation
+
+### Classificação
+
+- CWE: CWE-613 (principal), CWE-287
+- OWASP Top 10 2025: A07 Authentication Failures
+- OWASP Top 10 2021: A07 Identification and Authentication Failures
+- OWASP API Security Top 10 2023: API2 Broken Authentication
+- SANS CWE Top 25 2025: Não se enquadra; use o CWE
+- SANS CWE Top 25 2024: Não se enquadra; use o CWE
+- OWASP Mobile Top 10 2024: M3 Insecure Authentication/Authorization
+- OWASP Mobile Top 10 2016: M4 Insecure Authentication
+- OWASP MASVS 2023: MASVS-AUTH-1
+
+### Objetivos
+
+- Entender que sair do app precisa encerrar a sessão no servidor, não só na tela
+- Explorar a falha reusando o token depois do logout
+- Reconhecer que o servidor precisa revogar o token no logout
+- Corrigir o serviço de sessão revogando o token
+
+### Etapas
+
+1. Conhecer o app e achar o logout (10 pts)
+2. Reusar o token depois de sair (15 pts)
+3. Nomear o que o servidor faz no logout (15 pts)
+4. Decidir se apagar no aparelho basta (15 pts)
+5. Revogar o token no logout (45 pts)
+
+### Histórico de versões
+
+| Versão | Criada em | Obsoleta em | Situação | O que mudou |
+|---|---|---|---|---|
+| 1.0.0 | 2026-11-17 | — | vigente | Primeira versão (lab mobile, sessão que não morre no logout, Aurora Energia; família mob-sessao-logout, ramo Indústria e Energia). |
+
+## LAB-062 · MOB-08-FIN · API que devolve dados demais: a tela mostra pouco, a API entrega tudo
+
+- Versão vigente: 1.0.0
+- Cenário: App Pagomais, o app em que o cliente consulta o extrato e o próprio perfil
+- Papel do aluno: Pessoa desenvolvedora do time de apps do banco digital Pagomais
+- Linguagem / stack: python / flask
+- Nível: Iniciante · duração estimada: 30 min
+- Família: mob-dados-demais
+- Ramo: Financeiro
+- Módulo do curso: Foundation
+
+### Classificação
+
+- CWE: CWE-359 (principal), CWE-213
+- OWASP Top 10 2025: A01 Broken Access Control
+- OWASP Top 10 2021: A01 Broken Access Control
+- OWASP API Security Top 10 2023: API3 Broken Object Property Level Authorization
+- SANS CWE Top 25 2025: Não se enquadra; use o CWE
+- SANS CWE Top 25 2024: Não se enquadra; use o CWE
+- OWASP Mobile Top 10 2024: M6 Inadequate Privacy Controls
+- OWASP Mobile Top 10 2016: Não se enquadra; use o CWE
+- OWASP MASVS 2023: MASVS-PRIVACY-1
+
+### Objetivos
+
+- Entender que o que a tela esconde continua visível na resposta da API
+- Comparar o que o app mostra com o que a API entrega ao aparelho
+- Reconhecer o princípio da minimização de dados
+- Corrigir o serviço para devolver só os campos que a tela usa
+
+### Etapas
+
+1. Conhecer a tela Perfil e o serviço por trás dela (10 pts)
+2. Comparar a tela com a resposta da API (15 pts)
+3. Nomear o princípio (15 pts)
+4. Decidir se esconder na tela basta (15 pts)
+5. Devolver só os campos da tela (45 pts)
+
+### Histórico de versões
+
+| Versão | Criada em | Obsoleta em | Situação | O que mudou |
+|---|---|---|---|---|
+| 1.0.0 | 2026-11-17 | — | vigente | Primeira versão (lab mobile, api que devolve dados demais, Pagomais; família mob-dados-demais, ramo Financeiro). |
+
+## LAB-063 · MOB-08-SAU · API que devolve dados demais: a tela mostra pouco, a API entrega tudo
+
+- Versão vigente: 1.0.0
+- Cenário: App Lumen Saúde, o app em que o paciente consulta os exames e o próprio perfil
+- Papel do aluno: Pessoa desenvolvedora do time de apps da Clínica Lumen
+- Linguagem / stack: python / flask
+- Nível: Iniciante · duração estimada: 30 min
+- Família: mob-dados-demais
+- Ramo: Saúde
+- Módulo do curso: Foundation
+
+### Classificação
+
+- CWE: CWE-359 (principal), CWE-213
+- OWASP Top 10 2025: A01 Broken Access Control
+- OWASP Top 10 2021: A01 Broken Access Control
+- OWASP API Security Top 10 2023: API3 Broken Object Property Level Authorization
+- SANS CWE Top 25 2025: Não se enquadra; use o CWE
+- SANS CWE Top 25 2024: Não se enquadra; use o CWE
+- OWASP Mobile Top 10 2024: M6 Inadequate Privacy Controls
+- OWASP Mobile Top 10 2016: Não se enquadra; use o CWE
+- OWASP MASVS 2023: MASVS-PRIVACY-1
+
+### Objetivos
+
+- Entender que o que a tela esconde continua visível na resposta da API
+- Comparar o que o app mostra com o que a API entrega ao aparelho
+- Reconhecer o princípio da minimização de dados
+- Corrigir o serviço para devolver só os campos que a tela usa
+
+### Etapas
+
+1. Conhecer a tela Perfil e o serviço por trás dela (10 pts)
+2. Comparar a tela com a resposta da API (15 pts)
+3. Nomear o princípio (15 pts)
+4. Decidir se esconder na tela basta (15 pts)
+5. Devolver só os campos da tela (45 pts)
+
+### Histórico de versões
+
+| Versão | Criada em | Obsoleta em | Situação | O que mudou |
+|---|---|---|---|---|
+| 1.0.0 | 2026-11-17 | — | vigente | Primeira versão (lab mobile, api que devolve dados demais, Clínica Lumen; família mob-dados-demais, ramo Saúde). |
+
+## LAB-064 · MOB-08-IND · API que devolve dados demais: a tela mostra pouco, a API entrega tudo
+
+- Versão vigente: 1.0.0
+- Cenário: App Aurora Campo, o app em que o técnico de campo consulta as ordens de serviço e o próprio perfil
+- Papel do aluno: Pessoa desenvolvedora do time de apps da Aurora Energia
+- Linguagem / stack: python / flask
+- Nível: Iniciante · duração estimada: 30 min
+- Família: mob-dados-demais
+- Ramo: Indústria e Energia
+- Módulo do curso: Foundation
+
+### Classificação
+
+- CWE: CWE-359 (principal), CWE-213
+- OWASP Top 10 2025: A01 Broken Access Control
+- OWASP Top 10 2021: A01 Broken Access Control
+- OWASP API Security Top 10 2023: API3 Broken Object Property Level Authorization
+- SANS CWE Top 25 2025: Não se enquadra; use o CWE
+- SANS CWE Top 25 2024: Não se enquadra; use o CWE
+- OWASP Mobile Top 10 2024: M6 Inadequate Privacy Controls
+- OWASP Mobile Top 10 2016: Não se enquadra; use o CWE
+- OWASP MASVS 2023: MASVS-PRIVACY-1
+
+### Objetivos
+
+- Entender que o que a tela esconde continua visível na resposta da API
+- Comparar o que o app mostra com o que a API entrega ao aparelho
+- Reconhecer o princípio da minimização de dados
+- Corrigir o serviço para devolver só os campos que a tela usa
+
+### Etapas
+
+1. Conhecer a tela Perfil e o serviço por trás dela (10 pts)
+2. Comparar a tela com a resposta da API (15 pts)
+3. Nomear o princípio (15 pts)
+4. Decidir se esconder na tela basta (15 pts)
+5. Devolver só os campos da tela (45 pts)
+
+### Histórico de versões
+
+| Versão | Criada em | Obsoleta em | Situação | O que mudou |
+|---|---|---|---|---|
+| 1.0.0 | 2026-11-17 | — | vigente | Primeira versão (lab mobile, api que devolve dados demais, Aurora Energia; família mob-dados-demais, ramo Indústria e Energia). |
+
+## LAB-065 · MOB-09-FIN · Modo de teste esquecido: o atalho de teste que ficou na produção
+
+- Versão vigente: 1.0.0
+- Cenário: App Pagomais, o app em que o cliente consulta o extrato
+- Papel do aluno: Pessoa desenvolvedora do time de apps do banco digital Pagomais
+- Linguagem / stack: python / flask
+- Nível: Iniciante · duração estimada: 30 min
+- Família: mob-modo-teste
+- Ramo: Financeiro
+- Módulo do curso: Trained
+
+### Classificação
+
+- CWE: CWE-489 (principal), CWE-288, CWE-1188
+- OWASP Top 10 2025: A02 Security Misconfiguration
+- OWASP Top 10 2021: A05 Security Misconfiguration
+- OWASP API Security Top 10 2023: API8 Security Misconfiguration
+- SANS CWE Top 25 2025: Não se enquadra; use o CWE
+- SANS CWE Top 25 2024: Não se enquadra; use o CWE
+- OWASP Mobile Top 10 2024: M8 Security Misconfiguration
+- OWASP Mobile Top 10 2016: M10 Extraneous Functionality
+- OWASP MASVS 2023: MASVS-CODE-3
+
+### Objetivos
+
+- Entender como código de teste esquecido vira porta dos fundos em produção
+- Explorar o atalho de homologação para entrar numa conta sem login
+- Identificar o cabeçalho que liga o atalho
+- Corrigir a identificação do usuário removendo o atalho
+
+### Etapas
+
+1. Conhecer o app e achar quem identifica o usuário (10 pts)
+2. Entrar sem login com o atalho (15 pts)
+3. Identificar o cabeçalho do atalho (15 pts)
+4. Decidir se o atalho pode ficar (15 pts)
+5. Remover o atalho de homologação (45 pts)
+
+### Histórico de versões
+
+| Versão | Criada em | Obsoleta em | Situação | O que mudou |
+|---|---|---|---|---|
+| 1.0.0 | 2026-11-17 | — | vigente | Primeira versão (lab mobile, modo de teste esquecido, Pagomais; família mob-modo-teste, ramo Financeiro). |
+
+## LAB-066 · MOB-09-SAU · Modo de teste esquecido: o atalho de teste que ficou na produção
+
+- Versão vigente: 1.0.0
+- Cenário: App Lumen Saúde, o app em que o paciente consulta os exames
+- Papel do aluno: Pessoa desenvolvedora do time de apps da Clínica Lumen
+- Linguagem / stack: python / flask
+- Nível: Iniciante · duração estimada: 30 min
+- Família: mob-modo-teste
+- Ramo: Saúde
+- Módulo do curso: Trained
+
+### Classificação
+
+- CWE: CWE-489 (principal), CWE-288, CWE-1188
+- OWASP Top 10 2025: A02 Security Misconfiguration
+- OWASP Top 10 2021: A05 Security Misconfiguration
+- OWASP API Security Top 10 2023: API8 Security Misconfiguration
+- SANS CWE Top 25 2025: Não se enquadra; use o CWE
+- SANS CWE Top 25 2024: Não se enquadra; use o CWE
+- OWASP Mobile Top 10 2024: M8 Security Misconfiguration
+- OWASP Mobile Top 10 2016: M10 Extraneous Functionality
+- OWASP MASVS 2023: MASVS-CODE-3
+
+### Objetivos
+
+- Entender como código de teste esquecido vira porta dos fundos em produção
+- Explorar o atalho de homologação para entrar numa conta sem login
+- Identificar o cabeçalho que liga o atalho
+- Corrigir a identificação do usuário removendo o atalho
+
+### Etapas
+
+1. Conhecer o app e achar quem identifica o usuário (10 pts)
+2. Entrar sem login com o atalho (15 pts)
+3. Identificar o cabeçalho do atalho (15 pts)
+4. Decidir se o atalho pode ficar (15 pts)
+5. Remover o atalho de homologação (45 pts)
+
+### Histórico de versões
+
+| Versão | Criada em | Obsoleta em | Situação | O que mudou |
+|---|---|---|---|---|
+| 1.0.0 | 2026-11-17 | — | vigente | Primeira versão (lab mobile, modo de teste esquecido, Clínica Lumen; família mob-modo-teste, ramo Saúde). |
+
+## LAB-067 · MOB-09-IND · Modo de teste esquecido: o atalho de teste que ficou na produção
+
+- Versão vigente: 1.0.0
+- Cenário: App Aurora Campo, o app em que o técnico de campo consulta as ordens de serviço
+- Papel do aluno: Pessoa desenvolvedora do time de apps da Aurora Energia
+- Linguagem / stack: python / flask
+- Nível: Iniciante · duração estimada: 30 min
+- Família: mob-modo-teste
+- Ramo: Indústria e Energia
+- Módulo do curso: Trained
+
+### Classificação
+
+- CWE: CWE-489 (principal), CWE-288, CWE-1188
+- OWASP Top 10 2025: A02 Security Misconfiguration
+- OWASP Top 10 2021: A05 Security Misconfiguration
+- OWASP API Security Top 10 2023: API8 Security Misconfiguration
+- SANS CWE Top 25 2025: Não se enquadra; use o CWE
+- SANS CWE Top 25 2024: Não se enquadra; use o CWE
+- OWASP Mobile Top 10 2024: M8 Security Misconfiguration
+- OWASP Mobile Top 10 2016: M10 Extraneous Functionality
+- OWASP MASVS 2023: MASVS-CODE-3
+
+### Objetivos
+
+- Entender como código de teste esquecido vira porta dos fundos em produção
+- Explorar o atalho de homologação para entrar numa conta sem login
+- Identificar o cabeçalho que liga o atalho
+- Corrigir a identificação do usuário removendo o atalho
+
+### Etapas
+
+1. Conhecer o app e achar quem identifica o usuário (10 pts)
+2. Entrar sem login com o atalho (15 pts)
+3. Identificar o cabeçalho do atalho (15 pts)
+4. Decidir se o atalho pode ficar (15 pts)
+5. Remover o atalho de homologação (45 pts)
+
+### Histórico de versões
+
+| Versão | Criada em | Obsoleta em | Situação | O que mudou |
+|---|---|---|---|---|
+| 1.0.0 | 2026-11-17 | — | vigente | Primeira versão (lab mobile, modo de teste esquecido, Aurora Energia; família mob-modo-teste, ramo Indústria e Energia). |

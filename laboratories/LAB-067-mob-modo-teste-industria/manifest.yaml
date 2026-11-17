@@ -1,0 +1,251 @@
+# LAB-067 (MOB-09-IND): atalho de homologação esquecido no build de produção (CWE-489) no App Aurora Campo da Aurora Energia (app mobile simulado, Flask + SQLite).
+# CONTÉM VULNERABILIDADE INTENCIONAL. Uso exclusivo no runtime Docker LOCAL (ADR-008), em rede
+# interna da sessão. Dados 100% fictícios. Família MOB-09 mob-modo-teste (ADR-021, ADR-025): gerado por
+# scripts/gerar-familia.py a partir de laboratories/_familias/mob-modo-teste; não edite este arquivo à mão.
+#
+# ATENÇÃO: o digest abaixo é uma FIXTURE (sha256 de um texto fixo), não uma imagem publicada.
+# scripts/lab-local.sh e .ps1 trocam pela imagem construída localmente antes de registrar.
+apiVersion: labs.cecyber.io/v1alpha1
+kind: AppSecLab
+metadata:
+  id: LAB-067
+  version: 1.0.0
+  title: "MOB-09-IND · Modo de teste esquecido: o atalho de teste que ficou na produção"
+  primaryCwe: CWE-489
+  secondaryCwes: [CWE-288, CWE-1188]
+  family: mob-modo-teste
+  sectors: [industria-energia]
+  courseModules: [trained]
+  classifications:
+    - framework: OWASP Top 10
+      edition: "2025"
+      entries:
+        - "A02 Security Misconfiguration"
+    - framework: OWASP Top 10
+      edition: "2021"
+      entries:
+        - "A05 Security Misconfiguration"
+    - framework: OWASP API Security Top 10
+      edition: "2023"
+      entries:
+        - "API8 Security Misconfiguration"
+    - framework: SANS CWE Top 25
+      edition: "2025"
+      entries:
+        - "Não se enquadra; use o CWE"
+    - framework: SANS CWE Top 25
+      edition: "2024"
+      entries:
+        - "Não se enquadra; use o CWE"
+    - framework: OWASP Mobile Top 10
+      edition: "2024"
+      entries:
+        - "M8 Security Misconfiguration"
+    - framework: OWASP Mobile Top 10
+      edition: "2016"
+      entries:
+        - "M10 Extraneous Functionality"
+    - framework: OWASP MASVS
+      edition: "2023"
+      entries:
+        - "MASVS-CODE-3"
+learning:
+  singleVulnerability: true
+  estimatedMinutes: 30
+  difficulty: beginner
+  objectives:
+    - Entender como código de teste esquecido vira porta dos fundos em produção
+    - Explorar o atalho de homologação para entrar numa conta sem login
+    - Identificar o cabeçalho que liga o atalho
+    - Corrigir a identificação do usuário removendo o atalho
+  story:
+    role: >-
+      Pessoa desenvolvedora do time de apps da Aurora Energia
+    application: >-
+      App Aurora Campo, o app em que o técnico de campo consulta as ordens de serviço
+    context: >-
+      O app de campo da Aurora Energia de testes usava um cabeçalho para pular o login. O atalho ficou na API de produção.
+    mission: >-
+      Encontrar o atalho de homologação, entrar sem login e removê-lo da API
+  wrapUp:
+    text: |
+      Agora só o token do login identifica o usuário, e o atalho de homologação não existe mais. Em um app real, vale reforçar:
+
+      - **Build de produção sem atalhos.** Contas de teste, cabeçalhos mágicos, telas de depuração e endpoints internos ficam fora do build publicado. Use variantes de build (debug/release, flavors, schemes) e configuração por ambiente, não `if` esquecido.
+      - **Revisão e testes pegam o atalho.** Busque no código por `debug`, `test`, `bypass`, `X-` customizados; um teste automatizado pode chamar a API de produção com esses cabeçalhos e exigir 401.
+      - **Não confie no que o app manda.** Cabeçalhos são escritos por quem controla o app, inclusive o atacante.
+      - **Sinal no app é pista.** Uma etiqueta "homologação" ou um menu escondido na versão da loja costuma indicar funcionalidade esquecida.
+    references:
+      - title: "OWASP Mobile Top 10 2024: M8 Security Misconfiguration"
+        url: https://owasp.org/www-project-mobile-top-10/2023-risks/m8-security-misconfiguration
+      - title: "OWASP Mobile Top 10 2016: M10 Extraneous Functionality"
+        url: https://owasp.org/www-project-mobile-top-10/2016-risks/m10-extraneous-functionality
+      - title: "OWASP MASVS"
+        url: https://mas.owasp.org/MASVS/
+      - title: "OWASP API Security Top 10 2023: API8 Security Misconfiguration"
+        url: https://owasp.org/API-Security/editions/2023/en/0xa8-security-misconfiguration/
+      - title: "CWE-489: Active Debug Code"
+        url: https://cwe.mitre.org/data/definitions/489.html
+variants:
+  - id: python-flask
+    language: python
+    framework: flask
+    image: registry.local/labs/lab-067-mobile@sha256:eafd7b21baafd1a1ffe033bc326e16b9c587d41b7a356cb136d20caa61d2f663
+    runtimeProfile: web-basic
+    workspacePath: /workspace
+    startup:
+      command: ["sh", "-c", "python -u -m flask --app app run --host 0.0.0.0 --port 8080 --reload --no-debugger 2>&1 | tee -a /tmp/app.log"]
+      port: 8080
+    resources:
+      cpuMillicores: 500
+      memoryMiB: 512
+      storageMiB: 256
+      pidsMax: 64
+    session:
+      ttlMinutes: 45
+      maxRenewals: 2
+    interfaces: [editor, terminal, web]
+    platform: mobile
+steps:
+  - id: conhecer
+    order: 1
+    title: "Conhecer o app e achar quem identifica o usuário"
+    explanation: |
+      Você está no time de apps da Aurora Energia. A tela de login do app de campo da Aurora Energia publicado na loja ainda mostra a etiqueta "Modo homologação". Um pesquisador avisou que, com um cabeçalho que o app de testes usava, a API abre uma conta sem login.
+
+      **Um laboratório mobile.** Na aba **Aplicação**, o app aparece numa moldura de celular. Ele é um app **simulado** (não há emulador), mas fala com a API do servidor do mesmo jeito que um app Android ou iOS. Toda falha de app mobile termina numa decisão de segurança: quem a toma, o aparelho ou o servidor?
+
+      ```ilustracao
+      mob-modo-teste
+      ```
+
+      Siga um pedido pelas camadas:
+
+      1. **App** (`static/app.js`): envia o token do login em `Authorization: Bearer`.
+      2. **Controller** (`controllers/api_controller.py`): toda rota pergunta ao serviço de identidade quem é o usuário.
+      3. **Serviço** (`services/identidade_service.py`): identifica o usuário do pedido. **É aqui que está a falha.**
+
+      As credenciais de teste deste laboratório são:
+
+      - Usuário `diego.campos`, senha `Diego#Aurora26` (Diego Campos Ferraz).
+    task: |
+      1. Na aba **Aplicação**, veja a etiqueta **Modo homologação** na tela de login e entre com `diego.campos` e a senha `Diego#Aurora26`.
+      2. Na aba **Código**, abra `services/identidade_service.py`.
+
+      Informe abaixo o nome do método que identifica o usuário do pedido.
+    concept: "Código de teste esquecido vira porta dos fundos"
+    validatorRef: mob-modo-teste/answer/metodo-ind-v1
+    hints:
+      - level: 1
+        text: "A classe `IdentidadeService` tem um método público além de `__init__`."
+      - level: 2
+        text: "É o método chamado por `conta_logada` no controller."
+      - level: 3
+        text: "O valor é `identificar`."
+    points: 10
+  - id: explorar
+    order: 2
+    title: "Entrar sem login com o atalho"
+    explanation: |
+      Leia o método `identificar`: antes de olhar o token, ele confere um cabeçalho. Faça o que o pesquisador fez: chame a API sem login, primeiro sem e depois com esse cabeçalho.
+    task: |
+      No **Terminal**:
+
+      ```bash
+      curl -s http://127.0.0.1:8080/api/conta
+      curl -s http://127.0.0.1:8080/api/conta -H "X-Debug: 1"
+      ```
+
+      Sem login e com `X-Debug: 1`, a API devolveu os dados de uma conta? Responda **sim** ou **não**.
+    explore: |
+      **Como se acha isso num app de verdade.** Descompilando o app (jadx, apktool) e procurando por `debug`, `test`, `X-` ou URLs de homologação; ou observando o tráfego do app de testes. Etiquetas e menus escondidos na versão da loja são pistas comuns.
+    concept: "O atalho de teste abre uma conta sem login"
+    validatorRef: mob-modo-teste/answer/comportamento-ind-v1
+    hints:
+      - level: 1
+        text: "Compare as duas respostas."
+      - level: 2
+        text: "A segunda traz um nome e um resumo."
+      - level: 3
+        text: "A resposta é `sim`."
+    points: 15
+  - id: medida
+    order: 3
+    title: "Identificar o cabeçalho do atalho"
+    explanation: |
+      O atalho depende de um cabeçalho HTTP que qualquer pessoa pode enviar.
+    task: |
+      Qual cabeçalho liga o atalho de homologação? Responda com o nome do cabeçalho.
+    concept: "Cabeçalho é escrito por quem envia o pedido"
+    validatorRef: mob-modo-teste/answer/defesa-ind-v1
+    hints:
+      - level: 1
+        text: "Está no `if` do método `identificar`."
+      - level: 2
+        text: "Começa com `X-`."
+      - level: 3
+        text: "A resposta é `X-Debug`."
+    points: 15
+  - id: onde
+    order: 4
+    title: "Decidir se o atalho pode ficar"
+    explanation: |
+      Atalhos de teste aceleram a homologação. A questão é onde eles podem existir.
+    task: |
+      Esse atalho deveria existir no build de produção?
+
+      Responda **sim** ou **não**.
+    concept: "Atalho de teste não vai para produção"
+    validatorRef: mob-modo-teste/answer/onde-ind-v1
+    hints:
+      - level: 1
+        text: "Você entrou numa conta sem senha nenhuma."
+      - level: 2
+        text: "Qualquer pessoa pode mandar o cabeçalho."
+      - level: 3
+        text: "A resposta é `não`."
+    points: 15
+  - id: corrigir
+    order: 5
+    title: "Remover o atalho de homologação"
+    explanation: |
+      **Por que a falha existe.** `identificar` devolve a conta 1 sempre que `X-Debug` vale `1`, antes de olhar o token.
+
+      **A correção.** Remover o atalho: só o token emitido no login identifica o usuário.
+    task: |
+      Abra `services/identidade_service.py` e troque as quatro linhas do corpo de `identificar` (a partir do comentário) por estas:
+
+      ```python
+              # Sem atalho de teste em produção: só o token emitido no login identifica o usuário.
+              return self._tokens.conta_do_token(token) if token else None
+      ```
+
+      Salve com **Ctrl+S**. A aplicação reinicia. Então:
+
+      1. na aba **Aplicação**, entre de novo e veja que o app continua funcionando;
+      2. no **Terminal**, repita o `curl` com `X-Debug: 1` e veja `nao autorizado`;
+      3. clique em **Validar**.
+    explore: |
+      **Se algo não funcionar depois de salvar.** Um recuo errado derruba a aplicação e o app no celular para de responder. No **Terminal**:
+
+      ```bash
+      grep -iE "error|traceback" /tmp/app.log | tail -n 15
+      ```
+
+      **O que procurar.** `IndentationError` aponta a linha com recuo diferente: o corpo do método fica com 8 espaços e o que está dentro de um `if`, com 12. Copie o bloco da tarefa sem mudar o recuo.
+    concept: "Correção: sem atalho, só o token identifica"
+    validatorRef: mob-modo-teste/python-flask/sem-atalho-ind-v1
+    hints:
+      - level: 1
+        text: "A mudança é só em `services/identidade_service.py`, no método `identificar`."
+      - level: 2
+        text: "Apague o `if` do `X-Debug` inteiro."
+      - level: 3
+        text: "Copie o bloco da tarefa sem mudar o recuo: 8 espaços."
+    points: 45
+policy:
+  sequentialUnlock: true
+  allowStepRetry: true
+  persistProgressAcrossReset: true
+  allowSolutionReveal: false
+  finalPassingScore: 100
