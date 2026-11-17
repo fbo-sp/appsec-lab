@@ -1,0 +1,30 @@
+:root { --marca: #a16207; --fundo: #f4f6f9; --texto: #1f2430; --borda: #d9dee6; }
+* { box-sizing: border-box; }
+body { margin: 0; font-family: system-ui, sans-serif; background: var(--fundo); color: var(--texto); }
+.topo { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; padding: 0.8rem 1.2rem; background: var(--marca); color: #fff; }
+.topo a { color: #fff; }
+.marca { font-weight: 700; font-size: 1.1rem; }
+.sub { opacity: 0.85; }
+.topo nav { display: flex; gap: 1rem; }
+.usuario { margin-left: auto; }
+main { max-width: 960px; margin: 1.5rem auto; padding: 0 1rem; }
+footer { text-align: center; color: #6b7380; font-size: 0.8rem; padding: 2rem 0; }
+.cartao { background: #fff; border: 1px solid var(--borda); border-radius: 10px; padding: 1rem; display: grid; gap: 0.7rem; max-width: 520px; }
+.login { margin-top: 1.5rem; }
+label { display: grid; gap: 0.25rem; font-size: 0.9rem; }
+input { padding: 0.5rem 0.6rem; border: 1px solid var(--borda); border-radius: 6px; font: inherit; }
+button { background: var(--marca); color: #fff; border: 0; border-radius: 6px; padding: 0.55rem 1rem; font: inherit; cursor: pointer; }
+.erro { color: #b42318; }
+.ajuda { color: #4b5563; }
+.dados { display: grid; grid-template-columns: max-content 1fr; gap: 0.4rem 1rem; margin: 0 0 1rem; }
+.dados dt { font-weight: 600; }
+.dados dd { margin: 0; }
+.banner { border-radius: 8px; padding: 0.8rem 1rem; margin: 1rem 0; border: 1px solid; }
+.banner.antigo { background: #fffaeb; border-color: #fedf89; color: #93370d; }
+.banner.reforcado { background: #ecfdf3; border-color: #abefc6; color: #067647; }
+h2 { font-size: 1.05rem; margin-top: 1.5rem; }
+.lista { width: 100%; border-collapse: collapse; background: #fff; border: 1px solid var(--borda); border-radius: 8px; }
+.lista th, .lista td { text-align: left; padding: 0.5rem 0.7rem; border-bottom: 1px solid var(--borda); font-size: 0.92rem; }
+.lista th { background: #f8fafc; }
+code { font-family: ui-monospace, Consolas, monospace; font-size: 0.88em; }
+.topo.simulacao { background: #374151; }

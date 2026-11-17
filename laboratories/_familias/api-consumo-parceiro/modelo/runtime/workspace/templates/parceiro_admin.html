@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Simulação · [[parceiro_nome]]</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='estilo.css') }}">
+</head>
+<body>
+  <header class="topo simulacao"><span class="marca">Simulação do parceiro</span><span class="sub">[[parceiro_nome]] · só existe no laboratório</span></header>
+  <main>
+    <h1>Interruptor do parceiro</h1>
+    <p class="ajuda">Esta página imita o que acontece quando o parceiro é invadido ou publica uma versão com defeito.
+      Modo atual: <strong>{{ "comprometido" if comprometido else "normal" }}</strong>.</p>
+    <form method="post" action="{{ url_for('parceiro.mudar_modo') }}" class="cartao">
+      <input type="hidden" name="modo" value="{{ 'normal' if comprometido else 'comprometido' }}">
+      <button type="submit">{{ "Voltar ao modo normal" if comprometido else "Simular parceiro comprometido" }}</button>
+    </form>
+    <p class="ajuda"><a href="/painel">Voltar ao [[app_nome]]</a></p>
+  </main>
+</body>
+</html>

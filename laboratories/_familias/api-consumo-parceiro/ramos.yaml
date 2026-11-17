@@ -1,0 +1,148 @@
+# Família L6 api-consumo-parceiro (ADR-021): o que muda por ramo. O modelo comum está em ./modelo.
+# Depois de editar, rode:  uv run python scripts/gerar-familia.py api-consumo-parceiro
+# Logins, senhas, referências, campo e teto estão espelhados em
+# apps/backend/app/validation/suites_familias.py (CONSUMO_RAMOS); os testes Docker conferem os dois.
+# A falha é de consumo inseguro de API (OWASP API10): services/consulta_service.py grava a resposta do
+# parceiro sem conferir o contrato. O parceiro é SIMULADO no contêiner, com um modo "comprometido".
+ramos:
+  - destino: LAB-071-api-consumo-parceiro-banco
+    vars:
+      lab_id: LAB-071
+      versao: 1.0.0
+      codigo: L6-FIN
+      ramo: fin
+      setor: financeiro
+      imagem: lab-071-api-consumo
+      titulo: o bureau de crédito que aprovou sozinho
+      empresa: Fintech Vértix
+      marca: "▲ Vértix"
+      app_nome: Vértix Crédito
+      cor: "#4338ca"
+      papel: Pessoa desenvolvedora do time de crédito da Fintech Vértix
+      papel_usuario: Analista de crédito
+      aplicacao: Vértix Crédito, onde analistas consultam o Bureau Sigma para definir o limite das propostas de cartão
+      contexto: O Vértix Crédito consulta a API do Bureau Sigma e grava o limite sugerido de cada proposta. Na madrugada de ontem, o monitoramento viu 37 propostas aprovadas com limite de R$ 4,8 milhões, sem nenhum analista mexer. O Bureau Sigma confirmou depois que um servidor dele foi invadido.
+      missao: Reproduzir a resposta adulterada do parceiro, entender por que ela entrou no banco e passar a conferir o contrato antes de gravar
+      painel_titulo: Propostas de cartão
+      painel_desc: Propostas aguardando consulta ao bureau de crédito.
+      login_desc: Entre com seu usuário e senha do Vértix Crédito.
+      lista_titulo: Propostas pendentes
+      banco: vertix_credito
+      parceiro_nome: Bureau Sigma
+      parceiro_curto: bureau
+      campo: limite_sugerido
+      campo_rotulo: Limite sugerido
+      campo_rotulo_min: limite sugerido
+      teto: 50000
+      teto_texto: R$ 50.000
+      valor_comprometido: 4800000
+      pendencia_singular: proposta
+      pendencia_plural: propostas
+      login_a: renata.quintela
+      senha_a: "Renata#Vertix26"
+      nome_a: Renata Quintela Dias
+      ref_a: PROP-4471
+      cenario_invasao: 'Foi o que aconteceu com o Bureau Sigma: com um servidor dele invadido, a API passou a devolver limites milionários e um campo novo, que o Vértix Crédito tratou como aprovação.'
+      historia_abertura: 'Você é do time de crédito da Fintech Vértix. Na madrugada de ontem, o monitoramento viu 37 propostas de cartão aprovadas com limite de R$ 4,8 milhões, sem nenhum analista mexer. Horas depois, o Bureau Sigma avisou que um servidor dele tinha sido invadido. O chamado chegou ao seu time: por que o Vértix Crédito aceitou isso?'
+      seed_contas:
+        - [1, renata.quintela, Renata Quintela Dias, "Renata#Vertix26", analista]
+      seed_pendencias:
+        - [PROP-4471, 1, "Cartão Vértix Gold · cliente Júlio César Prado · renda declarada R$ 7.800"]
+        - [PROP-4472, 1, "Cartão Vértix Básico · cliente Sônia Abreu Lima · renda declarada R$ 3.100"]
+      respostas_normais:
+        PROP-4471: 8500
+        PROP-4472: 2300
+  - destino: LAB-072-api-consumo-parceiro-saude
+    vars:
+      lab_id: LAB-072
+      versao: 1.0.0
+      codigo: L6-SAU
+      ramo: sau
+      setor: saude
+      imagem: lab-072-api-consumo
+      titulo: o reembolso que o parceiro aprovou sozinho
+      empresa: Operadora Bem Cuidar
+      marca: "✚ Bem Cuidar"
+      app_nome: Bem Cuidar Reembolso
+      cor: "#be185d"
+      papel: Pessoa desenvolvedora do time de reembolso da Operadora Bem Cuidar
+      papel_usuario: Analista de reembolso
+      aplicacao: Bem Cuidar Reembolso, onde analistas consultam a tabela da Rede Atlas para calcular o reembolso de procedimentos
+      contexto: O Bem Cuidar Reembolso consulta a API da Rede Atlas Credenciados e grava o valor de reembolso de cada pedido. Na última sexta, 12 pedidos foram aprovados com reembolso de R$ 980 mil cada. A Rede Atlas descobriu, dias depois, que tinha publicado uma versão da API com dados de teste e um servidor comprometido.
+      missao: Reproduzir a resposta adulterada do parceiro, entender por que ela entrou no banco e passar a conferir o contrato antes de gravar
+      painel_titulo: Pedidos de reembolso
+      painel_desc: Pedidos aguardando consulta à tabela da rede credenciada.
+      login_desc: Entre com seu usuário e senha do Bem Cuidar Reembolso.
+      lista_titulo: Pedidos pendentes
+      banco: bemcuidar_reembolso
+      parceiro_nome: Rede Atlas Credenciados
+      parceiro_curto: Rede Atlas
+      campo: valor_reembolso
+      campo_rotulo: Valor de reembolso
+      campo_rotulo_min: valor de reembolso
+      teto: 20000
+      teto_texto: R$ 20.000
+      valor_comprometido: 980000
+      pendencia_singular: pedido
+      pendencia_plural: pedidos
+      login_a: helena.barros
+      senha_a: "Helena#BemCuidar26"
+      nome_a: Helena Barros Veloso
+      ref_a: REEMB-2093
+      cenario_invasao: 'Foi o que aconteceu com a Rede Atlas: com um servidor comprometido, a API passou a devolver reembolsos de quase um milhão e um campo novo, que o Bem Cuidar Reembolso tratou como aprovação.'
+      historia_abertura: 'Você é do time de reembolso da Operadora Bem Cuidar. Na última sexta, 12 pedidos de reembolso foram aprovados com valor de R$ 980 mil cada, sem passar por nenhum analista. A Rede Atlas Credenciados, que fornece a tabela de valores, descobriu dias depois um servidor comprometido. A auditoria quer saber por que o Bem Cuidar Reembolso aceitou esses valores.'
+      seed_contas:
+        - [1, helena.barros, Helena Barros Veloso, "Helena#BemCuidar26", analista]
+      seed_pendencias:
+        - [REEMB-2093, 1, "Consulta com dermatologista · beneficiária Lúcia Freitas Neves"]
+        - [REEMB-2094, 1, "Ressonância de joelho · beneficiário Caio Mendes Rocha"]
+      respostas_normais:
+        REEMB-2093: 640
+        REEMB-2094: 1850
+  - destino: LAB-073-api-consumo-parceiro-industria
+    vars:
+      lab_id: LAB-073
+      versao: 1.0.0
+      codigo: L6-IND
+      ramo: ind
+      setor: industria-energia
+      imagem: lab-073-api-consumo
+      titulo: a cotação do fornecedor que aprovou a compra sozinha
+      empresa: Siderúrgica Alvorada
+      marca: "⬢ Alvorada"
+      app_nome: Alvorada Compras
+      cor: "#a16207"
+      papel: Pessoa desenvolvedora do time de suprimentos da Siderúrgica Alvorada
+      papel_usuario: Comprador
+      aplicacao: Alvorada Compras, onde compradores consultam a API de cotação dos fornecedores homologados para fechar pedidos de peças
+      contexto: O Alvorada Compras consulta a API de cotação da Rolamax, fornecedora homologada de rolamentos, e grava o preço unitário de cada requisição. Na semana passada, três pedidos de rolamentos foram aprovados a R$ 875 mil a unidade. A Rolamax confirmou que a conta de um integrador dela foi invadida.
+      missao: Reproduzir a resposta adulterada do parceiro, entender por que ela entrou no banco e passar a conferir o contrato antes de gravar
+      painel_titulo: Requisições de compra
+      painel_desc: Requisições aguardando cotação do fornecedor homologado.
+      login_desc: Entre com seu usuário e senha do Alvorada Compras.
+      lista_titulo: Requisições pendentes
+      banco: alvorada_compras
+      parceiro_nome: Rolamax
+      parceiro_curto: Rolamax
+      campo: preco_unitario
+      campo_rotulo: Preço unitário
+      campo_rotulo_min: preço unitário
+      teto: 10000
+      teto_texto: R$ 10.000
+      valor_comprometido: 875000
+      pendencia_singular: requisição
+      pendencia_plural: requisições
+      login_a: marcos.teixeira
+      senha_a: "Marcos#Alvorada26"
+      nome_a: Marcos Teixeira Bastos
+      ref_a: COT-7781
+      cenario_invasao: 'Foi o que aconteceu com a Rolamax: com a conta de um integrador invadida, a API passou a devolver preços absurdos e um campo novo, que o Alvorada Compras tratou como aprovação do pedido.'
+      historia_abertura: 'Você é do time de suprimentos da Siderúrgica Alvorada. Na semana passada, três pedidos de rolamentos para o laminador foram aprovados a R$ 875 mil a unidade, e um deles quase foi pago. A Rolamax, fornecedora homologada, confirmou que a conta de um integrador dela foi invadida. A controladoria abriu um chamado: por que o Alvorada Compras aceitou essa cotação?'
+      seed_contas:
+        - [1, marcos.teixeira, Marcos Teixeira Bastos, "Marcos#Alvorada26", comprador]
+      seed_pendencias:
+        - [COT-7781, 1, "Rolamento autocompensador 22230 · laminador de tiras · 4 unidades"]
+        - [COT-7782, 1, "Rolamento de rolos cônicos 32222 · ponte rolante · 2 unidades"]
+      respostas_normais:
+        COT-7781: 1280.5
+        COT-7782: 690

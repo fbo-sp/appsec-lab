@@ -110,6 +110,9 @@ Indicado como primeira atividade de qualquer turma, antes do primeiro laboratór
 | LAB-068 | L5-FIN · Inventário de API: a v1 da API de comprovantes que ninguém desligou | 1.0.0 | CWE-1059 | A01 Broken Access Control (2025) | #4 CWE-862 Missing Authorization (2025) | Intermediário | 35 min |
 | LAB-069 | L5-SAU · Inventário de API: a v1 da API de exames que ninguém desligou | 1.0.0 | CWE-1059 | A01 Broken Access Control (2025) | #4 CWE-862 Missing Authorization (2025) | Intermediário | 35 min |
 | LAB-070 | L5-IND · Inventário de API: a v1 da API de faturas que ninguém desligou | 1.0.0 | CWE-1059 | A01 Broken Access Control (2025) | #4 CWE-862 Missing Authorization (2025) | Intermediário | 35 min |
+| LAB-071 | L6-FIN · Consumo inseguro de API: o bureau de crédito que aprovou sozinho | 1.0.0 | CWE-20 | A08 Software or Data Integrity Failures (2025) | #18 CWE-20 Improper Input Validation (2025) | Intermediário | 35 min |
+| LAB-072 | L6-SAU · Consumo inseguro de API: o reembolso que o parceiro aprovou sozinho | 1.0.0 | CWE-20 | A08 Software or Data Integrity Failures (2025) | #18 CWE-20 Improper Input Validation (2025) | Intermediário | 35 min |
+| LAB-073 | L6-IND · Consumo inseguro de API: a cotação do fornecedor que aprovou a compra sozinha | 1.0.0 | CWE-20 | A08 Software or Data Integrity Failures (2025) | #18 CWE-20 Improper Input Validation (2025) | Intermediário | 35 min |
 
 ## LAB-001 · SQL Injection: a busca que expõe pacientes
 
@@ -3025,3 +3028,129 @@ Indicado como primeira atividade de qualquer turma, antes do primeiro laboratór
 | Versão | Criada em | Obsoleta em | Situação | O que mudou |
 |---|---|---|---|---|
 | 1.0.0 | 2026-11-17 | — | vigente | Primeira versão (versão 1 da API de faturas esquecida no ar, Elétrica Serra Azul; família api-inventario, ramo Indústria e Energia). |
+
+## LAB-071 · L6-FIN · Consumo inseguro de API: o bureau de crédito que aprovou sozinho
+
+- Versão vigente: 1.0.0
+- Cenário: Vértix Crédito, onde analistas consultam o Bureau Sigma para definir o limite das propostas de cartão
+- Papel do aluno: Pessoa desenvolvedora do time de crédito da Fintech Vértix
+- Linguagem / stack: python / flask
+- Nível: Intermediário · duração estimada: 35 min
+- Família: api-consumo-parceiro
+- Ramo: Financeiro
+- Módulo do curso: Trained
+
+### Classificação
+
+- CWE: CWE-20 (principal), CWE-345, CWE-1287
+- OWASP Top 10 2025: A08 Software or Data Integrity Failures
+- OWASP Top 10 2021: A08 Software and Data Integrity Failures
+- OWASP API Security Top 10 2023: API10 Unsafe Consumption of APIs
+- OWASP API Security Top 10 2019: Não se enquadra; use o CWE
+- SANS CWE Top 25 2025: #18 CWE-20 Improper Input Validation
+- SANS CWE Top 25 2024: #12 CWE-20 Improper Input Validation
+
+### Objetivos
+
+- Tratar a resposta da API de um parceiro como entrada não confiável
+- Simular o parceiro comprometido e ver o dado absurdo entrar no banco
+- Reconhecer o contrato (campos e faixas) como a regra que o consumidor confere
+- Corrigir conferindo campos e faixa antes de gravar, e decidindo o status do nosso lado
+
+### Etapas
+
+1. Conhecer a consulta ao parceiro (10 pts)
+2. Simular o parceiro comprometido (15 pts)
+3. Nomear a regra que o consumidor deve conferir (15 pts)
+4. Encontrar onde a resposta é gravada sem conferência (15 pts)
+5. Conferir o contrato antes de gravar (45 pts)
+
+### Histórico de versões
+
+| Versão | Criada em | Obsoleta em | Situação | O que mudou |
+|---|---|---|---|---|
+| 1.0.0 | 2026-11-17 | — | vigente | Primeira versão (resposta do bureau de crédito gravada sem conferir o contrato, Fintech Vértix; família api-consumo-parceiro, ramo Financeiro). |
+
+## LAB-072 · L6-SAU · Consumo inseguro de API: o reembolso que o parceiro aprovou sozinho
+
+- Versão vigente: 1.0.0
+- Cenário: Bem Cuidar Reembolso, onde analistas consultam a tabela da Rede Atlas para calcular o reembolso de procedimentos
+- Papel do aluno: Pessoa desenvolvedora do time de reembolso da Operadora Bem Cuidar
+- Linguagem / stack: python / flask
+- Nível: Intermediário · duração estimada: 35 min
+- Família: api-consumo-parceiro
+- Ramo: Saúde
+- Módulo do curso: Trained
+
+### Classificação
+
+- CWE: CWE-20 (principal), CWE-345, CWE-1287
+- OWASP Top 10 2025: A08 Software or Data Integrity Failures
+- OWASP Top 10 2021: A08 Software and Data Integrity Failures
+- OWASP API Security Top 10 2023: API10 Unsafe Consumption of APIs
+- OWASP API Security Top 10 2019: Não se enquadra; use o CWE
+- SANS CWE Top 25 2025: #18 CWE-20 Improper Input Validation
+- SANS CWE Top 25 2024: #12 CWE-20 Improper Input Validation
+
+### Objetivos
+
+- Tratar a resposta da API de um parceiro como entrada não confiável
+- Simular o parceiro comprometido e ver o dado absurdo entrar no banco
+- Reconhecer o contrato (campos e faixas) como a regra que o consumidor confere
+- Corrigir conferindo campos e faixa antes de gravar, e decidindo o status do nosso lado
+
+### Etapas
+
+1. Conhecer a consulta ao parceiro (10 pts)
+2. Simular o parceiro comprometido (15 pts)
+3. Nomear a regra que o consumidor deve conferir (15 pts)
+4. Encontrar onde a resposta é gravada sem conferência (15 pts)
+5. Conferir o contrato antes de gravar (45 pts)
+
+### Histórico de versões
+
+| Versão | Criada em | Obsoleta em | Situação | O que mudou |
+|---|---|---|---|---|
+| 1.0.0 | 2026-11-17 | — | vigente | Primeira versão (resposta da rede credenciada gravada sem conferir o contrato, Operadora Bem Cuidar; família api-consumo-parceiro, ramo Saúde). |
+
+## LAB-073 · L6-IND · Consumo inseguro de API: a cotação do fornecedor que aprovou a compra sozinha
+
+- Versão vigente: 1.0.0
+- Cenário: Alvorada Compras, onde compradores consultam a API de cotação dos fornecedores homologados para fechar pedidos de peças
+- Papel do aluno: Pessoa desenvolvedora do time de suprimentos da Siderúrgica Alvorada
+- Linguagem / stack: python / flask
+- Nível: Intermediário · duração estimada: 35 min
+- Família: api-consumo-parceiro
+- Ramo: Indústria e Energia
+- Módulo do curso: Trained
+
+### Classificação
+
+- CWE: CWE-20 (principal), CWE-345, CWE-1287
+- OWASP Top 10 2025: A08 Software or Data Integrity Failures
+- OWASP Top 10 2021: A08 Software and Data Integrity Failures
+- OWASP API Security Top 10 2023: API10 Unsafe Consumption of APIs
+- OWASP API Security Top 10 2019: Não se enquadra; use o CWE
+- SANS CWE Top 25 2025: #18 CWE-20 Improper Input Validation
+- SANS CWE Top 25 2024: #12 CWE-20 Improper Input Validation
+
+### Objetivos
+
+- Tratar a resposta da API de um parceiro como entrada não confiável
+- Simular o parceiro comprometido e ver o dado absurdo entrar no banco
+- Reconhecer o contrato (campos e faixas) como a regra que o consumidor confere
+- Corrigir conferindo campos e faixa antes de gravar, e decidindo o status do nosso lado
+
+### Etapas
+
+1. Conhecer a consulta ao parceiro (10 pts)
+2. Simular o parceiro comprometido (15 pts)
+3. Nomear a regra que o consumidor deve conferir (15 pts)
+4. Encontrar onde a resposta é gravada sem conferência (15 pts)
+5. Conferir o contrato antes de gravar (45 pts)
+
+### Histórico de versões
+
+| Versão | Criada em | Obsoleta em | Situação | O que mudou |
+|---|---|---|---|---|
+| 1.0.0 | 2026-11-17 | — | vigente | Primeira versão (cotação do fornecedor gravada sem conferir o contrato, Siderúrgica Alvorada; família api-consumo-parceiro, ramo Indústria e Energia). |

@@ -452,6 +452,27 @@ const ILLUSTRATIONS: Record<string, { caption: string; body: () => ReactNode }> 
       />
     ),
   },
+  "consumo-api": {
+    caption: "Consumo de API: a resposta do parceiro é entrada externa — confira o contrato antes de usar.",
+    body: () => (
+      <Compare
+        bad={[
+          "Grava o que vier (hoje)",
+          <>
+            <span>O serviço grava o valor como veio, mesmo muito acima do teto.</span>
+            <span>Um campo fora do contrato ({c("aprovacao_automatica")}) decide o status.</span>
+          </>,
+        ]}
+        good={[
+          "Confere o contrato",
+          <>
+            <span>Só aceita os campos combinados e o valor dentro da faixa; o resto vira {c("RespostaInvalida")}.</span>
+            <span>O status é decisão do app: sempre {c("em análise")}.</span>
+          </>,
+        ]}
+      />
+    ),
+  },
   "bfla": {
     caption: "Autorização de função (BFLA): autenticar não é autorizar — cada função sensível confere o papel.",
     body: () => (

@@ -348,3 +348,15 @@ labs:
     - version: 1.0.0
       published: 2026-11-17
       summary: Primeira versão (versão 1 da API de faturas esquecida no ar, Elétrica Serra Azul; família api-inventario, ramo Indústria e Energia).
+  LAB-071:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (resposta do bureau de crédito gravada sem conferir o contrato, Fintech Vértix; família api-consumo-parceiro, ramo Financeiro).
+  LAB-072:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (resposta da rede credenciada gravada sem conferir o contrato, Operadora Bem Cuidar; família api-consumo-parceiro, ramo Saúde).
+  LAB-073:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (cotação do fornecedor gravada sem conferir o contrato, Siderúrgica Alvorada; família api-consumo-parceiro, ramo Indústria e Energia).

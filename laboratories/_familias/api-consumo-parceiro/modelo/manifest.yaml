@@ -1,0 +1,249 @@
+# [[lab_id]] ([[codigo]]): consumo inseguro da API de um parceiro (OWASP API10, CWE-20) no [[app_nome]] da [[empresa]] (Flask + SQLite).
+# CONTÉM VULNERABILIDADE INTENCIONAL. Uso exclusivo no runtime Docker LOCAL (ADR-008), em rede
+# interna da sessão. Dados 100% fictícios. Família L6 api-consumo-parceiro (ADR-021): gerado por
+# scripts/gerar-familia.py a partir de laboratories/_familias/api-consumo-parceiro; não edite este arquivo à mão.
+#
+# ATENÇÃO: o digest abaixo é uma FIXTURE (sha256 de um texto fixo), não uma imagem publicada.
+# scripts/lab-local.sh e .ps1 trocam pela imagem construída localmente antes de registrar.
+apiVersion: labs.cecyber.io/v1alpha1
+kind: AppSecLab
+metadata:
+  id: [[lab_id]]
+  version: [[versao]]
+  title: "[[codigo]] · Consumo inseguro de API: [[titulo]]"
+  primaryCwe: CWE-20
+  secondaryCwes: [CWE-345, CWE-1287]
+  family: api-consumo-parceiro
+  sectors: [[[setor]]]
+  courseModules: [trained]
+  classifications:
+    - framework: OWASP Top 10
+      edition: "2025"
+      entries:
+        - "A08 Software or Data Integrity Failures"
+    - framework: OWASP Top 10
+      edition: "2021"
+      entries:
+        - "A08 Software and Data Integrity Failures"
+    - framework: OWASP API Security Top 10
+      edition: "2023"
+      entries:
+        - "API10 Unsafe Consumption of APIs"
+    - framework: OWASP API Security Top 10
+      edition: "2019"
+      entries:
+        - "Não se enquadra; use o CWE"
+    - framework: SANS CWE Top 25
+      edition: "2025"
+      entries:
+        - "#18 CWE-20 Improper Input Validation"
+    - framework: SANS CWE Top 25
+      edition: "2024"
+      entries:
+        - "#12 CWE-20 Improper Input Validation"
+learning:
+  singleVulnerability: true
+  estimatedMinutes: 35
+  difficulty: intermediate
+  objectives:
+    - Tratar a resposta da API de um parceiro como entrada não confiável
+    - Simular o parceiro comprometido e ver o dado absurdo entrar no banco
+    - Reconhecer o contrato (campos e faixas) como a regra que o consumidor confere
+    - Corrigir conferindo campos e faixa antes de gravar, e decidindo o status do nosso lado
+  story:
+    role: [[papel]]
+    application: [[aplicacao]]
+    context: >-
+      [[contexto]]
+    mission: [[missao]]
+  wrapUp:
+    text: |
+      Agora a resposta do [[parceiro_nome]] só entra no banco se seguir o contrato, e o status é decidido pelo [[app_nome]]. Em um sistema real, vale reforçar:
+
+      - **API de parceiro é entrada externa.** Valide a resposta com o mesmo rigor de um formulário: esquema (campos e tipos), faixas e tamanho. Rejeite o que estiver fora, em vez de "corrigir" o valor.
+      - **Decisão de negócio fica do seu lado.** O parceiro informa; quem aprova, libera ou paga é a sua regra. Um campo extra na resposta nunca deve mudar o fluxo.
+      - **Transporte e tempo.** Use TLS com verificação de certificado, tempo limite (como o `timeout=3` do cliente) e não siga redirecionamentos para endereços não combinados.
+      - **Monitore o parceiro.** Registre e alerte quando as respostas começarem a ser recusadas: pode ser o primeiro sinal de que o parceiro foi invadido.
+    references:
+      - title: "OWASP API Security Top 10 2023: API10 Unsafe Consumption of APIs"
+        url: https://owasp.org/API-Security/editions/2023/en/0xaa-unsafe-consumption-of-apis/
+      - title: "OWASP Top 10:2025: A08 Software or Data Integrity Failures"
+        url: https://top10.owasp.org/2025/A08_2025-Software_or_Data_Integrity_Failures/
+      - title: "CWE-20: Improper Input Validation"
+        url: https://cwe.mitre.org/data/definitions/20.html
+      - title: "OWASP Cheat Sheet: Input Validation"
+        url: https://cheatsheetseries.owasp.org/cheatsheets/Input_Validation_Cheat_Sheet.html
+variants:
+  - id: python-flask
+    language: python
+    framework: flask
+    image: registry.local/labs/[[imagem]]@sha256:[[digest_fixture]]
+    runtimeProfile: web-basic
+    workspacePath: /workspace
+    startup:
+      command: ["sh", "-c", "python -u -m flask --app app run --host 0.0.0.0 --port 8080 --reload --no-debugger 2>&1 | tee -a /tmp/app.log"]
+      port: 8080
+    resources:
+      cpuMillicores: 500
+      memoryMiB: 512
+      storageMiB: 256
+      pidsMax: 64
+    session:
+      ttlMinutes: 45
+      maxRenewals: 2
+    interfaces: [editor, terminal, web]
+steps:
+  - id: conhecer
+    order: 1
+    title: Conhecer a consulta ao parceiro
+    explanation: |
+      [[historia_abertura]]
+
+      Quando o seu sistema chama a API de outra empresa, a resposta dela vira **entrada** do seu sistema, como um formulário preenchido por alguém de fora. A diferença é que costumamos confiar mais no parceiro do que no usuário. Se o parceiro for invadido, tiver um defeito ou trocar o formato sem avisar, essa confiança vira a porta de entrada: é o **consumo inseguro de APIs** (OWASP API10).
+
+      ```ilustracao
+      consumo-api
+      ```
+
+      Siga a consulta pelas camadas:
+
+      1. **Controller** (`controllers/painel_controller.py`): o botão "Consultar" chama o cliente do parceiro.
+      2. **Cliente** (`services/parceiro_client.py`): faz a chamada HTTP e devolve o JSON.
+      3. **Serviço** (`services/consulta_service.py`): grava o resultado no banco. **É aqui que falta conferir.**
+
+      As credenciais, neste laboratório, são:
+
+      - [[papel_usuario]]: `[[login_a]]`, senha `[[senha_a]]` ([[nome_a]]).
+    task: |
+      1. Na aba **Aplicação**, entre como `[[login_a]]` / `[[senha_a]]`.
+      2. Na [[pendencia_singular]] `[[ref_a]]`, clique em **Consultar [[parceiro_curto]]**. Veja a mensagem com o [[campo_rotulo_min]] devolvido e o status `em análise`.
+      3. Na aba **Código**, encontre o arquivo que faz a chamada HTTP ao parceiro.
+
+      Informe abaixo o nome desse arquivo (por exemplo, `algum_arquivo.py`).
+    concept: A resposta de uma API externa é entrada do seu sistema
+    validatorRef: api-consumo-parceiro/answer/cliente-[[ramo]]-v1
+    hints:
+      - level: 1
+        text: Fica na pasta `services/` e tem "parceiro" no nome.
+      - level: 2
+        text: É o arquivo com `urllib.request.urlopen`.
+      - level: 3
+        text: A resposta é `parceiro_client.py`.
+    points: 10
+  - id: explorar
+    order: 2
+    title: Simular o parceiro comprometido
+    explanation: |
+      No laboratório, o parceiro é simulado dentro do contêiner, sem internet, e tem um interruptor que imita uma invasão do lado dele. [[cenario_invasao]]
+    task: |
+      1. Na barra de endereço da aba **Aplicação**, abra `/parceiro/admin` e clique em **Simular parceiro comprometido**.
+      2. Volte ao painel (link na página) e clique de novo em **Consultar [[parceiro_curto]]** na [[pendencia_singular]] `[[ref_a]]`.
+      3. Veja, em "Consultas gravadas", o [[campo_rotulo_min]] e o status da nova linha.
+
+      Informe abaixo o status que a nova consulta recebeu.
+    explore: |
+      **O que o parceiro mandou.** Pelo **Terminal**, veja a resposta crua da API simulada:
+
+      ```bash
+      curl -s http://127.0.0.1:8080/parceiro/api/consulta/[[ref_a]]
+      ```
+
+      **O que procurar.** Dois problemas: o `[[campo]]` está muito acima do teto combinado e apareceu um campo novo, `aprovacao_automatica`, que não existe no contrato. O [[app_nome]] aceitou os dois. Para conferir o que foi gravado no banco, use `grep "Consulta gravada" /tmp/app.log` (o app.log também registra os acessos, por isso o `grep`).
+    concept: O consumidor aceitou valor absurdo e um campo fora do contrato
+    validatorRef: api-consumo-parceiro/answer/status-[[ramo]]-v1
+    hints:
+      - level: 1
+        text: Olhe a última coluna da linha mais nova em "Consultas gravadas".
+      - level: 2
+        text: O campo `aprovacao_automatica` do parceiro decidiu o status.
+      - level: 3
+        text: A resposta é `aprovado`.
+    points: 15
+  - id: contrato
+    order: 3
+    title: Nomear a regra que o consumidor deve conferir
+    explanation: |
+      Toda integração tem um acordo sobre o formato da resposta: quais campos vêm, de que tipo e em que faixa. Para o [[parceiro_nome]], ele está no topo de `services/consulta_service.py`: só `referencia` e `[[campo]]`, com valor entre 0 e [[teto_texto]]. Esse acordo é a régua para recusar o que vier fora.
+    task: |
+      Como se chama esse acordo entre as duas empresas sobre os campos, tipos e faixas da resposta da API?
+
+      Responda com uma palavra.
+    concept: O contrato da API define o que é uma resposta válida
+    validatorRef: api-consumo-parceiro/answer/contrato-[[ramo]]-v1
+    hints:
+      - level: 1
+        text: É a mesma palavra de um documento assinado entre duas empresas.
+      - level: 2
+        text: Aparece logo no comentário do topo de `services/consulta_service.py`.
+      - level: 3
+        text: A resposta é `contrato`.
+    points: 15
+  - id: onde
+    order: 4
+    title: Encontrar onde a resposta é gravada sem conferência
+    explanation: |
+      O cliente HTTP só busca a resposta; quem decide o que entra no banco é o serviço. Abra `services/consulta_service.py`: o método de gravação pega o `[[campo]]` como veio e ainda usa `aprovacao_automatica` para decidir o status.
+    task: |
+      Informe abaixo o nome do método que grava a resposta do parceiro sem conferir o contrato.
+    concept: A conferência pertence ao serviço que grava, antes do banco
+    validatorRef: api-consumo-parceiro/answer/metodo-[[ramo]]-v1
+    hints:
+      - level: 1
+        text: A classe `ConsultaService` tem um único método público.
+      - level: 2
+        text: É o método que o controller chama depois do cliente do parceiro.
+      - level: 3
+        text: A resposta é `registrar`.
+    points: 15
+  - id: corrigir
+    order: 5
+    title: Conferir o contrato antes de gravar
+    explanation: |
+      **Por que a falha existe.** `registrar` grava o valor como veio e deixa um campo do parceiro decidir o status.
+
+      **A correção.** Antes de gravar: recusar a resposta se tiver campos fora do contrato, recusar se o valor não for número ou estiver fora da faixa de 0 a [[teto_texto]], e decidir o status do nosso lado (`em análise`). A recusa é feita levantando `RespostaInvalida`, que o controller já transforma em "Resposta do parceiro inválida: nada foi gravado".
+    task: |
+      Abra `services/consulta_service.py` e troque o método `registrar` inteiro por este:
+
+      ```python
+          def registrar(self, conta_id: int, referencia: str, dados: dict) -> Consulta:
+              """Confere o contrato da resposta antes de gravar; o status é decisão nossa."""
+              if set(dados) != {"referencia", "[[campo]]"}:
+                  raise RespostaInvalida("campos fora do contrato")
+              valor = dados["[[campo]]"]
+              if not isinstance(valor, (int, float)) or not 0 <= valor <= [[teto]]:
+                  raise RespostaInvalida("valor fora da faixa")
+              return self._repositorio.inserir(conta_id, referencia, valor, "em análise")
+      ```
+
+      Salve com **Ctrl+S**. A aplicação reinicia (e o banco volta ao início). Então:
+
+      1. com o parceiro ainda **comprometido**, consulte `[[ref_a]]` e veja "Resposta do parceiro inválida: nada foi gravado";
+      2. em `/parceiro/admin`, volte ao **modo normal**, consulte de novo e veja que a consulta **continua** sendo gravada;
+      3. clique em **Validar**.
+    explore: |
+      **Por que recusar e não "consertar" o valor.** Trocar um valor absurdo pelo teto esconde o problema: a [[pendencia_singular]] seguiria com um número que ninguém informou. Recusar e registrar no log deixa o incidente visível. Veja a recusa com `grep "recusada" /tmp/app.log`.
+
+      **Se algo não funcionar depois de salvar.** No **Terminal**:
+
+      ```bash
+      grep -iE "error|traceback" /tmp/app.log | tail -n 15
+      ```
+
+      O `def registrar` fica com 4 espaços; o corpo, com 8; as linhas dentro dos `if`, com 12.
+    concept: Validar campos e faixas da resposta do parceiro e decidir o status no servidor
+    validatorRef: api-consumo-parceiro/python-flask/contrato-parceiro-[[ramo]]-v1
+    hints:
+      - level: 1
+        text: 'A mudança é só em `services/consulta_service.py`, no método `registrar`.'
+      - level: 2
+        text: Recuse campos extras e valor fora da faixa, e grave sempre o status `em análise`.
+      - level: 3
+        text: Copie o método da tarefa sem mudar o recuo. O `def` fica com 4 espaços.
+    points: 45
+policy:
+  sequentialUnlock: true
+  allowStepRetry: true
+  persistProgressAcrossReset: true
+  allowSolutionReveal: false
+  finalPassingScore: 100

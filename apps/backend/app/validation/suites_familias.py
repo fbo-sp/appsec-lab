@@ -2540,6 +2540,134 @@ def _inventario(r: InventarioRamo) -> tuple[Suite, ...]:
     )
 
 
+# L6 api-consumo-parceiro: resposta do parceiro gravada sem conferir o contrato (LAB-071 a LAB-073)
+
+
+@dataclass(frozen=True, slots=True)
+class ConsumoRamo:
+    ramo: str
+    banco: str  # arquivo SQLite do lab (/tmp/<banco>.db)
+    login_a: str
+    senha_a: str
+    ref_a: str
+    teto: int
+
+
+CONSUMO_RAMOS = (
+    ConsumoRamo("fin", "vertix_credito", "renata.quintela", "Renata#Vertix26", "PROP-4471", 50000),
+    ConsumoRamo("sau", "bemcuidar_reembolso", "helena.barros", "Helena#BemCuidar26", "REEMB-2093", 20000),
+    ConsumoRamo("ind", "alvorada_compras", "marcos.teixeira", "Marcos#Alvorada26", "COT-7781", 10000),
+)
+
+
+def _consumo(r: ConsumoRamo) -> tuple[Suite, ...]:
+    banco = f"/tmp/{r.banco}.db"  # noqa: S108 - caminho do banco DENTRO do contêiner do lab
+    return (
+        AnswerSuite(
+            ref=f"api-consumo-parceiro/answer/cliente-{r.ramo}-v1",
+            version="1.0.0",
+            prompt="Arquivo que faz a chamada HTTP ao parceiro",
+            accepted=("parceiro_client.py", "parceiro_client", "services/parceiro_client.py"),
+            success_feedback="Isso. O cliente só busca a resposta; quem decide o que gravar é outro arquivo.",
+            failure_feedback="Ainda não. Procure em services/ o arquivo com urllib.request.urlopen.",
+        ),
+        AnswerSuite(
+            ref=f"api-consumo-parceiro/answer/status-{r.ramo}-v1",
+            version="1.0.0",
+            prompt="Status que a consulta recebeu com o parceiro comprometido",
+            accepted=("aprovado", "aprovada", "aprovou"),
+            success_feedback="Exato: um campo fora do contrato aprovou a consulta sozinho.",
+            failure_feedback="Ainda não. Veja a coluna Status da linha mais nova em Consultas gravadas.",
+        ),
+        AnswerSuite(
+            ref=f"api-consumo-parceiro/answer/contrato-{r.ramo}-v1",
+            version="1.0.0",
+            prompt="Nome do acordo sobre campos, tipos e faixas da resposta",
+            accepted=_com_variantes(
+                "contrato", "contrato da api", "contrato de api", "esquema", "schema", "contract"
+            ),
+            success_feedback="Isso. O contrato é a régua para recusar o que vier fora.",
+            failure_feedback="Ainda não. Veja o comentário do topo de services/consulta_service.py.",
+        ),
+        AnswerSuite(
+            ref=f"api-consumo-parceiro/answer/metodo-{r.ramo}-v1",
+            version="1.0.0",
+            prompt="Método que grava a resposta do parceiro sem conferir",
+            accepted=("registrar", "registrar()", "ConsultaService.registrar"),
+            success_feedback="Isso. É em registrar que a resposta precisa ser conferida.",
+            failure_feedback="Ainda não. Veja o único método público de ConsultaService.",
+        ),
+        HttpSuite(
+            ref=f"api-consumo-parceiro/python-flask/contrato-parceiro-{r.ramo}-v1",
+            version="1.0.0",
+            logins=(
+                HttpLogin(name="analista", path="/login", form={"login": r.login_a, "senha": r.senha_a}),
+            ),
+            checks=(
+                HttpCheck(
+                    id="parceiro-normal",
+                    description="Com o parceiro normal, a consulta continua sendo gravada.",
+                    path="/parceiro/admin/modo",
+                    method="POST",
+                    form={"modo": "normal"},
+                    expect_status_in=(200, 302),
+                ),
+                HttpCheck(
+                    id="consulta-normal-gravada",
+                    description="A resposta dentro do contrato é aceita e gravada em análise.",
+                    path="/consultas",
+                    method="POST",
+                    form={"referencia": r.ref_a},
+                    as_user="analista",
+                    contains=("gravada", "em análise"),
+                ),
+                HttpCheck(
+                    id="parceiro-comprometido",
+                    description="A suíte simula o parceiro comprometido.",
+                    path="/parceiro/admin/modo",
+                    method="POST",
+                    form={"modo": "comprometido"},
+                    expect_status_in=(200, 302),
+                ),
+                HttpCheck(
+                    id="resposta-adulterada-recusada",
+                    description="A resposta fora do contrato é recusada e nada é gravado.",
+                    path="/consultas",
+                    method="POST",
+                    form={"referencia": r.ref_a},
+                    as_user="analista",
+                    expect_status_in=(400, 422, 502),
+                ),
+            ),
+            inspections=(
+                InspectCheck(
+                    id="valores-na-faixa",
+                    description=f"Nenhum valor gravado fica fora da faixa de 0 a {r.teto}.",
+                    db_path=banco,
+                    # teto é constante da suíte, não entrada do aluno
+                    query=f"SELECT referencia, IIF(valor BETWEEN 0 AND {r.teto}, 'ok', 'fora') FROM consultas",  # noqa: S608
+                    all_match=r"^ok$",
+                ),
+                InspectCheck(
+                    id="status-decidido-pelo-app",
+                    description="Nenhuma consulta é aprovada por um campo vindo do parceiro.",
+                    db_path=banco,
+                    query="SELECT referencia, status FROM consultas",
+                    none_match=r"aprovad",
+                ),
+            ),
+            success_feedback=(
+                "Correção validada: a resposta dentro do contrato continua sendo gravada, e a resposta "
+                "adulterada do parceiro é recusada sem tocar no banco."
+            ),
+            failure_feedback=(
+                "Algumas verificações falharam. Confira cada item abaixo e ajuste "
+                "services/consulta_service.py: confira os campos e a faixa e grave sempre 'em análise'."
+            ),
+        ),
+    )
+
+
 SUITES_FAMILIAS: tuple[Suite, ...] = (
     tuple(s for r in XSS_RAMOS for s in _xss(r))
     + tuple(s for r in MASSA_RAMOS for s in _massa(r))
@@ -2557,6 +2685,7 @@ SUITES_FAMILIAS: tuple[Suite, ...] = (
     + tuple(s for r in LDAP_RAMOS for s in _ldap(r))
     + tuple(s for r in GRAPHQL_RAMOS for s in _graphql(r))
     + tuple(s for r in INVENTARIO_RAMOS for s in _inventario(r))
+    + tuple(s for r in CONSUMO_RAMOS for s in _consumo(r))
     + tuple(
         s
         for r in MOB_RAMOS
