@@ -159,12 +159,19 @@ def _lab(fam: str, ramo: str) -> LabUnderTest:
 def test_original_fails_and_fix_passes(runtime: tuple[Any, Any], fam: str, ramo: str) -> None:
     rt, ev = runtime
     lab = _lab(fam, ramo)
+    # Cada provisão cria uma rede Docker: encerra logo após avaliar, para não esgotar o pool de redes.
     _, ref = lab.provision(rt)
-    original = lab.evaluate(ev, ref)
+    try:
+        original = lab.evaluate(ev, ref)
+    finally:
+        rt.terminate(ref)
     assert not all(original.values()), original
     box, ref2 = lab.provision(rt)
-    replace_in_file(box, FOCO[fam], VULN[fam], CORRETO[fam])
-    corrigido = lab.evaluate(ev, ref2)
+    try:
+        replace_in_file(box, FOCO[fam], VULN[fam], CORRETO[fam])
+        corrigido = lab.evaluate(ev, ref2)
+    finally:
+        rt.terminate(ref2)
     assert all(corrigido.values()), corrigido
 
 
@@ -173,8 +180,11 @@ def test_partial_fixes_still_fail(runtime: tuple[Any, Any], fam: str, parcial: s
     rt, ev = runtime
     lab = _lab(fam, "fin")
     box, ref = lab.provision(rt)
-    replace_in_file(box, FOCO[fam], VULN[fam], parcial)
-    r = lab.evaluate(ev, ref)
+    try:
+        replace_in_file(box, FOCO[fam], VULN[fam], parcial)
+        r = lab.evaluate(ev, ref)
+    finally:
+        rt.terminate(ref)
     assert not r[falha], r
 
 
