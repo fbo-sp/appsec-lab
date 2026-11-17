@@ -128,6 +128,9 @@ Indicado como primeira atividade de qualquer turma, antes do primeiro laboratór
 | LAB-086 | L3-FIN · Proteção no transporte: o cookie de sessão que viajou aberto no Wi-Fi do coworking | 1.0.0 | CWE-614 | A04 Cryptographic Failures (2025) | Não se enquadra; use o CWE (2025) | Intermediário | 35 min |
 | LAB-087 | L3-SAU · Proteção no transporte: o cookie de sessão do médico que viajou aberto no Wi-Fi do hospital | 1.0.0 | CWE-614 | A04 Cryptographic Failures (2025) | Não se enquadra; use o CWE (2025) | Intermediário | 35 min |
 | LAB-088 | L3-IND · Proteção no transporte: o cookie de sessão do operador que viajou aberto na rede do campo | 1.0.0 | CWE-614 | A04 Cryptographic Failures (2025) | Não se enquadra; use o CWE (2025) | Intermediário | 35 min |
+| LAB-089 | L8-FIN · Uso indevido da plataforma: o link do WhatsApp que fez o Pix sozinho | 1.0.0 | CWE-939 | A06 Insecure Design (2025) | Não se enquadra; use o CWE (2025) | Intermediário | 35 min |
+| LAB-090 | L8-SAU · Uso indevido da plataforma: o link do SMS que compartilhou os laudos sozinho | 1.0.0 | CWE-939 | A06 Insecure Design (2025) | Não se enquadra; use o CWE (2025) | Intermediário | 35 min |
+| LAB-091 | L8-IND · Uso indevido da plataforma: o link do e-mail que liberou a manobra sozinho | 1.0.0 | CWE-939 | A06 Insecure Design (2025) | Não se enquadra; use o CWE (2025) | Intermediário | 35 min |
 
 ## LAB-001 · SQL Injection: a busca que expõe pacientes
 
@@ -3775,3 +3778,135 @@ Indicado como primeira atividade de qualquer turma, antes do primeiro laboratór
 | Versão | Criada em | Obsoleta em | Situação | O que mudou |
 |---|---|---|---|---|
 | 1.0.0 | 2026-11-17 | — | vigente | Versão inicial (família L3 cookie-transporte, ramo indústria e energia): cookie de sessão sem Secure, HttpOnly e SameSite e sem HSTS. |
+
+## LAB-089 · L8-FIN · Uso indevido da plataforma: o link do WhatsApp que fez o Pix sozinho
+
+- Versão vigente: 1.0.0
+- Cenário: App Pagomais, o app em que o cliente consulta o extrato e faz Pix
+- Papel do aluno: Pessoa desenvolvedora do time de apps do banco digital Pagomais
+- Linguagem / stack: python / flask
+- Nível: Intermediário · duração estimada: 35 min
+- Família: mob-deep-link
+- Ramo: Financeiro
+- Módulo do curso: Trained
+
+### Classificação
+
+- CWE: CWE-939 (principal), CWE-940
+- OWASP Top 10 2025: A06 Insecure Design
+- OWASP Top 10 2021: A04 Insecure Design
+- OWASP API Security Top 10 2023: API6 Unrestricted Access to Sensitive Business Flows
+- SANS CWE Top 25 2025: Não se enquadra; use o CWE
+- SANS CWE Top 25 2024: Não se enquadra; use o CWE
+- OWASP Mobile Top 10 2024: M8 Security Misconfiguration
+- OWASP Mobile Top 10 2016: M1 Improper Platform Usage
+- OWASP MASVS 2023: MASVS-PLATFORM-1
+
+### Objetivos
+
+- Entender o que é um deep link e por que ele é entrada externa, como um formulário
+- Mostrar que um link aberto no celular executa a operação sem o usuário confirmar
+- Saber por que a confirmação precisa ser exigida pelo servidor, e não só pela tela do app
+- Corrigir o caminho do link para criar a operação pendente com código de confirmação de uso único
+
+### Etapas
+
+1. Conhecer o app e a confirmação da operação (10 pts)
+2. Tocar no link que chegou ao celular (15 pts)
+3. Saber quem pode criar o link (15 pts)
+4. Encontrar o caminho que pula a confirmação (15 pts)
+5. Exigir a confirmação também no link (45 pts)
+
+### Histórico de versões
+
+| Versão | Criada em | Obsoleta em | Situação | O que mudou |
+|---|---|---|---|---|
+| 1.0.0 | 2026-11-17 | — | vigente | Versão inicial (família L8 mob-deep-link, ramo financeiro): deep link que faz o Pix sem confirmação do usuário. |
+
+## LAB-090 · L8-SAU · Uso indevido da plataforma: o link do SMS que compartilhou os laudos sozinho
+
+- Versão vigente: 1.0.0
+- Cenário: App Lumen Saúde, o app em que o paciente consulta e compartilha os exames
+- Papel do aluno: Pessoa desenvolvedora do time de apps da Clínica Lumen
+- Linguagem / stack: python / flask
+- Nível: Intermediário · duração estimada: 35 min
+- Família: mob-deep-link
+- Ramo: Saúde
+- Módulo do curso: Trained
+
+### Classificação
+
+- CWE: CWE-939 (principal), CWE-940
+- OWASP Top 10 2025: A06 Insecure Design
+- OWASP Top 10 2021: A04 Insecure Design
+- OWASP API Security Top 10 2023: API6 Unrestricted Access to Sensitive Business Flows
+- SANS CWE Top 25 2025: Não se enquadra; use o CWE
+- SANS CWE Top 25 2024: Não se enquadra; use o CWE
+- OWASP Mobile Top 10 2024: M8 Security Misconfiguration
+- OWASP Mobile Top 10 2016: M1 Improper Platform Usage
+- OWASP MASVS 2023: MASVS-PLATFORM-1
+
+### Objetivos
+
+- Entender o que é um deep link e por que ele é entrada externa, como um formulário
+- Mostrar que um link aberto no celular executa a operação sem o usuário confirmar
+- Saber por que a confirmação precisa ser exigida pelo servidor, e não só pela tela do app
+- Corrigir o caminho do link para criar a operação pendente com código de confirmação de uso único
+
+### Etapas
+
+1. Conhecer o app e a confirmação da operação (10 pts)
+2. Tocar no link que chegou ao celular (15 pts)
+3. Saber quem pode criar o link (15 pts)
+4. Encontrar o caminho que pula a confirmação (15 pts)
+5. Exigir a confirmação também no link (45 pts)
+
+### Histórico de versões
+
+| Versão | Criada em | Obsoleta em | Situação | O que mudou |
+|---|---|---|---|---|
+| 1.0.0 | 2026-11-17 | — | vigente | Versão inicial (família L8 mob-deep-link, ramo saúde): deep link que compartilha laudos sem confirmação do usuário. |
+
+## LAB-091 · L8-IND · Uso indevido da plataforma: o link do e-mail que liberou a manobra sozinho
+
+- Versão vigente: 1.0.0
+- Cenário: App Aurora Campo, o app em que o técnico de campo consulta as ordens de serviço e libera manobras
+- Papel do aluno: Pessoa desenvolvedora do time de apps da Aurora Energia
+- Linguagem / stack: python / flask
+- Nível: Intermediário · duração estimada: 35 min
+- Família: mob-deep-link
+- Ramo: Indústria e Energia
+- Módulo do curso: Trained
+
+### Classificação
+
+- CWE: CWE-939 (principal), CWE-940
+- OWASP Top 10 2025: A06 Insecure Design
+- OWASP Top 10 2021: A04 Insecure Design
+- OWASP API Security Top 10 2023: API6 Unrestricted Access to Sensitive Business Flows
+- SANS CWE Top 25 2025: Não se enquadra; use o CWE
+- SANS CWE Top 25 2024: Não se enquadra; use o CWE
+- OWASP Mobile Top 10 2024: M8 Security Misconfiguration
+- OWASP Mobile Top 10 2016: M1 Improper Platform Usage
+- OWASP MASVS 2023: MASVS-PLATFORM-1
+
+### Objetivos
+
+- Entender o que é um deep link e por que ele é entrada externa, como um formulário
+- Mostrar que um link aberto no celular executa a operação sem o usuário confirmar
+- Saber por que a confirmação precisa ser exigida pelo servidor, e não só pela tela do app
+- Corrigir o caminho do link para criar a operação pendente com código de confirmação de uso único
+
+### Etapas
+
+1. Conhecer o app e a confirmação da operação (10 pts)
+2. Tocar no link que chegou ao celular (15 pts)
+3. Saber quem pode criar o link (15 pts)
+4. Encontrar o caminho que pula a confirmação (15 pts)
+5. Exigir a confirmação também no link (45 pts)
+
+### Histórico de versões
+
+| Versão | Criada em | Obsoleta em | Situação | O que mudou |
+|---|---|---|---|---|
+| 1.0.0 | 2026-11-17 | — | vigente | Versão inicial (família L8 mob-deep-link, ramo indústria e energia): deep link que libera manobra sem confirmação do usuário. |

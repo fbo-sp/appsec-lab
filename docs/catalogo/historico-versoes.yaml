@@ -420,3 +420,15 @@ labs:
     - version: 1.0.0
       published: 2026-11-17
       summary: "Versão inicial (família L3 cookie-transporte, ramo indústria e energia): cookie de sessão sem Secure, HttpOnly e SameSite e sem HSTS."
+  LAB-089:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: "Versão inicial (família L8 mob-deep-link, ramo financeiro): deep link que faz o Pix sem confirmação do usuário."
+  LAB-090:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: "Versão inicial (família L8 mob-deep-link, ramo saúde): deep link que compartilha laudos sem confirmação do usuário."
+  LAB-091:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: "Versão inicial (família L8 mob-deep-link, ramo indústria e energia): deep link que libera manobra sem confirmação do usuário."

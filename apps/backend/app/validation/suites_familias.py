@@ -3311,6 +3311,178 @@ def _cookie(r: CookieRamo) -> tuple[Suite, ...]:
     )
 
 
+# L8 mob-deep-link: operação vinda de deep link executada sem confirmação (LAB-089 a LAB-091)
+
+
+@dataclass(frozen=True, slots=True)
+class DeepLinkRamo:
+    ramo: str
+    login_a: str
+    senha_a: str
+    link_alvo: str
+    link_detalhe: str
+    acao_alvo: str
+    acao_detalhe: str
+
+
+DEEPLINK_RAMOS = (
+    DeepLinkRamo(
+        "fin",
+        "ana.ribeiro",
+        "Ana#Pagomais26",
+        "Premios Cashback Ltda",
+        "R$ 1.950,00",
+        "Vale Insumos Ltda",
+        "R$ 500,00",
+    ),
+    DeepLinkRamo(
+        "sau",
+        "marcos.tavares",
+        "Marcos#Lumen26",
+        "Clinica Parceira Bem Estar",
+        "Todos os laudos",
+        "Dr. Paulo Reis (CRM 48211)",
+        "Hemograma completo",
+    ),
+    DeepLinkRamo(
+        "ind",
+        "diego.campos",
+        "Diego#Aurora26",
+        "Disjuntor 12 SE Aurora Sul",
+        "Religar alimentador energizado",
+        "Disjuntor 7 · SE Aurora Norte",
+        "Manobra programada OS-1182",
+    ),
+)
+
+_CONFIRMACAO_RE = r'"confirmacao"\s*:\s*"([A-Za-z0-9_-]+)"'
+
+
+def _deep_link(r: DeepLinkRamo) -> tuple[Suite, ...]:
+    link: dict[str, object] = {"alvo": r.link_alvo, "detalhe": r.link_detalhe}
+    return (
+        AnswerSuite(
+            ref=f"mob-deep-link/answer/metodo-confirma-{r.ramo}-v1",
+            version="1.0.0",
+            prompt="Método que executa a operação depois de Confirmar",
+            accepted=("confirmar", "confirmar()", "OperacaoService.confirmar"),
+            success_feedback="Isso. Só confirmar, com o código de uso único, executa a operação.",
+            failure_feedback="Ainda não. Procure o método de OperacaoService que recebe o código.",
+        ),
+        AnswerSuite(
+            ref=f"mob-deep-link/answer/status-{r.ramo}-v1",
+            version="1.0.0",
+            prompt="Status da operação aberta pelo link",
+            accepted=_com_variantes("concluída", "concluido", "concluído", "executada"),
+            success_feedback="Exato: a operação aconteceu sem nenhuma tela de confirmação.",
+            failure_feedback="Ainda não. Veja a linha do alvo do link em Operações recentes.",
+        ),
+        AnswerSuite(
+            ref=f"mob-deep-link/answer/quem-{r.ramo}-v1",
+            version="1.0.0",
+            prompt="Quem pode criar e enviar o link",
+            accepted=_com_variantes(
+                "qualquer pessoa",
+                "qualquer um",
+                "qualquer",
+                "todos",
+                "qualquer app",
+                "qualquer site",
+                "o atacante",
+                "atacante",
+                "qualquer pessoa ou app",
+            ),
+            success_feedback="Isso. O link é entrada externa: quem o escreve escolhe os dados.",
+            failure_feedback="Não é isso. Pense em quem consegue mandar um SMS ou um e-mail com um link.",
+        ),
+        AnswerSuite(
+            ref=f"mob-deep-link/answer/metodo-{r.ramo}-v1",
+            version="1.0.0",
+            prompt="Método que executa a operação do link sem confirmação",
+            accepted=("iniciar_por_link", "iniciar_por_link()", "OperacaoService.iniciar_por_link"),
+            success_feedback="Isso. É em iniciar_por_link que a confirmação precisa ser exigida.",
+            failure_feedback="Ainda não. Veja o método chamado pela rota /api/operacoes/rapida.",
+        ),
+        HttpSuite(
+            ref=f"mob-deep-link/python-flask/link-confirmado-{r.ramo}-v1",
+            version="1.0.0",
+            logins=(
+                HttpLogin(
+                    name="a",
+                    path="/api/login",
+                    json={"login": r.login_a, "senha": r.senha_a},
+                    token_field="token",  # noqa: S106 - nome do campo JSON, não é senha
+                ),
+            ),
+            checks=(
+                HttpCheck(
+                    id="botao-continua",
+                    description="O botão do app continua criando a operação pendente com código de confirmação.",
+                    path="/api/operacoes",
+                    method="POST",
+                    as_user="a",
+                    json={"alvo": r.acao_alvo, "detalhe": r.acao_detalhe},
+                    contains=('"confirmacao"',),
+                ),
+                HttpCheck(
+                    id="link-fica-pendente",
+                    description="A operação vinda do link fica pendente e devolve um código de confirmação.",
+                    path="/api/operacoes/rapida",
+                    method="POST",
+                    as_user="a",
+                    json=link,
+                    contains=('"pendente"',),
+                    capture={"conf": _CONFIRMACAO_RE},
+                ),
+                HttpCheck(
+                    id="nada-executado-sem-confirmar",
+                    description="Antes de confirmar, nenhuma operação aparece como concluída.",
+                    path="/api/operacoes",
+                    as_user="a",
+                    not_contains=('"concluida"',),
+                ),
+                HttpCheck(
+                    id="confirmacao-executa",
+                    description="Com o código de confirmação, a operação é executada.",
+                    path="/api/operacoes/confirmar",
+                    method="POST",
+                    as_user="a",
+                    json={"confirmacao": "{{conf}}"},
+                    contains=('"concluida"',),
+                ),
+                HttpCheck(
+                    id="codigo-uso-unico",
+                    description="O mesmo código não executa a operação uma segunda vez.",
+                    path="/api/operacoes/confirmar",
+                    method="POST",
+                    as_user="a",
+                    json={"confirmacao": "{{conf}}"},
+                    expect_status=None,
+                    expect_status_in=(400, 404, 409, 410),
+                ),
+                HttpCheck(
+                    id="codigo-inventado-recusado",
+                    description="Um código inventado é recusado.",
+                    path="/api/operacoes/confirmar",
+                    method="POST",
+                    as_user="a",
+                    json={"confirmacao": "codigo-inventado-pela-suite"},
+                    expect_status=None,
+                    expect_status_in=(400, 404, 409, 410),
+                ),
+            ),
+            success_feedback=(
+                "Correção validada: o link só cria a operação pendente, e ela só acontece com o código de "
+                "confirmação, uma única vez."
+            ),
+            failure_feedback=(
+                "Algumas verificações falharam. Confira cada item abaixo e ajuste iniciar_por_link em "
+                "services/operacao_service.py: o link deve seguir o mesmo caminho do botão (operação pendente)."
+            ),
+        ),
+    )
+
+
 SUITES_FAMILIAS: tuple[Suite, ...] = (
     tuple(s for r in XSS_RAMOS for s in _xss(r))
     + tuple(s for r in MASSA_RAMOS for s in _massa(r))
@@ -3334,6 +3506,7 @@ SUITES_FAMILIAS: tuple[Suite, ...] = (
     + tuple(s for r in COMPONENTE_RAMOS for s in _componente(r))
     + tuple(s for r in PACOTE_RAMOS for s in _pacote(r))
     + tuple(s for r in COOKIE_RAMOS for s in _cookie(r))
+    + tuple(s for r in DEEPLINK_RAMOS for s in _deep_link(r))
     + tuple(
         s
         for r in MOB_RAMOS

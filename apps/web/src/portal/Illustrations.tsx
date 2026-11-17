@@ -578,6 +578,27 @@ const ILLUSTRATIONS: Record<string, { caption: string; body: () => ReactNode }> 
       />
     ),
   },
+  "deep-link-confirmacao": {
+    caption: "Uso indevido da plataforma: um deep link é entrada externa; ele pode abrir a tela, nunca executar a ação sozinho.",
+    body: () => (
+      <Compare
+        bad={[
+          "Link executa (hoje)",
+          <>
+            <span>Um SMS, e-mail ou página abre {c("esquema://acao?alvo=...")} com os dados que quiser.</span>
+            <span>O app chama {c("/api/operacoes/rapida")} e o servidor executa na hora.</span>
+          </>,
+        ]}
+        good={[
+          "Link só prepara",
+          <>
+            <span>O servidor cria a operação {c("pendente")} e devolve um código de uso único.</span>
+            <span>Só o toque em Confirmar, com o código, executa, e uma única vez.</span>
+          </>,
+        ]}
+      />
+    ),
+  },
   "bfla": {
     caption: "Autorização de função (BFLA): autenticar não é autorizar — cada função sensível confere o papel.",
     body: () => (
