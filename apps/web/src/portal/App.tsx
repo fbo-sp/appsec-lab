@@ -1,6 +1,6 @@
 import { Fragment, useCallback, useEffect, useState } from "react";
 import { api, ApiError, currentUser, setUser, type Lab, type LabSession } from "./api";
-import { isTutorial, MODULES, matchesFilter, readPref, SECTORS, writePref } from "./catalogFilter";
+import { FRAMEWORKS, isTutorial, MODULES, matchesFilter, readPref, SECTORS, writePref } from "./catalogFilter";
 import { SessionView } from "./SessionView";
 
 type Route = { name: "catalog" } | { name: "lab"; labId: string; version: string } | { name: "session"; id: string };
@@ -102,7 +102,8 @@ function Catalog() {
   const sessions = useAsync(() => api.sessions(), []);
   const [sector, setSector] = useState(() => readPref("cecyber.filtro.ramo"));
   const [module, setModule] = useState(() => readPref("cecyber.filtro.modulo"));
-  const visible = (labs.data?.items ?? []).filter((l) => matchesFilter(l, sector, module));
+  const [framework, setFramework] = useState(() => readPref("cecyber.filtro.classificacao"));
+  const visible = (labs.data?.items ?? []).filter((l) => matchesFilter(l, sector, module, framework));
   return (
     <main className="page">
       <h1>Laboratórios</h1>
@@ -157,6 +158,23 @@ function Catalog() {
             >
               <option value="">Todos</option>
               {Object.entries(MODULES).map(([k, v]) => (
+                <option key={k} value={k}>
+                  {v}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Classificação
+            <select
+              value={framework}
+              onChange={(e) => {
+                setFramework(e.target.value);
+                writePref("cecyber.filtro.classificacao", e.target.value);
+              }}
+            >
+              <option value="">Todas</option>
+              {Object.entries(FRAMEWORKS).map(([k, v]) => (
                 <option key={k} value={k}>
                   {v}
                 </option>

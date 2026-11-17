@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Lab } from "./api";
-import { matchesFilter } from "./catalogFilter";
+import { labFrameworks, matchesFilter } from "./catalogFilter";
 
 function lab(over: Partial<Lab>): Lab {
   return {
@@ -38,5 +38,26 @@ describe("matchesFilter (ADR-021)", () => {
   it("lab sem ramo some com filtro, mas o tutorial aparece sempre", () => {
     expect(matchesFilter(antigo, "financeiro", "")).toBe(false);
     expect(matchesFilter(tutorial, "saude", "expert")).toBe(true);
+  });
+
+  const api = lab({
+    classifications: [
+      { framework: "OWASP Top 10", edition: "2025", entries: ["A01 Broken Access Control"] },
+      { framework: "OWASP API Security Top 10", edition: "2023", entries: ["API1 BOLA"] },
+      { framework: "SANS CWE Top 25", edition: "2025", entries: ["Não se enquadra; use o CWE"] },
+    ],
+  });
+  it("filtra por classificação (framework)", () => {
+    expect(matchesFilter(api, "", "", "OWASP API Security Top 10")).toBe(true);
+    expect(matchesFilter(api, "", "", "OWASP Top 10")).toBe(true);
+    expect(matchesFilter(fin, "", "", "OWASP API Security Top 10")).toBe(false);
+  });
+  it('"Não se enquadra" não conta como pertencer à lista', () => {
+    expect(labFrameworks(api)).toEqual(["OWASP Top 10", "OWASP API Security Top 10"]);
+    expect(matchesFilter(api, "", "", "SANS CWE Top 25")).toBe(false);
+  });
+  it("classificação combina com os outros filtros e o tutorial ignora tudo", () => {
+    expect(matchesFilter(api, "", "", "")).toBe(true);
+    expect(matchesFilter(tutorial, "", "", "OWASP API Security Top 10")).toBe(true);
   });
 });
