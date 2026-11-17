@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block conteudo %}
+<h1>Leituras do parque</h1>
+<p class="ajuda">Leituras do aerogerador AG-14 do Parque Ventos do Cabo.</p>
+
+<dl class="dados">
+  <dt>Titular</dt><dd>{{ conta.nome }}</dd>
+</dl>
+
+<p>O app Ventura Campo busca os leituras pela API, 20 por vez:</p>
+<p><a href="/api/leituras?limite=20&pagina=1"><code>/api/leituras?limite=20&amp;pagina=1</code></a></p>
+<p class="ajuda">Próxima página: <a href="/api/leituras?limite=20&pagina=2"><code>pagina=2</code></a>.</p>
+
+<p class="banner reforcado">Você está autenticado. Use <a href="{{ url_for('auth.sair') }}">Sair</a> para encerrar a sessão.</p>
+{% endblock %}

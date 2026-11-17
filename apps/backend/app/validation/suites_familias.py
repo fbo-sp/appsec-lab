@@ -2668,6 +2668,103 @@ def _consumo(r: ConsumoRamo) -> tuple[Suite, ...]:
     )
 
 
+# L7 api-recursos: listagem sem teto de página (LAB-074 a LAB-076)
+
+
+@dataclass(frozen=True, slots=True)
+class RecursosRamo:
+    ramo: str
+    recurso: str  # rota /api/<recurso>
+    prefixo: str  # prefixo da descrição de cada item (LCT-00001, ...)
+    login_a: str
+    senha_a: str
+    total: int
+
+
+RECURSOS_RAMOS = (
+    RecursosRamo("fin", "lancamentos", "LCT-", "eduardo.saraiva", "Eduardo#Pinaculo26", 3000),
+    RecursosRamo("sau", "atendimentos", "ATD-", "patricia.lins", "Patricia#Sereno26", 3000),
+    RecursosRamo("ind", "leituras", "LEI-", "tiago.andrade", "Tiago#Ventura26", 3000),
+)
+
+
+def _recursos(r: RecursosRamo) -> tuple[Suite, ...]:
+    alem_do_teto = f"{r.prefixo}00101"
+    return (
+        AnswerSuite(
+            ref=f"api-recursos/answer/quantidade-{r.ramo}-v1",
+            version="1.0.0",
+            prompt="Valor de quantidade com limite=20",
+            accepted=("20", "vinte"),
+            success_feedback="Isso. O app pede 20 itens por vez.",
+            failure_feedback="Ainda não. Abra o link do painel e veja o campo quantidade.",
+        ),
+        AnswerSuite(
+            ref=f"api-recursos/answer/total-{r.ramo}-v1",
+            version="1.0.0",
+            prompt="Valor de quantidade com limite=100000",
+            accepted=(str(r.total), f"{r.total:,}".replace(",", "."), f"{r.total:,}"),
+            success_feedback="Exato: uma chamada trouxe a base inteira da conta.",
+            failure_feedback="Ainda não. Use a rota da tarefa e copie o campo quantidade.",
+        ),
+        AnswerSuite(
+            ref=f"api-recursos/answer/negativo-{r.ramo}-v1",
+            version="1.0.0",
+            prompt="O limite -1 devolveu tudo ou nada?",
+            accepted=("tudo", "todos", "tudo veio", "todos os itens", "all"),
+            success_feedback="Isso. No SQLite, LIMIT -1 é 'sem limite': o negativo também abre tudo.",
+            failure_feedback="Não é isso. Compare a quantidade com a da etapa anterior.",
+        ),
+        AnswerSuite(
+            ref=f"api-recursos/answer/metodo-{r.ramo}-v1",
+            version="1.0.0",
+            prompt="Método do serviço que usa o limite sem teto",
+            accepted=("listar", "listar()"),
+            success_feedback="Isso. É em listar que o teto precisa ser aplicado.",
+            failure_feedback="Ainda não. Veja o único método público da classe do serviço.",
+        ),
+        HttpSuite(
+            ref=f"api-recursos/python-flask/teto-pagina-{r.ramo}-v1",
+            version="1.0.0",
+            logins=(HttpLogin(name="cliente", path="/login", form={"login": r.login_a, "senha": r.senha_a}),),
+            checks=(
+                HttpCheck(
+                    id="pagina-normal",
+                    description="O app continua recebendo a página de 20 itens.",
+                    path=f"/api/{r.recurso}?limite=20&pagina=1",
+                    as_user="cliente",
+                    contains=(f"{r.prefixo}00020",),
+                    not_contains=(f"{r.prefixo}00021",),
+                ),
+                HttpCheck(
+                    id="limite-grande-contido",
+                    description="Um limite enorme não traz mais que 100 itens.",
+                    path=f"/api/{r.recurso}?limite=100000",
+                    as_user="cliente",
+                    expect_status_in=(200, 400),
+                    not_contains=(alem_do_teto,),
+                ),
+                HttpCheck(
+                    id="limite-negativo-contido",
+                    description="Um limite negativo não abre a base inteira.",
+                    path=f"/api/{r.recurso}?limite=-1",
+                    as_user="cliente",
+                    expect_status_in=(200, 400),
+                    not_contains=(alem_do_teto,),
+                ),
+            ),
+            success_feedback=(
+                "Correção validada: o app continua com a página de 20, e nem um limite enorme nem um "
+                "negativo trazem mais que o teto."
+            ),
+            failure_feedback=(
+                "Algumas verificações falharam. Confira cada item abaixo e ajuste o método listar do "
+                "serviço: prenda o limite entre 1 e LIMITE_MAXIMO."
+            ),
+        ),
+    )
+
+
 SUITES_FAMILIAS: tuple[Suite, ...] = (
     tuple(s for r in XSS_RAMOS for s in _xss(r))
     + tuple(s for r in MASSA_RAMOS for s in _massa(r))
@@ -2686,6 +2783,7 @@ SUITES_FAMILIAS: tuple[Suite, ...] = (
     + tuple(s for r in GRAPHQL_RAMOS for s in _graphql(r))
     + tuple(s for r in INVENTARIO_RAMOS for s in _inventario(r))
     + tuple(s for r in CONSUMO_RAMOS for s in _consumo(r))
+    + tuple(s for r in RECURSOS_RAMOS for s in _recursos(r))
     + tuple(
         s
         for r in MOB_RAMOS

@@ -473,6 +473,27 @@ const ILLUSTRATIONS: Record<string, { caption: string; body: () => ReactNode }> 
       />
     ),
   },
+  "paginacao-teto": {
+    caption: "Consumo de recursos: o servidor decide o tamanho máximo da página, não o cliente.",
+    body: () => (
+      <Compare
+        bad={[
+          "Limite do cliente (hoje)",
+          <>
+            <span>{c("?limite=100000")} faz o servidor ler e montar a base inteira numa resposta.</span>
+            <span>{c("?limite=-1")} também abre tudo: no SQLite, {c("LIMIT -1")} é "sem limite".</span>
+          </>,
+        ]}
+        good={[
+          "Teto no servidor",
+          <>
+            <span>O serviço prende o limite: {c("max(1, min(limite, 100))")}.</span>
+            <span>O app oficial, que pede 20, não percebe diferença.</span>
+          </>,
+        ]}
+      />
+    ),
+  },
   "bfla": {
     caption: "Autorização de função (BFLA): autenticar não é autorizar — cada função sensível confere o papel.",
     body: () => (

@@ -360,3 +360,15 @@ labs:
     - version: 1.0.0
       published: 2026-11-17
       summary: Primeira versão (cotação do fornecedor gravada sem conferir o contrato, Siderúrgica Alvorada; família api-consumo-parceiro, ramo Indústria e Energia).
+  LAB-074:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (API de extrato sem teto de página, Corretora Pináculo; família api-recursos, ramo Financeiro).
+  LAB-075:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (API de histórico de atendimentos sem teto de página, Hospital Monte Sereno; família api-recursos, ramo Saúde).
+  LAB-076:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (API de leituras de sensores sem teto de página, Ventura Energia Eólica; família api-recursos, ramo Indústria e Energia).

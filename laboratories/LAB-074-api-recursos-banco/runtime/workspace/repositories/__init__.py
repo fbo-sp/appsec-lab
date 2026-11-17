@@ -1,0 +1,1 @@
+"""Repositórios: consultas ao banco."""

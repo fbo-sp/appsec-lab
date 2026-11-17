@@ -113,6 +113,9 @@ Indicado como primeira atividade de qualquer turma, antes do primeiro laboratór
 | LAB-071 | L6-FIN · Consumo inseguro de API: o bureau de crédito que aprovou sozinho | 1.0.0 | CWE-20 | A08 Software or Data Integrity Failures (2025) | #18 CWE-20 Improper Input Validation (2025) | Intermediário | 35 min |
 | LAB-072 | L6-SAU · Consumo inseguro de API: o reembolso que o parceiro aprovou sozinho | 1.0.0 | CWE-20 | A08 Software or Data Integrity Failures (2025) | #18 CWE-20 Improper Input Validation (2025) | Intermediário | 35 min |
 | LAB-073 | L6-IND · Consumo inseguro de API: a cotação do fornecedor que aprovou a compra sozinha | 1.0.0 | CWE-20 | A08 Software or Data Integrity Failures (2025) | #18 CWE-20 Improper Input Validation (2025) | Intermediário | 35 min |
+| LAB-074 | L7-FIN · Consumo de recursos: o extrato que derrubou a API no fechamento do mês | 1.0.0 | CWE-770 | A06 Insecure Design (2025) | #25 CWE-770 Allocation of Resources Without Limits or Throttling (2025) | Intermediário | 35 min |
+| LAB-075 | L7-SAU · Consumo de recursos: o histórico de atendimentos que travou o agendamento | 1.0.0 | CWE-770 | A06 Insecure Design (2025) | #25 CWE-770 Allocation of Resources Without Limits or Throttling (2025) | Intermediário | 35 min |
+| LAB-076 | L7-IND · Consumo de recursos: as leituras dos sensores que derrubaram o painel da usina | 1.0.0 | CWE-770 | A06 Insecure Design (2025) | #25 CWE-770 Allocation of Resources Without Limits or Throttling (2025) | Intermediário | 35 min |
 
 ## LAB-001 · SQL Injection: a busca que expõe pacientes
 
@@ -3154,3 +3157,129 @@ Indicado como primeira atividade de qualquer turma, antes do primeiro laboratór
 | Versão | Criada em | Obsoleta em | Situação | O que mudou |
 |---|---|---|---|---|
 | 1.0.0 | 2026-11-17 | — | vigente | Primeira versão (cotação do fornecedor gravada sem conferir o contrato, Siderúrgica Alvorada; família api-consumo-parceiro, ramo Indústria e Energia). |
+
+## LAB-074 · L7-FIN · Consumo de recursos: o extrato que derrubou a API no fechamento do mês
+
+- Versão vigente: 1.0.0
+- Cenário: Pináculo Invest, onde o investidor acompanha o extrato de movimentações pelo navegador e pelo app
+- Papel do aluno: Pessoa desenvolvedora do time de plataforma da Corretora Pináculo
+- Linguagem / stack: python / flask
+- Nível: Intermediário · duração estimada: 35 min
+- Família: api-recursos
+- Ramo: Financeiro
+- Módulo do curso: Trained
+
+### Classificação
+
+- CWE: CWE-770 (principal), CWE-400
+- OWASP Top 10 2025: A06 Insecure Design
+- OWASP Top 10 2021: A04 Insecure Design
+- OWASP API Security Top 10 2023: API4 Unrestricted Resource Consumption
+- OWASP API Security Top 10 2019: API4 Lack of Resources & Rate Limiting
+- SANS CWE Top 25 2025: #25 CWE-770 Allocation of Resources Without Limits or Throttling
+- SANS CWE Top 25 2024: #24 CWE-400 Uncontrolled Resource Consumption
+
+### Objetivos
+
+- Entender por que toda API precisa de teto para o que o cliente pode pedir
+- Medir, de forma contida, o efeito de um tamanho de página sem limite
+- Reconhecer a paginação com teto aplicado no servidor como defesa
+- Corrigir limitando o tamanho de página entre 1 e o máximo combinado
+
+### Etapas
+
+1. Conhecer a API paginada (10 pts)
+2. Pedir a base inteira numa chamada (15 pts)
+3. Testar um valor especial (15 pts)
+4. Encontrar onde o limite deveria ser aplicado (15 pts)
+5. Aplicar o teto de página no servidor (45 pts)
+
+### Histórico de versões
+
+| Versão | Criada em | Obsoleta em | Situação | O que mudou |
+|---|---|---|---|---|
+| 1.0.0 | 2026-11-17 | — | vigente | Primeira versão (API de extrato sem teto de página, Corretora Pináculo; família api-recursos, ramo Financeiro). |
+
+## LAB-075 · L7-SAU · Consumo de recursos: o histórico de atendimentos que travou o agendamento
+
+- Versão vigente: 1.0.0
+- Cenário: Monte Sereno Paciente, onde o paciente consulta o histórico de atendimentos e agenda consultas pelo navegador e pelo app
+- Papel do aluno: Pessoa desenvolvedora do time de sistemas do Hospital Monte Sereno
+- Linguagem / stack: python / flask
+- Nível: Intermediário · duração estimada: 35 min
+- Família: api-recursos
+- Ramo: Saúde
+- Módulo do curso: Trained
+
+### Classificação
+
+- CWE: CWE-770 (principal), CWE-400
+- OWASP Top 10 2025: A06 Insecure Design
+- OWASP Top 10 2021: A04 Insecure Design
+- OWASP API Security Top 10 2023: API4 Unrestricted Resource Consumption
+- OWASP API Security Top 10 2019: API4 Lack of Resources & Rate Limiting
+- SANS CWE Top 25 2025: #25 CWE-770 Allocation of Resources Without Limits or Throttling
+- SANS CWE Top 25 2024: #24 CWE-400 Uncontrolled Resource Consumption
+
+### Objetivos
+
+- Entender por que toda API precisa de teto para o que o cliente pode pedir
+- Medir, de forma contida, o efeito de um tamanho de página sem limite
+- Reconhecer a paginação com teto aplicado no servidor como defesa
+- Corrigir limitando o tamanho de página entre 1 e o máximo combinado
+
+### Etapas
+
+1. Conhecer a API paginada (10 pts)
+2. Pedir a base inteira numa chamada (15 pts)
+3. Testar um valor especial (15 pts)
+4. Encontrar onde o limite deveria ser aplicado (15 pts)
+5. Aplicar o teto de página no servidor (45 pts)
+
+### Histórico de versões
+
+| Versão | Criada em | Obsoleta em | Situação | O que mudou |
+|---|---|---|---|---|
+| 1.0.0 | 2026-11-17 | — | vigente | Primeira versão (API de histórico de atendimentos sem teto de página, Hospital Monte Sereno; família api-recursos, ramo Saúde). |
+
+## LAB-076 · L7-IND · Consumo de recursos: as leituras dos sensores que derrubaram o painel da usina
+
+- Versão vigente: 1.0.0
+- Cenário: Ventura Operação, onde a equipe de campo acompanha as leituras dos aerogeradores pelo navegador e pelo app
+- Papel do aluno: Pessoa desenvolvedora do time de automação da Ventura Energia Eólica
+- Linguagem / stack: python / flask
+- Nível: Intermediário · duração estimada: 35 min
+- Família: api-recursos
+- Ramo: Indústria e Energia
+- Módulo do curso: Trained
+
+### Classificação
+
+- CWE: CWE-770 (principal), CWE-400
+- OWASP Top 10 2025: A06 Insecure Design
+- OWASP Top 10 2021: A04 Insecure Design
+- OWASP API Security Top 10 2023: API4 Unrestricted Resource Consumption
+- OWASP API Security Top 10 2019: API4 Lack of Resources & Rate Limiting
+- SANS CWE Top 25 2025: #25 CWE-770 Allocation of Resources Without Limits or Throttling
+- SANS CWE Top 25 2024: #24 CWE-400 Uncontrolled Resource Consumption
+
+### Objetivos
+
+- Entender por que toda API precisa de teto para o que o cliente pode pedir
+- Medir, de forma contida, o efeito de um tamanho de página sem limite
+- Reconhecer a paginação com teto aplicado no servidor como defesa
+- Corrigir limitando o tamanho de página entre 1 e o máximo combinado
+
+### Etapas
+
+1. Conhecer a API paginada (10 pts)
+2. Pedir a base inteira numa chamada (15 pts)
+3. Testar um valor especial (15 pts)
+4. Encontrar onde o limite deveria ser aplicado (15 pts)
+5. Aplicar o teto de página no servidor (45 pts)
+
+### Histórico de versões
+
+| Versão | Criada em | Obsoleta em | Situação | O que mudou |
+|---|---|---|---|---|
+| 1.0.0 | 2026-11-17 | — | vigente | Primeira versão (API de leituras de sensores sem teto de página, Ventura Energia Eólica; família api-recursos, ramo Indústria e Energia). |

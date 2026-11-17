@@ -1,0 +1,254 @@
+# [[lab_id]] ([[codigo]]): API sem teto de paginação (OWASP API4, CWE-770) no [[app_nome]] da [[empresa]] (Flask + SQLite).
+# CONTÉM VULNERABILIDADE INTENCIONAL. Uso exclusivo no runtime Docker LOCAL (ADR-008), em rede
+# interna da sessão. Dados 100% fictícios. Família L7 api-recursos (ADR-021): gerado por
+# scripts/gerar-familia.py a partir de laboratories/_familias/api-recursos; não edite este arquivo à mão.
+#
+# ATENÇÃO: o digest abaixo é uma FIXTURE (sha256 de um texto fixo), não uma imagem publicada.
+# scripts/lab-local.sh e .ps1 trocam pela imagem construída localmente antes de registrar.
+apiVersion: labs.cecyber.io/v1alpha1
+kind: AppSecLab
+metadata:
+  id: [[lab_id]]
+  version: [[versao]]
+  title: "[[codigo]] · Consumo de recursos: [[titulo]]"
+  primaryCwe: CWE-770
+  secondaryCwes: [CWE-400]
+  family: api-recursos
+  sectors: [[[setor]]]
+  courseModules: [trained]
+  classifications:
+    - framework: OWASP Top 10
+      edition: "2025"
+      entries:
+        - "A06 Insecure Design"
+    - framework: OWASP Top 10
+      edition: "2021"
+      entries:
+        - "A04 Insecure Design"
+    - framework: OWASP API Security Top 10
+      edition: "2023"
+      entries:
+        - "API4 Unrestricted Resource Consumption"
+    - framework: OWASP API Security Top 10
+      edition: "2019"
+      entries:
+        - "API4 Lack of Resources & Rate Limiting"
+    - framework: SANS CWE Top 25
+      edition: "2025"
+      entries:
+        - "#25 CWE-770 Allocation of Resources Without Limits or Throttling"
+    - framework: SANS CWE Top 25
+      edition: "2024"
+      entries:
+        - "#24 CWE-400 Uncontrolled Resource Consumption"
+learning:
+  singleVulnerability: true
+  estimatedMinutes: 35
+  difficulty: intermediate
+  objectives:
+    - Entender por que toda API precisa de teto para o que o cliente pode pedir
+    - Medir, de forma contida, o efeito de um tamanho de página sem limite
+    - Reconhecer a paginação com teto aplicado no servidor como defesa
+    - Corrigir limitando o tamanho de página entre 1 e o máximo combinado
+  story:
+    role: [[papel]]
+    application: [[aplicacao]]
+    context: >-
+      [[contexto]]
+    mission: [[missao]]
+  wrapUp:
+    text: |
+      Agora a API entrega no máximo 100 [[recurso_plural]] por chamada, qualquer que seja o `limite` pedido. Em um sistema real, vale reforçar:
+
+      - **Todo parâmetro de tamanho tem teto no servidor.** Tamanho de página, quantidade de itens num lote, tamanho do arquivo enviado e profundidade de consulta. O app oficial pedir pouco não garante nada: quem ataca chama a API direto.
+      - **Cuidado com os valores especiais.** Zero, negativo e muito grande. No SQLite, `LIMIT -1` é "sem limite"; outros bancos e bibliotecas têm armadilhas parecidas.
+      - **Limite de taxa e de custo.** Além do tamanho, limite quantas chamadas cada conta faz por minuto, e principalmente as que custam dinheiro, como envio de SMS e consultas a bureaus pagos (o lab de tentativas de login mostra o limite por tentativas).
+      - **Meça e alerte.** O log com `itens` e `tempo_ms` desta API é o tipo de sinal que o monitoramento usa para ver um abuso começando.
+    references:
+      - title: "OWASP API Security Top 10 2023: API4 Unrestricted Resource Consumption"
+        url: https://owasp.org/API-Security/editions/2023/en/0xa4-unrestricted-resource-consumption/
+      - title: "OWASP API Security Top 10 2019: API4 Lack of Resources & Rate Limiting"
+        url: https://owasp.org/API-Security/editions/2019/en/0xa4-lack-of-resources-and-rate-limiting/
+      - title: "CWE-770: Allocation of Resources Without Limits or Throttling"
+        url: https://cwe.mitre.org/data/definitions/770.html
+      - title: "CWE-400: Uncontrolled Resource Consumption"
+        url: https://cwe.mitre.org/data/definitions/400.html
+variants:
+  - id: python-flask
+    language: python
+    framework: flask
+    image: registry.local/labs/[[imagem]]@sha256:[[digest_fixture]]
+    runtimeProfile: web-basic
+    workspacePath: /workspace
+    startup:
+      command: ["sh", "-c", "python -u -m flask --app app run --host 0.0.0.0 --port 8080 --reload --no-debugger 2>&1 | tee -a /tmp/app.log"]
+      port: 8080
+    resources:
+      cpuMillicores: 500
+      memoryMiB: 512
+      storageMiB: 256
+      pidsMax: 64
+    session:
+      ttlMinutes: 45
+      maxRenewals: 2
+    interfaces: [editor, terminal, web]
+steps:
+  - id: conhecer
+    order: 1
+    title: Conhecer a API paginada
+    explanation: |
+      [[historia_abertura]]
+
+      Uma API que lista muitos itens devolve o resultado em **páginas**: o cliente diz quantos itens quer por vez (`limite`) e qual página (`pagina`). Isso protege o servidor e a rede, desde que o **servidor** imponha um teto. Se o tamanho da página fica a critério do cliente, uma única chamada pode pedir a base inteira: é o **consumo irrestrito de recursos** (OWASP API4).
+
+      ```ilustracao
+      paginacao-teto
+      ```
+
+      Siga a listagem pelas camadas:
+
+      1. **Controller** (`controllers/api_controller.py`): lê `limite` e `pagina` da URL e registra no log o tamanho e o tempo da resposta.
+      2. **Serviço** (`services/[[recurso_singular_arquivo]]_service.py`): calcula o deslocamento e pede a página ao repositório. **É aqui que falta o teto.**
+      3. **Repositório** (`repositories/[[recurso_singular_arquivo]]_repository.py`): `SELECT ... LIMIT ? OFFSET ?`.
+
+      As credenciais, neste laboratório, são:
+
+      - Cliente: `[[login_a]]`, senha `[[senha_a]]` ([[nome_a]]).
+    task: |
+      1. Na aba **Aplicação**, entre como `[[login_a]]` / `[[senha_a]]`.
+      2. No painel, clique no link da API (`/api/[[recurso]]?limite=20&pagina=1`). O navegador mostra o JSON que o app recebe.
+
+      Informe abaixo o valor do campo `quantidade` dessa resposta.
+    concept: Paginação limita quanto cada chamada lê e devolve
+    validatorRef: api-recursos/answer/quantidade-[[ramo]]-v1
+    hints:
+      - level: 1
+        text: O campo `quantidade` fica logo no começo do JSON.
+      - level: 2
+        text: É o mesmo número do `limite` do link.
+      - level: 3
+        text: A resposta é `20`.
+    points: 10
+  - id: explorar
+    order: 2
+    title: Pedir a base inteira numa chamada
+    explanation: |
+      O app pede 20 por vez, mas nada impede outra pessoa de chamar a API com outro `limite`. Neste laboratório a base da conta tem [[total]] [[recurso_plural]], então o efeito é pequeno e contido; num banco de produção, com milhões de linhas, a mesma chamada prende o banco, a memória e a rede.
+    task: |
+      Na barra de endereço da aba **Aplicação**, troque o limite por um número enorme:
+
+      ```
+      /api/[[recurso]]?limite=100000
+      ```
+
+      Informe abaixo o valor de `quantidade` que veio na resposta.
+    explore: |
+      **Veja o custo no log.** O controller registra o tamanho e o tempo de cada listagem. No **Terminal**:
+
+      ```bash
+      grep "Listagem:" /tmp/app.log
+      ```
+
+      **O que procurar.** Compare a linha de `limite=20` com a de `limite=100000`: `itens` e `tempo_ms` crescem juntos. O app.log também registra os acessos (linhas com `GET`), por isso o `grep`.
+
+      **O outro lado da mesma falha.** [[custo_extra]]
+    concept: Sem teto no servidor, o cliente decide quanto o servidor trabalha
+    validatorRef: api-recursos/answer/total-[[ramo]]-v1
+    hints:
+      - level: 1
+        text: Use exatamente a rota da tarefa e veja o campo `quantidade`.
+      - level: 2
+        text: Veio a base inteira da conta, descrita no comentário de `database/seed.py`.
+      - level: 3
+        text: A resposta é `[[total]]`.
+    points: 15
+  - id: negativo
+    order: 3
+    title: Testar um valor especial
+    explanation: |
+      Quem valida só "não pode ser grande demais" esquece os valores especiais. No SQLite, `LIMIT -1` significa **sem limite**. Uma correção que faça só `min(limite, 100)` deixa o `-1` passar.
+    task: |
+      Abra agora:
+
+      ```
+      /api/[[recurso]]?limite=-1
+      ```
+
+      Informe abaixo se o `-1` devolveu **tudo** ou **nada**.
+    concept: Zero, negativo e enorme precisam estar na validação
+    validatorRef: api-recursos/answer/negativo-[[ramo]]-v1
+    hints:
+      - level: 1
+        text: Compare a `quantidade` com a da etapa anterior.
+      - level: 2
+        text: Veio o mesmo número de itens que com `limite=100000`.
+      - level: 3
+        text: A resposta é `tudo`.
+    points: 15
+  - id: onde
+    order: 4
+    title: Encontrar onde o limite deveria ser aplicado
+    explanation: |
+      O controller só converte o texto da URL em número. Quem decide o tamanho da página é o serviço: abra `services/[[recurso_singular_arquivo]]_service.py`. Repare na constante `LIMITE_MAXIMO`, combinada com a infraestrutura, que ninguém usa.
+    task: |
+      Informe abaixo o nome do método do serviço que usa o `limite` do cliente sem teto.
+    concept: O teto pertence ao serviço, antes do banco
+    validatorRef: api-recursos/answer/metodo-[[ramo]]-v1
+    hints:
+      - level: 1
+        text: A classe do serviço tem um único método público.
+      - level: 2
+        text: É o método que o controller chama para montar a página.
+      - level: 3
+        text: A resposta é `listar`.
+    points: 15
+  - id: corrigir
+    order: 5
+    title: Aplicar o teto de página no servidor
+    explanation: |
+      **Por que a falha existe.** `listar` usa o `limite` como veio.
+
+      **A correção.** Prender o limite entre 1 e `LIMITE_MAXIMO` antes de consultar: `max(1, min(limite, LIMITE_MAXIMO))`. O `min` corta o que for grande demais; o `max` impede zero e negativo. O app oficial, que pede 20, não percebe diferença.
+    task: |
+      Abra `services/[[recurso_singular_arquivo]]_service.py` e troque o método `listar` inteiro por este:
+
+      ```python
+          def listar(self, conta_id: int, limite: int, pagina: int) -> list[[[classe]]]:
+              """Devolve uma página de [[recurso_plural]] da conta, com no máximo LIMITE_MAXIMO itens."""
+              limite = max(1, min(limite, LIMITE_MAXIMO))
+              deslocamento = max(pagina - 1, 0) * limite
+              return self._repositorio.listar(conta_id, limite, deslocamento)
+      ```
+
+      Salve com **Ctrl+S**. A aplicação reinicia. Então:
+
+      1. abra `/api/[[recurso]]?limite=100000` e veja `quantidade` igual a 100;
+      2. abra `/api/[[recurso]]?limite=-1` e veja que não vem mais tudo;
+      3. abra o link do painel (`limite=20`) e veja que o app **continua** recebendo 20;
+      4. clique em **Validar**.
+    explore: |
+      **Recusar ou limitar?** Duas escolhas são aceitas: limitar em silêncio (como aqui) ou recusar com HTTP 400 quando o pedido passa do teto. O importante é que o servidor nunca entregue mais que o máximo.
+
+      **Se algo não funcionar depois de salvar.** No **Terminal**:
+
+      ```bash
+      grep -iE "error|traceback" /tmp/app.log | tail -n 15
+      ```
+
+      O `def listar` fica com 4 espaços; o corpo, com 8.
+    concept: Teto de página entre 1 e o máximo, aplicado no servidor
+    validatorRef: api-recursos/python-flask/teto-pagina-[[ramo]]-v1
+    hints:
+      - level: 1
+        text: 'A mudança é só em `services/[[recurso_singular_arquivo]]_service.py`, no método `listar`.'
+      - level: 2
+        text: "Use max(1, min(limite, LIMITE_MAXIMO)) antes de calcular o deslocamento."
+      - level: 3
+        text: Copie o método da tarefa sem mudar o recuo. O `def` fica com 4 espaços.
+    points: 45
+policy:
+  sequentialUnlock: true
+  allowStepRetry: true
+  persistProgressAcrossReset: true
+  allowSolutionReveal: false
+  finalPassingScore: 100
