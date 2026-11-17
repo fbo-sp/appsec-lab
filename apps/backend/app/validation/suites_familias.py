@@ -956,6 +956,114 @@ def _ssrf(r: SsrfRamo) -> tuple[Suite, ...]:
     )
 
 
+# --------------------------------------------------------------------------------------------------
+# A8 logica-negocio: falha de lógica de negócio no resgate (LAB-023 a LAB-025)
+
+
+@dataclass(frozen=True, slots=True)
+class LogicaRamo:
+    ramo: str
+    login_a: str
+    senha_a: str
+
+
+LOGICA_RAMOS = (
+    LogicaRamo("fin", "marina.gomes", "Marina#Cred26"),
+    LogicaRamo("sau", "rafael.antunes", "Rafael#Sereno26"),
+    LogicaRamo("ind", "diego.farias", "Diego#Voltera26"),
+)
+
+
+def _logica(r: LogicaRamo) -> tuple[Suite, ...]:
+    return (
+        AnswerSuite(
+            ref=f"logica-negocio/answer/metodo-{r.ramo}-v1",
+            version="1.0.0",
+            prompt="Método que executa o resgate",
+            accepted=("resgatar", "resgatar()"),
+            success_feedback="Isso. É em resgatar que a regra de negócio deveria valer.",
+            failure_feedback="Ainda não. Em services/resgate_service.py, veja o único método público da classe.",
+        ),
+        AnswerSuite(
+            ref=f"logica-negocio/answer/aceito-{r.ramo}-v1",
+            version="1.0.0",
+            prompt="O resgate acima do saldo foi aceito ou recusado?",
+            accepted=("aceito", "aceita", "foi aceito"),
+            success_feedback="Exato: sem validação, o servidor aceitou um resgate acima do saldo.",
+            failure_feedback="Não é isso. Veja a mensagem depois de resgatar 999999: a operação foi registrada.",
+        ),
+        AnswerSuite(
+            ref=f"logica-negocio/answer/limite-{r.ramo}-v1",
+            version="1.0.0",
+            prompt="O valor do resgate não pode passar do quê",
+            accepted=("saldo", "saldo disponível", "saldo disponivel", "o saldo", "do saldo"),
+            success_feedback="Isso. O valor não pode passar do saldo disponível.",
+            failure_feedback="Ainda não. É o quanto você tem disponível, mostrado no painel.",
+        ),
+        AnswerSuite(
+            ref=f"logica-negocio/answer/onde-{r.ramo}-v1",
+            version="1.0.0",
+            prompt="Onde a regra de negócio tem que ser conferida",
+            accepted=(
+                "servidor",
+                "no servidor",
+                "lado do servidor",
+                "no lado do servidor",
+                "backend",
+                "no backend",
+                "server-side",
+                "server side",
+            ),
+            success_feedback="Isso. A regra que vale é a que roda no servidor, não no navegador.",
+            failure_feedback="Ainda não. O atacante não usa o seu formulário; a checagem tem que valer do outro lado.",
+        ),
+        HttpSuite(
+            ref=f"logica-negocio/python-flask/resgate-validado-{r.ramo}-v1",
+            version="1.0.0",
+            logins=(HttpLogin(name="a", path="/login", form={"login": r.login_a, "senha": r.senha_a}),),
+            checks=(
+                HttpCheck(
+                    id="resgate-legitimo",
+                    description="Um resgate dentro do saldo continua funcionando depois da correção.",
+                    path="/resgatar",
+                    method="POST",
+                    as_user="a",
+                    form={"valor": "100"},
+                    contains=("Operação registrada",),
+                ),
+                HttpCheck(
+                    id="acima-do-saldo-recusado",
+                    description="Um resgate acima do saldo é recusado.",
+                    path="/resgatar",
+                    method="POST",
+                    as_user="a",
+                    form={"valor": "999999"},
+                    contains=("acima do saldo",),
+                    not_contains=("Operação registrada",),
+                ),
+                HttpCheck(
+                    id="valor-negativo-recusado",
+                    description="Um valor negativo é recusado (não credita o usuário).",
+                    path="/resgatar",
+                    method="POST",
+                    as_user="a",
+                    form={"valor": "-50"},
+                    contains=("deve ser positivo",),
+                    not_contains=("Operação registrada",),
+                ),
+            ),
+            success_feedback=(
+                "Correção validada: o resgate legítimo funciona, e valores acima do saldo ou negativos "
+                "são recusados — a regra de negócio agora vale no servidor."
+            ),
+            failure_feedback=(
+                "Algumas verificações falharam. Confira cada item abaixo, ajuste services/resgate_service.py "
+                "e valide de novo."
+            ),
+        ),
+    )
+
+
 SUITES_FAMILIAS: tuple[Suite, ...] = (
     tuple(s for r in XSS_RAMOS for s in _xss(r))
     + tuple(s for r in MASSA_RAMOS for s in _massa(r))
@@ -963,4 +1071,5 @@ SUITES_FAMILIAS: tuple[Suite, ...] = (
     + tuple(s for r in SENHA_RAMOS for s in _senha(r))
     + tuple(s for r in UPLOAD_RAMOS for s in _upload(r))
     + tuple(s for r in SSRF_RAMOS for s in _ssrf(r))
+    + tuple(s for r in LOGICA_RAMOS for s in _logica(r))
 )

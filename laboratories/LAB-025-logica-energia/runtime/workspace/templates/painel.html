@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block conteudo %}
+<h1>Portal do Cliente</h1>
+<p class="ajuda">Converta seus créditos de energia em desconto na fatura.</p>
+
+<dl class="dados">
+  <dt>Titular</dt><dd>{{ conta.nome }}</dd>
+  <dt>Créditos de energia disponíveis (R$)</dt><dd>R$ {{ "%.2f"|format(conta.saldo) }}</dd>
+</dl>
+
+<form method="post" action="{{ url_for('painel.resgatar') }}" class="cartao">
+  <label>Valor do uso de créditos (R$)
+    <input name="valor" type="text" placeholder="100,00" required>
+  </label>
+  <button type="submit">Converter em desconto</button>
+  <p class="ajuda">Informe quanto dos seus créditos de energia quer usar como desconto na fatura.</p>
+</form>
+
+{% if resultado %}<p class="banner reforcado">{{ resultado }}</p>{% endif %}
+{% if erro %}<p class="banner antigo">{{ erro }}</p>{% endif %}
+{% endblock %}

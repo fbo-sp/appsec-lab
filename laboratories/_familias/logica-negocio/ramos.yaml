@@ -1,0 +1,108 @@
+# Família A8 logica-negocio (ADR-021): o que muda por ramo. O modelo comum está em ./modelo.
+# Depois de editar, rode:  uv run python scripts/gerar-familia.py logica-negocio
+# Logins e saldos estão espelhados em apps/backend/app/validation/suites_familias.py (registro
+# protegido); os testes Docker conferem os dois. A falha é de lógica de negócio: services/
+# resgate_service.py debita o valor pedido sem conferir se ele é positivo e cabe no saldo.
+ramos:
+  - destino: LAB-023-logica-cooperativa
+    vars:
+      lab_id: LAB-023
+      versao: 1.0.0
+      codigo: A8-FIN
+      ramo: fin
+      setor: financeiro
+      imagem: lab-023-logica
+      titulo: o resgate que aceita qualquer valor
+      empresa: Cooperativa Credimova
+      marca: "◆ Credimova"
+      app_nome: Resgate de Investimento
+      cor: "#1d4ed8"
+      papel: Pessoa desenvolvedora da squad de investimentos da Cooperativa Credimova
+      aplicacao: autoatendimento de Resgate de Investimento, onde o cooperado resgata parte do saldo investido para a conta corrente
+      contexto: O cooperado resgata, por conta própria, parte do saldo investido para a conta corrente. Um teste de invasão alertou que o resgate confia no valor enviado no formulário sem conferir as regras de negócio — dá para resgatar um valor acima do saldo ou até um valor negativo.
+      missao: Confirmar que o resgate aceita valores que deveria recusar e corrigir aplicando as regras de negócio
+      painel_titulo: Resgate de Investimento
+      painel_desc: Resgate parte do seu saldo investido para a conta corrente.
+      login_desc: Entre com as credenciais do cooperado para acessar o resgate.
+      saldo_label: Saldo investido disponível
+      termo_acao: resgate
+      acao_label: Resgatar para a conta
+      acao_desc: Informe quanto quer resgatar do seu saldo investido para a conta corrente.
+      banco: credimova_inv
+      login_a: marina.gomes
+      senha_a: "Marina#Cred26"
+      nome_a: Marina Aguiar Gomes
+      saldo_a: 500.0
+      historia_abertura: 'Você está na squad de investimentos da Cooperativa Credimova. O cooperado resgata, por conta própria, parte do saldo investido para a conta corrente. O time de segurança abriu um chamado: o resgate confia no valor que chega do formulário sem conferir as regras de negócio, e um teste de invasão mostrou que dá para resgatar mais do que o saldo investido — ou até informar um valor negativo.'
+      seed_contas:
+        - [1, marina.gomes, Marina Aguiar Gomes, "Marina#Cred26", 500.0]
+        - [2, rodrigo.sena, Rodrigo Sena Vilela, "Rodrigo#Cred26", 320.0]
+        - [3, helena.prado, Helena Prado Antunes, "Helena#Cred26", 180.0]
+  - destino: LAB-024-logica-saude
+    vars:
+      lab_id: LAB-024
+      versao: 1.0.0
+      codigo: A8-SAU
+      ramo: sau
+      setor: saude
+      imagem: lab-024-logica
+      titulo: o reembolso que aceita qualquer valor
+      empresa: Sereno Saúde
+      marca: "✚ Sereno"
+      app_nome: Portal do Beneficiário
+      cor: "#0e7490"
+      papel: Pessoa desenvolvedora do time de produtos digitais da operadora Sereno Saúde
+      aplicacao: Portal do Beneficiário, onde o beneficiário solicita o reembolso a partir do saldo de reembolso já aprovado
+      contexto: O beneficiário solicita o reembolso de consultas a partir de um saldo de reembolso já aprovado. Numa auditoria, a equipe apontou que o pedido confia no valor enviado no formulário sem conferir as regras de negócio — dá para solicitar um valor acima do saldo aprovado ou até um valor negativo.
+      missao: Confirmar que o reembolso aceita valores que deveria recusar e corrigir aplicando as regras de negócio
+      painel_titulo: Portal do Beneficiário
+      painel_desc: Solicite o reembolso a partir do seu saldo aprovado.
+      login_desc: Entre com as credenciais do beneficiário para acessar o reembolso.
+      saldo_label: Saldo de reembolso aprovado
+      termo_acao: reembolso
+      acao_label: Solicitar reembolso
+      acao_desc: Informe o valor do reembolso a receber do seu saldo aprovado.
+      banco: sereno_reemb
+      login_a: rafael.antunes
+      senha_a: "Rafael#Sereno26"
+      nome_a: Rafael Antunes Barreto
+      saldo_a: 500.0
+      historia_abertura: 'Você é do time de produtos digitais da operadora Sereno Saúde. O beneficiário solicita o reembolso de consultas a partir de um saldo de reembolso já aprovado. Numa auditoria, a equipe apontou que o pedido confia no valor que chega do formulário sem conferir as regras de negócio, e que dá para solicitar mais do que o saldo aprovado — ou até informar um valor negativo.'
+      seed_contas:
+        - [1, rafael.antunes, Rafael Antunes Barreto, "Rafael#Sereno26", 500.0]
+        - [2, carla.menezes, Carla Menezes Pires, "Carla#Sereno26", 240.0]
+        - [3, bruno.dias, Bruno Dias Correia, "Bruno#Sereno26", 150.0]
+  - destino: LAB-025-logica-energia
+    vars:
+      lab_id: LAB-025
+      versao: 1.0.0
+      codigo: A8-IND
+      ramo: ind
+      setor: industria-energia
+      imagem: lab-025-logica
+      titulo: o uso de créditos que aceita qualquer valor
+      empresa: Voltera Distribuidora de Energia
+      marca: "⚡ Voltera"
+      app_nome: Portal do Cliente
+      cor: "#9a3412"
+      papel: Pessoa desenvolvedora do time digital da Voltera Distribuidora de Energia
+      aplicacao: Portal do Cliente, onde o cliente converte créditos de energia em desconto na fatura
+      contexto: O cliente converte, por conta própria, créditos de energia (de geração própria) em desconto na fatura. Antes de uma auditoria, a equipe apontou que a conversão confia no valor enviado no formulário sem conferir as regras de negócio — dá para usar mais créditos do que o cliente tem, ou até um valor negativo.
+      missao: Confirmar que a conversão aceita valores que deveria recusar e corrigir aplicando as regras de negócio
+      painel_titulo: Portal do Cliente
+      painel_desc: Converta seus créditos de energia em desconto na fatura.
+      login_desc: Entre com as credenciais do cliente para acessar os créditos.
+      saldo_label: Créditos de energia disponíveis (R$)
+      termo_acao: uso de créditos
+      acao_label: Converter em desconto
+      acao_desc: Informe quanto dos seus créditos de energia quer usar como desconto na fatura.
+      banco: voltera_cred
+      login_a: diego.farias
+      senha_a: "Diego#Voltera26"
+      nome_a: Diego Farias Lobo
+      saldo_a: 500.0
+      historia_abertura: 'Você é do time digital da Voltera Distribuidora de Energia. O cliente converte, por conta própria, créditos de energia (de geração própria) em desconto na fatura. A equipe apontou que a conversão confia no valor que chega do formulário sem conferir as regras de negócio, e que dá para usar mais créditos do que o cliente tem — ou até informar um valor negativo.'
+      seed_contas:
+        - [1, diego.farias, Diego Farias Lobo, "Diego#Voltera26", 500.0]
+        - [2, tania.rocha, Tânia Rocha Sampaio, "Tania#Voltera26", 275.0]
+        - [3, marcos.vidal, Marcos Vidal Nunes, "Marcos#Voltera26", 130.0]

@@ -410,6 +410,27 @@ const ILLUSTRATIONS: Record<string, { caption: string; body: () => ReactNode }> 
       />
     ),
   },
+  "logica-validacao": {
+    caption: "Falha de lógica: o código funciona, mas ninguém conferiu quando o valor pedido é válido.",
+    body: () => (
+      <Compare
+        bad={[
+          "Sem validação (o que tem hoje)",
+          <>
+            <span>O serviço debita {c("valor")} direto: aceita acima do saldo, zero ou negativo.</span>
+            <span>Resgatar {c("999999")} de um saldo de {c("500")}, ou {c("-50")} (que credita o usuário), passa.</span>
+          </>,
+        ]}
+        good={[
+          "Com validação no servidor",
+          <>
+            <span>Antes de debitar: recusa se {c("valor <= 0")} e se {c("valor > conta.saldo")}.</span>
+            <span>Só um valor positivo e dentro do saldo é debitado.</span>
+          </>,
+        ]}
+      />
+    ),
+  },
 };
 
 export function hasIllustration(name: string): boolean {

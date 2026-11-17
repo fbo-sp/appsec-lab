@@ -62,6 +62,9 @@ Indicado como primeira atividade de qualquer turma, antes do primeiro laboratór
 | LAB-020 | A6-FIN · SSRF: o importador de comprovantes que busca qualquer URL | 1.0.0 | CWE-918 | A01 Broken Access Control (2025) | #22 CWE-918 (2025) | Intermediário | 40 min |
 | LAB-021 | A6-SAU · SSRF: o importador de laudos que busca qualquer URL | 1.0.0 | CWE-918 | A01 Broken Access Control (2025) | #22 CWE-918 (2025) | Intermediário | 40 min |
 | LAB-022 | A6-IND · SSRF: o importador de documentos técnicos que busca qualquer URL | 1.0.0 | CWE-918 | A01 Broken Access Control (2025) | #22 CWE-918 (2025) | Intermediário | 40 min |
+| LAB-023 | A8-FIN · Lógica de negócio: o resgate que aceita qualquer valor | 1.0.0 | CWE-840 | A06 Insecure Design (2025) | Não se enquadra; use o CWE (2025) | Intermediário | 35 min |
+| LAB-024 | A8-SAU · Lógica de negócio: o reembolso que aceita qualquer valor | 1.0.0 | CWE-840 | A06 Insecure Design (2025) | Não se enquadra; use o CWE (2025) | Intermediário | 35 min |
+| LAB-025 | A8-IND · Lógica de negócio: o uso de créditos que aceita qualquer valor | 1.0.0 | CWE-840 | A06 Insecure Design (2025) | Não se enquadra; use o CWE (2025) | Intermediário | 35 min |
 
 ## LAB-001 · SQL Injection: a busca que expõe pacientes
 
@@ -958,3 +961,126 @@ Indicado como primeira atividade de qualquer turma, antes do primeiro laboratór
 | Versão | Criada em | Obsoleta em | Situação | O que mudou |
 |---|---|---|---|---|
 | 1.0.0 | 2026-11-17 | — | vigente | Primeira versão (SSRF no importador por URL, Siderúrgica Pindorama; família ssrf, ramo Indústria e Energia). |
+
+## LAB-023 · A8-FIN · Lógica de negócio: o resgate que aceita qualquer valor
+
+- Versão vigente: 1.0.0
+- Cenário: autoatendimento de Resgate de Investimento, onde o cooperado resgata parte do saldo investido para a conta corrente
+- Papel do aluno: Pessoa desenvolvedora da squad de investimentos da Cooperativa Credimova
+- Linguagem / stack: python / flask
+- Nível: Intermediário · duração estimada: 35 min
+- Família: logica-negocio
+- Ramo: Financeiro
+- Módulo do curso: Foundation
+
+### Classificação
+
+- CWE: CWE-840 (principal), CWE-20
+- OWASP Top 10 2025: A06 Insecure Design
+- OWASP Top 10 2021: A04 Insecure Design
+- OWASP API Security Top 10 2023: API6 Unrestricted Access to Sensitive Business Flows
+- SANS CWE Top 25 2025: Não se enquadra; use o CWE
+- SANS CWE Top 25 2024: Não se enquadra; use o CWE
+
+### Objetivos
+
+- Entender o que é uma falha de lógica de negócio e por que ela passa pelos testes funcionais
+- Explorar a falha pedindo um resgate acima do saldo e um valor negativo
+- Reconhecer que a regra de negócio precisa ser conferida no servidor, não confiada ao cliente
+- Corrigir aplicando as regras (valor positivo e dentro do saldo) na camada de serviço
+
+### Etapas
+
+1. Conhecer o resgate e achar a regra de negócio (10 pts)
+2. Pedir um resgate que deveria ser impossível (15 pts)
+3. Nomear a regra que faltou (15 pts)
+4. Decidir onde a regra tem que valer (15 pts)
+5. Aplicar a regra de negócio no serviço (45 pts)
+
+### Histórico de versões
+
+| Versão | Criada em | Obsoleta em | Situação | O que mudou |
+|---|---|---|---|---|
+| 1.0.0 | 2026-11-17 | — | vigente | Primeira versão (falha de lógica de negócio no resgate, Cooperativa Credimova; família logica-negocio, ramo Financeiro). |
+
+## LAB-024 · A8-SAU · Lógica de negócio: o reembolso que aceita qualquer valor
+
+- Versão vigente: 1.0.0
+- Cenário: Portal do Beneficiário, onde o beneficiário solicita o reembolso a partir do saldo de reembolso já aprovado
+- Papel do aluno: Pessoa desenvolvedora do time de produtos digitais da operadora Sereno Saúde
+- Linguagem / stack: python / flask
+- Nível: Intermediário · duração estimada: 35 min
+- Família: logica-negocio
+- Ramo: Saúde
+- Módulo do curso: Foundation
+
+### Classificação
+
+- CWE: CWE-840 (principal), CWE-20
+- OWASP Top 10 2025: A06 Insecure Design
+- OWASP Top 10 2021: A04 Insecure Design
+- OWASP API Security Top 10 2023: API6 Unrestricted Access to Sensitive Business Flows
+- SANS CWE Top 25 2025: Não se enquadra; use o CWE
+- SANS CWE Top 25 2024: Não se enquadra; use o CWE
+
+### Objetivos
+
+- Entender o que é uma falha de lógica de negócio e por que ela passa pelos testes funcionais
+- Explorar a falha pedindo um resgate acima do saldo e um valor negativo
+- Reconhecer que a regra de negócio precisa ser conferida no servidor, não confiada ao cliente
+- Corrigir aplicando as regras (valor positivo e dentro do saldo) na camada de serviço
+
+### Etapas
+
+1. Conhecer o resgate e achar a regra de negócio (10 pts)
+2. Pedir um resgate que deveria ser impossível (15 pts)
+3. Nomear a regra que faltou (15 pts)
+4. Decidir onde a regra tem que valer (15 pts)
+5. Aplicar a regra de negócio no serviço (45 pts)
+
+### Histórico de versões
+
+| Versão | Criada em | Obsoleta em | Situação | O que mudou |
+|---|---|---|---|---|
+| 1.0.0 | 2026-11-17 | — | vigente | Primeira versão (falha de lógica de negócio no reembolso, Sereno Saúde; família logica-negocio, ramo Saúde). |
+
+## LAB-025 · A8-IND · Lógica de negócio: o uso de créditos que aceita qualquer valor
+
+- Versão vigente: 1.0.0
+- Cenário: Portal do Cliente, onde o cliente converte créditos de energia em desconto na fatura
+- Papel do aluno: Pessoa desenvolvedora do time digital da Voltera Distribuidora de Energia
+- Linguagem / stack: python / flask
+- Nível: Intermediário · duração estimada: 35 min
+- Família: logica-negocio
+- Ramo: Indústria e Energia
+- Módulo do curso: Foundation
+
+### Classificação
+
+- CWE: CWE-840 (principal), CWE-20
+- OWASP Top 10 2025: A06 Insecure Design
+- OWASP Top 10 2021: A04 Insecure Design
+- OWASP API Security Top 10 2023: API6 Unrestricted Access to Sensitive Business Flows
+- SANS CWE Top 25 2025: Não se enquadra; use o CWE
+- SANS CWE Top 25 2024: Não se enquadra; use o CWE
+
+### Objetivos
+
+- Entender o que é uma falha de lógica de negócio e por que ela passa pelos testes funcionais
+- Explorar a falha pedindo um resgate acima do saldo e um valor negativo
+- Reconhecer que a regra de negócio precisa ser conferida no servidor, não confiada ao cliente
+- Corrigir aplicando as regras (valor positivo e dentro do saldo) na camada de serviço
+
+### Etapas
+
+1. Conhecer o resgate e achar a regra de negócio (10 pts)
+2. Pedir um resgate que deveria ser impossível (15 pts)
+3. Nomear a regra que faltou (15 pts)
+4. Decidir onde a regra tem que valer (15 pts)
+5. Aplicar a regra de negócio no serviço (45 pts)
+
+### Histórico de versões
+
+| Versão | Criada em | Obsoleta em | Situação | O que mudou |
+|---|---|---|---|---|
+| 1.0.0 | 2026-11-17 | — | vigente | Primeira versão (falha de lógica de negócio no uso de créditos, Voltera Distribuidora de Energia; família logica-negocio, ramo Indústria e Energia). |

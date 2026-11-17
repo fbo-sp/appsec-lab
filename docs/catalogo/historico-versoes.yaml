@@ -156,3 +156,15 @@ labs:
     - version: 1.0.0
       published: 2026-11-17
       summary: Primeira versão (SSRF no importador por URL, Siderúrgica Pindorama; família ssrf, ramo Indústria e Energia).
+  LAB-023:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (falha de lógica de negócio no resgate, Cooperativa Credimova; família logica-negocio, ramo Financeiro).
+  LAB-024:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (falha de lógica de negócio no reembolso, Sereno Saúde; família logica-negocio, ramo Saúde).
+  LAB-025:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (falha de lógica de negócio no uso de créditos, Voltera Distribuidora de Energia; família logica-negocio, ramo Indústria e Energia).
