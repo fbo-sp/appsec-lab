@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type JSX } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type JSX } from "react";
 import { EditorView, basicSetup } from "codemirror";
 import { Compartment, EditorState, type Extension } from "@codemirror/state";
 import { keymap } from "@codemirror/view";
@@ -52,29 +52,38 @@ function lerEscuro(): Escuro {
   }
 }
 
+// O ouvinte é registrado já ao carregar o módulo, antes do evento load do iframe: o portal envia o
+// modo no onLoad, e um ouvinte criado num efeito do React podia chegar tarde e perder a mensagem.
+let escuroAtual: Escuro = lerEscuro();
+const ouvintesEscuro = new Set<() => void>();
+
+function definirEscuro(novo: Escuro): void {
+  escuroAtual = novo;
+  document.documentElement.dataset.tema = novo ? "escuro" : "claro";
+  try {
+    localStorage.setItem(TEMA_KEY, novo ? "escuro" : "claro");
+  } catch {
+    /* sem armazenamento local */
+  }
+  ouvintesEscuro.forEach((l) => l());
+}
+
+if (typeof window !== "undefined" && window.parent !== window) {
+  window.addEventListener("message", (e: MessageEvent) => {
+    if (e.source !== window.parent) return;
+    const d = e.data as { type?: unknown; tema?: unknown } | null;
+    if (d && d.type === "cecyber:tema" && (d.tema === "claro" || d.tema === "codigo" || d.tema === "escuro")) {
+      definirEscuro(d.tema !== "claro");
+    }
+  });
+}
+if (typeof document !== "undefined") document.documentElement.dataset.tema = escuroAtual ? "escuro" : "claro";
+
 function useEscuroFromParent(): Escuro {
-  const [escuro, setEscuro] = useState<Escuro>(lerEscuro());
-  useEffect(() => {
-    const onMessage = (e: MessageEvent) => {
-      if (e.source !== window.parent || window.parent === window) return;
-      const d = e.data as { type?: unknown; tema?: unknown } | null;
-      if (d && d.type === "cecyber:tema" && (d.tema === "claro" || d.tema === "codigo" || d.tema === "escuro")) {
-        const novo = d.tema !== "claro";
-        setEscuro(novo);
-        try {
-          localStorage.setItem(TEMA_KEY, novo ? "escuro" : "claro");
-        } catch {
-          /* sem armazenamento local */
-        }
-      }
-    };
-    window.addEventListener("message", onMessage);
-    return () => window.removeEventListener("message", onMessage);
-  }, []);
-  useEffect(() => {
-    document.documentElement.dataset.tema = escuro ? "escuro" : "claro";
-  }, [escuro]);
-  return escuro;
+  return useSyncExternalStore(
+    (l) => (ouvintesEscuro.add(l), () => ouvintesEscuro.delete(l)),
+    () => escuroAtual,
+  );
 }
 
 // Avisa o portal de que o aluno está usando o editor/terminal (ADR-014: encerramento por inatividade).
