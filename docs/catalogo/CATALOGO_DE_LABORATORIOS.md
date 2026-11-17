@@ -74,6 +74,9 @@ Indicado como primeira atividade de qualquer turma, antes do primeiro laboratór
 | LAB-032 | A12-FIN · Path traversal: o documento que foge da pasta | 1.0.0 | CWE-22 | A01 Broken Access Control (2025) | #6 CWE-22 Path Traversal (2025) | Intermediário | 35 min |
 | LAB-033 | A12-SAU · Path traversal: o documento que foge da pasta | 1.0.0 | CWE-22 | A01 Broken Access Control (2025) | #6 CWE-22 Path Traversal (2025) | Intermediário | 35 min |
 | LAB-034 | A12-IND · Path traversal: o documento que foge da pasta | 1.0.0 | CWE-22 | A01 Broken Access Control (2025) | #6 CWE-22 Path Traversal (2025) | Intermediário | 35 min |
+| LAB-035 | A10-FIN · Confiança no cliente: a loja que confia no preço do cliente | 1.0.0 | CWE-602 | A06 Insecure Design (2025) | Não se enquadra; use o CWE (2025) | Intermediário | 35 min |
+| LAB-036 | A10-SAU · Confiança no cliente: a loja que confia no preço do cliente | 1.0.0 | CWE-602 | A06 Insecure Design (2025) | Não se enquadra; use o CWE (2025) | Intermediário | 35 min |
+| LAB-037 | A10-IND · Confiança no cliente: a loja que confia no preço do cliente | 1.0.0 | CWE-602 | A06 Insecure Design (2025) | Não se enquadra; use o CWE (2025) | Intermediário | 35 min |
 
 ## LAB-001 · SQL Injection: a busca que expõe pacientes
 
@@ -1462,3 +1465,126 @@ Indicado como primeira atividade de qualquer turma, antes do primeiro laboratór
 | Versão | Criada em | Obsoleta em | Situação | O que mudou |
 |---|---|---|---|---|
 | 1.0.0 | 2026-11-17 | — | vigente | Primeira versão (path traversal no download de documentos, Corrente Energia; família path-traversal, ramo Indústria e Energia). |
+
+## LAB-035 · A10-FIN · Confiança no cliente: a loja que confia no preço do cliente
+
+- Versão vigente: 1.0.0
+- Cenário: Clube de Pontos, onde o cooperado resgata produtos gastando pontos do programa de fidelidade
+- Papel do aluno: Pessoa desenvolvedora da squad de engajamento da Cooperativa Credimova
+- Linguagem / stack: python / flask
+- Nível: Intermediário · duração estimada: 35 min
+- Família: confianca-cliente
+- Ramo: Financeiro
+- Módulo do curso: Trained
+
+### Classificação
+
+- CWE: CWE-602 (principal), CWE-472
+- OWASP Top 10 2025: A06 Insecure Design
+- OWASP Top 10 2021: A04 Insecure Design
+- OWASP API Security Top 10 2023: API6 Unrestricted Access to Sensitive Business Flows
+- SANS CWE Top 25 2025: Não se enquadra; use o CWE
+- SANS CWE Top 25 2024: Não se enquadra; use o CWE
+
+### Objetivos
+
+- Entender por que não se deve confiar em dados que o cliente controla
+- Explorar a falha resgatando um produto caro com um custo adulterado no pedido
+- Reconhecer que o custo do produto é um dado do servidor, não do formulário
+- Corrigir usando o custo real do produto (do banco) e ignorando o do formulário
+
+### Etapas
+
+1. Conhecer a loja e achar o resgate (10 pts)
+2. Resgatar um produto caro pagando 1 ponto (15 pts)
+3. Dizer de onde o custo deve vir (15 pts)
+4. Decidir se o servidor pode confiar no formulário (15 pts)
+5. Usar o custo real do produto no serviço (45 pts)
+
+### Histórico de versões
+
+| Versão | Criada em | Obsoleta em | Situação | O que mudou |
+|---|---|---|---|---|
+| 1.0.0 | 2026-11-17 | — | vigente | Primeira versão (loja confia no custo enviado pelo cliente, Cooperativa Credimova; família confianca-cliente, ramo Financeiro). |
+
+## LAB-036 · A10-SAU · Confiança no cliente: a loja que confia no preço do cliente
+
+- Versão vigente: 1.0.0
+- Cenário: Clube de Bem-Estar, onde o beneficiário resgata produtos gastando pontos do programa de saúde
+- Papel do aluno: Pessoa desenvolvedora do time de produtos digitais da operadora Sereno Saúde
+- Linguagem / stack: python / flask
+- Nível: Intermediário · duração estimada: 35 min
+- Família: confianca-cliente
+- Ramo: Saúde
+- Módulo do curso: Trained
+
+### Classificação
+
+- CWE: CWE-602 (principal), CWE-472
+- OWASP Top 10 2025: A06 Insecure Design
+- OWASP Top 10 2021: A04 Insecure Design
+- OWASP API Security Top 10 2023: API6 Unrestricted Access to Sensitive Business Flows
+- SANS CWE Top 25 2025: Não se enquadra; use o CWE
+- SANS CWE Top 25 2024: Não se enquadra; use o CWE
+
+### Objetivos
+
+- Entender por que não se deve confiar em dados que o cliente controla
+- Explorar a falha resgatando um produto caro com um custo adulterado no pedido
+- Reconhecer que o custo do produto é um dado do servidor, não do formulário
+- Corrigir usando o custo real do produto (do banco) e ignorando o do formulário
+
+### Etapas
+
+1. Conhecer a loja e achar o resgate (10 pts)
+2. Resgatar um produto caro pagando 1 ponto (15 pts)
+3. Dizer de onde o custo deve vir (15 pts)
+4. Decidir se o servidor pode confiar no formulário (15 pts)
+5. Usar o custo real do produto no serviço (45 pts)
+
+### Histórico de versões
+
+| Versão | Criada em | Obsoleta em | Situação | O que mudou |
+|---|---|---|---|---|
+| 1.0.0 | 2026-11-17 | — | vigente | Primeira versão (loja confia no custo enviado pelo cliente, Sereno Saúde; família confianca-cliente, ramo Saúde). |
+
+## LAB-037 · A10-IND · Confiança no cliente: a loja que confia no preço do cliente
+
+- Versão vigente: 1.0.0
+- Cenário: Clube de Vantagens, onde o cliente resgata produtos gastando pontos do programa de relacionamento
+- Papel do aluno: Pessoa desenvolvedora do time digital da Voltera Distribuidora de Energia
+- Linguagem / stack: python / flask
+- Nível: Intermediário · duração estimada: 35 min
+- Família: confianca-cliente
+- Ramo: Indústria e Energia
+- Módulo do curso: Trained
+
+### Classificação
+
+- CWE: CWE-602 (principal), CWE-472
+- OWASP Top 10 2025: A06 Insecure Design
+- OWASP Top 10 2021: A04 Insecure Design
+- OWASP API Security Top 10 2023: API6 Unrestricted Access to Sensitive Business Flows
+- SANS CWE Top 25 2025: Não se enquadra; use o CWE
+- SANS CWE Top 25 2024: Não se enquadra; use o CWE
+
+### Objetivos
+
+- Entender por que não se deve confiar em dados que o cliente controla
+- Explorar a falha resgatando um produto caro com um custo adulterado no pedido
+- Reconhecer que o custo do produto é um dado do servidor, não do formulário
+- Corrigir usando o custo real do produto (do banco) e ignorando o do formulário
+
+### Etapas
+
+1. Conhecer a loja e achar o resgate (10 pts)
+2. Resgatar um produto caro pagando 1 ponto (15 pts)
+3. Dizer de onde o custo deve vir (15 pts)
+4. Decidir se o servidor pode confiar no formulário (15 pts)
+5. Usar o custo real do produto no serviço (45 pts)
+
+### Histórico de versões
+
+| Versão | Criada em | Obsoleta em | Situação | O que mudou |
+|---|---|---|---|---|
+| 1.0.0 | 2026-11-17 | — | vigente | Primeira versão (loja confia no custo enviado pelo cliente, Voltera Distribuidora de Energia; família confianca-cliente, ramo Indústria e Energia). |

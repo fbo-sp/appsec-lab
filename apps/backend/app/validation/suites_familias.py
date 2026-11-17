@@ -1400,6 +1400,102 @@ def _path(r: PathRamo) -> tuple[Suite, ...]:
     )
 
 
+# A10 confianca-cliente: a loja confia no custo que o cliente envia (LAB-035 a LAB-037)
+# Seed fixo em todos os ramos: saldo inicial 500 pontos, produto 1 custa 300 (saldo correto após: 200).
+
+
+@dataclass(frozen=True, slots=True)
+class ConfiancaRamo:
+    ramo: str
+    login_a: str
+    senha_a: str
+
+
+CONFIANCA_RAMOS = (
+    ConfiancaRamo("fin", "marina.gomes", "Marina#Cred26"),
+    ConfiancaRamo("sau", "rafael.antunes", "Rafael#Sereno26"),
+    ConfiancaRamo("ind", "diego.farias", "Diego#Voltera26"),
+)
+
+
+def _confianca(r: ConfiancaRamo) -> tuple[Suite, ...]:
+    return (
+        AnswerSuite(
+            ref=f"confianca-cliente/answer/metodo-{r.ramo}-v1",
+            version="1.0.0",
+            prompt="Método que resgata o produto",
+            accepted=("resgatar", "resgatar()"),
+            success_feedback="Isso. É em resgatar que o custo deveria vir do banco, não do formulário.",
+            failure_feedback="Ainda não. Em services/loja_service.py, veja o único método público da classe.",
+        ),
+        AnswerSuite(
+            ref=f"confianca-cliente/answer/quem-define-{r.ramo}-v1",
+            version="1.0.0",
+            prompt="Quem deve definir o custo do produto: o cliente ou a loja (servidor)?",
+            accepted=("loja", "a loja", "servidor", "o servidor", "o banco", "banco", "backend"),
+            success_feedback="Exato: o custo é um dado da loja; ele está no servidor, no banco.",
+            failure_feedback="Não é isso. O custo não pode ser escolhido por quem faz o pedido.",
+        ),
+        AnswerSuite(
+            ref=f"confianca-cliente/answer/vem-de-onde-{r.ramo}-v1",
+            version="1.0.0",
+            prompt="De onde o custo correto do produto deve ser lido",
+            accepted=(
+                "banco",
+                "do banco",
+                "banco de dados",
+                "servidor",
+                "do servidor",
+                "produto",
+                "do produto",
+                "tabela de produtos",
+            ),
+            success_feedback="Isso. O custo correto vem do produto no banco, não do formulário.",
+            failure_feedback="Ainda não. É onde a loja guarda o custo de cada produto.",
+        ),
+        AnswerSuite(
+            ref=f"confianca-cliente/answer/confiar-{r.ramo}-v1",
+            version="1.0.0",
+            prompt="O servidor deve confiar no custo que veio do formulário? (sim/não)",
+            accepted=("não", "nao", "não deve", "nao deve", "jamais", "nunca"),
+            success_feedback="Isso. O servidor não confia em dado que o cliente controla e que ele mesmo pode determinar.",
+            failure_feedback="Ainda não. O cliente pode mandar qualquer custo; o servidor tem o custo real.",
+        ),
+        HttpSuite(
+            ref=f"confianca-cliente/python-flask/loja-servidor-{r.ramo}-v1",
+            version="1.0.0",
+            logins=(HttpLogin(name="a", path="/login", form={"login": r.login_a, "senha": r.senha_a}),),
+            checks=(
+                HttpCheck(
+                    id="catalogo-visivel",
+                    description="A loja mostra o catálogo com o custo real e o saldo inicial.",
+                    path="/painel",
+                    as_user="a",
+                    contains=("300", "500"),
+                ),
+                HttpCheck(
+                    id="custo-real-cobrado",
+                    description="Ao resgatar com um custo adulterado, a loja cobra o custo REAL do produto.",
+                    path="/resgatar",
+                    method="POST",
+                    as_user="a",
+                    form={"produto_id": "1", "custo": "1"},
+                    contains=("Saldo restante: 200",),
+                    not_contains=("499",),
+                ),
+            ),
+            success_feedback=(
+                "Correção validada: o resgate cobra o custo real do produto (do banco), ignorando o "
+                "custo enviado no formulário."
+            ),
+            failure_feedback=(
+                "Algumas verificações falharam. Confira cada item abaixo, ajuste services/loja_service.py "
+                "e valide de novo. O custo tem que vir do produto no banco, não do formulário."
+            ),
+        ),
+    )
+
+
 SUITES_FAMILIAS: tuple[Suite, ...] = (
     tuple(s for r in XSS_RAMOS for s in _xss(r))
     + tuple(s for r in MASSA_RAMOS for s in _massa(r))
@@ -1411,4 +1507,5 @@ SUITES_FAMILIAS: tuple[Suite, ...] = (
     + tuple(s for r in TENTATIVAS_RAMOS for s in _tentativas(r))
     + tuple(s for r in CORS_RAMOS for s in _cors(r))
     + tuple(s for r in PATH_RAMOS for s in _path(r))
+    + tuple(s for r in CONFIANCA_RAMOS for s in _confianca(r))
 )

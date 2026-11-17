@@ -410,6 +410,27 @@ const ILLUSTRATIONS: Record<string, { caption: string; body: () => ReactNode }> 
       />
     ),
   },
+  "confianca-cliente": {
+    caption: "Não confie em dado que o cliente controla e que o servidor pode determinar sozinho.",
+    body: () => (
+      <Compare
+        bad={[
+          "Confia no custo do formulário (hoje)",
+          <>
+            <span>O pedido manda {c("produto_id=1&custo=1")}; o servidor debita {c("custo")} = 1.</span>
+            <span>Campo {c('type="hidden"')} é editável: leva um produto de 300 por 1 ponto.</span>
+          </>,
+        ]}
+        good={[
+          "Usa o custo do produto no banco",
+          <>
+            <span>O servidor ignora o {c("custo")} do formulário e lê {c("produto.custo")} do banco.</span>
+            <span>O cliente só escolhe qual produto; o preço é consequência, decidida no servidor.</span>
+          </>,
+        ]}
+      />
+    ),
+  },
   "path-traversal": {
     caption: "Path traversal: um nome com ../ (ou absoluto) sai da pasta permitida e lê outros arquivos.",
     body: () => (

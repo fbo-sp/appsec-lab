@@ -204,3 +204,15 @@ labs:
     - version: 1.0.0
       published: 2026-11-17
       summary: Primeira versão (path traversal no download de documentos, Corrente Energia; família path-traversal, ramo Indústria e Energia).
+  LAB-035:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (loja confia no custo enviado pelo cliente, Cooperativa Credimova; família confianca-cliente, ramo Financeiro).
+  LAB-036:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (loja confia no custo enviado pelo cliente, Sereno Saúde; família confianca-cliente, ramo Saúde).
+  LAB-037:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (loja confia no custo enviado pelo cliente, Voltera Distribuidora de Energia; família confianca-cliente, ramo Indústria e Energia).
