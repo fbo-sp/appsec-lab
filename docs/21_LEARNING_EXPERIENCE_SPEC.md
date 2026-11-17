@@ -72,3 +72,7 @@ Definir se a primeira dica é gratuita, se dicas afetam pontuação, quantas ten
 ## Labs mobile (ADR-025)
 
 Labs com `variants[].platform: mobile` mantêm o layout padrão (etapas à esquerda; abas Aplicação, Código, Terminal e Validação à direita). Só a aba Aplicação muda: o app aparece dentro de uma moldura de celular (~320×640) com a mesma barra de endereço. Etapas, dicas, pontuação e validação seguem as mesmas regras.
+
+## Aparência da plataforma (ADR-026)
+
+O aluno escolhe a aparência no botão "Aparência" da barra superior: **Claro** (padrão), **Código escuro** (só o editor da aba Código fica escuro) ou **Tudo escuro** (portal e área de trabalho inteiros). A escolha fica salva no usuário (`GET/PUT /api/v1/me/preferences`) e vale em qualquer navegador. As aplicações dos laboratórios, inclusive a moldura de celular, não mudam com o tema.

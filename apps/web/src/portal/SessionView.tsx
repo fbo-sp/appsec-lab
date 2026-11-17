@@ -15,6 +15,7 @@ const TABS: { id: Tab; label: string }[] = [
 import { ErrorBox, StatusChip, go } from "./App";
 import { previewPathFrom } from "./previewPath";
 import { AddressHelp } from "./AddressHelp";
+import { useTema } from "./theme";
 
 const LIVE = new Set(["READY", "ACTIVE"]);
 const ENDED = new Set(["TERMINATED", "EXPIRED", "FAILED", "COMPLETED"]);
@@ -127,6 +128,7 @@ async function openAttackerSite(id: string) {
 }
 
 export function SessionView({ id }: { id: string }) {
+  const tema = useTema();
   const [session, setSession] = useState<LabSession>();
   const [error, setError] = useState<string>();
   const [frames, setFrames] = useState<{
@@ -242,8 +244,10 @@ export function SessionView({ id }: { id: string }) {
   const syncWorkspaceView = () => {
     if (!frames || !workspaceLoaded.current) return;
     workspaceFrame.current?.contentWindow?.postMessage({ type: "cecyber:view", view: wsView }, frames.workspaceOrigin);
+    // ADR-026: o workspace (outra origem) segue o modo de aparência do portal.
+    workspaceFrame.current?.contentWindow?.postMessage({ type: "cecyber:tema", tema }, frames.workspaceOrigin);
   };
-  useEffect(syncWorkspaceView, [wsView, frames]);
+  useEffect(syncWorkspaceView, [wsView, frames, tema]);
 
   function pickTab(t: Tab) {
     setTab(t);

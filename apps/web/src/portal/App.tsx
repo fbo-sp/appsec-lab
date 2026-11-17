@@ -2,6 +2,7 @@ import { Fragment, useCallback, useEffect, useState } from "react";
 import { api, ApiError, currentUser, setUser, type Lab, type LabSession } from "./api";
 import { FRAMEWORKS, isTutorial, MODULES, matchesFilter, readPref, SECTORS, writePref } from "./catalogFilter";
 import { SessionView } from "./SessionView";
+import { Aparencia } from "./Aparencia";
 
 type Route = { name: "catalog" } | { name: "lab"; labId: string; version: string } | { name: "session"; id: string };
 
@@ -36,6 +37,7 @@ export function App() {
           <span className="dev-badge" title="Autenticação de desenvolvimento local; não use em produção">
             modo local
           </span>
+          <Aparencia user={user} />
           <span className="user">{user}</span>
           <button className="link" onClick={() => (setUser(null), setUserState(null))}>
             trocar usuário

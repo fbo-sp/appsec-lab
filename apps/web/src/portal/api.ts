@@ -174,6 +174,9 @@ export const api = {
   activity: (id: string) => call<LabSession>(`/api/v1/sessions/${id}/activity`, { method: "POST" }),
   renew: (id: string) => call<LabSession>(`/api/v1/sessions/${id}/renewals`, { method: "POST" }),
   terminate: (id: string) => call<LabSession>(`/api/v1/sessions/${id}`, { method: "DELETE" }),
+  preferences: () => call<{ theme: string }>("/api/v1/me/preferences"),
+  setPreferences: (theme: string) =>
+    call<{ theme: string }>("/api/v1/me/preferences", { method: "PUT", body: JSON.stringify({ theme }) }),
   ticket: (id: string, purpose: "workspace" | "preview" | "attacker") =>
     call<{ url: string }>(`/api/v1/sessions/${id}/gateway-ticket`, {
       method: "POST",
