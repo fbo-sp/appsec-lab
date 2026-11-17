@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>App Pagomais</title>
+  <link rel="stylesheet" href="/static/estilo.css">
+  <style>:root { --marca: #1d4ed8; }</style>
+</head>
+<body>
+  <!-- App mobile SIMULADO (ADR-025): aparece dentro da moldura de celular da aba Aplicação. -->
+  <div class="status" aria-hidden="true"><span>9:41</span><span>5G ▮▮▮ 100%</span></div>
+  <main id="app" class="app"></main>
+  <script>
+    window.LAB = {
+      marca: "Pagomais",
+      lista: "Extrato",
+      acao: "Transferir R$ 500,00 por PIX",
+      recurso: "Cashback em dobro",
+      planoNome: "plano Pagomais Mais",
+      recursos: {{ recursos|tojson }}
+    };
+  </script>
+  <script src="/static/regras.js"></script>
+  <script src="/static/app.js"></script>
+</body>
+</html>

@@ -641,6 +641,27 @@ const ILLUSTRATIONS: Record<string, { caption: string; body: () => ReactNode }> 
       />
     ),
   },
+  "app-adulterado": {
+    caption: "O app roda no aparelho do usuário: regra que só existe no app pode ser trocada. Quem decide é o servidor.",
+    body: () => (
+      <Compare
+        bad={[
+          "Confia no que o app diz (hoje)",
+          <>
+            <span>O app manda {c('{"plano": "avancado", "integridade": "ok"}')} e o servidor libera.</span>
+            <span>Um app reempacotado troca {c("return conta.plano;")} e qualquer conta vira avançada.</span>
+          </>,
+        ]}
+        good={[
+          "Selo da loja + cadastro",
+          <>
+            <span>{c("verificar(selo)")}: assinatura da loja, conta certa, {c("app_oficial")} e dentro da validade.</span>
+            <span>O plano vem de {c("plano_da_conta")} no banco; o que o app diz é ignorado.</span>
+          </>,
+        ]}
+      />
+    ),
+  },
   "bfla": {
     caption: "Autorização de função (BFLA): autenticar não é autorizar — cada função sensível confere o papel.",
     body: () => (

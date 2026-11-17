@@ -456,3 +456,15 @@ labs:
     - version: 1.0.0
       published: 2026-11-17
       summary: "Publicação inicial. App mobile da Aurora Energia manda o token de sessão na URL (?token=), que vaza no log de acesso; correção aceita o token só no cabeçalho Authorization e recusa ?token=."
+  LAB-098:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: "Publicação inicial. App mobile da Pagomais modificado libera o Cashback em dobro do plano pago; correção decide pelo cadastro e confere o selo de integridade da loja simulada (Code Tampering)."
+  LAB-099:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: "Publicação inicial. App mobile da Clínica Lumen modificado libera a Teleconsulta imediata do plano Ouro; correção decide pelo cadastro e confere o selo de integridade da loja simulada (Code Tampering)."
+  LAB-100:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: "Publicação inicial. App mobile da Aurora Energia modificado libera o Relatório de ativos do supervisor; correção decide pelo cadastro e confere o selo de integridade da loja simulada (Code Tampering)."

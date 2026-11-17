@@ -1,0 +1,206 @@
+# Família L11 mob-app-adulterado (ADR-021, ADR-025): o que muda por ramo. O modelo comum está em ./modelo.
+# Depois de editar, rode:  uv run python scripts/gerar-familia.py mob-app-adulterado
+# Usa o app mobile comum (mesmas marcas, logins e dados de mob-modo-teste). Logins estão espelhados em
+# apps/backend/app/validation/suites_familias.py (ADULTERADO_RAMOS); os testes Docker conferem.
+# A falha (CWE-602, Mobile 2016 M8): services/recurso_service.py libera o recurso do plano avançado
+# com o plano e a "integridade" que o app informa; um app modificado diz o que quiser. A loja (Play
+# Integrity / App Attest) é SIMULADA em services/atestacao_service.py, com hash e chave em /opt/loja.
+ramos:
+- destino: LAB-098-mob-app-adulterado-fintech
+  vars:
+    lab_id: LAB-098
+    versao: 1.0.0
+    codigo: L11-FIN
+    imagem: lab-098-mobile
+    ramo: fin
+    setor: financeiro
+    banco: pagomais_mobile
+    empresa: Pagomais
+    marca: Pagomais
+    app_nome: App Pagomais
+    cor: '#1d4ed8'
+    lista_titulo: Extrato
+    acao_titulo: Transferir R$ 500,00 por PIX
+    login_a: ana.ribeiro
+    senha_a: Ana#Pagomais26
+    nome_a: Ana Ribeiro Teixeira
+    chave_app: PGM-APP-KEY-7F3A91C2
+    doc_rotulo: CPF
+    extra_rotulo: renda mensal
+    seed_contas:
+    - - 1
+      - ana.ribeiro
+      - Ana Ribeiro Teixeira
+      - Ana#Pagomais26
+      - Saldo R$ 4.820,15
+      - 111.444.777-35
+      - Renda mensal R$ 9.800
+    - - 2
+      - carlos.moura
+      - Carlos Moura Pinto
+      - Carlos#Pagomais26
+      - Saldo R$ 12.310,00
+      - 222.555.888-46
+      - Renda mensal R$ 15.200
+    seed_itens:
+    - - 1
+      - 1
+      - PIX recebido
+      - Vale Insumos
+      - + R$ 1.250,00
+    - - 2
+      - 1
+      - Cartão final 4410
+      - Mercado Norte
+      - '- R$ 212,90'
+    - - 3
+      - 2
+      - PIX enviado
+      - Norte Transportes
+      - '- R$ 2.300,00'
+    missao: Simular um app modificado que libera um recurso pago, mostrar que o servidor confia nele e corrigir o servidor para decidir pelo cadastro e conferir o selo de integridade assinado pela loja
+    titulo: o cashback em dobro liberado por um app pirata
+    papel: Pessoa desenvolvedora do time de apps do banco digital Pagomais
+    aplicacao: App Pagomais, o app em que o cliente consulta o extrato e ativa os benefícios do plano
+    contexto: 'O time de prevenção a fraudes da Pagomais encontrou num grupo de mensagens um "Pagomais Mod": uma versão modificada do app que libera o Cashback em dobro, benefício exclusivo do plano Pagomais
+      Mais, para qualquer cliente.'
+    historia_abertura: 'Você está no time de apps do banco digital Pagomais. Na segunda-feira, o time de prevenção a fraudes viu o custo do Cashback em dobro, benefício exclusivo do plano Pagomais Mais,
+      triplicar em uma semana. A explicação apareceu num grupo de mensagens: um tal de "Pagomais Mod", uma versão modificada do app, distribuída fora da loja, que mostra o botão do benefício para qualquer
+      cliente. E a API aceita.'
+    plano_nome: plano Pagomais Mais
+    recurso_titulo: Cashback em dobro
+    recurso_resultado: ativado nas compras do cartão até o fim do mês.
+    impacto: 'Cada cliente do plano básico com o app pirata recebe o dobro de cashback, pago pela Pagomais, sem pagar a mensalidade do plano. O app pirata também é distribuído fora da loja: o mesmo pacote
+      pode trazer código que rouba senhas, e o cliente nem percebe a diferença.'
+- destino: LAB-099-mob-app-adulterado-saude
+  vars:
+    lab_id: LAB-099
+    versao: 1.0.0
+    codigo: L11-SAU
+    imagem: lab-099-mobile
+    ramo: sau
+    setor: saude
+    banco: lumen_mobile
+    empresa: Clínica Lumen
+    marca: Lumen
+    app_nome: App Lumen Saúde
+    cor: '#0e7490'
+    lista_titulo: Meus exames
+    acao_titulo: Compartilhar laudo com o Dr. Paulo Reis
+    login_a: marcos.tavares
+    senha_a: Marcos#Lumen26
+    nome_a: Marcos Tavares Lima
+    chave_app: LUM-APP-KEY-3B71E0C9
+    doc_rotulo: CPF
+    extra_rotulo: diagnóstico (CID)
+    seed_contas:
+    - - 1
+      - marcos.tavares
+      - Marcos Tavares Lima
+      - Marcos#Lumen26
+      - Próxima consulta 20/11 às 14h30
+      - 333.666.999-57
+      - CID J45 asma
+    - - 2
+      - renata.borges
+      - Renata Borges Nunes
+      - Renata#Lumen26
+      - Próxima consulta 02/12 às 9h
+      - 444.777.000-68
+      - CID E11 diabetes
+    seed_itens:
+    - - 1
+      - 1
+      - Hemograma completo
+      - Resultado disponível
+      - 12/11
+    - - 2
+      - 1
+      - Consulta cardiologia
+      - Agendada
+      - 20/11
+    - - 3
+      - 2
+      - Ressonância de joelho
+      - Laudo em análise
+      - 08/11
+    missao: Simular um app modificado que libera um recurso pago, mostrar que o servidor confia nele e corrigir o servidor para decidir pelo cadastro e conferir o selo de integridade assinado pela loja
+    titulo: a teleconsulta imediata liberada por um app pirata
+    papel: Pessoa desenvolvedora do time de apps da Clínica Lumen
+    aplicacao: App Lumen Saúde, o app em que o paciente consulta os exames e agenda teleconsultas
+    contexto: A coordenação de telemedicina da Clínica Lumen estranhou a fila da Teleconsulta imediata, exclusiva do plano Lumen Ouro, cheia de pacientes do plano básico. Um app modificado, distribuído
+      fora da loja, libera o botão para qualquer paciente.
+    historia_abertura: 'Você está no time de apps da Clínica Lumen. Na terça-feira, a coordenação de telemedicina reclamou: a fila da Teleconsulta imediata, exclusiva do plano Lumen Ouro, está cheia de
+      pacientes do plano básico, e quem pagou pelo Ouro está esperando. O suporte descobriu um "Lumen Saúde Plus" circulando em grupos de mensagens: o app modificado mostra o botão para qualquer paciente.
+      E a API aceita.'
+    plano_nome: plano Lumen Ouro
+    recurso_titulo: Teleconsulta imediata
+    recurso_resultado: você entrou na fila prioritária; um médico chama em até 10 minutos.
+    impacto: Pacientes do plano básico com o app pirata ocupam a fila prioritária paga pelo plano Ouro, com custo de médico de plantão para a clínica e atraso para quem tem direito. O app pirata, distribuído
+      fora da loja, também pode trazer código que lê os exames do paciente, dado de saúde protegido pela LGPD.
+- destino: LAB-100-mob-app-adulterado-industria
+  vars:
+    lab_id: LAB-100
+    versao: 1.0.0
+    codigo: L11-IND
+    imagem: lab-100-mobile
+    ramo: ind
+    setor: industria-energia
+    banco: aurora_mobile
+    empresa: Aurora Energia
+    marca: Aurora
+    app_nome: App Aurora Campo
+    cor: '#b45309'
+    lista_titulo: Ordens de serviço
+    acao_titulo: Liberar manobra no disjuntor 7
+    login_a: diego.campos
+    senha_a: Diego#Aurora26
+    nome_a: Diego Campos Ferraz
+    chave_app: AUR-APP-KEY-C40D92B1
+    doc_rotulo: matrícula
+    extra_rotulo: endereço residencial
+    seed_contas:
+    - - 1
+      - diego.campos
+      - Diego Campos Ferraz
+      - Diego#Aurora26
+      - 3 ordens em aberto hoje
+      - MAT-40213
+      - Rua das Turbinas 120
+    - - 2
+      - sonia.barros
+      - Sonia Barros Teles
+      - Sonia#Aurora26
+      - 1 ordem em aberto hoje
+      - MAT-40877
+      - Avenida da Usina 45
+    seed_itens:
+    - - 1
+      - 1
+      - OS 4821
+      - Manutenção da bomba 4
+      - Hoje
+    - - 2
+      - 1
+      - OS 4822
+      - Inspeção da subestação 2
+      - Amanhã
+    - - 3
+      - 2
+      - OS 4825
+      - Parada da turbina 2
+      - 19/11
+    missao: Simular um app modificado que libera um recurso pago, mostrar que o servidor confia nele e corrigir o servidor para decidir pelo cadastro e conferir o selo de integridade assinado pela loja
+    titulo: o relatório de ativos liberado por um app adulterado
+    papel: Pessoa desenvolvedora do time de apps da Aurora Energia
+    aplicacao: App Aurora Campo, o app em que o técnico de campo consulta as ordens de serviço da equipe
+    contexto: A segurança de TA da Aurora Energia encontrou, no celular de um técnico de uma empreiteira, uma versão modificada do App Aurora Campo que libera o Relatório de ativos da subestação, exclusivo
+      da habilitação de supervisor.
+    historia_abertura: Você está no time de apps da Aurora Energia. Numa inspeção de rotina, a segurança de TA encontrou no celular de um técnico de empreiteira uma versão modificada do App Aurora Campo,
+      instalada fora da loja, que mostra o Relatório de ativos da subestação, com equipamentos, firmware e pontos de acesso remoto, exclusivo da habilitação de supervisor. O técnico não é supervisor. E
+      a API entregou o relatório.
+    plano_nome: habilitação de supervisor
+    recurso_titulo: Relatório de ativos
+    recurso_resultado: 'SE Vale Verde: 14 equipamentos, 3 com firmware desatualizado e 2 pontos de acesso remoto.'
+    impacto: 'Qualquer técnico, inclusive de empreiteira, com o app adulterado vê o inventário dos equipamentos da subestação, o firmware desatualizado e os pontos de acesso remoto: o mapa que alguém precisaria
+      para planejar um ataque à rede elétrica.'

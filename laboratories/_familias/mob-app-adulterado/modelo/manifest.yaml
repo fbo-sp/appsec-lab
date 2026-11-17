@@ -1,0 +1,275 @@
+# [[lab_id]] ([[codigo]]): servidor que confia no app modificado (Code Tampering, CWE-602) no [[app_nome]] da [[empresa]] (app mobile simulado, Flask + SQLite).
+# CONTÉM VULNERABILIDADE INTENCIONAL. Uso exclusivo no runtime Docker LOCAL (ADR-008), em rede
+# interna da sessão. Dados 100% fictícios. Família L11 mob-app-adulterado (ADR-021, ADR-025): gerado por
+# scripts/gerar-familia.py a partir de laboratories/_familias/mob-app-adulterado; não edite este arquivo à mão.
+#
+# ATENÇÃO: o digest abaixo é uma FIXTURE (sha256 de um texto fixo), não uma imagem publicada.
+# scripts/lab-local.sh e .ps1 trocam pela imagem construída localmente antes de registrar.
+apiVersion: labs.cecyber.io/v1alpha1
+kind: AppSecLab
+metadata:
+  id: [[lab_id]]
+  version: [[versao]]
+  title: "[[codigo]] · App adulterado: [[titulo]]"
+  primaryCwe: CWE-602
+  secondaryCwes: [CWE-345]
+  family: mob-app-adulterado
+  sectors: [[[setor]]]
+  courseModules: [trained]
+  classifications:
+    - framework: OWASP Top 10
+      edition: "2025"
+      entries:
+        - "A06 Insecure Design"
+    - framework: OWASP Top 10
+      edition: "2021"
+      entries:
+        - "A04 Insecure Design"
+    - framework: SANS CWE Top 25
+      edition: "2025"
+      entries:
+        - "Não se enquadra; use o CWE"
+    - framework: SANS CWE Top 25
+      edition: "2024"
+      entries:
+        - "Não se enquadra; use o CWE"
+    - framework: OWASP Mobile Top 10
+      edition: "2024"
+      entries:
+        - "M7 Insufficient Binary Protections"
+    - framework: OWASP Mobile Top 10
+      edition: "2016"
+      entries:
+        - "M8 Code Tampering"
+    - framework: OWASP MASVS
+      edition: "2023"
+      entries:
+        - "MASVS-RESILIENCE-2"
+learning:
+  singleVulnerability: true
+  estimatedMinutes: 40
+  difficulty: beginner
+  objectives:
+    - Entender que o código do app pode ser modificado por quem tem o celular
+    - Simular um app reempacotado e ver o servidor liberar o que não devia
+    - Ler o veredito do selo de integridade da loja
+    - Corrigir o servidor para decidir pelo cadastro e conferir o selo assinado
+  story:
+    role: >-
+      [[papel]]
+    application: >-
+      [[aplicacao]]
+    context: >-
+      [[contexto]]
+    mission: >-
+      [[missao]]
+  wrapUp:
+    text: |
+      Agora o servidor decide o plano pelo cadastro e só libera o recurso com um selo de integridade válido, assinado pela loja, desta conta, dentro da validade e com o veredito `app_oficial`. Em um app real, vale reforçar:
+
+      - **O app é do usuário, não seu.** Qualquer regra que só existe no app (esconder um botão, conferir um plano, dizer "estou íntegro") pode ser trocada por quem reempacota o app. Regra de negócio e de acesso mora no servidor.
+      - **Atestação de verdade.** Use Play Integrity (Android) e App Attest / DeviceCheck (iOS). O selo é verificado no servidor (com a API ou a chave pública da plataforma), amarrado a um desafio de uso único e com validade curta.
+      - **Proteções no binário ajudam, mas não decidem.** Ofuscação, detecção de root/jailbreak, de depurador e de hooking aumentam o custo do ataque (MASVS-RESILIENCE), mas rodam no aparelho do atacante: são camada extra, nunca o controle principal.
+      - **Monitore.** Pedidos com selo `app_modificado` ou sem selo são sinal de app pirata em circulação: registre, alerte e, se preciso, bloqueie a conta.
+    references:
+      - title: "OWASP Mobile Top 10 2016: M8 Code Tampering"
+        url: https://owasp.org/www-project-mobile-top-10/2016-risks/m8-code-tampering
+      - title: "OWASP Mobile Top 10 2024: M7 Insufficient Binary Protections"
+        url: https://owasp.org/www-project-mobile-top-10/2023-risks/m7-insufficient-binary-protection
+      - title: "OWASP MASVS: MASVS-RESILIENCE"
+        url: https://mas.owasp.org/MASVS/11-MASVS-RESILIENCE/
+      - title: "CWE-602: Client-Side Enforcement of Server-Side Security"
+        url: https://cwe.mitre.org/data/definitions/602.html
+      - title: "Android Developers: Play Integrity API"
+        url: https://developer.android.com/google/play/integrity
+      - title: "Apple Developer: Establishing your app's integrity (App Attest)"
+        url: https://developer.apple.com/documentation/devicecheck/establishing-your-app-s-integrity
+variants:
+  - id: python-flask
+    language: python
+    framework: flask
+    image: registry.local/labs/[[imagem]]@sha256:[[digest_fixture]]
+    runtimeProfile: web-basic
+    workspacePath: /workspace
+    startup:
+      command: ["sh", "-c", "python -u -m flask --app app run --host 0.0.0.0 --port 8080 --reload --no-debugger 2>&1 | tee -a /tmp/app.log"]
+      port: 8080
+    resources:
+      cpuMillicores: 500
+      memoryMiB: 512
+      storageMiB: 256
+      pidsMax: 64
+    session:
+      ttlMinutes: 45
+      maxRenewals: 2
+    interfaces: [editor, terminal, web]
+    platform: mobile
+steps:
+  - id: conhecer
+    order: 1
+    title: Conhecer o app e a regra do plano
+    explanation: |
+      [[historia_abertura]]
+
+      **Um laboratório mobile.** Na aba **Aplicação**, o app aparece numa moldura de celular. Ele é um app **simulado** (não há emulador), mas fala com a API do servidor do mesmo jeito que um app Android ou iOS.
+
+      O recurso **[[recurso_titulo]]** é só do plano avançado ([[plano_nome]]). O app esconde o botão de quem não é desse plano e, quando alguém usa o recurso, manda à API o plano da conta e o resultado da própria verificação de integridade (`"ok"`). O servidor confia nos dois. Só que o app roda no celular do usuário: quem tem o celular pode descompilar o app, trocar uma regra e reempacotá-lo. É uma falha de **adulteração de código** (Mobile M8 / Code Tampering).
+
+      ```ilustracao
+      app-adulterado
+      ```
+
+      Siga o pedido pelas camadas:
+
+      1. **App** (`static/regras.js` e `static/app.js`): decide se mostra o botão e o que manda à API.
+      2. **Selo de integridade** (`services/atestacao_service.py`): **simula** o serviço da loja (Play Integrity / App Attest), que confere o código do app e devolve um selo assinado. Esse arquivo não tem falha.
+      3. **Serviço** (`services/recurso_service.py`): decide se libera o recurso. **É aqui que está a falha.**
+
+      As credenciais de teste deste laboratório são:
+
+      - Usuário `[[login_a]]`, senha `[[senha_a]]` ([[nome_a]]), conta do plano **básico**.
+    task: |
+      1. Na aba **Aplicação**, entre com `[[login_a]]` e a senha `[[senha_a]]`. Veja o cartão **[[recurso_titulo]]** com o cadeado: a conta é do plano básico.
+      2. Na aba **Código**, abra `static/regras.js` e veja a função `plano`.
+
+      Informe abaixo o nome do arquivo do app que decide qual plano o app considera para a conta.
+    concept: A regra que só existe no app pode ser trocada
+    validatorRef: mob-app-adulterado/answer/regras-[[ramo]]-v1
+    hints:
+      - level: 1
+        text: Está na pasta `static/`, ao lado de `app.js`.
+      - level: 2
+        text: O arquivo define `window.REGRAS`.
+      - level: 3
+        text: A resposta é `regras.js`.
+    points: 10
+  - id: adulterar
+    order: 2
+    title: Simular o app reempacotado
+    explanation: |
+      Um app reempacotado é o app oficial com algumas linhas trocadas e assinado de novo por outra pessoa. Aqui, editar `static/regras.js` faz o papel do reempacotamento: é o código que vai dentro do app.
+    task: |
+      1. Em `static/regras.js`, troque a linha `return conta.plano;` por:
+
+         ```javascript
+             return "avancado";
+         ```
+
+      2. Salve com **Ctrl+S**. Na aba **Aplicação**, clique em **recarregar** (acima do celular, para o app carregar o código novo) e entre de novo com as credenciais da etapa 1. O cartão agora mostra o botão **Usar [[recurso_titulo]]**.
+      3. Toque no botão.
+
+      O servidor liberou o recurso para a conta do plano básico? Responda **sim** ou **não**.
+    explore: |
+      **Por que isso é grave.** [[impacto]]
+
+      **Como isso acontece fora do laboratório.** O APK de um app Android é um arquivo que qualquer pessoa pode baixar e abrir com ferramentas públicas de engenharia reversa; um app iOS em aparelho com jailbreak também. Trocar uma comparação, reempacotar e assinar com outra chave leva poucos minutos, e o app modificado continua falando com a mesma API.
+
+      **Mantenha a alteração por enquanto:** você vai usá-la na próxima etapa.
+    concept: O servidor confiou no que o app modificado disse
+    validatorRef: mob-app-adulterado/answer/liberou-[[ramo]]-v1
+    hints:
+      - level: 1
+        text: Veja a mensagem que aparece no topo da tela depois de tocar no botão.
+      - level: 2
+        text: 'Se a mensagem começa com "[[recurso_titulo]]:", o servidor liberou.'
+      - level: 3
+        text: A resposta é `sim`.
+    points: 15
+  - id: selo
+    order: 3
+    title: Ler o veredito do selo de integridade
+    explanation: |
+      Antes de chamar o recurso, o app pediu um **selo de integridade** à loja (aqui, ao serviço simulado). A loja confere o código do app e assina o veredito, e o app não consegue fabricar um selo válido, porque não tem a chave da loja. O app repassou o selo ao servidor... e o servidor nem olhou.
+    task: |
+      No **Terminal**, veja os últimos selos emitidos:
+
+      ```bash
+      grep "Selo emitido" /tmp/app.log | tail -n 2
+      ```
+
+      Informe abaixo o **veredito** do último selo.
+    explore: |
+      **O selo de verdade.** No Android, o Play Integrity devolve um veredito assinado pelo Google (por exemplo, se o app é o reconhecido pela loja e se o aparelho é íntegro); no iOS, o App Attest prova que o pedido vem de uma instância legítima do app. Nos dois casos, quem decide é o **servidor**, conferindo a assinatura, a validade e a quem o selo se refere.
+    concept: A loja viu a modificação; o servidor ignorou
+    validatorRef: mob-app-adulterado/answer/veredito-[[ramo]]-v1
+    hints:
+      - level: 1
+        text: O log mostra `veredito=...` no fim da linha.
+      - level: 2
+        text: O código do app foi alterado na etapa 2.
+      - level: 3
+        text: A resposta é `app_modificado`.
+    points: 15
+  - id: onde
+    order: 4
+    title: Encontrar onde o servidor confia no app
+    explanation: |
+      Abra `services/recurso_service.py`. O método que decide se a conta pode usar o recurso lê o `plano` e a `integridade` do pedido, os dois escritos pelo app, e não usa o cadastro nem o selo.
+    task: |
+      Informe abaixo o nome do método que decide se libera o recurso.
+    concept: Decisão de acesso tomada com dados do cliente
+    validatorRef: mob-app-adulterado/answer/metodo-[[ramo]]-v1
+    hints:
+      - level: 1
+        text: A classe `RecursoService` tem um método público além de `__init__`.
+      - level: 2
+        text: É o método chamado pela rota `/api/recurso` no controller.
+      - level: 3
+        text: A resposta é `liberar`.
+    points: 15
+  - id: corrigir
+    order: 5
+    title: Decidir pelo cadastro e conferir o selo
+    explanation: |
+      **Por que a falha existe.** O servidor usa o plano e a integridade que o app informa. Os dois saem do código do app, e o código do app está nas mãos do usuário.
+
+      **A correção.** O servidor ignora o `plano` e a `integridade` do pedido e decide com o que só ele controla:
+
+      - o **selo de integridade**, conferido por `AtestacaoService.verificar` (assinatura da loja, conta certa, veredito `app_oficial` e dentro da validade);
+      - o **plano do cadastro**, lido por `AssinaturaRepository.plano_da_conta`.
+
+      Esconder o botão no app continua útil para a experiência de uso, mas deixa de ser o controle.
+    task: |
+      1. Abra `services/recurso_service.py` e troque o método `liberar` inteiro por este:
+
+         ```python
+             def liberar(self, conta_id: int, dados: dict) -> bool:
+                 """Libera o recurso só com selo válido do app oficial e plano avançado no cadastro."""
+                 if not self._atestacao.verificar(dados.get("selo"), conta_id):
+                     return False  # app modificado, selo forjado, vencido ou de outra conta
+                 return self._assinaturas.plano_da_conta(conta_id) == "avancado"
+         ```
+
+      2. Desfaça a alteração da etapa 2: em `static/regras.js`, volte a linha para `return conta.plano;`.
+
+      Salve os dois arquivos com **Ctrl+S**. A aplicação reinicia. Então:
+
+      1. na aba **Aplicação**, clique em **recarregar** e entre de novo com as credenciais da etapa 1: o cartão volta a mostrar o cadeado;
+      2. se quiser, troque de novo a linha para `return "avancado";`, recarregue, entre de novo e toque no botão: agora o servidor recusa (o selo diz `app_modificado` e o cadastro diz plano básico). Depois, desfaça a troca;
+      3. clique em **Validar**.
+    explore: |
+      **O que a validação confere.** Uma conta do plano avançado com selo válido continua usando o recurso; a conta básica que se declara avançada é recusada; pedido sem selo, com selo forjado ou com selo de outra conta também. Se o `static/regras.js` ficar modificado, o selo diz `app_modificado` e até a conta avançada é recusada: desfaça a alteração antes de validar.
+
+      **Se algo não funcionar depois de salvar.** No **Terminal**:
+
+      ```bash
+      grep -iE "error|traceback" /tmp/app.log | tail -n 15
+      ```
+
+      O `def liberar` fica com 4 espaços; o corpo, com 8; o `return False` dentro do `if`, com 12.
+    concept: Regra no servidor, selo conferido no servidor
+    validatorRef: mob-app-adulterado/python-flask/selo-cadastro-[[ramo]]-v1
+    hints:
+      - level: 1
+        text: 'São duas mudanças: o método `liberar` e desfazer a troca em `static/regras.js`.'
+      - level: 2
+        text: O servidor não pode ler `plano` nem `integridade` do pedido; o selo e o cadastro decidem.
+      - level: 3
+        text: Copie o método da tarefa sem mudar o recuo e volte `regras.js` para `return conta.plano;`.
+    points: 45
+policy:
+  sequentialUnlock: true
+  allowStepRetry: true
+  persistProgressAcrossReset: true
+  allowSolutionReveal: false
+  finalPassingScore: 100

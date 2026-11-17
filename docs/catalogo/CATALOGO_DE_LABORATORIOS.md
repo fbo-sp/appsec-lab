@@ -137,6 +137,9 @@ Indicado como primeira atividade de qualquer turma, antes do primeiro laboratór
 | LAB-095 | L9-FIN · Comunicação insegura: o token de sessão que apareceu no log do proxy | 1.0.0 | CWE-598 | A04 Cryptographic Failures (2025) | Não se enquadra; use o CWE (2025) | Iniciante | 35 min |
 | LAB-096 | L9-SAU · Comunicação insegura: o token de sessão que apareceu no log do Wi-Fi da clínica | 1.0.0 | CWE-598 | A04 Cryptographic Failures (2025) | Não se enquadra; use o CWE (2025) | Iniciante | 35 min |
 | LAB-097 | L9-IND · Comunicação insegura: o token de sessão que apareceu no log da rede da subestação | 1.0.0 | CWE-598 | A04 Cryptographic Failures (2025) | Não se enquadra; use o CWE (2025) | Iniciante | 35 min |
+| LAB-098 | L11-FIN · App adulterado: o cashback em dobro liberado por um app pirata | 1.0.0 | CWE-602 | A06 Insecure Design (2025) | Não se enquadra; use o CWE (2025) | Iniciante | 40 min |
+| LAB-099 | L11-SAU · App adulterado: a teleconsulta imediata liberada por um app pirata | 1.0.0 | CWE-602 | A06 Insecure Design (2025) | Não se enquadra; use o CWE (2025) | Iniciante | 40 min |
+| LAB-100 | L11-IND · App adulterado: o relatório de ativos liberado por um app adulterado | 1.0.0 | CWE-602 | A06 Insecure Design (2025) | Não se enquadra; use o CWE (2025) | Iniciante | 40 min |
 
 ## LAB-001 · SQL Injection: a busca que expõe pacientes
 
@@ -4174,3 +4177,132 @@ Indicado como primeira atividade de qualquer turma, antes do primeiro laboratór
 | Versão | Criada em | Obsoleta em | Situação | O que mudou |
 |---|---|---|---|---|
 | 1.0.0 | 2026-11-17 | — | vigente | Publicação inicial. App mobile da Aurora Energia manda o token de sessão na URL (?token=), que vaza no log de acesso; correção aceita o token só no cabeçalho Authorization e recusa ?token=. |
+
+## LAB-098 · L11-FIN · App adulterado: o cashback em dobro liberado por um app pirata
+
+- Versão vigente: 1.0.0
+- Cenário: App Pagomais, o app em que o cliente consulta o extrato e ativa os benefícios do plano
+- Papel do aluno: Pessoa desenvolvedora do time de apps do banco digital Pagomais
+- Linguagem / stack: python / flask
+- Nível: Iniciante · duração estimada: 40 min
+- Família: mob-app-adulterado
+- Ramo: Financeiro
+- Módulo do curso: Trained
+
+### Classificação
+
+- CWE: CWE-602 (principal), CWE-345
+- OWASP Top 10 2025: A06 Insecure Design
+- OWASP Top 10 2021: A04 Insecure Design
+- SANS CWE Top 25 2025: Não se enquadra; use o CWE
+- SANS CWE Top 25 2024: Não se enquadra; use o CWE
+- OWASP Mobile Top 10 2024: M7 Insufficient Binary Protections
+- OWASP Mobile Top 10 2016: M8 Code Tampering
+- OWASP MASVS 2023: MASVS-RESILIENCE-2
+
+### Objetivos
+
+- Entender que o código do app pode ser modificado por quem tem o celular
+- Simular um app reempacotado e ver o servidor liberar o que não devia
+- Ler o veredito do selo de integridade da loja
+- Corrigir o servidor para decidir pelo cadastro e conferir o selo assinado
+
+### Etapas
+
+1. Conhecer o app e a regra do plano (10 pts)
+2. Simular o app reempacotado (15 pts)
+3. Ler o veredito do selo de integridade (15 pts)
+4. Encontrar onde o servidor confia no app (15 pts)
+5. Decidir pelo cadastro e conferir o selo (45 pts)
+
+### Histórico de versões
+
+| Versão | Criada em | Obsoleta em | Situação | O que mudou |
+|---|---|---|---|---|
+| 1.0.0 | 2026-11-17 | — | vigente | Publicação inicial. App mobile da Pagomais modificado libera o Cashback em dobro do plano pago; correção decide pelo cadastro e confere o selo de integridade da loja simulada (Code Tampering). |
+
+## LAB-099 · L11-SAU · App adulterado: a teleconsulta imediata liberada por um app pirata
+
+- Versão vigente: 1.0.0
+- Cenário: App Lumen Saúde, o app em que o paciente consulta os exames e agenda teleconsultas
+- Papel do aluno: Pessoa desenvolvedora do time de apps da Clínica Lumen
+- Linguagem / stack: python / flask
+- Nível: Iniciante · duração estimada: 40 min
+- Família: mob-app-adulterado
+- Ramo: Saúde
+- Módulo do curso: Trained
+
+### Classificação
+
+- CWE: CWE-602 (principal), CWE-345
+- OWASP Top 10 2025: A06 Insecure Design
+- OWASP Top 10 2021: A04 Insecure Design
+- SANS CWE Top 25 2025: Não se enquadra; use o CWE
+- SANS CWE Top 25 2024: Não se enquadra; use o CWE
+- OWASP Mobile Top 10 2024: M7 Insufficient Binary Protections
+- OWASP Mobile Top 10 2016: M8 Code Tampering
+- OWASP MASVS 2023: MASVS-RESILIENCE-2
+
+### Objetivos
+
+- Entender que o código do app pode ser modificado por quem tem o celular
+- Simular um app reempacotado e ver o servidor liberar o que não devia
+- Ler o veredito do selo de integridade da loja
+- Corrigir o servidor para decidir pelo cadastro e conferir o selo assinado
+
+### Etapas
+
+1. Conhecer o app e a regra do plano (10 pts)
+2. Simular o app reempacotado (15 pts)
+3. Ler o veredito do selo de integridade (15 pts)
+4. Encontrar onde o servidor confia no app (15 pts)
+5. Decidir pelo cadastro e conferir o selo (45 pts)
+
+### Histórico de versões
+
+| Versão | Criada em | Obsoleta em | Situação | O que mudou |
+|---|---|---|---|---|
+| 1.0.0 | 2026-11-17 | — | vigente | Publicação inicial. App mobile da Clínica Lumen modificado libera a Teleconsulta imediata do plano Ouro; correção decide pelo cadastro e confere o selo de integridade da loja simulada (Code Tampering). |
+
+## LAB-100 · L11-IND · App adulterado: o relatório de ativos liberado por um app adulterado
+
+- Versão vigente: 1.0.0
+- Cenário: App Aurora Campo, o app em que o técnico de campo consulta as ordens de serviço da equipe
+- Papel do aluno: Pessoa desenvolvedora do time de apps da Aurora Energia
+- Linguagem / stack: python / flask
+- Nível: Iniciante · duração estimada: 40 min
+- Família: mob-app-adulterado
+- Ramo: Indústria e Energia
+- Módulo do curso: Trained
+
+### Classificação
+
+- CWE: CWE-602 (principal), CWE-345
+- OWASP Top 10 2025: A06 Insecure Design
+- OWASP Top 10 2021: A04 Insecure Design
+- SANS CWE Top 25 2025: Não se enquadra; use o CWE
+- SANS CWE Top 25 2024: Não se enquadra; use o CWE
+- OWASP Mobile Top 10 2024: M7 Insufficient Binary Protections
+- OWASP Mobile Top 10 2016: M8 Code Tampering
+- OWASP MASVS 2023: MASVS-RESILIENCE-2
+
+### Objetivos
+
+- Entender que o código do app pode ser modificado por quem tem o celular
+- Simular um app reempacotado e ver o servidor liberar o que não devia
+- Ler o veredito do selo de integridade da loja
+- Corrigir o servidor para decidir pelo cadastro e conferir o selo assinado
+
+### Etapas
+
+1. Conhecer o app e a regra do plano (10 pts)
+2. Simular o app reempacotado (15 pts)
+3. Ler o veredito do selo de integridade (15 pts)
+4. Encontrar onde o servidor confia no app (15 pts)
+5. Decidir pelo cadastro e conferir o selo (45 pts)
+
+### Histórico de versões
+
+| Versão | Criada em | Obsoleta em | Situação | O que mudou |
+|---|---|---|---|---|
+| 1.0.0 | 2026-11-17 | — | vigente | Publicação inicial. App mobile da Aurora Energia modificado libera o Relatório de ativos do supervisor; correção decide pelo cadastro e confere o selo de integridade da loja simulada (Code Tampering). |

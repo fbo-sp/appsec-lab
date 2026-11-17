@@ -226,7 +226,7 @@ steps:
 
       Salve os dois arquivos com **Ctrl+S**. A aplicação reinicia. Então:
 
-      1. no app, toque em **Sair** e entre de novo com as credenciais da etapa 1: o app continua funcionando, agora só com o cabeçalho;
+      1. na aba **Aplicação**, clique em **recarregar** (acima do celular, para o app ler a configuração nova) e entre de novo com as credenciais da etapa 1: o app continua funcionando, agora só com o cabeçalho;
       2. no **Terminal**, repita o `curl` da etapa 2 e veja `nao autorizado`;
       3. clique em **Validar**.
     explore: |

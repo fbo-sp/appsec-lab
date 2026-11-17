@@ -3719,6 +3719,159 @@ def _token_url(r: TokenUrlRamo) -> tuple[Suite, ...]:
     )
 
 
+# L11 mob-app-adulterado: servidor que confia no plano e na integridade que o app informa (LAB-098 a LAB-100)
+
+
+@dataclass(frozen=True, slots=True)
+class AdulteradoRamo:
+    ramo: str
+    login_a: str  # conta 1, plano básico
+    senha_a: str
+    login_b: str  # conta 2, plano avançado
+    senha_b: str
+
+
+ADULTERADO_RAMOS = (
+    AdulteradoRamo("fin", "ana.ribeiro", "Ana#Pagomais26", "carlos.moura", "Carlos#Pagomais26"),
+    AdulteradoRamo("sau", "marcos.tavares", "Marcos#Lumen26", "renata.borges", "Renata#Lumen26"),
+    AdulteradoRamo("ind", "diego.campos", "Diego#Aurora26", "sonia.barros", "Sonia#Aurora26"),
+)
+
+_SELO_RE = r'"selo"\s*:\s*"([A-Za-z0-9_=.-]+)"'
+# Selo "forjado": corpo válido (conta 2, app_oficial, validade em 2100) com assinatura inventada.
+_SELO_FORJADO = (
+    "eyJjb250YV9pZCI6IDIsICJleHBpcmFfZW0iOiA0MTAyNDQ0ODAwLCAidmVyZWRpdG8iOiAiYXBwX29maWNpYWwifQ==." + "0" * 64
+)
+
+
+def _adulterado(r: AdulteradoRamo) -> tuple[Suite, ...]:
+    def pedido(selo: str | None) -> dict[str, object]:
+        corpo: dict[str, object] = {"plano": "avancado", "integridade": "ok"}
+        if selo is not None:
+            corpo["selo"] = selo
+        return corpo
+
+    def login(nome: str, usuario: str, senha: str) -> HttpLogin:
+        return HttpLogin(
+            name=nome,
+            path="/api/login",
+            json={"login": usuario, "senha": senha},
+            token_field="token",  # noqa: S106 - nome do campo JSON, não é senha
+        )
+
+    return (
+        AnswerSuite(
+            ref=f"mob-app-adulterado/answer/regras-{r.ramo}-v1",
+            version="1.0.0",
+            prompt="Arquivo do app que decide o plano",
+            accepted=("regras.js", "static/regras.js", "regras"),
+            success_feedback="Isso. A regra do plano está no código do app, que vai para o celular do usuário.",
+            failure_feedback="Ainda não. Procure em static/ o arquivo que define window.REGRAS.",
+        ),
+        AnswerSuite(
+            ref=f"mob-app-adulterado/answer/liberou-{r.ramo}-v1",
+            version="1.0.0",
+            prompt="O servidor liberou o recurso para a conta básica?",
+            accepted=_SIM,
+            success_feedback="Exato: bastou trocar uma linha do app para o servidor liberar o recurso pago.",
+            failure_feedback="Ainda não. Troque a linha, recarregue o app, entre de novo e toque no botão.",
+        ),
+        AnswerSuite(
+            ref=f"mob-app-adulterado/answer/veredito-{r.ramo}-v1",
+            version="1.0.0",
+            prompt="Veredito do último selo",
+            accepted=("app_modificado", "app modificado", "modificado"),
+            success_feedback="Isso. A loja percebeu a modificação, mas o servidor nem conferiu o selo.",
+            failure_feedback="Ainda não. Rode o grep da tarefa e veja o valor de veredito= na última linha.",
+        ),
+        AnswerSuite(
+            ref=f"mob-app-adulterado/answer/metodo-{r.ramo}-v1",
+            version="1.0.0",
+            prompt="Método que decide se libera o recurso",
+            accepted=("liberar", "liberar()", "RecursoService.liberar"),
+            success_feedback="Isso. É em liberar que o servidor precisa usar o selo e o cadastro.",
+            failure_feedback="Ainda não. Veja o método público de RecursoService.",
+        ),
+        HttpSuite(
+            ref=f"mob-app-adulterado/python-flask/selo-cadastro-{r.ramo}-v1",
+            version="1.0.0",
+            logins=(login("a", r.login_a, r.senha_a), login("b", r.login_b, r.senha_b)),
+            checks=(
+                HttpCheck(
+                    id="selo-do-app-oficial",
+                    description="O app sem modificação recebe um selo de integridade (static/regras.js e app.js originais).",
+                    path="/api/atestacao",
+                    method="POST",
+                    as_user="b",
+                    capture={"selo_b": _SELO_RE},
+                ),
+                HttpCheck(
+                    id="avancado-com-selo-liberado",
+                    description="A conta do plano avançado, com selo válido do app oficial, continua usando o recurso.",
+                    path="/api/recurso",
+                    method="POST",
+                    as_user="b",
+                    json=pedido("{{selo_b}}"),
+                    expect_status=200,
+                ),
+                HttpCheck(
+                    id="selo-da-conta-basica",
+                    description="A conta básica também recebe um selo válido (para a verificação seguinte).",
+                    path="/api/atestacao",
+                    method="POST",
+                    as_user="a",
+                    capture={"selo_a": _SELO_RE},
+                ),
+                HttpCheck(
+                    id="basico-declarando-avancado-recusado",
+                    description="A conta básica que se declara do plano avançado é recusada, mesmo com selo válido: o cadastro decide.",
+                    path="/api/recurso",
+                    method="POST",
+                    as_user="a",
+                    json=pedido("{{selo_a}}"),
+                    expect_status=403,
+                ),
+                HttpCheck(
+                    id="sem-selo-recusado",
+                    description="Um pedido sem selo de integridade é recusado, mesmo da conta do plano avançado.",
+                    path="/api/recurso",
+                    method="POST",
+                    as_user="b",
+                    json=pedido(None),
+                    expect_status=403,
+                ),
+                HttpCheck(
+                    id="selo-forjado-recusado",
+                    description="Um selo com assinatura que não é da loja é recusado.",
+                    path="/api/recurso",
+                    method="POST",
+                    as_user="b",
+                    json=pedido(_SELO_FORJADO),
+                    expect_status=403,
+                ),
+                HttpCheck(
+                    id="selo-de-outra-conta-recusado",
+                    description="O selo emitido para outra conta é recusado.",
+                    path="/api/recurso",
+                    method="POST",
+                    as_user="b",
+                    json=pedido("{{selo_a}}"),
+                    expect_status=403,
+                ),
+            ),
+            success_feedback=(
+                "Correção validada: o servidor decide o plano pelo cadastro e só libera o recurso com selo "
+                "válido do app oficial, desta conta."
+            ),
+            failure_feedback=(
+                "Algumas verificações falharam. Confira cada item abaixo: o método liberar precisa conferir o "
+                "selo com AtestacaoService.verificar e o plano com AssinaturaRepository.plano_da_conta, e "
+                "static/regras.js precisa estar como o original (return conta.plano;)."
+            ),
+        ),
+    )
+
+
 SUITES_FAMILIAS: tuple[Suite, ...] = (
     tuple(s for r in XSS_RAMOS for s in _xss(r))
     + tuple(s for r in MASSA_RAMOS for s in _massa(r))
@@ -3745,6 +3898,7 @@ SUITES_FAMILIAS: tuple[Suite, ...] = (
     + tuple(s for r in DEEPLINK_RAMOS for s in _deep_link(r))
     + tuple(s for r in WEBVIEW_RAMOS for s in _webview(r))
     + tuple(s for r in TOKENURL_RAMOS for s in _token_url(r))
+    + tuple(s for r in ADULTERADO_RAMOS for s in _adulterado(r))
     + tuple(
         s
         for r in MOB_RAMOS
