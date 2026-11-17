@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block conteudo %}
+<h1>[[painel_titulo]]</h1>
+<p class="ajuda">[[painel_desc]]</p>
+
+<dl class="dados">
+  <dt>Titular</dt><dd>{{ conta.nome }}</dd>
+</dl>
+
+<h2>Seus documentos</h2>
+<ul class="dados">
+  {% for doc in documentos %}
+  <li><a href="{{ url_for('painel.documento', nome=doc) }}">{{ doc }}</a></li>
+  {% endfor %}
+</ul>
+
+{% if erro %}<p class="banner antigo">{{ erro }}</p>{% endif %}
+<p class="banner reforcado">Use <a href="{{ url_for('auth.sair') }}">Sair</a> para encerrar a sessão.</p>
+{% endblock %}

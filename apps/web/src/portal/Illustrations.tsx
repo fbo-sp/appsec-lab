@@ -410,6 +410,27 @@ const ILLUSTRATIONS: Record<string, { caption: string; body: () => ReactNode }> 
       />
     ),
   },
+  "path-traversal": {
+    caption: "Path traversal: um nome com ../ (ou absoluto) sai da pasta permitida e lê outros arquivos.",
+    body: () => (
+      <Compare
+        bad={[
+          "Junta a pasta com o nome (o que tem hoje)",
+          <>
+            <span>{c('open(BASE + "/" + nome)')} abre o que vier: {c("../segredo_interno.txt")} sai da pasta.</span>
+            <span>Um caminho absoluto como {c("/workspace/segredo_interno.txt")} ignora a pasta base inteira.</span>
+          </>,
+        ]}
+        good={[
+          "Confere que o caminho fica dentro da base",
+          <>
+            <span>Resolve o caminho final com {c("realpath")} e exige que ele comece dentro da pasta.</span>
+            <span>Qualquer caminho que escape da pasta de documentos é recusado.</span>
+          </>,
+        ]}
+      />
+    ),
+  },
   "cors-reflexo": {
     caption: "CORS: refletir a origem recebida libera qualquer site a ler a API — com o cookie da vítima.",
     body: () => (

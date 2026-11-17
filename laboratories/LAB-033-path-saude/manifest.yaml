@@ -1,0 +1,242 @@
+# LAB-033 (A12-SAU): path traversal (CWE-22) no Central de Documentos da Operadora Vitalis (Flask + SQLite).
+# CONTÉM VULNERABILIDADE INTENCIONAL. Uso exclusivo no runtime Docker LOCAL (ADR-008), em rede
+# interna da sessão. Dados 100% fictícios. Família A12 path-traversal (ADR-021): gerado por
+# scripts/gerar-familia.py a partir de laboratories/_familias/path-traversal; não edite este arquivo à mão.
+#
+# ATENÇÃO: o digest abaixo é uma FIXTURE (sha256 de um texto fixo), não uma imagem publicada.
+# scripts/lab-local.sh e .ps1 trocam pela imagem construída localmente antes de registrar.
+apiVersion: labs.cecyber.io/v1alpha1
+kind: AppSecLab
+metadata:
+  id: LAB-033
+  version: 1.0.0
+  title: "A12-SAU · Path traversal: o documento que foge da pasta"
+  primaryCwe: CWE-22
+  secondaryCwes: [CWE-23, CWE-36]
+  family: path-traversal
+  sectors: [saude]
+  courseModules: [trained]
+  classifications:
+    - framework: OWASP Top 10
+      edition: "2025"
+      entries:
+        - "A01 Broken Access Control"
+    - framework: OWASP Top 10
+      edition: "2021"
+      entries:
+        - "A01 Broken Access Control"
+    - framework: OWASP API Security Top 10
+      edition: "2023"
+      entries:
+        - "API1 Broken Object Level Authorization"
+    - framework: SANS CWE Top 25
+      edition: "2025"
+      entries:
+        - "#6 CWE-22 Path Traversal"
+    - framework: SANS CWE Top 25
+      edition: "2024"
+      entries:
+        - "#5 CWE-22 Path Traversal"
+learning:
+  singleVulnerability: true
+  estimatedMinutes: 35
+  difficulty: intermediate
+  objectives:
+    - Entender o que é path traversal e como um nome de arquivo sai da pasta permitida
+    - Explorar a falha baixando um arquivo fora da pasta de documentos com ../
+    - Reconhecer que validar o nome por string (bloquear "..") não basta
+    - Corrigir garantindo que o caminho final fique dentro da pasta de documentos
+  story:
+    role: Pessoa desenvolvedora do time de produtos digitais da operadora Vitalis
+    application: Central de Documentos, onde o beneficiário baixa os próprios documentos pelo nome
+    context: >-
+      O beneficiário baixa documentos pelo nome, na Central de Documentos. Numa auditoria, a equipe apontou que o download monta o caminho sem conferir a pasta — dá para pedir um nome com ../ e baixar arquivos de fora da pasta de documentos.
+    mission: Confirmar que o download sai da pasta de documentos e corrigir garantindo o caminho dentro da pasta
+  wrapUp:
+    text: |
+      Agora o download só entrega arquivos de dentro da pasta de documentos. Em um sistema real, vale reforçar:
+
+      - **Path traversal é sair da pasta permitida.** Juntar uma pasta base com um nome que o usuário controla não basta: `../` sobe de diretório e um caminho absoluto ignora a base inteira. O arquivo final pode acabar em qualquer lugar do sistema de arquivos.
+      - **Validar por string é frágil.** Bloquear o texto `..` deixa passar caminho absoluto, codificações (`%2e%2e`, `....//`) e links simbólicos. A regra robusta é resolver o caminho final (`realpath`) e conferir que ele começa **dentro** da pasta base.
+      - **Melhor ainda: não use o nome como caminho.** Trate o nome só como identificador — por exemplo, use `os.path.basename`, uma lista de documentos permitidos, ou guarde os arquivos por um id que você controla.
+      - **Menos privilégio no processo.** O serviço deve rodar com acesso só à pasta de documentos; assim, mesmo um deslize não alcança arquivos sensíveis do sistema.
+    references:
+      - title: "OWASP Top 10:2025: A01 Broken Access Control"
+        url: https://top10.owasp.org/2025/A01_2025-Broken_Access_Control/
+      - title: "OWASP Top 10:2021: A01 Broken Access Control"
+        url: https://owasp.org/Top10/A01_2021-Broken_Access_Control/
+      - title: "CWE-22: Improper Limitation of a Pathname to a Restricted Directory (Path Traversal)"
+        url: https://cwe.mitre.org/data/definitions/22.html
+      - title: "OWASP Cheat Sheet: Path Traversal / File Path Injection"
+        url: https://cheatsheetseries.owasp.org/cheatsheets/File_Upload_Cheat_Sheet.html
+variants:
+  - id: python-flask
+    language: python
+    framework: flask
+    image: registry.local/labs/lab-033-path@sha256:897400b67d32ad887b2e81b98291eb43b0499fa5a40a87c35872231313c9863f
+    runtimeProfile: web-basic
+    workspacePath: /workspace
+    startup:
+      command: ["sh", "-c", "python -u -m flask --app app run --host 0.0.0.0 --port 8080 --reload --no-debugger 2>&1 | tee -a /tmp/app.log"]
+      port: 8080
+    resources:
+      cpuMillicores: 500
+      memoryMiB: 512
+      storageMiB: 256
+      pidsMax: 64
+    session:
+      ttlMinutes: 45
+      maxRenewals: 2
+    interfaces: [editor, terminal, web]
+steps:
+  - id: conhecer
+    order: 1
+    title: Conhecer o download e achar a leitura do arquivo
+    explanation: |
+      Você é do time de produtos digitais da operadora Vitalis. O beneficiário baixa documentos pelo nome na Central de Documentos. Numa auditoria, a equipe apontou que o download monta o caminho juntando a pasta de documentos com o nome recebido, sem conferir, e que dá para pedir ../segredo_interno.txt e baixar um arquivo de fora da pasta.
+
+      **Path traversal** (travessia de diretório) acontece quando o nome de arquivo que o usuário controla é usado para montar um caminho, sem conferir se o caminho final fica dentro da pasta permitida. Com `../`, o atacante sobe de diretório; com um caminho absoluto, ignora a pasta de uma vez.
+
+      ```ilustracao
+      path-traversal
+      ```
+
+      Siga o download pelas camadas:
+
+      1. **Controller** (`controllers/painel_controller.py`): a rota `/documento` recebe o nome e chama o serviço.
+      2. **Serviço** (`services/documento_service.py`): monta o caminho e abre o arquivo. **É aqui que falta conferir a pasta.**
+
+      As credenciais de acesso, neste laboratório, são:
+
+      - Usuário `fernanda.lopes`, senha `Fernanda#Vitalis26`.
+    task: |
+      1. Na aba **Aplicação**, entre com `fernanda.lopes` e a senha `Fernanda#Vitalis26`. Você chega ao **Central de Documentos** e vê a lista de documentos. Baixe `extrato.txt` para ver um download legítimo.
+      2. Na aba **Código**, abra `services/documento_service.py`.
+
+      Informe abaixo o nome do método que lê o documento (o que o controller chama).
+    concept: Path traversal — um nome de arquivo que sai da pasta permitida
+    validatorRef: path-traversal/answer/metodo-sau-v1
+    hints:
+      - level: 1
+        text: 'Em `services/documento_service.py`, a classe `DocumentoService` tem um único método público.'
+      - level: 2
+        text: É o método que o controller chama para abrir e devolver o arquivo.
+      - level: 3
+        text: O valor é `ler`.
+    points: 10
+  - id: explorar
+    order: 2
+    title: Baixar um arquivo fora da pasta de documentos
+    explanation: |
+      O método `ler` junta a pasta `documentos/` com o nome recebido e abre o arquivo, sem conferir se o caminho final continua dentro dessa pasta. Ao lado da pasta existe um arquivo `segredo_interno.txt`, que **não** deveria ser baixável. Vamos alcançá-lo com `../`.
+    task: |
+      Na aba **Terminal**, peça um arquivo fora da pasta, subindo um nível com `../`:
+
+      ```bash
+      curl -s "http://127.0.0.1:8080/documento?nome=../segredo_interno.txt" --cookie-jar /tmp/c --cookie /tmp/c
+      ```
+
+      Se precisar, primeiro faça login pela aba **Aplicação** e repita o curl pelo navegador. Você verá o conteúdo de `segredo_interno.txt` (com uma `CHAVE-INTERNA`) — um arquivo de fora da pasta de documentos. Informe abaixo se o download **saiu** da pasta de documentos ou ficou **dentro** dela.
+    explore: |
+      **Teste também um caminho absoluto.** Peça `nome=/workspace/segredo_interno.txt`: como o nome é absoluto, ao juntar com a pasta base o Python descarta a base e abre o caminho absoluto direto. É a mesma falha pela outra ponta — por isso bloquear só o texto `..` não resolve.
+    concept: Sem conferir a pasta, o nome com ../ lê arquivos de fora
+    validatorRef: path-traversal/answer/saiu-sau-v1
+    hints:
+      - level: 1
+        text: Compare onde fica `segredo_interno.txt` com a pasta `documentos/`.
+      - level: 2
+        text: O `../` subiu um nível, para fora da pasta de documentos.
+      - level: 3
+        text: A resposta é `saiu`.
+    points: 15
+  - id: fragil
+    order: 3
+    title: Entender por que bloquear ".." não basta
+    explanation: |
+      Uma tentação é só recusar o nome quando ele contém `..`. Mas isso é frágil: um **caminho absoluto** (`/workspace/segredo_interno.txt`) não tem `..` e mesmo assim sai da pasta; e ainda há codificações (`%2e%2e`, `....//`) e links simbólicos. Validar por string, proibindo trechos, sempre deixa uma brecha.
+
+      A regra robusta não olha o texto do nome: ela resolve o caminho final e confere se ele **fica dentro** da pasta de documentos.
+    task: |
+      O nome `/workspace/segredo_interno.txt` sai da pasta de documentos e **não** contém `..`. Que tipo de caminho é esse, que ignora a pasta base mesmo sem `..`?
+
+      Responda com uma palavra (o oposto de um caminho relativo).
+    concept: Validar por string deixa passar caminho absoluto e codificações
+    validatorRef: path-traversal/answer/absoluto-sau-v1
+    hints:
+      - level: 1
+        text: Começa com `/` e aponta o arquivo desde a raiz do sistema.
+      - level: 2
+        text: É o oposto de "relativo".
+      - level: 3
+        text: A resposta é `absoluto`.
+    points: 15
+  - id: dentro
+    order: 4
+    title: Nomear a regra que vale
+    explanation: |
+      A correção não proíbe trechos do nome: ela resolve o caminho final (com `realpath`) e só aceita se ele estiver **dentro** da pasta de documentos. Assim, tanto `../` quanto caminho absoluto quanto link simbólico caem na mesma checagem: o caminho final tem que começar na pasta base.
+    task: |
+      Complete a regra: o caminho final do arquivo tem que ficar ___ da pasta de documentos.
+
+      Responda com uma palavra (onde o caminho final precisa estar).
+    concept: A regra é garantir que o caminho final fique dentro da pasta base
+    validatorRef: path-traversal/answer/regra-sau-v1
+    hints:
+      - level: 1
+        text: É o oposto de "fora".
+      - level: 2
+        text: O caminho final não pode escapar da pasta de documentos.
+      - level: 3
+        text: A resposta é `dentro`.
+    points: 15
+  - id: corrigir
+    order: 5
+    title: Garantir o caminho dentro da pasta no serviço
+    explanation: |
+      **Por que a falha existe.** `ler` abre o caminho montado sem conferir onde ele aponta. Quem envia o nome escolhe o caminho.
+
+      **A correção.** Resolver o caminho final com `os.path.realpath` e só abrir se ele estiver dentro da pasta base. Qualquer coisa fora dela é recusada.
+    task: |
+      Abra `services/documento_service.py` e troque o método `ler` inteiro por este:
+
+      ```python
+          def ler(self, nome: str) -> str:
+              """Lê o documento de nome ``nome`` dentro da pasta de documentos e devolve o conteúdo."""
+              base = os.path.realpath(self.BASE)
+              caminho = os.path.realpath(os.path.join(base, nome))
+              if caminho != base and not caminho.startswith(base + os.sep):
+                  raise ValueError("Documento não permitido.")
+              with open(caminho, encoding="utf-8") as arquivo:
+                  return arquivo.read()
+      ```
+
+      Salve com **Ctrl+S**. A aplicação reinicia. Então, na aba **Terminal** (ou pelo navegador, logado):
+
+      1. repita `nome=../segredo_interno.txt` e veja que agora dá **documento não encontrado**;
+      2. teste `nome=/workspace/segredo_interno.txt`: também é recusado;
+      3. baixe `extrato.txt` e veja que o documento legítimo **continua** funcionando;
+      4. clique em **Validar**.
+    explore: |
+      **Se algo não funcionar depois de salvar.** Um recuo errado derruba a aplicação. No **Terminal**:
+
+      ```bash
+      grep -iE "error|traceback" /tmp/app.log | tail -n 15
+      ```
+
+      **O que procurar.** `IndentationError` aponta a linha com recuo diferente: o `def ler` fica com 4 espaços; o corpo, com 8. A checagem (`if caminho != base and not caminho.startswith(...)`) fica antes do `with open(...)`.
+    concept: Correção do path traversal garantindo o caminho dentro da base
+    validatorRef: path-traversal/python-flask/documento-seguro-sau-v1
+    hints:
+      - level: 1
+        text: 'A mudança é só em `services/documento_service.py`, no método `ler`.'
+      - level: 2
+        text: "Resolva o caminho com os.path.realpath e confira que ele começa dentro da pasta base."
+      - level: 3
+        text: Copie o método da tarefa sem mudar o recuo. O `def ler` fica com 4 espaços antes de `def`.
+    points: 45
+policy:
+  sequentialUnlock: true
+  allowStepRetry: true
+  persistProgressAcrossReset: true
+  allowSolutionReveal: false
+  finalPassingScore: 100

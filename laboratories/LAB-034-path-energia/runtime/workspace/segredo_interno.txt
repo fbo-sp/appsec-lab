@@ -1,0 +1,3 @@
+CHAVE-INTERNA
+Arquivo interno da Corrente Energia — NÃO deve ser acessível pelo download de documentos.
+CHAVE_INTERNA=corrente-kms-9b1d05

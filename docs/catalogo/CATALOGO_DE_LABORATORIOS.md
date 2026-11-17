@@ -71,6 +71,9 @@ Indicado como primeira atividade de qualquer turma, antes do primeiro laboratór
 | LAB-029 | A7-FIN · CORS mal configurado: o perfil que qualquer site pode ler | 1.0.0 | CWE-942 | A02 Security Misconfiguration (2025) | Não se enquadra; use o CWE (2025) | Intermediário | 35 min |
 | LAB-030 | A7-SAU · CORS mal configurado: o perfil que qualquer site pode ler | 1.0.0 | CWE-942 | A02 Security Misconfiguration (2025) | Não se enquadra; use o CWE (2025) | Intermediário | 35 min |
 | LAB-031 | A7-IND · CORS mal configurado: o perfil que qualquer site pode ler | 1.0.0 | CWE-942 | A02 Security Misconfiguration (2025) | Não se enquadra; use o CWE (2025) | Intermediário | 35 min |
+| LAB-032 | A12-FIN · Path traversal: o documento que foge da pasta | 1.0.0 | CWE-22 | A01 Broken Access Control (2025) | #6 CWE-22 Path Traversal (2025) | Intermediário | 35 min |
+| LAB-033 | A12-SAU · Path traversal: o documento que foge da pasta | 1.0.0 | CWE-22 | A01 Broken Access Control (2025) | #6 CWE-22 Path Traversal (2025) | Intermediário | 35 min |
+| LAB-034 | A12-IND · Path traversal: o documento que foge da pasta | 1.0.0 | CWE-22 | A01 Broken Access Control (2025) | #6 CWE-22 Path Traversal (2025) | Intermediário | 35 min |
 
 ## LAB-001 · SQL Injection: a busca que expõe pacientes
 
@@ -1336,3 +1339,126 @@ Indicado como primeira atividade de qualquer turma, antes do primeiro laboratór
 | Versão | Criada em | Obsoleta em | Situação | O que mudou |
 |---|---|---|---|---|
 | 1.0.0 | 2026-11-17 | — | vigente | Primeira versão (CORS mal configurado que reflete qualquer origem, Corrente Energia; família cors, ramo Indústria e Energia). |
+
+## LAB-032 · A12-FIN · Path traversal: o documento que foge da pasta
+
+- Versão vigente: 1.0.0
+- Cenário: Central de Documentos, onde o investidor baixa os próprios documentos pelo nome
+- Papel do aluno: Pessoa desenvolvedora do time de plataforma da Corretora Montara
+- Linguagem / stack: python / flask
+- Nível: Intermediário · duração estimada: 35 min
+- Família: path-traversal
+- Ramo: Financeiro
+- Módulo do curso: Trained
+
+### Classificação
+
+- CWE: CWE-22 (principal), CWE-23, CWE-36
+- OWASP Top 10 2025: A01 Broken Access Control
+- OWASP Top 10 2021: A01 Broken Access Control
+- OWASP API Security Top 10 2023: API1 Broken Object Level Authorization
+- SANS CWE Top 25 2025: #6 CWE-22 Path Traversal
+- SANS CWE Top 25 2024: #5 CWE-22 Path Traversal
+
+### Objetivos
+
+- Entender o que é path traversal e como um nome de arquivo sai da pasta permitida
+- Explorar a falha baixando um arquivo fora da pasta de documentos com ../
+- Reconhecer que validar o nome por string (bloquear "..") não basta
+- Corrigir garantindo que o caminho final fique dentro da pasta de documentos
+
+### Etapas
+
+1. Conhecer o download e achar a leitura do arquivo (10 pts)
+2. Baixar um arquivo fora da pasta de documentos (15 pts)
+3. Entender por que bloquear ".." não basta (15 pts)
+4. Nomear a regra que vale (15 pts)
+5. Garantir o caminho dentro da pasta no serviço (45 pts)
+
+### Histórico de versões
+
+| Versão | Criada em | Obsoleta em | Situação | O que mudou |
+|---|---|---|---|---|
+| 1.0.0 | 2026-11-17 | — | vigente | Primeira versão (path traversal no download de documentos, Corretora Montara; família path-traversal, ramo Financeiro). |
+
+## LAB-033 · A12-SAU · Path traversal: o documento que foge da pasta
+
+- Versão vigente: 1.0.0
+- Cenário: Central de Documentos, onde o beneficiário baixa os próprios documentos pelo nome
+- Papel do aluno: Pessoa desenvolvedora do time de produtos digitais da operadora Vitalis
+- Linguagem / stack: python / flask
+- Nível: Intermediário · duração estimada: 35 min
+- Família: path-traversal
+- Ramo: Saúde
+- Módulo do curso: Trained
+
+### Classificação
+
+- CWE: CWE-22 (principal), CWE-23, CWE-36
+- OWASP Top 10 2025: A01 Broken Access Control
+- OWASP Top 10 2021: A01 Broken Access Control
+- OWASP API Security Top 10 2023: API1 Broken Object Level Authorization
+- SANS CWE Top 25 2025: #6 CWE-22 Path Traversal
+- SANS CWE Top 25 2024: #5 CWE-22 Path Traversal
+
+### Objetivos
+
+- Entender o que é path traversal e como um nome de arquivo sai da pasta permitida
+- Explorar a falha baixando um arquivo fora da pasta de documentos com ../
+- Reconhecer que validar o nome por string (bloquear "..") não basta
+- Corrigir garantindo que o caminho final fique dentro da pasta de documentos
+
+### Etapas
+
+1. Conhecer o download e achar a leitura do arquivo (10 pts)
+2. Baixar um arquivo fora da pasta de documentos (15 pts)
+3. Entender por que bloquear ".." não basta (15 pts)
+4. Nomear a regra que vale (15 pts)
+5. Garantir o caminho dentro da pasta no serviço (45 pts)
+
+### Histórico de versões
+
+| Versão | Criada em | Obsoleta em | Situação | O que mudou |
+|---|---|---|---|---|
+| 1.0.0 | 2026-11-17 | — | vigente | Primeira versão (path traversal no download de documentos, Operadora Vitalis; família path-traversal, ramo Saúde). |
+
+## LAB-034 · A12-IND · Path traversal: o documento que foge da pasta
+
+- Versão vigente: 1.0.0
+- Cenário: Central de Documentos, onde o cliente baixa os próprios documentos pelo nome
+- Papel do aluno: Pessoa desenvolvedora do time digital da Corrente Energia
+- Linguagem / stack: python / flask
+- Nível: Intermediário · duração estimada: 35 min
+- Família: path-traversal
+- Ramo: Indústria e Energia
+- Módulo do curso: Trained
+
+### Classificação
+
+- CWE: CWE-22 (principal), CWE-23, CWE-36
+- OWASP Top 10 2025: A01 Broken Access Control
+- OWASP Top 10 2021: A01 Broken Access Control
+- OWASP API Security Top 10 2023: API1 Broken Object Level Authorization
+- SANS CWE Top 25 2025: #6 CWE-22 Path Traversal
+- SANS CWE Top 25 2024: #5 CWE-22 Path Traversal
+
+### Objetivos
+
+- Entender o que é path traversal e como um nome de arquivo sai da pasta permitida
+- Explorar a falha baixando um arquivo fora da pasta de documentos com ../
+- Reconhecer que validar o nome por string (bloquear "..") não basta
+- Corrigir garantindo que o caminho final fique dentro da pasta de documentos
+
+### Etapas
+
+1. Conhecer o download e achar a leitura do arquivo (10 pts)
+2. Baixar um arquivo fora da pasta de documentos (15 pts)
+3. Entender por que bloquear ".." não basta (15 pts)
+4. Nomear a regra que vale (15 pts)
+5. Garantir o caminho dentro da pasta no serviço (45 pts)
+
+### Histórico de versões
+
+| Versão | Criada em | Obsoleta em | Situação | O que mudou |
+|---|---|---|---|---|
+| 1.0.0 | 2026-11-17 | — | vigente | Primeira versão (path traversal no download de documentos, Corrente Energia; família path-traversal, ramo Indústria e Energia). |

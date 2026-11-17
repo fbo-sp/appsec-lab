@@ -192,3 +192,15 @@ labs:
     - version: 1.0.0
       published: 2026-11-17
       summary: Primeira versão (CORS mal configurado que reflete qualquer origem, Corrente Energia; família cors, ramo Indústria e Energia).
+  LAB-032:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (path traversal no download de documentos, Corretora Montara; família path-traversal, ramo Financeiro).
+  LAB-033:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (path traversal no download de documentos, Operadora Vitalis; família path-traversal, ramo Saúde).
+  LAB-034:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (path traversal no download de documentos, Corrente Energia; família path-traversal, ramo Indústria e Energia).

@@ -1308,6 +1308,98 @@ def _cors(r: CorsRamo) -> tuple[Suite, ...]:
     )
 
 
+# A12 path-traversal: download de documento sai da pasta com ../ ou caminho absoluto (LAB-032 a LAB-034)
+
+
+@dataclass(frozen=True, slots=True)
+class PathRamo:
+    ramo: str
+    login_a: str
+    senha_a: str
+
+
+PATH_RAMOS = (
+    PathRamo("fin", "lucas.andrade", "Lucas#Montara26"),
+    PathRamo("sau", "fernanda.lopes", "Fernanda#Vitalis26"),
+    PathRamo("ind", "marcelo.dantas", "Marcelo#Corrente26"),
+)
+
+
+def _path(r: PathRamo) -> tuple[Suite, ...]:
+    return (
+        AnswerSuite(
+            ref=f"path-traversal/answer/metodo-{r.ramo}-v1",
+            version="1.0.0",
+            prompt="Método que lê o documento",
+            accepted=("ler", "ler()"),
+            success_feedback="Isso. É em ler que deveria haver a conferência da pasta.",
+            failure_feedback="Ainda não. Em services/documento_service.py, veja o único método público da classe.",
+        ),
+        AnswerSuite(
+            ref=f"path-traversal/answer/saiu-{r.ramo}-v1",
+            version="1.0.0",
+            prompt="Com ../, o download saiu da pasta de documentos ou ficou dentro dela?",
+            accepted=("saiu", "saiu da pasta", "sai", "saiu fora", "fora", "escapou"),
+            success_feedback="Exato: o ../ subiu um nível e leu um arquivo de fora da pasta de documentos.",
+            failure_feedback="Não é isso. O segredo_interno.txt fica fora da pasta documentos/.",
+        ),
+        AnswerSuite(
+            ref=f"path-traversal/answer/absoluto-{r.ramo}-v1",
+            version="1.0.0",
+            prompt="Que tipo de caminho ignora a pasta base mesmo sem ..",
+            accepted=("absoluto", "caminho absoluto", "absolute", "path absoluto"),
+            success_feedback="Isso. Um caminho absoluto aponta desde a raiz e ignora a pasta base.",
+            failure_feedback="Ainda não. Começa com / e aponta o arquivo desde a raiz do sistema.",
+        ),
+        AnswerSuite(
+            ref=f"path-traversal/answer/regra-{r.ramo}-v1",
+            version="1.0.0",
+            prompt="O caminho final tem que ficar onde, em relação à pasta de documentos",
+            accepted=("dentro", "dentro da pasta", "dentro dela", "para dentro"),
+            success_feedback="Isso. O caminho final tem que ficar dentro da pasta de documentos.",
+            failure_feedback="Ainda não. É o oposto de 'fora': o caminho não pode escapar da pasta base.",
+        ),
+        HttpSuite(
+            ref=f"path-traversal/python-flask/documento-seguro-{r.ramo}-v1",
+            version="1.0.0",
+            logins=(HttpLogin(name="a", path="/login", form={"login": r.login_a, "senha": r.senha_a}),),
+            checks=(
+                HttpCheck(
+                    id="documento-legitimo",
+                    description="Um documento da pasta continua podendo ser baixado.",
+                    path="/documento?nome=extrato.txt",
+                    as_user="a",
+                    contains=("DOCUMENTO-EXTRATO",),
+                ),
+                HttpCheck(
+                    id="traversal-relativo-bloqueado",
+                    description="Um nome com ../ não consegue mais ler arquivos de fora da pasta.",
+                    path="/documento?nome=../segredo_interno.txt",
+                    as_user="a",
+                    contains=("não",),
+                    not_contains=("CHAVE-INTERNA",),
+                ),
+                HttpCheck(
+                    id="traversal-absoluto-bloqueado",
+                    description="Um caminho absoluto também não consegue ler arquivos de fora da pasta.",
+                    path="/documento?nome=/workspace/segredo_interno.txt",
+                    as_user="a",
+                    contains=("não",),
+                    not_contains=("CHAVE-INTERNA",),
+                ),
+            ),
+            success_feedback=(
+                "Correção validada: o documento legítimo continua baixando, e ../ ou caminho absoluto "
+                "não leem mais arquivos de fora da pasta de documentos."
+            ),
+            failure_feedback=(
+                "Algumas verificações falharam. Confira cada item abaixo, ajuste "
+                "services/documento_service.py e valide de novo. Garanta que o caminho final fique dentro da base."
+            ),
+        ),
+    )
+
+
 SUITES_FAMILIAS: tuple[Suite, ...] = (
     tuple(s for r in XSS_RAMOS for s in _xss(r))
     + tuple(s for r in MASSA_RAMOS for s in _massa(r))
@@ -1318,4 +1410,5 @@ SUITES_FAMILIAS: tuple[Suite, ...] = (
     + tuple(s for r in LOGICA_RAMOS for s in _logica(r))
     + tuple(s for r in TENTATIVAS_RAMOS for s in _tentativas(r))
     + tuple(s for r in CORS_RAMOS for s in _cors(r))
+    + tuple(s for r in PATH_RAMOS for s in _path(r))
 )

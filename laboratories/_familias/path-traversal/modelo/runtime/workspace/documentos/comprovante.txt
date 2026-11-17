@@ -1,0 +1,4 @@
+DOCUMENTO-COMPROVANTE
+[[empresa]] — Comprovante (documento de treinamento, dados fictícios)
+Titular: [[nome_a]]
+Protocolo: 2026-ABCD-0001
