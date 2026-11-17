@@ -340,6 +340,13 @@ def variant_interfaces(release: LabRelease, variant_key: str) -> list[str]:
     return []
 
 
+def variant_platform(release: LabRelease, variant_key: str) -> str:
+    for v in release.manifest.get("variants", []):
+        if v.get("id") == variant_key:
+            return str(v.get("platform", "web"))
+    return "web"
+
+
 def session_view(db: Session, s: LabSession) -> dict[str, Any]:
     release = db.get(LabRelease, s.release_id)
     variant = db.get(LabVariant, s.variant_id)
@@ -352,6 +359,8 @@ def session_view(db: Session, s: LabSession) -> dict[str, Any]:
         "variantId": variant.variant_key,
         # Interfaces da variante (ex.: "attacker" habilita o site do atacante, ADR-022).
         "interfaces": variant_interfaces(release, variant.variant_key),
+        # ADR-025: "mobile" mostra a aplicação numa moldura de celular.
+        "platform": variant_platform(release, variant.variant_key),
         "expiresAt": s.expires_at.isoformat(),
         "ttlMinutes": variant.ttl_minutes,
         "renewals": s.renewals,

@@ -18,7 +18,7 @@ export type Lab = {
     objectives: string[];
     story: { role: string; application: string; context: string; mission: string };
   };
-  variants: { id: string; language: string; framework: string; ttlMinutes: number; interfaces?: string[] }[];
+  variants: { id: string; language: string; framework: string; ttlMinutes: number; interfaces?: string[]; platform?: string }[];
   steps: { id: string; order: number; title: string; points: number }[];
 };
 
@@ -28,6 +28,7 @@ export type LabSession = {
   labId: string;
   version: string;
   variantId: string;
+  platform?: string; // "mobile" = moldura de celular na aba Aplicação (ADR-025)
   interfaces?: string[]; // "attacker" = laboratório com site do atacante (ADR-022)
   expiresAt: string;
   lastErrorCode: string | null;

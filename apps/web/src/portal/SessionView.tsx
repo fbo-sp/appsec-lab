@@ -548,14 +548,28 @@ export function SessionView({ id }: { id: string }) {
                     syncWorkspaceView();
                   }}
                 />
-                <iframe
-                  key={previewKey}
-                  className="pane-preview"
-                  title="Aplicação do laboratório"
-                  src={previewKey === 0 ? frames.preview : `${frames.previewOrigin}${previewPath}`}
-                  sandbox="allow-scripts allow-forms allow-same-origin allow-popups"
-                  hidden={!showApp}
-                />
+                {session.platform === "mobile" ? (
+                  <div className="phone-stage" hidden={!showApp}>
+                    <div className="phone" aria-label="Aparelho simulado">
+                      <iframe
+                        key={previewKey}
+                        className="pane-preview phone-screen"
+                        title="Aplicação do laboratório"
+                        src={previewKey === 0 ? frames.preview : `${frames.previewOrigin}${previewPath}`}
+                        sandbox="allow-scripts allow-forms allow-same-origin allow-popups"
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <iframe
+                    key={previewKey}
+                    className="pane-preview"
+                    title="Aplicação do laboratório"
+                    src={previewKey === 0 ? frames.preview : `${frames.previewOrigin}${previewPath}`}
+                    sandbox="allow-scripts allow-forms allow-same-origin allow-popups"
+                    hidden={!showApp}
+                  />
+                )}
                 {tab === "log" && <ValidationLog sessionId={id} version={progressVersion} />}
               </div>
             ) : (

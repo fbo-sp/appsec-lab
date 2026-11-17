@@ -65,6 +65,13 @@ class Interface(StrEnum):
     ATTACKER = "attacker"
 
 
+class Platform(StrEnum):
+    """Plataforma da aplicação (ADR-025). ``mobile`` só muda a aba Aplicação: moldura de celular."""
+
+    WEB = "web"
+    MOBILE = "mobile"
+
+
 class Sector(StrEnum):
     """Ramo de atividade do cenário (ADR-021), usado para o aluno escolher labs do seu setor."""
 
@@ -187,6 +194,7 @@ class LabVariant(_Strict):
     session: SessionPolicy
     network: Network = Network()
     interfaces: tuple[Interface, ...] = Field(min_length=1, max_length=4)
+    platform: Platform = Platform.WEB
 
 
 class Hint(_Strict):

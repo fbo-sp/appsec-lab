@@ -68,3 +68,7 @@
 ## 7. Questões ainda abertas
 
 Definir se a primeira dica é gratuita, se dicas afetam pontuação, quantas tentativas serão permitidas e se respostas finais completas podem ser reveladas após conclusão. Questões não bloqueiam arquitetura: armazenar policy declarativa e uma trilha auditável de hints.
+
+## Labs mobile (ADR-025)
+
+Labs com `variants[].platform: mobile` mantêm o layout padrão (etapas à esquerda; abas Aplicação, Código, Terminal e Validação à direita). Só a aba Aplicação muda: o app aparece dentro de uma moldura de celular (~320×640) com a mesma barra de endereço. Etapas, dicas, pontuação e validação seguem as mesmas regras.

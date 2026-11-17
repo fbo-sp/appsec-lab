@@ -300,6 +300,10 @@
             "egressProfile": "deny-all"
           }
         },
+        "platform": {
+          "$ref": "#/$defs/Platform",
+          "default": "web"
+        },
         "resources": {
           "$ref": "#/$defs/Resources"
         },
@@ -509,6 +513,15 @@
       },
       "title": "Network",
       "type": "object"
+    },
+    "Platform": {
+      "description": "Plataforma da aplicação (ADR-025). ``mobile`` só muda a aba Aplicação: moldura de celular.",
+      "enum": [
+        "web",
+        "mobile"
+      ],
+      "title": "Platform",
+      "type": "string"
     },
     "Policy": {
       "additionalProperties": false,

@@ -154,6 +154,13 @@ def _variant_interfaces(manifest: dict[str, Any], variant_key: str) -> list[str]
     return []
 
 
+def _variant_field(manifest: dict[str, Any], variant_key: str, field: str, default: str) -> str:
+    for v in manifest.get("variants", []):
+        if v.get("id") == variant_key:
+            return str(v.get(field, default))
+    return default
+
+
 def public_release_view(db: Session, release: LabRelease) -> dict[str, Any]:
     """Visão pública: narrativa, CWE, objetivos, variantes e metadados de etapas.
 
@@ -193,6 +200,7 @@ def public_release_view(db: Session, release: LabRelease) -> dict[str, Any]:
                 "ttlMinutes": v.ttl_minutes,
                 "maxRenewals": v.max_renewals,
                 "interfaces": _variant_interfaces(m, v.variant_key),
+                "platform": _variant_field(m, v.variant_key, "platform", "web"),
             }
             for v in variants
         ],
