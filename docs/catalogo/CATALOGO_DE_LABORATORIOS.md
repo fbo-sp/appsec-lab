@@ -131,6 +131,9 @@ Indicado como primeira atividade de qualquer turma, antes do primeiro laboratór
 | LAB-089 | L8-FIN · Uso indevido da plataforma: o link do WhatsApp que fez o Pix sozinho | 1.0.0 | CWE-939 | A06 Insecure Design (2025) | Não se enquadra; use o CWE (2025) | Intermediário | 35 min |
 | LAB-090 | L8-SAU · Uso indevido da plataforma: o link do SMS que compartilhou os laudos sozinho | 1.0.0 | CWE-939 | A06 Insecure Design (2025) | Não se enquadra; use o CWE (2025) | Intermediário | 35 min |
 | LAB-091 | L8-IND · Uso indevido da plataforma: o link do e-mail que liberou a manobra sozinho | 1.0.0 | CWE-939 | A06 Insecure Design (2025) | Não se enquadra; use o CWE (2025) | Intermediário | 35 min |
+| LAB-092 | L10-FIN · Qualidade do código do cliente: a mensagem do Pix que desenhou um botão no app | 1.0.0 | CWE-79 | A05 Injection (2025) | #1 CWE-79 Cross-site Scripting (2025) | Intermediário | 35 min |
+| LAB-093 | L10-SAU · Qualidade do código do cliente: o convite que desenhou um quadro no app do paciente | 1.0.0 | CWE-79 | A05 Injection (2025) | #1 CWE-79 Cross-site Scripting (2025) | Intermediário | 35 min |
+| LAB-094 | L10-IND · Qualidade do código do cliente: o aviso de turno que desenhou um quadro no app de campo | 1.0.0 | CWE-79 | A05 Injection (2025) | #1 CWE-79 Cross-site Scripting (2025) | Intermediário | 35 min |
 
 ## LAB-001 · SQL Injection: a busca que expõe pacientes
 
@@ -3910,3 +3913,132 @@ Indicado como primeira atividade de qualquer turma, antes do primeiro laboratór
 | Versão | Criada em | Obsoleta em | Situação | O que mudou |
 |---|---|---|---|---|
 | 1.0.0 | 2026-11-17 | — | vigente | Versão inicial (família L8 mob-deep-link, ramo indústria e energia): deep link que libera manobra sem confirmação do usuário. |
+
+## LAB-092 · L10-FIN · Qualidade do código do cliente: a mensagem do Pix que desenhou um botão no app
+
+- Versão vigente: 1.0.0
+- Cenário: App Pagomais, o app em que o cliente vê o extrato e as mensagens que chegam junto com cada Pix
+- Papel do aluno: Pessoa desenvolvedora do time de apps do banco digital Pagomais
+- Linguagem / stack: python / flask
+- Nível: Intermediário · duração estimada: 35 min
+- Família: mob-webview-html
+- Ramo: Financeiro
+- Módulo do curso: Trained
+
+### Classificação
+
+- CWE: CWE-79 (principal), CWE-116
+- OWASP Top 10 2025: A05 Injection
+- OWASP Top 10 2021: A03 Injection
+- SANS CWE Top 25 2025: #1 CWE-79 Cross-site Scripting
+- SANS CWE Top 25 2024: #1 CWE-79 Cross-site Scripting
+- OWASP Mobile Top 10 2024: M4 Insufficient Input/Output Validation
+- OWASP Mobile Top 10 2016: M7 Client Code Quality
+- OWASP MASVS 2023: MASVS-PLATFORM-2
+
+### Objetivos
+
+- Entender o que é um WebView e por que o HTML dele é código do app
+- Mostrar que uma mensagem escrita por outro usuário vira HTML dentro do app
+- Saber o que a codificação de saída e a política de conteúdo (CSP) protegem
+- Corrigir a página da central sem o filtro safe e com CSP
+
+### Etapas
+
+1. Conhecer a central de mensagens e o WebView (10 pts)
+2. Escrever uma mensagem que vira HTML (15 pts)
+3. Achar o que desliga a proteção do template (15 pts)
+4. Saber qual é a segunda camada (15 pts)
+5. Codificar a saída e declarar a política (45 pts)
+
+### Histórico de versões
+
+| Versão | Criada em | Obsoleta em | Situação | O que mudou |
+|---|---|---|---|---|
+| 1.0.0 | 2026-11-17 | — | vigente | Versão inicial (família L10 mob-webview-html, ramo financeiro): mensagem do Pix exibida como HTML no WebView do app. |
+
+## LAB-093 · L10-SAU · Qualidade do código do cliente: o convite que desenhou um quadro no app do paciente
+
+- Versão vigente: 1.0.0
+- Cenário: App Lumen Saúde, o app em que o paciente vê os exames e os convites e recados da central
+- Papel do aluno: Pessoa desenvolvedora do time de apps da Clínica Lumen
+- Linguagem / stack: python / flask
+- Nível: Intermediário · duração estimada: 35 min
+- Família: mob-webview-html
+- Ramo: Saúde
+- Módulo do curso: Trained
+
+### Classificação
+
+- CWE: CWE-79 (principal), CWE-116
+- OWASP Top 10 2025: A05 Injection
+- OWASP Top 10 2021: A03 Injection
+- SANS CWE Top 25 2025: #1 CWE-79 Cross-site Scripting
+- SANS CWE Top 25 2024: #1 CWE-79 Cross-site Scripting
+- OWASP Mobile Top 10 2024: M4 Insufficient Input/Output Validation
+- OWASP Mobile Top 10 2016: M7 Client Code Quality
+- OWASP MASVS 2023: MASVS-PLATFORM-2
+
+### Objetivos
+
+- Entender o que é um WebView e por que o HTML dele é código do app
+- Mostrar que uma mensagem escrita por outro usuário vira HTML dentro do app
+- Saber o que a codificação de saída e a política de conteúdo (CSP) protegem
+- Corrigir a página da central sem o filtro safe e com CSP
+
+### Etapas
+
+1. Conhecer a central de mensagens e o WebView (10 pts)
+2. Escrever uma mensagem que vira HTML (15 pts)
+3. Achar o que desliga a proteção do template (15 pts)
+4. Saber qual é a segunda camada (15 pts)
+5. Codificar a saída e declarar a política (45 pts)
+
+### Histórico de versões
+
+| Versão | Criada em | Obsoleta em | Situação | O que mudou |
+|---|---|---|---|---|
+| 1.0.0 | 2026-11-17 | — | vigente | Versão inicial (família L10 mob-webview-html, ramo saúde): convite com recado exibido como HTML no WebView do app. |
+
+## LAB-094 · L10-IND · Qualidade do código do cliente: o aviso de turno que desenhou um quadro no app de campo
+
+- Versão vigente: 1.0.0
+- Cenário: App Aurora Campo, o app em que o técnico vê as ordens de serviço e os avisos de turno da equipe
+- Papel do aluno: Pessoa desenvolvedora do time de apps da Aurora Energia
+- Linguagem / stack: python / flask
+- Nível: Intermediário · duração estimada: 35 min
+- Família: mob-webview-html
+- Ramo: Indústria e Energia
+- Módulo do curso: Trained
+
+### Classificação
+
+- CWE: CWE-79 (principal), CWE-116
+- OWASP Top 10 2025: A05 Injection
+- OWASP Top 10 2021: A03 Injection
+- SANS CWE Top 25 2025: #1 CWE-79 Cross-site Scripting
+- SANS CWE Top 25 2024: #1 CWE-79 Cross-site Scripting
+- OWASP Mobile Top 10 2024: M4 Insufficient Input/Output Validation
+- OWASP Mobile Top 10 2016: M7 Client Code Quality
+- OWASP MASVS 2023: MASVS-PLATFORM-2
+
+### Objetivos
+
+- Entender o que é um WebView e por que o HTML dele é código do app
+- Mostrar que uma mensagem escrita por outro usuário vira HTML dentro do app
+- Saber o que a codificação de saída e a política de conteúdo (CSP) protegem
+- Corrigir a página da central sem o filtro safe e com CSP
+
+### Etapas
+
+1. Conhecer a central de mensagens e o WebView (10 pts)
+2. Escrever uma mensagem que vira HTML (15 pts)
+3. Achar o que desliga a proteção do template (15 pts)
+4. Saber qual é a segunda camada (15 pts)
+5. Codificar a saída e declarar a política (45 pts)
+
+### Histórico de versões
+
+| Versão | Criada em | Obsoleta em | Situação | O que mudou |
+|---|---|---|---|---|
+| 1.0.0 | 2026-11-17 | — | vigente | Versão inicial (família L10 mob-webview-html, ramo indústria e energia): aviso de turno exibido como HTML no WebView do app. |

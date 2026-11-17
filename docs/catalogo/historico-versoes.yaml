@@ -432,3 +432,15 @@ labs:
     - version: 1.0.0
       published: 2026-11-17
       summary: "Versão inicial (família L8 mob-deep-link, ramo indústria e energia): deep link que libera manobra sem confirmação do usuário."
+  LAB-092:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: "Versão inicial (família L10 mob-webview-html, ramo financeiro): mensagem do Pix exibida como HTML no WebView do app."
+  LAB-093:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: "Versão inicial (família L10 mob-webview-html, ramo saúde): convite com recado exibido como HTML no WebView do app."
+  LAB-094:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: "Versão inicial (família L10 mob-webview-html, ramo indústria e energia): aviso de turno exibido como HTML no WebView do app."

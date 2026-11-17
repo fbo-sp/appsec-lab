@@ -599,6 +599,27 @@ const ILLUSTRATIONS: Record<string, { caption: string; body: () => ReactNode }> 
       />
     ),
   },
+  "webview-mensagens": {
+    caption: "Qualidade do código do cliente: a página do WebView é código do app; texto de outro usuário precisa sair codificado.",
+    body: () => (
+      <Compare
+        bad={[
+          "Texto como HTML (hoje)",
+          <>
+            <span>O template mostra {c("{{ m.texto|safe }}")}: a marcação da mensagem vira tela.</span>
+            <span>Quem escreve a mensagem desenha botões e formulários dentro do app oficial.</span>
+          </>,
+        ]}
+        good={[
+          "Texto como texto",
+          <>
+            <span>{c("{{ m.texto }}")}: o Jinja troca {c("<")} por {c("&lt;")} e a marcação aparece como escrita.</span>
+            <span>{c("Content-Security-Policy: default-src 'none'")} limita o estrago se algo escapar.</span>
+          </>,
+        ]}
+      />
+    ),
+  },
   "bfla": {
     caption: "Autorização de função (BFLA): autenticar não é autorizar — cada função sensível confere o papel.",
     body: () => (

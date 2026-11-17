@@ -3483,6 +3483,126 @@ def _deep_link(r: DeepLinkRamo) -> tuple[Suite, ...]:
     )
 
 
+# L10 mob-webview-html: mensagem de outro usuário exibida como HTML no WebView (LAB-092 a LAB-094)
+
+
+@dataclass(frozen=True, slots=True)
+class WebviewRamo:
+    ramo: str
+    login_a: str
+    senha_a: str
+    login_b: str
+    senha_b: str
+    trecho_mensagem: str  # trecho de uma mensagem do seed, para provar que a página continua funcionando
+
+
+WEBVIEW_RAMOS = (
+    WebviewRamo(
+        "fin", "ana.ribeiro", "Ana#Pagomais26", "carlos.moura", "Carlos#Pagomais26", "Acompanhe a entrega"
+    ),
+    WebviewRamo(
+        "sau", "marcos.tavares", "Marcos#Lumen26", "renata.borges", "Renata#Lumen26", "Hemograma completo"
+    ),
+    WebviewRamo("ind", "diego.campos", "Diego#Aurora26", "sonia.barros", "Sonia#Aurora26", "bomba 4"),
+)
+
+# Carga INOFENSIVA: só desenha um quadro. Não usa script, então filtrar "script" não basta.
+_MARCA_DEMO = '<div class="cecyber-demo"'
+_CARGA_DEMO = (
+    _MARCA_DEMO + ' style="border:2px dashed #b42318">[Demonstracao] quadro desenhado pela mensagem</div>'
+)
+
+
+def _webview(r: WebviewRamo) -> tuple[Suite, ...]:
+    def login(nome: str, usuario: str, senha: str) -> HttpLogin:
+        return HttpLogin(
+            name=nome,
+            path="/api/login",
+            json={"login": usuario, "senha": senha},
+            token_field="token",  # noqa: S106 - nome do campo JSON, não é senha
+        )
+
+    return (
+        AnswerSuite(
+            ref=f"mob-webview-html/answer/pagina-{r.ramo}-v1",
+            version="1.0.0",
+            prompt="Arquivo da página mostrada no WebView",
+            accepted=("webview_mensagens.html", "webview_mensagens", "templates/webview_mensagens.html"),
+            success_feedback="Isso. É essa página que o app mostra no WebView da central.",
+            failure_feedback="Ainda não. Procure em templates/ o arquivo que começa com webview_.",
+        ),
+        AnswerSuite(
+            ref=f"mob-webview-html/answer/aparencia-{r.ramo}-v1",
+            version="1.0.0",
+            prompt="A mensagem apareceu como texto ou como quadro?",
+            accepted=_com_variantes("quadro", "um quadro", "html", "como quadro", "desenhado"),
+            success_feedback="Exato: o texto de outro usuário virou HTML dentro do app.",
+            failure_feedback="Ainda não. Abra Mensagens de novo e veja a mensagem mais nova, no topo.",
+        ),
+        AnswerSuite(
+            ref=f"mob-webview-html/answer/filtro-{r.ramo}-v1",
+            version="1.0.0",
+            prompt="Filtro do Jinja que desliga a codificação",
+            accepted=("safe", "|safe", "filtro safe"),
+            success_feedback="Isso. O |safe diz ao Jinja que o texto é confiável, e ele não é.",
+            failure_feedback="Ainda não. Veja o que vem depois da barra vertical na linha do texto.",
+        ),
+        AnswerSuite(
+            ref=f"mob-webview-html/answer/csp-{r.ramo}-v1",
+            version="1.0.0",
+            prompt="Nome da política de conteúdo",
+            accepted=("content-security-policy", "content security policy", "csp"),
+            success_feedback="Isso. A CSP é a segunda camada, depois da codificação de saída.",
+            failure_feedback="Ainda não. A sigla tem três letras.",
+        ),
+        HttpSuite(
+            ref=f"mob-webview-html/python-flask/mensagem-codificada-{r.ramo}-v1",
+            version="1.0.0",
+            logins=(login("a", r.login_a, r.senha_a), login("b", r.login_b, r.senha_b)),
+            checks=(
+                HttpCheck(
+                    id="mensagem-enviada",
+                    description="Outro usuário continua podendo enviar uma mensagem.",
+                    path="/api/mensagens",
+                    method="POST",
+                    as_user="b",
+                    json={"para": r.login_a, "texto": _CARGA_DEMO},
+                    contains=('"enviada"',),
+                ),
+                HttpCheck(
+                    id="central-funciona",
+                    description="A central continua mostrando as mensagens.",
+                    path="/api/mensagens/pagina",
+                    as_user="a",
+                    contains=(r.trecho_mensagem, "&lt;div class="),
+                ),
+                HttpCheck(
+                    id="sem-html-da-mensagem",
+                    description="A marcação escrita na mensagem não chega crua à página do WebView.",
+                    path="/api/mensagens/pagina",
+                    as_user="a",
+                    not_contains=(_MARCA_DEMO,),
+                ),
+                HttpCheck(
+                    id="politica-de-conteudo",
+                    description="A página declara uma política de conteúdo restrita (Content-Security-Policy).",
+                    path="/api/mensagens/pagina",
+                    as_user="a",
+                    contains=('http-equiv="Content-Security-Policy"', "default-src 'none'"),
+                ),
+            ),
+            success_feedback=(
+                "Correção validada: a mensagem aparece como texto, codificada, e a página do WebView "
+                "declara uma política de conteúdo restrita."
+            ),
+            failure_feedback=(
+                "Algumas verificações falharam. Confira cada item abaixo e ajuste "
+                "templates/webview_mensagens.html: sem |safe no texto e com a meta Content-Security-Policy."
+            ),
+        ),
+    )
+
+
 SUITES_FAMILIAS: tuple[Suite, ...] = (
     tuple(s for r in XSS_RAMOS for s in _xss(r))
     + tuple(s for r in MASSA_RAMOS for s in _massa(r))
@@ -3507,6 +3627,7 @@ SUITES_FAMILIAS: tuple[Suite, ...] = (
     + tuple(s for r in PACOTE_RAMOS for s in _pacote(r))
     + tuple(s for r in COOKIE_RAMOS for s in _cookie(r))
     + tuple(s for r in DEEPLINK_RAMOS for s in _deep_link(r))
+    + tuple(s for r in WEBVIEW_RAMOS for s in _webview(r))
     + tuple(
         s
         for r in MOB_RAMOS
