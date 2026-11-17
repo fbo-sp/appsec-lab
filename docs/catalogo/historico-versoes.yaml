@@ -396,3 +396,15 @@ labs:
     - version: 1.0.0
       published: 2026-11-17
       summary: "Versão inicial (família L1 componente-desatualizado, ramo indústria e energia): biblioteca de documentos com falha conhecida, corrigida atualizando a dependência."
+  LAB-083:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: "Versão inicial (família L4 pacote-assinatura, ramo financeiro): pacote de regras antifraude aplicado sem conferir a assinatura HMAC."
+  LAB-084:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: "Versão inicial (família L4 pacote-assinatura, ramo saúde): tabela de valores críticos aplicada sem conferir a assinatura HMAC."
+  LAB-085:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: "Versão inicial (família L4 pacote-assinatura, ramo indústria e energia): parâmetros de linha aplicados sem conferir a assinatura HMAC."

@@ -8,6 +8,9 @@ de cada família conferem os dois lados.
 
 from __future__ import annotations
 
+import hashlib
+import hmac
+import json
 import re
 import urllib.parse
 from dataclasses import dataclass
@@ -3004,6 +3007,187 @@ def _componente(r: ComponenteRamo) -> tuple[Suite, ...]:
     )
 
 
+# L4 pacote-assinatura: pacote aplicado sem conferir a assinatura HMAC (LAB-083 a LAB-085)
+
+
+@dataclass(frozen=True, slots=True)
+class PacoteRamo:
+    ramo: str
+    banco: str  # arquivo SQLite do lab (/tmp/<banco>.db)
+    login_a: str
+    senha_a: str
+    fornecedor: str
+    versao: str
+    parametros: tuple[tuple[str, int | float], ...]
+    chave: str  # chave HMAC FICTÍCIA do lab (config.py)
+    param: str  # parâmetro que a suíte adultera
+    valor_mal: int | float
+
+
+PACOTE_RAMOS = (
+    PacoteRamo(
+        "fin",
+        "solaris_antifraude",
+        "beatriz.nogueira",
+        "Beatriz#Solaris26",
+        "Bureau Atento Antifraude",
+        "2026.11.1",
+        (("limite_pix_noturno", 1000), ("score_minimo_aprovacao", 720), ("dias_dispositivo_novo", 3)),
+        "lab-fin-chave-hmac-ficticia-bureau-2026",
+        "limite_pix_noturno",
+        50000,
+    ),
+    PacoteRamo(
+        "sau",
+        "bompastor_alertas",
+        "luciana.ferraz",
+        "Luciana#BomPastor26",
+        "Laboratório de Apoio Analítica",
+        "2026.11.1",
+        (("glicemia_critica_min", 50), ("hemoglobina_critica_min", 7.0), ("potassio_critico_max", 6.0)),
+        "lab-sau-chave-hmac-ficticia-analitica-2026",
+        "potassio_critico_max",
+        9.0,
+    ),
+    PacoteRamo(
+        "ind",
+        "cruzeiro_parametros",
+        "rafael.antunes",
+        "Rafael#Cruzeiro26",
+        "Integradora Vértice Automação",
+        "2026.11.1",
+        (
+            ("pressao_max_hidraulica", 210),
+            ("temperatura_max_forno", 1250),
+            ("velocidade_max_laminador", 11.5),
+        ),
+        "lab-ind-chave-hmac-ficticia-vertice-2026",
+        "temperatura_max_forno",
+        1600,
+    ),
+)
+
+
+def _pacote_assinado(r: PacoteRamo) -> dict[str, object]:
+    """O pacote legítimo do fornecedor, assinado como o lab espera (HMAC-SHA256 do conteúdo canônico)."""
+    pacote: dict[str, object] = {
+        "fornecedor": r.fornecedor,
+        "versao": r.versao,
+        "parametros": dict(r.parametros),
+    }
+    canonico = json.dumps(pacote, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+    pacote["assinatura"] = hmac.new(r.chave.encode("utf-8"), canonico, hashlib.sha256).hexdigest()
+    return pacote
+
+
+def _pacote(r: PacoteRamo) -> tuple[Suite, ...]:
+    banco = f"/tmp/{r.banco}.db"  # noqa: S108 - caminho do banco DENTRO do contêiner do lab
+    legitimo = _pacote_assinado(r)
+    adulterado = {**legitimo, "parametros": {**dict(r.parametros), r.param: r.valor_mal}}
+    sem_assinatura = {k: v for k, v in adulterado.items() if k != "assinatura"}
+    valor_ok = str(dict(r.parametros)[r.param])
+
+    def envio(nome: str, pacote: dict[str, object]) -> dict[str, str]:
+        # ensure_ascii: o probe envia o arquivo em latin-1; com os acentos escapados no JSON, chega igual.
+        conteudo = json.dumps(pacote, indent=2, ensure_ascii=True)
+        return {"field": "arquivo", "filename": nome, "content_type": "application/json", "content": conteudo}
+
+    return (
+        AnswerSuite(
+            ref=f"pacote-assinatura/answer/campo-{r.ramo}-v1",
+            version="1.0.0",
+            prompt="Campo do pacote que leva a assinatura do fornecedor",
+            accepted=("assinatura", '"assinatura"', "assinatura hmac"),
+            success_feedback="Isso. É o HMAC que o fornecedor calculou sobre o conteúdo.",
+            failure_feedback="Ainda não. Procure o campo com um texto longo em hexadecimal.",
+        ),
+        AnswerSuite(
+            ref=f"pacote-assinatura/answer/valor-{r.ramo}-v1",
+            version="1.0.0",
+            prompt="Valor do parâmetro em vigor depois do envio alterado",
+            accepted=_com_variantes(str(r.valor_mal), str(r.valor_mal).replace(".", ",")),
+            success_feedback="Exato: o pacote alterado virou regra, com a assinatura antiga no lugar.",
+            failure_feedback="Ainda não. Recarregue a aba Aplicação e veja a linha do parâmetro alterado.",
+        ),
+        AnswerSuite(
+            ref=f"pacote-assinatura/answer/garantia-{r.ramo}-v1",
+            version="1.0.0",
+            prompt="O que a assinatura garante além da integridade",
+            accepted=_com_variantes("origem", "autenticidade", "procedência", "autoria", "a origem"),
+            success_feedback="Isso. Integridade e origem: não mudou e veio de quem tem a chave.",
+            failure_feedback="Não é isso. Pense em de quem o pacote veio.",
+        ),
+        AnswerSuite(
+            ref=f"pacote-assinatura/answer/metodo-{r.ramo}-v1",
+            version="1.0.0",
+            prompt="Método que aplica o pacote sem conferir a assinatura",
+            accepted=("importar", "importar()", "PacoteService.importar"),
+            success_feedback="Isso. É em importar que a assinatura precisa ser conferida.",
+            failure_feedback="Ainda não. Veja o único método público de PacoteService.",
+        ),
+        HttpSuite(
+            ref=f"pacote-assinatura/python-flask/assinatura-conferida-{r.ramo}-v1",
+            version="1.0.0",
+            logins=(HttpLogin(name="usuario", path="/login", form={"login": r.login_a, "senha": r.senha_a}),),
+            checks=(
+                HttpCheck(
+                    id="pacote-legitimo-aplicado",
+                    description="O pacote assinado pelo fornecedor continua sendo aplicado.",
+                    path="/pacotes",
+                    method="POST",
+                    as_user="usuario",
+                    multipart=envio("pacote.json", legitimo),
+                    contains=("aplicado",),
+                ),
+                HttpCheck(
+                    id="pacote-adulterado-recusado",
+                    description="Um pacote alterado depois de assinado é recusado.",
+                    path="/pacotes",
+                    method="POST",
+                    as_user="usuario",
+                    multipart=envio("pacote.json", adulterado),
+                    expect_status=None,
+                    expect_status_in=(400, 403, 422),
+                ),
+                HttpCheck(
+                    id="pacote-sem-assinatura-recusado",
+                    description="Um pacote sem assinatura é recusado.",
+                    path="/pacotes",
+                    method="POST",
+                    as_user="usuario",
+                    multipart=envio("pacote.json", sem_assinatura),
+                    expect_status=None,
+                    expect_status_in=(400, 403, 422),
+                ),
+            ),
+            inspections=(
+                InspectCheck(
+                    id="parametro-intacto",
+                    description=f"O parâmetro {r.param} continua com o valor do pacote legítimo.",
+                    db_path=banco,
+                    query=f"SELECT nome, valor FROM parametros WHERE nome = '{r.param}'",  # noqa: S608
+                    all_match=re.escape(valor_ok),
+                ),
+                InspectCheck(
+                    id="versao-legitima-em-vigor",
+                    description="A versão em vigor é a do pacote legítimo.",
+                    db_path=banco,
+                    query="SELECT 'versao', versao FROM pacote_atual",
+                    all_match=re.escape(r.versao),
+                ),
+            ),
+            success_feedback=(
+                "Correção validada: o pacote do fornecedor é aplicado, e o pacote alterado ou sem "
+                "assinatura é recusado sem tocar nos parâmetros."
+            ),
+            failure_feedback=(
+                "Algumas verificações falharam. Confira cada item abaixo e ajuste o método importar de "
+                "services/pacote_service.py: recalcule o HMAC e compare com hmac.compare_digest antes de gravar."
+            ),
+        ),
+    )
+
+
 SUITES_FAMILIAS: tuple[Suite, ...] = (
     tuple(s for r in XSS_RAMOS for s in _xss(r))
     + tuple(s for r in MASSA_RAMOS for s in _massa(r))
@@ -3025,6 +3209,7 @@ SUITES_FAMILIAS: tuple[Suite, ...] = (
     + tuple(s for r in RECURSOS_RAMOS for s in _recursos(r))
     + tuple(s for r in AUDITORIA_RAMOS for s in _auditoria(r))
     + tuple(s for r in COMPONENTE_RAMOS for s in _componente(r))
+    + tuple(s for r in PACOTE_RAMOS for s in _pacote(r))
     + tuple(
         s
         for r in MOB_RAMOS

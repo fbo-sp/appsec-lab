@@ -536,6 +536,27 @@ const ILLUSTRATIONS: Record<string, { caption: string; body: () => ReactNode }> 
       />
     ),
   },
+  "pacote-assinado": {
+    caption: "Integridade de dados: a assinatura só protege se quem recebe recalcula e confere antes de aplicar.",
+    body: () => (
+      <Compare
+        bad={[
+          "Aplica sem conferir (hoje)",
+          <>
+            <span>O pacote passa pelo servidor de arquivos; alguém troca um número e deixa a {c("assinatura")} antiga.</span>
+            <span>O serviço lê o JSON e grava direto: o valor alterado vira regra.</span>
+          </>,
+        ]}
+        good={[
+          "Confere antes de aplicar",
+          <>
+            <span>Recalcula {c("HMAC-SHA256")} do conteúdo com a chave do fornecedor.</span>
+            <span>{c("hmac.compare_digest")} diferente ou assinatura ausente: recusa e não grava nada.</span>
+          </>,
+        ]}
+      />
+    ),
+  },
   "bfla": {
     caption: "Autorização de função (BFLA): autenticar não é autorizar — cada função sensível confere o papel.",
     body: () => (

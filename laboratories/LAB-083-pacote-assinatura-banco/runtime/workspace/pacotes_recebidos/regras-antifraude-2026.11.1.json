@@ -1,0 +1,10 @@
+{
+  "fornecedor": "Bureau Atento Antifraude",
+  "versao": "2026.11.1",
+  "parametros": {
+    "limite_pix_noturno": 1000,
+    "score_minimo_aprovacao": 720,
+    "dias_dispositivo_novo": 3
+  },
+  "assinatura": "3a84d25a664101b8cb1ca92d3e5640cb752581febf1f2133122dab7453d03ea6"
+}

@@ -122,6 +122,9 @@ Indicado como primeira atividade de qualquer turma, antes do primeiro laboratór
 | LAB-080 | L1-FIN · Componentes vulneráveis: o extrato gerado por uma biblioteca de três anos atrás | 1.0.0 | CWE-1395 | A03 Software Supply Chain Failures (2025) | Não se enquadra; use o CWE (2025) | Intermediário | 35 min |
 | LAB-081 | L1-SAU · Componentes vulneráveis: o laudo gerado por uma biblioteca de três anos atrás | 1.0.0 | CWE-1395 | A03 Software Supply Chain Failures (2025) | Não se enquadra; use o CWE (2025) | Intermediário | 35 min |
 | LAB-082 | L1-IND · Componentes vulneráveis: a ordem de serviço gerada por uma biblioteca de três anos atrás | 1.0.0 | CWE-1395 | A03 Software Supply Chain Failures (2025) | Não se enquadra; use o CWE (2025) | Intermediário | 35 min |
+| LAB-083 | L4-FIN · Integridade de dados: a tabela de regras antifraude que ninguém conferiu | 1.0.0 | CWE-345 | A08 Software or Data Integrity Failures (2025) | Não se enquadra; use o CWE (2025) | Intermediário | 35 min |
+| LAB-084 | L4-SAU · Integridade de dados: a tabela de valores críticos que ninguém conferiu | 1.0.0 | CWE-345 | A08 Software or Data Integrity Failures (2025) | Não se enquadra; use o CWE (2025) | Intermediário | 35 min |
+| LAB-085 | L4-IND · Integridade de dados: o pacote de parâmetros do laminador que ninguém conferiu | 1.0.0 | CWE-345 | A08 Software or Data Integrity Failures (2025) | Não se enquadra; use o CWE (2025) | Intermediário | 35 min |
 
 ## LAB-001 · SQL Injection: a busca que expõe pacientes
 
@@ -3529,3 +3532,123 @@ Indicado como primeira atividade de qualquer turma, antes do primeiro laboratór
 | Versão | Criada em | Obsoleta em | Situação | O que mudou |
 |---|---|---|---|---|
 | 1.0.0 | 2026-11-17 | — | vigente | Versão inicial (família L1 componente-desatualizado, ramo indústria e energia): biblioteca de documentos com falha conhecida, corrigida atualizando a dependência. |
+
+## LAB-083 · L4-FIN · Integridade de dados: a tabela de regras antifraude que ninguém conferiu
+
+- Versão vigente: 1.0.0
+- Cenário: Solaris Antifraude, o motor que decide quais Pix e compras passam direto, vão para análise ou são bloqueados
+- Papel do aluno: Pessoa desenvolvedora do time de prevenção a fraudes do Banco Solaris
+- Linguagem / stack: python / flask
+- Nível: Intermediário · duração estimada: 35 min
+- Família: pacote-assinatura
+- Ramo: Financeiro
+- Módulo do curso: Trained
+
+### Classificação
+
+- CWE: CWE-345 (principal), CWE-347, CWE-494
+- OWASP Top 10 2025: A08 Software or Data Integrity Failures
+- OWASP Top 10 2021: A08 Software and Data Integrity Failures
+- SANS CWE Top 25 2025: Não se enquadra; use o CWE
+- SANS CWE Top 25 2024: Não se enquadra; use o CWE
+
+### Objetivos
+
+- Entender o que uma assinatura HMAC prova sobre um pacote recebido de terceiros
+- Mostrar que um pacote alterado depois de assinado, ou sem assinatura, é aplicado
+- Saber o que conferir antes de aplicar dados que chegam de fora
+- Corrigir recalculando o HMAC e comparando em tempo constante antes de aplicar
+
+### Etapas
+
+1. Conhecer o pacote e a assinatura (10 pts)
+2. Alterar o pacote depois de assinado (15 pts)
+3. Saber o que a assinatura garante (15 pts)
+4. Encontrar onde a assinatura deveria ser conferida (15 pts)
+5. Conferir a assinatura antes de aplicar (45 pts)
+
+### Histórico de versões
+
+| Versão | Criada em | Obsoleta em | Situação | O que mudou |
+|---|---|---|---|---|
+| 1.0.0 | 2026-11-17 | — | vigente | Versão inicial (família L4 pacote-assinatura, ramo financeiro): pacote de regras antifraude aplicado sem conferir a assinatura HMAC. |
+
+## LAB-084 · L4-SAU · Integridade de dados: a tabela de valores críticos que ninguém conferiu
+
+- Versão vigente: 1.0.0
+- Cenário: Bom Pastor Alertas Clínicos, que avisa a equipe de enfermagem quando um resultado de exame passa de um valor crítico
+- Papel do aluno: Pessoa desenvolvedora do time de sistemas clínicos do Hospital Bom Pastor
+- Linguagem / stack: python / flask
+- Nível: Intermediário · duração estimada: 35 min
+- Família: pacote-assinatura
+- Ramo: Saúde
+- Módulo do curso: Trained
+
+### Classificação
+
+- CWE: CWE-345 (principal), CWE-347, CWE-494
+- OWASP Top 10 2025: A08 Software or Data Integrity Failures
+- OWASP Top 10 2021: A08 Software and Data Integrity Failures
+- SANS CWE Top 25 2025: Não se enquadra; use o CWE
+- SANS CWE Top 25 2024: Não se enquadra; use o CWE
+
+### Objetivos
+
+- Entender o que uma assinatura HMAC prova sobre um pacote recebido de terceiros
+- Mostrar que um pacote alterado depois de assinado, ou sem assinatura, é aplicado
+- Saber o que conferir antes de aplicar dados que chegam de fora
+- Corrigir recalculando o HMAC e comparando em tempo constante antes de aplicar
+
+### Etapas
+
+1. Conhecer o pacote e a assinatura (10 pts)
+2. Alterar o pacote depois de assinado (15 pts)
+3. Saber o que a assinatura garante (15 pts)
+4. Encontrar onde a assinatura deveria ser conferida (15 pts)
+5. Conferir a assinatura antes de aplicar (45 pts)
+
+### Histórico de versões
+
+| Versão | Criada em | Obsoleta em | Situação | O que mudou |
+|---|---|---|---|---|
+| 1.0.0 | 2026-11-17 | — | vigente | Versão inicial (família L4 pacote-assinatura, ramo saúde): tabela de valores críticos aplicada sem conferir a assinatura HMAC. |
+
+## LAB-085 · L4-IND · Integridade de dados: o pacote de parâmetros do laminador que ninguém conferiu
+
+- Versão vigente: 1.0.0
+- Cenário: Cruzeiro Parâmetros de Linha, que distribui para os CLPs da laminação os limites de operação da linha
+- Papel do aluno: Pessoa desenvolvedora do time de automação da Aços Cruzeiro
+- Linguagem / stack: python / flask
+- Nível: Intermediário · duração estimada: 35 min
+- Família: pacote-assinatura
+- Ramo: Indústria e Energia
+- Módulo do curso: Trained
+
+### Classificação
+
+- CWE: CWE-345 (principal), CWE-347, CWE-494
+- OWASP Top 10 2025: A08 Software or Data Integrity Failures
+- OWASP Top 10 2021: A08 Software and Data Integrity Failures
+- SANS CWE Top 25 2025: Não se enquadra; use o CWE
+- SANS CWE Top 25 2024: Não se enquadra; use o CWE
+
+### Objetivos
+
+- Entender o que uma assinatura HMAC prova sobre um pacote recebido de terceiros
+- Mostrar que um pacote alterado depois de assinado, ou sem assinatura, é aplicado
+- Saber o que conferir antes de aplicar dados que chegam de fora
+- Corrigir recalculando o HMAC e comparando em tempo constante antes de aplicar
+
+### Etapas
+
+1. Conhecer o pacote e a assinatura (10 pts)
+2. Alterar o pacote depois de assinado (15 pts)
+3. Saber o que a assinatura garante (15 pts)
+4. Encontrar onde a assinatura deveria ser conferida (15 pts)
+5. Conferir a assinatura antes de aplicar (45 pts)
+
+### Histórico de versões
+
+| Versão | Criada em | Obsoleta em | Situação | O que mudou |
+|---|---|---|---|---|
+| 1.0.0 | 2026-11-17 | — | vigente | Versão inicial (família L4 pacote-assinatura, ramo indústria e energia): parâmetros de linha aplicados sem conferir a assinatura HMAC. |
