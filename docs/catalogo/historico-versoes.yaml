@@ -144,3 +144,15 @@ labs:
     - version: 1.0.0
       published: 2026-11-16
       summary: Primeira versão (armazenamento inseguro de senha em MD5, Siderúrgica Pindorama; família senha, ramo Indústria e Energia).
+  LAB-020:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (SSRF no importador por URL, Cooperativa Credimova; família ssrf, ramo Financeiro).
+  LAB-021:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (SSRF no importador por URL, Clínica Sampaio; família ssrf, ramo Saúde).
+  LAB-022:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (SSRF no importador por URL, Siderúrgica Pindorama; família ssrf, ramo Indústria e Energia).

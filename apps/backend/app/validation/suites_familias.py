@@ -827,10 +827,140 @@ def _upload(r: UploadRamo) -> tuple[Suite, ...]:
     )
 
 
+# --------------------------------------------------------------------------------------------------
+# A6 ssrf: Server-Side Request Forgery no importador por URL (LAB-020 a LAB-022)
+
+
+@dataclass(frozen=True, slots=True)
+class SsrfRamo:
+    ramo: str
+    login_a: str
+    senha_a: str
+    doc_trecho: str  # trecho do documento legítimo; confirma que a busca permitida continua funcionando
+    meta_chave: str  # credencial fictícia que o console interno vaza; não pode voltar depois da correção
+
+
+SSRF_RAMOS = (
+    SsrfRamo(
+        "fin",
+        "analista.credito",
+        "Analista#Cred26",
+        "Renda bruta mensal",
+        "CHAVE-FICTICIA-CREDIMOVA-NAO-USAR",
+    ),
+    SsrfRamo(
+        "sau",
+        "recepcao.laudos",
+        "Recepcao#Sampaio26",
+        "Hemograma completo",
+        "CHAVE-FICTICIA-SAMPAIO-NAO-USAR",
+    ),
+    SsrfRamo(
+        "ind",
+        "eng.processos",
+        "Engenharia#Pind26",
+        "Chapa de aço laminado",
+        "CHAVE-FICTICIA-PINDORAMA-NAO-USAR",
+    ),
+)
+
+_DOC_LEGITIMO = "http://127.0.0.1:8090/doc/1"  # Serviço de Documentos interno (destino permitido)
+_CONSOLE_INTERNO = "http://127.0.0.1:9000/infra/credenciais"  # Console de Infraestrutura (uso interno)
+
+
+def _ssrf(r: SsrfRamo) -> tuple[Suite, ...]:
+    return (
+        AnswerSuite(
+            ref=f"ssrf/answer/funcao-busca-{r.ramo}-v1",
+            version="1.0.0",
+            prompt="Função que abre a URL no servidor",
+            accepted=("urlopen", "urllib.request.urlopen", "request.urlopen", "urlopen()"),
+            success_feedback="Isso. urlopen abre, no servidor, a URL que veio do formulário.",
+            failure_feedback="Ainda não. Em services/importador_service.py, veja o que vem depois de urllib.request.",
+        ),
+        AnswerSuite(
+            ref=f"ssrf/answer/credencial-vazada-{r.ramo}-v1",
+            version="1.0.0",
+            prompt="Valor do campo chave_integracao vazado pelo console interno",
+            accepted=(r.meta_chave,),
+            success_feedback="Exato: pela tela de importar você leu um segredo de infraestrutura. Isso é SSRF.",
+            failure_feedback="Não é esse. Busque a URL do console interno e copie o campo chave_integracao do JSON.",
+        ),
+        AnswerSuite(
+            ref=f"ssrf/answer/destino-legitimo-{r.ramo}-v1",
+            version="1.0.0",
+            prompt="Host e porta do único destino legítimo",
+            accepted=("127.0.0.1:8090", "http://127.0.0.1:8090", "127.0.0.1:8090/"),
+            success_feedback="Isso. O importador só precisa do Serviço de Documentos; o resto deve ser recusado.",
+            failure_feedback="Não é esse. É o host:porta da URL http://____/doc/1 que você buscou na etapa 1.",
+        ),
+        AnswerSuite(
+            ref=f"ssrf/answer/defesa-{r.ramo}-v1",
+            version="1.0.0",
+            prompt="Defesa que lista o que é permitido e recusa o resto",
+            accepted=(
+                "allowlist",
+                "allow-list",
+                "allow list",
+                "lista de permissão",
+                "lista de permissao",
+                "lista de permissões",
+                "lista de permissoes",
+            ),
+            success_feedback="Isso. A allowlist descreve o que é aceito e recusa todo o resto.",
+            failure_feedback="Ainda não. É o oposto de blocklist: em português, lista de permissão.",
+        ),
+        HttpSuite(
+            ref=f"ssrf/python-flask/importador-allowlist-{r.ramo}-v1",
+            version="1.0.0",
+            logins=(HttpLogin(name="a", path="/login", form={"login": r.login_a, "senha": r.senha_a}),),
+            checks=(
+                HttpCheck(
+                    id="documento-legitimo",
+                    description="A busca do documento legítimo (Serviço de Documentos) continua funcionando.",
+                    path="/importar",
+                    method="POST",
+                    as_user="a",
+                    form={"url": _DOC_LEGITIMO},
+                    contains=(r.doc_trecho,),
+                ),
+                HttpCheck(
+                    id="console-interno-bloqueado",
+                    description="A busca do console interno é recusada e a credencial não volta mais.",
+                    path="/importar",
+                    method="POST",
+                    as_user="a",
+                    form={"url": _CONSOLE_INTERNO},
+                    contains=("não permitido",),
+                    not_contains=(r.meta_chave,),
+                ),
+                HttpCheck(
+                    id="esquema-arquivo-bloqueado",
+                    description="Um destino file:// (fora da lista de permissão) também é recusado.",
+                    path="/importar",
+                    method="POST",
+                    as_user="a",
+                    form={"url": "file:///etc/hostname"},
+                    contains=("não permitido",),
+                ),
+            ),
+            success_feedback=(
+                "Correção validada: o documento legítimo continua sendo buscado e o console interno "
+                "(e outros destinos) é recusado — o servidor não busca mais qualquer URL."
+            ),
+            failure_feedback=(
+                "Algumas verificações falharam. Confira cada item abaixo, ajuste services/importador_service.py "
+                "e valide de novo."
+            ),
+        ),
+    )
+
+
 SUITES_FAMILIAS: tuple[Suite, ...] = (
     tuple(s for r in XSS_RAMOS for s in _xss(r))
     + tuple(s for r in MASSA_RAMOS for s in _massa(r))
     + tuple(s for r in CSRF_RAMOS for s in _csrf(r))
     + tuple(s for r in SENHA_RAMOS for s in _senha(r))
     + tuple(s for r in UPLOAD_RAMOS for s in _upload(r))
+    + tuple(s for r in SSRF_RAMOS for s in _ssrf(r))
 )

@@ -375,6 +375,41 @@ const ILLUSTRATIONS: Record<string, { caption: string; body: () => ReactNode }> 
       />
     ),
   },
+  "ssrf-fluxo": {
+    caption: "SSRF: quem controla a URL controla para onde o SERVIDOR vai — inclusive serviços internos.",
+    body: () => (
+      <Flow
+        steps={[
+          { who: "Atacante", what: <>informa uma URL interna, ex.: {c("http://127.0.0.1:9000/infra/credenciais")}</>, tone: "atk" },
+          { who: "Aplicação", what: <>o servidor abre a URL com {c("urlopen(url)")}, sem conferir o destino</>, tone: "app" },
+          { who: "Console interno", what: "responde ao servidor (ele está na rede interna, o atacante não)", tone: "vit" },
+          { who: "Aplicação", what: "devolve a resposta na prévia, como se fosse um documento", tone: "app" },
+          { who: "Resultado", what: "o atacante lê um segredo interno pela tela de importar documento", tone: "bad" },
+        ]}
+      />
+    ),
+  },
+  "ssrf-allowlist": {
+    caption: "Blocklist × allowlist: listar o que é proibido sempre deixa brecha; listar o que é permitido, não.",
+    body: () => (
+      <Compare
+        bad={[
+          "Lista de proibidos (blocklist)",
+          <>
+            <span>Barrar {c("127.0.0.1")}, {c("169.254.169.254")}, {c("file://")}… sempre sobra um jeito.</span>
+            <span>Octal, IPv6, DNS que resolve para interno, redirecionamento: tudo contorna.</span>
+          </>,
+        ]}
+        good={[
+          "Lista de permissão (allowlist)",
+          <>
+            <span>Só {c('("http", "127.0.0.1", 8090)')} (o Serviço de Documentos) é aceito.</span>
+            <span>Qualquer outro esquema, host ou porta é recusado antes da busca.</span>
+          </>,
+        ]}
+      />
+    ),
+  },
 };
 
 export function hasIllustration(name: string): boolean {

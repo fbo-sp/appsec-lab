@@ -59,6 +59,9 @@ Indicado como primeira atividade de qualquer turma, antes do primeiro laboratór
 | LAB-017 | A4-FIN · Senhas: as senhas MD5 herdadas da fusão | 1.0.0 | CWE-916 | A04 Cryptographic Failures (2025) | Não se enquadra; use o CWE (2025) | Iniciante | 40 min |
 | LAB-018 | A4-SAU · Senhas: o portal do paciente com senhas em MD5 | 1.0.0 | CWE-916 | A04 Cryptographic Failures (2025) | Não se enquadra; use o CWE (2025) | Iniciante | 40 min |
 | LAB-019 | A4-IND · Senhas: o portal do colaborador com senhas em MD5 | 1.0.0 | CWE-916 | A04 Cryptographic Failures (2025) | Não se enquadra; use o CWE (2025) | Iniciante | 40 min |
+| LAB-020 | A6-FIN · SSRF: o importador de comprovantes que busca qualquer URL | 1.0.0 | CWE-918 | A01 Broken Access Control (2025) | #22 CWE-918 (2025) | Intermediário | 40 min |
+| LAB-021 | A6-SAU · SSRF: o importador de laudos que busca qualquer URL | 1.0.0 | CWE-918 | A01 Broken Access Control (2025) | #22 CWE-918 (2025) | Intermediário | 40 min |
+| LAB-022 | A6-IND · SSRF: o importador de documentos técnicos que busca qualquer URL | 1.0.0 | CWE-918 | A01 Broken Access Control (2025) | #22 CWE-918 (2025) | Intermediário | 40 min |
 
 ## LAB-001 · SQL Injection: a busca que expõe pacientes
 
@@ -832,3 +835,126 @@ Indicado como primeira atividade de qualquer turma, antes do primeiro laboratór
 | Versão | Criada em | Obsoleta em | Situação | O que mudou |
 |---|---|---|---|---|
 | 1.0.0 | 2026-11-16 | — | vigente | Primeira versão (armazenamento inseguro de senha em MD5, Siderúrgica Pindorama; família senha, ramo Indústria e Energia). |
+
+## LAB-020 · A6-FIN · SSRF: o importador de comprovantes que busca qualquer URL
+
+- Versão vigente: 1.0.0
+- Cenário: Mesa de Crédito, onde a equipe importa o comprovante de renda enviado pelo parceiro para analisar a proposta
+- Papel do aluno: Pessoa desenvolvedora da squad de crédito da Cooperativa Credimova
+- Linguagem / stack: python / flask
+- Nível: Intermediário · duração estimada: 40 min
+- Família: ssrf
+- Ramo: Financeiro
+- Módulo do curso: Trained, MASTER
+
+### Classificação
+
+- CWE: CWE-918
+- OWASP Top 10 2025: A01 Broken Access Control
+- OWASP Top 10 2021: A10 Server-Side Request Forgery (SSRF)
+- OWASP API Security Top 10 2023: API7 Server Side Request Forgery
+- SANS CWE Top 25 2025: #22 CWE-918
+- SANS CWE Top 25 2024: #19 CWE-918
+
+### Objetivos
+
+- Entender o que é SSRF: fazer o servidor da aplicação buscar uma URL escolhida por quem ataca
+- Explorar a falha usando o importador para ler um serviço interno que o usuário não deveria alcançar
+- Entender por que "é só uma busca de documento" vira acesso à infraestrutura interna
+- Corrigir com uma lista de permissão (allowlist) de destinos, validada no servidor
+
+### Etapas
+
+1. Conhecer a Mesa e achar onde o servidor busca a URL (10 pts)
+2. Usar o importador para ler um serviço interno (15 pts)
+3. Ver que o importador não distingue destino nenhum (15 pts)
+4. Escolher a defesa certa contra SSRF (15 pts)
+5. Corrigir o importador com uma lista de permissão (45 pts)
+
+### Histórico de versões
+
+| Versão | Criada em | Obsoleta em | Situação | O que mudou |
+|---|---|---|---|---|
+| 1.0.0 | 2026-11-17 | — | vigente | Primeira versão (SSRF no importador por URL, Cooperativa Credimova; família ssrf, ramo Financeiro). |
+
+## LAB-021 · A6-SAU · SSRF: o importador de laudos que busca qualquer URL
+
+- Versão vigente: 1.0.0
+- Cenário: Central de Laudos, onde a recepção importa o laudo enviado pelo laboratório parceiro
+- Papel do aluno: Pessoa desenvolvedora do time de sistemas da Clínica Sampaio
+- Linguagem / stack: python / flask
+- Nível: Intermediário · duração estimada: 40 min
+- Família: ssrf
+- Ramo: Saúde
+- Módulo do curso: Trained, MASTER
+
+### Classificação
+
+- CWE: CWE-918
+- OWASP Top 10 2025: A01 Broken Access Control
+- OWASP Top 10 2021: A10 Server-Side Request Forgery (SSRF)
+- OWASP API Security Top 10 2023: API7 Server Side Request Forgery
+- SANS CWE Top 25 2025: #22 CWE-918
+- SANS CWE Top 25 2024: #19 CWE-918
+
+### Objetivos
+
+- Entender o que é SSRF: fazer o servidor da aplicação buscar uma URL escolhida por quem ataca
+- Explorar a falha usando o importador para ler um serviço interno que o usuário não deveria alcançar
+- Entender por que "é só uma busca de documento" vira acesso à infraestrutura interna
+- Corrigir com uma lista de permissão (allowlist) de destinos, validada no servidor
+
+### Etapas
+
+1. Conhecer a Mesa e achar onde o servidor busca a URL (10 pts)
+2. Usar o importador para ler um serviço interno (15 pts)
+3. Ver que o importador não distingue destino nenhum (15 pts)
+4. Escolher a defesa certa contra SSRF (15 pts)
+5. Corrigir o importador com uma lista de permissão (45 pts)
+
+### Histórico de versões
+
+| Versão | Criada em | Obsoleta em | Situação | O que mudou |
+|---|---|---|---|---|
+| 1.0.0 | 2026-11-17 | — | vigente | Primeira versão (SSRF no importador por URL, Clínica Sampaio; família ssrf, ramo Saúde). |
+
+## LAB-022 · A6-IND · SSRF: o importador de documentos técnicos que busca qualquer URL
+
+- Versão vigente: 1.0.0
+- Cenário: Portal de Engenharia, onde a equipe importa o documento técnico enviado pelo fornecedor
+- Papel do aluno: Pessoa desenvolvedora do time de sistemas industriais da Siderúrgica Pindorama
+- Linguagem / stack: python / flask
+- Nível: Intermediário · duração estimada: 40 min
+- Família: ssrf
+- Ramo: Indústria e Energia
+- Módulo do curso: Trained, MASTER
+
+### Classificação
+
+- CWE: CWE-918
+- OWASP Top 10 2025: A01 Broken Access Control
+- OWASP Top 10 2021: A10 Server-Side Request Forgery (SSRF)
+- OWASP API Security Top 10 2023: API7 Server Side Request Forgery
+- SANS CWE Top 25 2025: #22 CWE-918
+- SANS CWE Top 25 2024: #19 CWE-918
+
+### Objetivos
+
+- Entender o que é SSRF: fazer o servidor da aplicação buscar uma URL escolhida por quem ataca
+- Explorar a falha usando o importador para ler um serviço interno que o usuário não deveria alcançar
+- Entender por que "é só uma busca de documento" vira acesso à infraestrutura interna
+- Corrigir com uma lista de permissão (allowlist) de destinos, validada no servidor
+
+### Etapas
+
+1. Conhecer a Mesa e achar onde o servidor busca a URL (10 pts)
+2. Usar o importador para ler um serviço interno (15 pts)
+3. Ver que o importador não distingue destino nenhum (15 pts)
+4. Escolher a defesa certa contra SSRF (15 pts)
+5. Corrigir o importador com uma lista de permissão (45 pts)
+
+### Histórico de versões
+
+| Versão | Criada em | Obsoleta em | Situação | O que mudou |
+|---|---|---|---|---|
+| 1.0.0 | 2026-11-17 | — | vigente | Primeira versão (SSRF no importador por URL, Siderúrgica Pindorama; família ssrf, ramo Indústria e Energia). |
