@@ -68,6 +68,9 @@ Indicado como primeira atividade de qualquer turma, antes do primeiro laboratór
 | LAB-026 | A13-FIN · Força bruta no login: o login que aceita senhas sem parar | 1.0.0 | CWE-307 | A07 Authentication Failures (2025) | Não se enquadra; use o CWE (2025) | Intermediário | 35 min |
 | LAB-027 | A13-SAU · Força bruta no login: o login que aceita senhas sem parar | 1.0.0 | CWE-307 | A07 Authentication Failures (2025) | Não se enquadra; use o CWE (2025) | Intermediário | 35 min |
 | LAB-028 | A13-IND · Força bruta no login: o login que aceita senhas sem parar | 1.0.0 | CWE-307 | A07 Authentication Failures (2025) | Não se enquadra; use o CWE (2025) | Intermediário | 35 min |
+| LAB-029 | A7-FIN · CORS mal configurado: o perfil que qualquer site pode ler | 1.0.0 | CWE-942 | A02 Security Misconfiguration (2025) | Não se enquadra; use o CWE (2025) | Intermediário | 35 min |
+| LAB-030 | A7-SAU · CORS mal configurado: o perfil que qualquer site pode ler | 1.0.0 | CWE-942 | A02 Security Misconfiguration (2025) | Não se enquadra; use o CWE (2025) | Intermediário | 35 min |
+| LAB-031 | A7-IND · CORS mal configurado: o perfil que qualquer site pode ler | 1.0.0 | CWE-942 | A02 Security Misconfiguration (2025) | Não se enquadra; use o CWE (2025) | Intermediário | 35 min |
 
 ## LAB-001 · SQL Injection: a busca que expõe pacientes
 
@@ -1210,3 +1213,126 @@ Indicado como primeira atividade de qualquer turma, antes do primeiro laboratór
 | Versão | Criada em | Obsoleta em | Situação | O que mudou |
 |---|---|---|---|---|
 | 1.0.0 | 2026-11-17 | — | vigente | Primeira versão (login sem limite de tentativas / força bruta, Metalúrgica Aurora; família tentativas-login, ramo Indústria e Energia). |
+
+## LAB-029 · A7-FIN · CORS mal configurado: o perfil que qualquer site pode ler
+
+- Versão vigente: 1.0.0
+- Cenário: Portal do Investidor, onde o investidor vê o próprio perfil carregado pela API da plataforma
+- Papel do aluno: Pessoa desenvolvedora do time de plataforma da Corretora Montara
+- Linguagem / stack: python / flask
+- Nível: Intermediário · duração estimada: 35 min
+- Família: cors
+- Ramo: Financeiro
+- Módulo do curso: Trained
+
+### Classificação
+
+- CWE: CWE-942 (principal), CWE-346
+- OWASP Top 10 2025: A02 Security Misconfiguration
+- OWASP Top 10 2021: A05 Security Misconfiguration
+- OWASP API Security Top 10 2023: API8 Security Misconfiguration
+- SANS CWE Top 25 2025: Não se enquadra; use o CWE
+- SANS CWE Top 25 2024: Não se enquadra; use o CWE
+
+### Objetivos
+
+- Entender o que o CORS controla e o que o cabeçalho Access-Control-Allow-Origin libera
+- Explorar a falha vendo a API refletir qualquer origem enviada na requisição
+- Reconhecer o risco de refletir a origem junto com Allow-Credentials
+- Corrigir liberando só origens confiáveis, de uma lista conhecida
+
+### Etapas
+
+1. Conhecer a API e achar a configuração de CORS (10 pts)
+2. Ver a API refletir qualquer origem (15 pts)
+3. Nomear a defesa que falta (15 pts)
+4. Entender o papel das credenciais (15 pts)
+5. Liberar só origens confiáveis no serviço de CORS (45 pts)
+
+### Histórico de versões
+
+| Versão | Criada em | Obsoleta em | Situação | O que mudou |
+|---|---|---|---|---|
+| 1.0.0 | 2026-11-17 | — | vigente | Primeira versão (CORS mal configurado que reflete qualquer origem, Corretora Montara; família cors, ramo Financeiro). |
+
+## LAB-030 · A7-SAU · CORS mal configurado: o perfil que qualquer site pode ler
+
+- Versão vigente: 1.0.0
+- Cenário: Portal do Beneficiário, onde o beneficiário vê o próprio perfil carregado pela API da operadora
+- Papel do aluno: Pessoa desenvolvedora do time de produtos digitais da operadora Vitalis
+- Linguagem / stack: python / flask
+- Nível: Intermediário · duração estimada: 35 min
+- Família: cors
+- Ramo: Saúde
+- Módulo do curso: Trained
+
+### Classificação
+
+- CWE: CWE-942 (principal), CWE-346
+- OWASP Top 10 2025: A02 Security Misconfiguration
+- OWASP Top 10 2021: A05 Security Misconfiguration
+- OWASP API Security Top 10 2023: API8 Security Misconfiguration
+- SANS CWE Top 25 2025: Não se enquadra; use o CWE
+- SANS CWE Top 25 2024: Não se enquadra; use o CWE
+
+### Objetivos
+
+- Entender o que o CORS controla e o que o cabeçalho Access-Control-Allow-Origin libera
+- Explorar a falha vendo a API refletir qualquer origem enviada na requisição
+- Reconhecer o risco de refletir a origem junto com Allow-Credentials
+- Corrigir liberando só origens confiáveis, de uma lista conhecida
+
+### Etapas
+
+1. Conhecer a API e achar a configuração de CORS (10 pts)
+2. Ver a API refletir qualquer origem (15 pts)
+3. Nomear a defesa que falta (15 pts)
+4. Entender o papel das credenciais (15 pts)
+5. Liberar só origens confiáveis no serviço de CORS (45 pts)
+
+### Histórico de versões
+
+| Versão | Criada em | Obsoleta em | Situação | O que mudou |
+|---|---|---|---|---|
+| 1.0.0 | 2026-11-17 | — | vigente | Primeira versão (CORS mal configurado que reflete qualquer origem, Operadora Vitalis; família cors, ramo Saúde). |
+
+## LAB-031 · A7-IND · CORS mal configurado: o perfil que qualquer site pode ler
+
+- Versão vigente: 1.0.0
+- Cenário: Portal do Cliente, onde o cliente vê o próprio perfil carregado pela API da distribuidora
+- Papel do aluno: Pessoa desenvolvedora do time digital da Corrente Energia
+- Linguagem / stack: python / flask
+- Nível: Intermediário · duração estimada: 35 min
+- Família: cors
+- Ramo: Indústria e Energia
+- Módulo do curso: Trained
+
+### Classificação
+
+- CWE: CWE-942 (principal), CWE-346
+- OWASP Top 10 2025: A02 Security Misconfiguration
+- OWASP Top 10 2021: A05 Security Misconfiguration
+- OWASP API Security Top 10 2023: API8 Security Misconfiguration
+- SANS CWE Top 25 2025: Não se enquadra; use o CWE
+- SANS CWE Top 25 2024: Não se enquadra; use o CWE
+
+### Objetivos
+
+- Entender o que o CORS controla e o que o cabeçalho Access-Control-Allow-Origin libera
+- Explorar a falha vendo a API refletir qualquer origem enviada na requisição
+- Reconhecer o risco de refletir a origem junto com Allow-Credentials
+- Corrigir liberando só origens confiáveis, de uma lista conhecida
+
+### Etapas
+
+1. Conhecer a API e achar a configuração de CORS (10 pts)
+2. Ver a API refletir qualquer origem (15 pts)
+3. Nomear a defesa que falta (15 pts)
+4. Entender o papel das credenciais (15 pts)
+5. Liberar só origens confiáveis no serviço de CORS (45 pts)
+
+### Histórico de versões
+
+| Versão | Criada em | Obsoleta em | Situação | O que mudou |
+|---|---|---|---|---|
+| 1.0.0 | 2026-11-17 | — | vigente | Primeira versão (CORS mal configurado que reflete qualquer origem, Corrente Energia; família cors, ramo Indústria e Energia). |

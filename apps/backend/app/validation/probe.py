@@ -10,6 +10,8 @@ credenciais FICTÍCIAS do laboratório; se ``token_field`` for informado, o valo
 JSON vira o cabeçalho ``Authorization: Bearer``. Uma verificação com ``as_user`` usa essa sessão; sem
 ``as_user`` ela roda anônima, sem cookies.
 
+ADR-024: ``expect_absent_headers`` proíbe trechos em cabeçalhos da resposta (trecho vazio => cabeçalho
+ausente), o espelho de ``not_contains`` para cabeçalhos.
 ADR-023: ``expect_headers`` exige trechos em cabeçalhos da resposta; ``capture`` guarda um valor do corpo
 (regex com um grupo) para as verificações seguintes, que o usam como ``{{nome}}``; ``multipart`` envia um
 arquivo. Variável ausente ou captura sem casamento => a verificação falha (fail closed).
@@ -130,6 +132,13 @@ def _status_ok(check: dict[str, Any], status: int) -> bool:
 def _headers_ok(check: dict[str, Any], headers: dict[str, str]) -> bool:
     for name, part in (check.get("expect_headers") or {}).items():
         if str(part).lower() not in headers.get(str(name).lower(), "").lower():
+            return False
+    # ADR-024: cabeçalhos que não podem conter certo trecho (trecho vazio => cabeçalho ausente).
+    for name, part in (check.get("expect_absent_headers") or {}).items():
+        value = headers.get(str(name).lower())
+        if value is None:
+            continue  # cabeçalho ausente: ok, nada proibido pode estar presente
+        if str(part) == "" or str(part).lower() in value.lower():
             return False
     return True
 

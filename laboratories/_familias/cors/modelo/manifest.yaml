@@ -1,0 +1,246 @@
+# [[lab_id]] ([[codigo]]): CORS mal configurado (CWE-942) no [[app_nome]] da [[empresa]] (Flask + SQLite).
+# CONTÉM VULNERABILIDADE INTENCIONAL. Uso exclusivo no runtime Docker LOCAL (ADR-008), em rede
+# interna da sessão. Dados 100% fictícios. Família A7 cors (ADR-021): gerado por
+# scripts/gerar-familia.py a partir de laboratories/_familias/cors; não edite este arquivo à mão.
+#
+# ATENÇÃO: o digest abaixo é uma FIXTURE (sha256 de um texto fixo), não uma imagem publicada.
+# scripts/lab-local.sh e .ps1 trocam pela imagem construída localmente antes de registrar.
+apiVersion: labs.cecyber.io/v1alpha1
+kind: AppSecLab
+metadata:
+  id: [[lab_id]]
+  version: [[versao]]
+  title: "[[codigo]] · CORS mal configurado: [[titulo]]"
+  primaryCwe: CWE-942
+  secondaryCwes: [CWE-346]
+  family: cors
+  sectors: [[[setor]]]
+  courseModules: [trained]
+  classifications:
+    - framework: OWASP Top 10
+      edition: "2025"
+      entries:
+        - "A02 Security Misconfiguration"
+    - framework: OWASP Top 10
+      edition: "2021"
+      entries:
+        - "A05 Security Misconfiguration"
+    - framework: OWASP API Security Top 10
+      edition: "2023"
+      entries:
+        - "API8 Security Misconfiguration"
+    - framework: SANS CWE Top 25
+      edition: "2025"
+      entries:
+        - "Não se enquadra; use o CWE"
+    - framework: SANS CWE Top 25
+      edition: "2024"
+      entries:
+        - "Não se enquadra; use o CWE"
+learning:
+  singleVulnerability: true
+  estimatedMinutes: 35
+  difficulty: intermediate
+  objectives:
+    - Entender o que o CORS controla e o que o cabeçalho Access-Control-Allow-Origin libera
+    - Explorar a falha vendo a API refletir qualquer origem enviada na requisição
+    - Reconhecer o risco de refletir a origem junto com Allow-Credentials
+    - Corrigir liberando só origens confiáveis, de uma lista conhecida
+  story:
+    role: [[papel]]
+    application: [[aplicacao]]
+    context: >-
+      [[contexto]]
+    mission: [[missao]]
+  wrapUp:
+    text: |
+      Agora a API só libera, pelo CORS, origens confiáveis de uma lista conhecida. Em um sistema real, vale reforçar:
+
+      - **CORS é uma permissão, não uma defesa de autenticação.** Ele diz ao navegador quais origens podem LER a resposta. Refletir a origem recebida equivale a liberar para todo mundo — inclusive um site malicioso que a vítima visite.
+      - **Refletir a origem com `Allow-Credentials: true` é o pior caso.** Junto, eles dizem "qualquer site pode ler esta resposta usando o cookie de sessão do usuário". É assim que um site de terceiros lê dados da API autenticada da vítima.
+      - **Use uma lista de origens confiáveis (allowlist).** Compare a origem recebida com uma lista fixa e só então ecoe o `Access-Control-Allow-Origin`. Para origens de fora, não mande cabeçalho de CORS nenhum.
+      - **Nunca use `*` com credenciais.** O curinga não pode ser combinado com `Allow-Credentials`, e mesmo sem credenciais ele expõe a resposta a qualquer origem — só sirva assim recursos realmente públicos.
+    references:
+      - title: "OWASP Top 10:2025: A02 Security Misconfiguration"
+        url: https://top10.owasp.org/2025/A02_2025-Security_Misconfiguration/
+      - title: "OWASP Top 10:2021: A05 Security Misconfiguration"
+        url: https://owasp.org/Top10/A05_2021-Security_Misconfiguration/
+      - title: "OWASP API Security Top 10 2023: API8 Security Misconfiguration"
+        url: https://owasp.org/API-Security/editions/2023/en/0xa8-security-misconfiguration/
+      - title: "CWE-942: Permissive Cross-domain Policy with Untrusted Domains"
+        url: https://cwe.mitre.org/data/definitions/942.html
+      - title: "MDN: Cross-Origin Resource Sharing (CORS)"
+        url: https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS
+variants:
+  - id: python-flask
+    language: python
+    framework: flask
+    image: registry.local/labs/[[imagem]]@sha256:[[digest_fixture]]
+    runtimeProfile: web-basic
+    workspacePath: /workspace
+    startup:
+      command: ["sh", "-c", "python -u -m flask --app app run --host 0.0.0.0 --port 8080 --reload --no-debugger 2>&1 | tee -a /tmp/app.log"]
+      port: 8080
+    resources:
+      cpuMillicores: 500
+      memoryMiB: 512
+      storageMiB: 256
+      pidsMax: 64
+    session:
+      ttlMinutes: 45
+      maxRenewals: 2
+    interfaces: [editor, terminal, web]
+steps:
+  - id: conhecer
+    order: 1
+    title: Conhecer a API e achar a configuração de CORS
+    explanation: |
+      [[historia_abertura]]
+
+      **CORS** (Cross-Origin Resource Sharing) é o mecanismo que o navegador usa para decidir se uma página de **uma origem** (site) pode ler a resposta de uma API de **outra origem**. Quem autoriza é a própria API, pelo cabeçalho `Access-Control-Allow-Origin`. Se a API devolve esse cabeçalho de forma errada, ela libera demais.
+
+      ```ilustracao
+      cors-reflexo
+      ```
+
+      Siga o perfil pelas camadas:
+
+      1. **Controller** (`controllers/painel_controller.py`): a rota `/api/perfil` devolve o perfil em JSON e aplica os cabeçalhos de CORS.
+      2. **Serviço** (`services/cors_service.py`): decide os cabeçalhos de CORS a partir da origem recebida. **É aqui que a liberação é decidida.**
+
+      As credenciais de acesso, neste laboratório, são:
+
+      - Usuário `[[login_a]]`, senha `[[senha_a]]`.
+    task: |
+      1. Na aba **Aplicação**, entre com `[[login_a]]` e a senha `[[senha_a]]`. Você chega ao **[[painel_titulo]]**, que carrega o seu perfil pela API.
+      2. Na aba **Código**, abra `services/cors_service.py`.
+
+      Informe abaixo o nome do método que monta os cabeçalhos de CORS (o que o controller chama).
+    concept: CORS — quem pode ler a resposta da API, por origem
+    validatorRef: cors/answer/metodo-[[ramo]]-v1
+    hints:
+      - level: 1
+        text: 'Em `services/cors_service.py`, a classe `CorsService` tem um único método público.'
+      - level: 2
+        text: É o método que o controller chama para montar os cabeçalhos da resposta.
+      - level: 3
+        text: O valor é `cabecalhos`.
+    points: 10
+  - id: explorar
+    order: 2
+    title: Ver a API refletir qualquer origem
+    explanation: |
+      O método `cabecalhos` pega a origem que veio na requisição e **devolve ela mesma** no `Access-Control-Allow-Origin`, ainda por cima com `Access-Control-Allow-Credentials: true`. Ou seja: seja qual for o site que pergunte, a API responde "sim, você pode ler — inclusive com o cookie da vítima".
+
+      Vamos provar isso pela linha de comando, fingindo ser um site malicioso.
+    task: |
+      Na aba **Terminal**, faça um pedido ao `/api/perfil` com uma origem inventada e veja os cabeçalhos da resposta:
+
+      ```bash
+      curl -si -H "Origin: https://malicioso.example" http://127.0.0.1:8080/api/perfil | grep -i access-control
+      ```
+
+      Veja que a resposta traz `Access-Control-Allow-Origin: https://malicioso.example` — a API **refletiu** a origem maliciosa. Informe abaixo se a API **reflete** (devolve) a origem recebida ou a **recusa**.
+    explore: |
+      **Por que isso é grave.** O navegador confia nesse cabeçalho. Se a vítima está logada no portal e abre, noutra aba, um site do atacante, aquele site pode chamar `/api/perfil` com `fetch(..., {credentials: "include"})`: a API responde liberando a origem do atacante **e** o uso do cookie, e o navegador deixa o site do atacante ler o perfil da vítima. Refletir a origem anula a proteção que o CORS deveria dar.
+    concept: Refletir a origem recebida libera qualquer site a ler a API
+    validatorRef: cors/answer/reflete-[[ramo]]-v1
+    hints:
+      - level: 1
+        text: Compare a origem que você enviou no curl com a que voltou no cabeçalho.
+      - level: 2
+        text: A API devolve exatamente a mesma origem que recebeu.
+      - level: 3
+        text: A resposta é `reflete`.
+    points: 15
+  - id: lista
+    order: 3
+    title: Nomear a defesa que falta
+    explanation: |
+      A defesa é não confiar na origem recebida e sim compará-la com uma **lista de origens confiáveis** (allowlist) conhecida de antemão. Só se a origem estiver na lista é que a API ecoa o `Access-Control-Allow-Origin`; para qualquer outra, não manda cabeçalho de CORS nenhum.
+    task: |
+      Complete a defesa: em vez de refletir a origem, a API deve aceitar só as origens que estão numa ___ de origens confiáveis.
+
+      Responda com uma palavra (o que guarda as origens confiáveis).
+    concept: A defesa é uma lista de origens confiáveis (allowlist)
+    validatorRef: cors/answer/defesa-[[ramo]]-v1
+    hints:
+      - level: 1
+        text: É uma relação fixa, conhecida de antemão, das origens que podem ler a API.
+      - level: 2
+        text: Em inglês se chama allowlist; em português, uma ___ de permissão.
+      - level: 3
+        text: A resposta é `lista`.
+    points: 15
+  - id: credenciais
+    order: 4
+    title: Entender o papel das credenciais
+    explanation: |
+      O que torna a falha crítica é o par refletir-a-origem **mais** `Access-Control-Allow-Credentials: true`. Com credenciais liberadas, o site de terceiros lê a resposta usando o **cookie de sessão** da vítima — é a diferença entre expor um dado público e expor os dados da conta logada.
+    task: |
+      Qual cabeçalho, junto com a origem refletida, permite que o site de terceiros leia a resposta usando o cookie de sessão da vítima?
+
+      Responda com uma palavra (o que está sendo liberado além da origem).
+    concept: Allow-Credentials com origem refletida expõe a sessão da vítima
+    validatorRef: cors/answer/credenciais-[[ramo]]-v1
+    hints:
+      - level: 1
+        text: 'É o que o `fetch` envia com `credentials: "include"`.'
+      - level: 2
+        text: O cabeçalho é `Access-Control-Allow-Credentials`; a palavra está no nome dele.
+      - level: 3
+        text: A resposta é `credenciais`.
+    points: 15
+  - id: corrigir
+    order: 5
+    title: Liberar só origens confiáveis no serviço de CORS
+    explanation: |
+      **Por que a falha existe.** `cabecalhos` devolve a própria origem recebida, sem conferir se ela é confiável. Quem faz a requisição escolhe a origem.
+
+      **A correção.** Guardar uma lista de origens confiáveis e só ecoar o `Access-Control-Allow-Origin` quando a origem recebida estiver nessa lista. Para qualquer outra origem, não devolver cabeçalho de CORS.
+    task: |
+      Abra `services/cors_service.py` e troque o método `cabecalhos` inteiro por este (note a linha nova de classe, `ORIGENS_CONFIAVEIS`, logo antes do método):
+
+      ```python
+          # Origens que podem ler a API pelo navegador (o próprio portal). Ajuste conforme o ambiente.
+          ORIGENS_CONFIAVEIS = ("https://portal.exemplo",)
+
+          def cabecalhos(self, origem: str) -> dict[str, str]:
+              """Monta os cabeçalhos CORS da resposta da API, a partir da origem que veio na requisição."""
+              if origem not in self.ORIGENS_CONFIAVEIS:
+                  return {}
+              return {
+                  "Access-Control-Allow-Origin": origem,
+                  "Access-Control-Allow-Credentials": "true",
+              }
+      ```
+
+      Salve com **Ctrl+S**. A aplicação reinicia. Então, na aba **Terminal**:
+
+      1. repita o curl com `Origin: https://malicioso.example` e veja que **não** vem mais `Access-Control-Allow-Origin`;
+      2. teste `-H "Origin: https://portal.exemplo"` e veja que essa origem confiável **continua** liberada;
+      3. clique em **Validar**.
+    explore: |
+      **Se algo não funcionar depois de salvar.** Um recuo errado derruba a aplicação. No **Terminal**:
+
+      ```bash
+      grep -iE "error|traceback" /tmp/app.log | tail -n 15
+      ```
+
+      **O que procurar.** `IndentationError` aponta a linha com recuo diferente: `ORIGENS_CONFIAVEIS` fica com 4 espaços (atributo de classe), o `def cabecalhos` também com 4, e o corpo com 8. Copie o bloco da tarefa sem mudar o recuo.
+    concept: Correção do CORS com lista de origens confiáveis
+    validatorRef: cors/python-flask/cors-restrito-[[ramo]]-v1
+    hints:
+      - level: 1
+        text: 'A mudança é só em `services/cors_service.py`, no método `cabecalhos` (mais o atributo de classe).'
+      - level: 2
+        text: "Compare a origem com uma lista fixa; se não estiver nela, não devolva cabeçalho de CORS."
+      - level: 3
+        text: Copie o bloco da tarefa sem mudar o recuo. `ORIGENS_CONFIAVEIS` e `def cabecalhos` ficam com 4 espaços.
+    points: 45
+policy:
+  sequentialUnlock: true
+  allowStepRetry: true
+  persistProgressAcrossReset: true
+  allowSolutionReveal: false
+  finalPassingScore: 100

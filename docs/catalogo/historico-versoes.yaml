@@ -180,3 +180,15 @@ labs:
     - version: 1.0.0
       published: 2026-11-17
       summary: Primeira versão (login sem limite de tentativas / força bruta, Metalúrgica Aurora; família tentativas-login, ramo Indústria e Energia).
+  LAB-029:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (CORS mal configurado que reflete qualquer origem, Corretora Montara; família cors, ramo Financeiro).
+  LAB-030:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (CORS mal configurado que reflete qualquer origem, Operadora Vitalis; família cors, ramo Saúde).
+  LAB-031:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (CORS mal configurado que reflete qualquer origem, Corrente Energia; família cors, ramo Indústria e Energia).

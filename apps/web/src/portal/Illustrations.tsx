@@ -410,6 +410,27 @@ const ILLUSTRATIONS: Record<string, { caption: string; body: () => ReactNode }> 
       />
     ),
   },
+  "cors-reflexo": {
+    caption: "CORS: refletir a origem recebida libera qualquer site a ler a API — com o cookie da vítima.",
+    body: () => (
+      <Compare
+        bad={[
+          "Reflete qualquer origem (o que tem hoje)",
+          <>
+            <span>A API devolve {c("Access-Control-Allow-Origin: <a origem que chegou>")}, seja qual for.</span>
+            <span>Com {c("Allow-Credentials: true")}, um site malicioso lê a API usando o cookie da vítima.</span>
+          </>,
+        ]}
+        good={[
+          "Lista de origens confiáveis",
+          <>
+            <span>Só origens de uma lista fixa recebem {c("Access-Control-Allow-Origin")}.</span>
+            <span>Para qualquer outra origem, a API não devolve cabeçalho de CORS nenhum.</span>
+          </>,
+        ]}
+      />
+    ),
+  },
   "forca-bruta": {
     caption: "Força bruta: sem limite de tentativas, o atacante testa senha após senha até acertar.",
     body: () => (

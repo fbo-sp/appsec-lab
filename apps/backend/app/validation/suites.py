@@ -39,6 +39,8 @@ class HttpCheck:
     expect_status_in: tuple[int, ...] = ()  # se informado, substitui ``expect_status``
     # ADR-023. Cabeçalho (nome sem diferenciar maiúsculas) -> trecho exigido no valor (sem diferenciar).
     expect_headers: dict[str, str] | None = None
+    # ADR-024. Cabeçalho -> trecho que NÃO pode aparecer no valor; trecho vazio exige o cabeçalho AUSENTE.
+    expect_absent_headers: dict[str, str] | None = None
     # Variável -> regex com um grupo aplicada ao corpo; o valor vale para as verificações seguintes, que o
     # usam como ``{{variavel}}`` em path, form, json, headers e conteúdo do arquivo. Sem casamento, falha.
     capture: dict[str, str] | None = None
@@ -59,6 +61,7 @@ class HttpCheck:
             "not_contains": list(self.not_contains),
             "as_user": self.as_user,
             "expect_headers": self.expect_headers,
+            "expect_absent_headers": self.expect_absent_headers,
             "capture": self.capture,
             "multipart": self.multipart,
         }
@@ -147,7 +150,7 @@ def normalize_answer(value: str) -> str:
 
 
 # Campos do ADR-023: fora do digest quando vazios, para não mudar o digest das suítes anteriores.
-_OPTIONAL_KEYS = frozenset({"expect_headers", "capture", "multipart", "inspections"})
+_OPTIONAL_KEYS = frozenset({"expect_headers", "expect_absent_headers", "capture", "multipart", "inspections"})
 
 
 def _digest_dict(items: list[tuple[str, object]]) -> dict[str, object]:

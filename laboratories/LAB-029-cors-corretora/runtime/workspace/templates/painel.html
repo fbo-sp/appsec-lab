@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block conteudo %}
+<h1>Portal do Investidor</h1>
+<p class="ajuda">Seu perfil na Corretora Montara.</p>
+
+<dl class="dados">
+  <dt>Titular</dt><dd>{{ conta.nome }}</dd>
+  <dt>Usuário</dt><dd>{{ conta.login }}</dd>
+</dl>
+
+<p class="ajuda">Seu perfil (carregado pela página a partir da API <code>/api/perfil</code>):</p>
+<pre id="perfil" class="cartao">carregando…</pre>
+
+<p class="banner reforcado">Você está autenticado. Use <a href="{{ url_for('auth.sair') }}">Sair</a> para encerrar a sessão.</p>
+
+<script>
+  fetch("/api/perfil", { credentials: "include" })
+    .then(function (r) { return r.json(); })
+    .then(function (p) { document.getElementById("perfil").textContent = p.nome + " (" + p.login + ")"; })
+    .catch(function () { document.getElementById("perfil").textContent = "falha ao carregar"; });
+</script>
+{% endblock %}

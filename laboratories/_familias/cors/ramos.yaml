@@ -1,0 +1,93 @@
+# Família A7 cors (ADR-021): o que muda por ramo. O modelo comum está em ./modelo.
+# Depois de editar, rode:  uv run python scripts/gerar-familia.py cors
+# Logins e senhas estão espelhados em apps/backend/app/validation/suites_familias.py (registro
+# protegido); os testes Docker conferem os dois. A falha é de CORS: services/cors_service.py reflete
+# qualquer origem recebida (com Allow-Credentials), em vez de liberar só origens confiáveis.
+ramos:
+  - destino: LAB-029-cors-corretora
+    vars:
+      lab_id: LAB-029
+      versao: 1.0.0
+      codigo: A7-FIN
+      ramo: fin
+      setor: financeiro
+      imagem: lab-029-cors
+      titulo: o perfil que qualquer site pode ler
+      empresa: Corretora Montara
+      marca: "▲ Montara"
+      app_nome: Portal do Investidor
+      cor: "#1d4ed8"
+      papel: Pessoa desenvolvedora do time de plataforma da Corretora Montara
+      aplicacao: Portal do Investidor, onde o investidor vê o próprio perfil carregado pela API da plataforma
+      contexto: O Portal do Investidor carrega o perfil do cliente por uma API. Um teste de invasão alertou que a API de perfil reflete qualquer origem no CORS — um site malicioso que o cliente visite consegue ler, pelo navegador dele, os dados da conta logada.
+      missao: Confirmar que a API reflete qualquer origem e corrigir liberando só origens confiáveis
+      painel_titulo: Portal do Investidor
+      painel_desc: Seu perfil na Corretora Montara.
+      login_desc: Entre com as credenciais do investidor para acessar o portal.
+      banco: montara_investidores
+      login_a: lucas.andrade
+      senha_a: "Lucas#Montara26"
+      nome_a: Lucas Andrade Figueira
+      historia_abertura: 'Você está no time de plataforma da Corretora Montara. O Portal do Investidor carrega o perfil do cliente por uma API (/api/perfil). O time de segurança abriu um chamado: a API reflete no CORS qualquer origem que chegar, e um teste de invasão mostrou que um site malicioso visitado pelo cliente consegue ler, pelo navegador dele, os dados da conta logada.'
+      seed_contas:
+        - [1, lucas.andrade, Lucas Andrade Figueira, "Lucas#Montara26", 0.0]
+        - [2, bianca.rocha, Bianca Rocha Amaral, "Bianca#Montara26", 0.0]
+        - [3, thiago.neves, Thiago Neves Cardoso, "Thiago#Montara26", 0.0]
+  - destino: LAB-030-cors-saude
+    vars:
+      lab_id: LAB-030
+      versao: 1.0.0
+      codigo: A7-SAU
+      ramo: sau
+      setor: saude
+      imagem: lab-030-cors
+      titulo: o perfil que qualquer site pode ler
+      empresa: Operadora Vitalis
+      marca: "✚ Vitalis"
+      app_nome: Portal do Beneficiário
+      cor: "#0e7490"
+      papel: Pessoa desenvolvedora do time de produtos digitais da operadora Vitalis
+      aplicacao: Portal do Beneficiário, onde o beneficiário vê o próprio perfil carregado pela API da operadora
+      contexto: O Portal do Beneficiário carrega o perfil por uma API. Numa auditoria, a equipe apontou que a API de perfil reflete qualquer origem no CORS — um site malicioso que o beneficiário visite consegue ler, pelo navegador dele, os dados da conta logada.
+      missao: Confirmar que a API reflete qualquer origem e corrigir liberando só origens confiáveis
+      painel_titulo: Portal do Beneficiário
+      painel_desc: Seu perfil na Operadora Vitalis.
+      login_desc: Entre com as credenciais do beneficiário para acessar o portal.
+      banco: vitalis_beneficiarios
+      login_a: fernanda.lopes
+      senha_a: "Fernanda#Vitalis26"
+      nome_a: Fernanda Lopes Carvalho
+      historia_abertura: 'Você é do time de produtos digitais da operadora Vitalis. O Portal do Beneficiário carrega o perfil por uma API (/api/perfil). Numa auditoria, a equipe apontou que a API reflete no CORS qualquer origem que chegar, e que um site malicioso visitado pelo beneficiário consegue ler, pelo navegador dele, os dados da conta logada.'
+      seed_contas:
+        - [1, fernanda.lopes, Fernanda Lopes Carvalho, "Fernanda#Vitalis26", 0.0]
+        - [2, rodrigo.matos, Rodrigo Matos Simões, "Rodrigo#Vitalis26", 0.0]
+        - [3, aline.castro, Aline Castro Ramos, "Aline#Vitalis26", 0.0]
+  - destino: LAB-031-cors-energia
+    vars:
+      lab_id: LAB-031
+      versao: 1.0.0
+      codigo: A7-IND
+      ramo: ind
+      setor: industria-energia
+      imagem: lab-031-cors
+      titulo: o perfil que qualquer site pode ler
+      empresa: Corrente Energia
+      marca: "⚡ Corrente"
+      app_nome: Portal do Cliente
+      cor: "#9a3412"
+      papel: Pessoa desenvolvedora do time digital da Corrente Energia
+      aplicacao: Portal do Cliente, onde o cliente vê o próprio perfil carregado pela API da distribuidora
+      contexto: O Portal do Cliente carrega o perfil por uma API. Antes de uma auditoria, a equipe apontou que a API de perfil reflete qualquer origem no CORS — um site malicioso que o cliente visite consegue ler, pelo navegador dele, os dados da conta logada.
+      missao: Confirmar que a API reflete qualquer origem e corrigir liberando só origens confiáveis
+      painel_titulo: Portal do Cliente
+      painel_desc: Seu perfil na Corrente Energia.
+      login_desc: Entre com as credenciais do cliente para acessar o portal.
+      banco: corrente_clientes
+      login_a: marcelo.dantas
+      senha_a: "Marcelo#Corrente26"
+      nome_a: Marcelo Dantas Vieira
+      historia_abertura: 'Você é do time digital da Corrente Energia. O Portal do Cliente carrega o perfil por uma API (/api/perfil). A equipe apontou que a API reflete no CORS qualquer origem que chegar, e que um site malicioso visitado pelo cliente consegue ler, pelo navegador dele, os dados da conta logada.'
+      seed_contas:
+        - [1, marcelo.dantas, Marcelo Dantas Vieira, "Marcelo#Corrente26", 0.0]
+        - [2, patricia.gomes, Patrícia Gomes Souza, "Patricia#Corrente26", 0.0]
+        - [3, eduardo.lima, Eduardo Lima Barros, "Eduardo#Corrente26", 0.0]

@@ -37,6 +37,10 @@ class _App(BaseHTTPRequestHandler):
             self._send(200, f"usuario={who}")
         elif self.path == "/api":
             self._send(200 if auth == "Bearer tok-123" else 401, auth or "sem token")
+        elif self.path == "/cors":
+            # Reflete a origem recebida (comportamento vulnerável), para testar expect_absent_headers.
+            origem = self.headers.get("Origin", "")
+            self._send(200, "dados", {"Access-Control-Allow-Origin": origem} if origem else {})
         else:
             self._send(404, "nao encontrado")
 
@@ -120,3 +124,39 @@ def test_token_login_sets_bearer_and_explicit_headers_override(base: str) -> Non
     assert r["token"] and r["forjado"] and r["status-lista"] and r["patch"], r
     # Login que falha reprova (fail closed) as verificações daquele usuário; status fora do esperado também.
     assert not r["login-falhou"] and not r["status-errado"], r
+
+
+def test_expect_absent_headers(base: str) -> None:
+    # /cors reflete a origem recebida em Access-Control-Allow-Origin (comportamento vulnerável).
+    suite = HttpSuite(
+        ref="t",
+        version="1",
+        checks=(
+            # Origem maliciosa é refletida => o cabeçalho CONTÉM "malicioso" => deve reprovar.
+            HttpCheck(
+                id="reflete-malicioso",
+                description="",
+                path="/cors",
+                headers={"Origin": "https://malicioso.example"},
+                expect_absent_headers={"Access-Control-Allow-Origin": "malicioso"},
+            ),
+            # Sem origem, o endpoint não emite o cabeçalho => ausente => trecho vazio aprova.
+            HttpCheck(
+                id="sem-cabecalho",
+                description="",
+                path="/cors",
+                expect_absent_headers={"Access-Control-Allow-Origin": ""},
+            ),
+            # Origem confiável refletida não casa o trecho proibido "malicioso" => aprova.
+            HttpCheck(
+                id="origem-confiavel",
+                description="",
+                path="/cors",
+                headers={"Origin": "https://portal.example"},
+                expect_absent_headers={"Access-Control-Allow-Origin": "malicioso"},
+            ),
+        ),
+    )
+    r = _run(base, suite)
+    assert not r["reflete-malicioso"], r
+    assert r["sem-cabecalho"] and r["origem-confiavel"], r

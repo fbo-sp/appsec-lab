@@ -1190,6 +1190,124 @@ def _tentativas(r: TentativasRamo) -> tuple[Suite, ...]:
     )
 
 
+# A7 cors: CORS mal configurado que reflete qualquer origem (LAB-029 a LAB-031)
+
+CORS_ORIGEM_CONFIAVEL = "https://portal.exemplo"
+CORS_ORIGEM_MALICIOSA = "https://malicioso.example"
+
+
+@dataclass(frozen=True, slots=True)
+class CorsRamo:
+    ramo: str
+    login_a: str
+    senha_a: str
+
+
+CORS_RAMOS = (
+    CorsRamo("fin", "lucas.andrade", "Lucas#Montara26"),
+    CorsRamo("sau", "fernanda.lopes", "Fernanda#Vitalis26"),
+    CorsRamo("ind", "marcelo.dantas", "Marcelo#Corrente26"),
+)
+
+
+def _cors(r: CorsRamo) -> tuple[Suite, ...]:
+    return (
+        AnswerSuite(
+            ref=f"cors/answer/metodo-{r.ramo}-v1",
+            version="1.0.0",
+            prompt="Método que monta os cabeçalhos de CORS",
+            accepted=("cabecalhos", "cabeçalhos", "cabecalhos()", "cabeçalhos()"),
+            success_feedback="Isso. É em cabecalhos que se decide qual origem é liberada.",
+            failure_feedback="Ainda não. Em services/cors_service.py, veja o único método público da classe.",
+        ),
+        AnswerSuite(
+            ref=f"cors/answer/reflete-{r.ramo}-v1",
+            version="1.0.0",
+            prompt="A API reflete (devolve) a origem recebida ou a recusa?",
+            accepted=("reflete", "reflete a origem", "devolve", "devolve a origem", "espelha"),
+            success_feedback="Exato: a API devolve de volta a mesma origem que recebeu, seja qual for.",
+            failure_feedback="Não é isso. Compare a origem que você enviou no curl com a que voltou no cabeçalho.",
+        ),
+        AnswerSuite(
+            ref=f"cors/answer/defesa-{r.ramo}-v1",
+            version="1.0.0",
+            prompt="As origens confiáveis devem ficar guardadas numa o quê",
+            accepted=(
+                "lista",
+                "lista de permissão",
+                "lista de origens",
+                "lista de origens confiáveis",
+                "allowlist",
+                "uma lista",
+            ),
+            success_feedback="Isso. A defesa é uma lista de origens confiáveis (allowlist).",
+            failure_feedback="Ainda não. É uma relação fixa das origens que podem ler a API.",
+        ),
+        AnswerSuite(
+            ref=f"cors/answer/credenciais-{r.ramo}-v1",
+            version="1.0.0",
+            prompt="O que o Allow-Credentials libera, além da origem",
+            accepted=(
+                "credenciais",
+                "credencial",
+                "as credenciais",
+                "cookie",
+                "cookies",
+                "cookie de sessão",
+                "o cookie",
+            ),
+            success_feedback="Isso. Allow-Credentials libera o uso das credenciais (o cookie de sessão) da vítima.",
+            failure_feedback="Ainda não. É o que o fetch envia com credentials: 'include' — o cookie da sessão.",
+        ),
+        HttpSuite(
+            ref=f"cors/python-flask/cors-restrito-{r.ramo}-v1",
+            version="1.0.0",
+            logins=(HttpLogin(name="a", path="/login", form={"login": r.login_a, "senha": r.senha_a}),),
+            checks=(
+                HttpCheck(
+                    id="perfil-dados",
+                    description="A API de perfil continua devolvendo os dados do usuário logado.",
+                    path="/api/perfil",
+                    as_user="a",
+                    contains=(r.login_a,),
+                ),
+                HttpCheck(
+                    id="origem-maliciosa-sem-reflexo",
+                    description="Uma origem não confiável não é refletida no Access-Control-Allow-Origin.",
+                    path="/api/perfil",
+                    as_user="a",
+                    headers={"Origin": CORS_ORIGEM_MALICIOSA},
+                    expect_absent_headers={"Access-Control-Allow-Origin": "malicioso"},
+                ),
+                HttpCheck(
+                    id="credenciais-nao-liberadas",
+                    description="Para origem não confiável, não se libera o envio de credenciais.",
+                    path="/api/perfil",
+                    as_user="a",
+                    headers={"Origin": CORS_ORIGEM_MALICIOSA},
+                    expect_absent_headers={"Access-Control-Allow-Credentials": "true"},
+                ),
+                HttpCheck(
+                    id="origem-confiavel-liberada",
+                    description="Uma origem confiável continua liberada no CORS.",
+                    path="/api/perfil",
+                    as_user="a",
+                    headers={"Origin": CORS_ORIGEM_CONFIAVEL},
+                    expect_headers={"Access-Control-Allow-Origin": "portal.exemplo"},
+                ),
+            ),
+            success_feedback=(
+                "Correção validada: a API libera no CORS só a origem confiável e deixa de refletir "
+                "origens estranhas (e de liberar credenciais para elas)."
+            ),
+            failure_feedback=(
+                "Algumas verificações falharam. Confira cada item abaixo, ajuste services/cors_service.py "
+                "e valide de novo. Libere só origens de uma lista confiável; para as demais, nenhum cabeçalho de CORS."
+            ),
+        ),
+    )
+
+
 SUITES_FAMILIAS: tuple[Suite, ...] = (
     tuple(s for r in XSS_RAMOS for s in _xss(r))
     + tuple(s for r in MASSA_RAMOS for s in _massa(r))
@@ -1199,4 +1317,5 @@ SUITES_FAMILIAS: tuple[Suite, ...] = (
     + tuple(s for r in SSRF_RAMOS for s in _ssrf(r))
     + tuple(s for r in LOGICA_RAMOS for s in _logica(r))
     + tuple(s for r in TENTATIVAS_RAMOS for s in _tentativas(r))
+    + tuple(s for r in CORS_RAMOS for s in _cors(r))
 )
