@@ -620,6 +620,27 @@ const ILLUSTRATIONS: Record<string, { caption: string; body: () => ReactNode }> 
       />
     ),
   },
+  "token-na-url": {
+    caption: "Token é segredo: viaja no cabeçalho Authorization, nunca na URL, que fica gravada em logs e proxies.",
+    body: () => (
+      <Compare
+        bad={[
+          "Token na URL (hoje)",
+          <>
+            <span>O app chama {c("/api/conta?token=9f3a...")} e o servidor aceita.</span>
+            <span>A URL inteira cai no log de acesso e nos proxies: quem lê o log entra na conta.</span>
+          </>,
+        ]}
+        good={[
+          "Token só no cabeçalho",
+          <>
+            <span>{c("Authorization: Bearer 9f3a...")}: cabeçalho não entra no log de acesso.</span>
+            <span>Pedido com {c("?token=")} é recusado, e o app deixa de mandá-lo ({c('"token_na_url": false')}).</span>
+          </>,
+        ]}
+      />
+    ),
+  },
   "bfla": {
     caption: "Autorização de função (BFLA): autenticar não é autorizar — cada função sensível confere o papel.",
     body: () => (

@@ -1,0 +1,263 @@
+# LAB-097 (L9-IND): token de sessão enviado na URL e gravado em logs (CWE-598) no App Aurora Campo da Aurora Energia (app mobile simulado, Flask + SQLite).
+# CONTÉM VULNERABILIDADE INTENCIONAL. Uso exclusivo no runtime Docker LOCAL (ADR-008), em rede
+# interna da sessão. Dados 100% fictícios. Família L9 mob-token-url (ADR-021, ADR-025): gerado por
+# scripts/gerar-familia.py a partir de laboratories/_familias/mob-token-url; não edite este arquivo à mão.
+#
+# ATENÇÃO: o digest abaixo é uma FIXTURE (sha256 de um texto fixo), não uma imagem publicada.
+# scripts/lab-local.sh e .ps1 trocam pela imagem construída localmente antes de registrar.
+apiVersion: labs.cecyber.io/v1alpha1
+kind: AppSecLab
+metadata:
+  id: LAB-097
+  version: 1.0.0
+  title: "L9-IND · Comunicação insegura: o token de sessão que apareceu no log da rede da subestação"
+  primaryCwe: CWE-598
+  secondaryCwes: [CWE-532, CWE-319]
+  family: mob-token-url
+  sectors: [industria-energia]
+  courseModules: [trained]
+  classifications:
+    - framework: OWASP Top 10
+      edition: "2025"
+      entries:
+        - "A04 Cryptographic Failures"
+    - framework: OWASP Top 10
+      edition: "2021"
+      entries:
+        - "A02 Cryptographic Failures"
+    - framework: SANS CWE Top 25
+      edition: "2025"
+      entries:
+        - "Não se enquadra; use o CWE"
+    - framework: SANS CWE Top 25
+      edition: "2024"
+      entries:
+        - "Não se enquadra; use o CWE"
+    - framework: OWASP Mobile Top 10
+      edition: "2024"
+      entries:
+        - "M5 Insecure Communication"
+    - framework: OWASP Mobile Top 10
+      edition: "2016"
+      entries:
+        - "M3 Insecure Communication"
+    - framework: OWASP MASVS
+      edition: "2023"
+      entries:
+        - "MASVS-NETWORK-1"
+learning:
+  singleVulnerability: true
+  estimatedMinutes: 35
+  difficulty: beginner
+  objectives:
+    - Entender por que um segredo na URL vaza mesmo com HTTPS
+    - Encontrar o token de sessão no log e reaproveitá-lo
+    - Saber onde o token deve viajar
+    - Corrigir o servidor para recusar token na URL e o app para parar de mandá-lo
+  story:
+    role: >-
+      Pessoa desenvolvedora do time de apps da Aurora Energia
+    application: >-
+      App Aurora Campo, o app em que o técnico de campo consulta as ordens de serviço
+    context: >-
+      Numa auditoria da rede das subestações, a segurança de TA da Aurora Energia encontrou no log do proxy de saída URLs da API do app de campo com o token de sessão inteiro dos técnicos que usam o app na subestação.
+    mission: >-
+      Mostrar que o token de sessão na URL fica gravado em logs e pode ser reaproveitado, e corrigir o servidor e o app para que o token só viaje no cabeçalho Authorization
+  wrapUp:
+    text: |
+      Agora o token de sessão só viaja no cabeçalho `Authorization`, e o servidor recusa qualquer pedido com token na URL. Em um app real, vale reforçar:
+
+      - **URL não é lugar de segredo.** Mesmo com HTTPS, a URL completa fica no log do servidor, em proxies corporativos e de inspeção TLS, em ferramentas de APM e no histórico. Token, senha, CPF e número de cartão vão no corpo ou no cabeçalho.
+      - **Recuse, não só prefira.** Aceitar o token na URL "por compatibilidade" mantém o vazamento para sempre. Recuse e atualize o app.
+      - **Mascare os logs.** Configure o servidor e os proxies para mascarar parâmetros sensíveis, e trate logs antigos com token como incidente: revogue as sessões expostas.
+      - **Transporte seguro de verdade.** Só HTTPS (TLS 1.2+), certificado validado e, para apps de alto risco, *certificate pinning*. A validação de certificado e o pinning ficam para um laboratório próprio (MOB-13), porque precisam de TLS real.
+    references:
+      - title: "OWASP Mobile Top 10 2016: M3 Insecure Communication"
+        url: https://owasp.org/www-project-mobile-top-10/2016-risks/m3-insecure-communication
+      - title: "OWASP Mobile Top 10 2024: M5 Insecure Communication"
+        url: https://owasp.org/www-project-mobile-top-10/2023-risks/m5-insecure-communication
+      - title: "OWASP MASVS: MASVS-NETWORK"
+        url: https://mas.owasp.org/MASVS/08-MASVS-NETWORK/
+      - title: "CWE-598: Use of GET Request Method With Sensitive Query Strings"
+        url: https://cwe.mitre.org/data/definitions/598.html
+      - title: "OWASP: Information exposure through query strings in URL"
+        url: https://owasp.org/www-community/vulnerabilities/Information_exposure_through_query_strings_in_url
+variants:
+  - id: python-flask
+    language: python
+    framework: flask
+    image: registry.local/labs/lab-097-mobile@sha256:0656c5f20b2167dc59bbd32698b6e1ce79458d9164df09c033cd12c1913a43ae
+    runtimeProfile: web-basic
+    workspacePath: /workspace
+    startup:
+      command: ["sh", "-c", "python -u -m flask --app app run --host 0.0.0.0 --port 8080 --reload --no-debugger 2>&1 | tee -a /tmp/app.log"]
+      port: 8080
+    resources:
+      cpuMillicores: 500
+      memoryMiB: 512
+      storageMiB: 256
+      pidsMax: 64
+    session:
+      ttlMinutes: 45
+      maxRenewals: 2
+    interfaces: [editor, terminal, web]
+    platform: mobile
+steps:
+  - id: conhecer
+    order: 1
+    title: Conhecer o app e a configuração do token
+    explanation: |
+      Você está no time de apps da Aurora Energia. Na auditoria trimestral da rede das subestações, a segurança de TA revisou o log do proxy de saída e encontrou centenas de URLs da API do app de campo com `?token=...` no fim, de técnicos que abriram as ordens de serviço pela rede da subestação. O log é copiado para um servidor de monitoramento de um fornecedor. Qualquer pessoa com acesso a ele tinha o token de sessão dos técnicos.
+
+      **Um laboratório mobile.** Na aba **Aplicação**, o app aparece numa moldura de celular. Ele é um app **simulado** (não há emulador), mas fala com a API do servidor do mesmo jeito que um app Android ou iOS.
+
+      Depois do login, o app recebe um **token de sessão**: quem tem o token é o usuário. O lugar certo para ele é o cabeçalho `Authorization: Bearer`. Este app também o coloca na **URL** (`?token=...`), por causa de um proxy de operadora antigo que removia o cabeçalho. O HTTPS protege a URL no caminho, mas não no destino: ela é gravada inteira em logs de servidor, de proxies e de ferramentas de monitoramento. É uma falha de **comunicação insegura** (Mobile M3).
+
+      ```ilustracao
+      token-na-url
+      ```
+
+      Siga o token pelas camadas:
+
+      1. **App** (`static/app.js` e `cliente/config.json`): a configuração `token_na_url` faz o app acrescentar `?token=...` a cada pedido.
+      2. **Controller** (`controllers/api_controller.py`): entrega ao serviço o cabeçalho e os parâmetros da URL.
+      3. **Serviço** (`services/identidade_service.py`): aceita o token de qualquer um dos dois. **É aqui que está a falha do servidor.**
+
+      As credenciais de teste deste laboratório são:
+
+      - Usuário `diego.campos`, senha `Diego#Aurora26` (Diego Campos Ferraz).
+    task: |
+      1. Na aba **Aplicação**, entre com `diego.campos` e a senha `Diego#Aurora26` e veja a tela inicial.
+      2. Na aba **Código**, abra `cliente/config.json`, a configuração que vai empacotada dentro do app.
+
+      Informe abaixo o valor de `token_na_url`.
+    concept: Token de sessão é segredo
+    validatorRef: mob-token-url/answer/config-ind-v1
+    hints:
+      - level: 1
+        text: É um valor booleano (verdadeiro ou falso) em JSON.
+      - level: 2
+        text: O app está mandando o token na URL.
+      - level: 3
+        text: A resposta é `true`.
+    points: 10
+  - id: explorar
+    order: 2
+    title: Achar o token no log e reaproveitá-lo
+    explanation: |
+      O `app.log` deste laboratório também registra cada acesso à API, com a URL completa, exatamente como o log de um servidor ou de um proxy corporativo. Faça o que um curioso com acesso ao log faria.
+    task: |
+      No **Terminal**, procure tokens nas URLs registradas e use o último, sem senha nenhuma:
+
+      ```bash
+      grep -o "token=[0-9a-f]*" /tmp/app.log | tail -n 3
+      TOKEN=$(grep -o "token=[0-9a-f]*" /tmp/app.log | tail -n 1 | cut -d= -f2)
+      curl -s "http://127.0.0.1:8080/api/conta?token=$TOKEN"
+      ```
+
+      A API devolveu os dados da conta só com o token copiado do log? Responda **sim** ou **não**.
+    explore: |
+      **Por que isso é grave.** Quem lê o log (o fornecedor de monitoramento, alguém com acesso ao servidor de logs) cola o token num pedido e vê as ordens de serviço da equipe, com locais e equipamentos da rede elétrica, sem senha nenhuma.
+
+      **E o HTTPS?** Em produção, o app fala com `https://api.aurora-campo.exemplo`. O TLS cifra a URL no caminho, mas o servidor, o proxy corporativo que inspeciona TLS e as ferramentas de monitoramento veem e gravam a URL inteira. Segredo na URL vaza no destino, não no caminho.
+    concept: Token na URL vai parar em logs e é reaproveitado
+    validatorRef: mob-token-url/answer/reuso-ind-v1
+    hints:
+      - level: 1
+        text: Veja se a resposta traz um nome e um resumo.
+      - level: 2
+        text: Se a resposta não for `nao autorizado`, a API aceitou o token.
+      - level: 3
+        text: A resposta é `sim`.
+    points: 15
+  - id: conceito
+    order: 3
+    title: Saber onde o token deve viajar
+    explanation: |
+      Cabeçalhos HTTP não aparecem na URL e, por padrão, não são gravados nos logs de acesso de servidores e proxies. Por isso o padrão para tokens de acesso (OAuth 2.0, JWT) é um cabeçalho específico, com o esquema `Bearer`.
+    task: |
+      Em que cabeçalho HTTP o token de sessão deve viajar? Responda com o nome do cabeçalho.
+    concept: Token no cabeçalho, nunca na URL
+    validatorRef: mob-token-url/answer/cabecalho-ind-v1
+    hints:
+      - level: 1
+        text: O app já o usa, além da URL.
+      - level: 2
+        text: 'O valor tem a forma `Bearer <token>`.'
+      - level: 3
+        text: A resposta é `Authorization`.
+    points: 15
+  - id: onde
+    order: 4
+    title: Encontrar onde o servidor aceita o token da URL
+    explanation: |
+      Abra `services/identidade_service.py`. O método que identifica o usuário usa o token do cabeçalho **ou**, se ele faltar, o parâmetro `token` da URL.
+    task: |
+      Informe abaixo o nome do método que aceita o token da URL.
+    concept: O servidor decide de onde aceita o token
+    validatorRef: mob-token-url/answer/metodo-ind-v1
+    hints:
+      - level: 1
+        text: A classe `IdentidadeService` tem um método público além de `__init__`.
+      - level: 2
+        text: É o método chamado por `conta_logada` no controller.
+      - level: 3
+        text: A resposta é `identificar`.
+    points: 15
+  - id: corrigir
+    order: 5
+    title: Recusar o token na URL e atualizar o app
+    explanation: |
+      **Por que a falha existe.** O servidor aceita o token da URL, e o app o manda lá.
+
+      **A correção tem dois lados.** No servidor, recusar qualquer pedido que traga token na URL (só aceitar o cabeçalho): enquanto o servidor aceitar, um app antigo ou uma integração esquecida continua vazando. No app, parar de mandar o token na URL. Corrigir só o app não basta: a API continuaria aceitando o token copiado de um log antigo pela URL.
+    task: |
+      1. Abra `services/identidade_service.py` e troque o método `identificar` inteiro por este:
+
+         ```python
+             def identificar(self, token_cabecalho: str | None, parametros) -> int | None:
+                 """Id da conta do pedido, só pelo cabeçalho Authorization; token na URL é recusado."""
+                 if "token" in parametros:
+                     return None  # token na URL vaza em logs e proxies: o pedido é recusado
+                 return self._tokens.conta_do_token(token_cabecalho) if token_cabecalho else None
+         ```
+
+      2. Abra `cliente/config.json` e troque `"token_na_url": true` por `"token_na_url": false`.
+
+      Salve os dois arquivos com **Ctrl+S**. A aplicação reinicia. Então:
+
+      1. no app, toque em **Sair** e entre de novo com as credenciais da etapa 1: o app continua funcionando, agora só com o cabeçalho;
+      2. no **Terminal**, repita o `curl` da etapa 2 e veja `nao autorizado`;
+      3. clique em **Validar**.
+    explore: |
+      **Confira que o log parou de receber tokens.** Depois de navegar no app, rode de novo:
+
+      ```bash
+      grep -c "token=" /tmp/app.log
+      ```
+
+      O número não aumenta mais. Os tokens antigos que já estavam em logs precisam ser revogados (num sistema real, encerrando as sessões expostas).
+
+      **Se algo não funcionar depois de salvar.** No **Terminal**:
+
+      ```bash
+      grep -iE "error|traceback" /tmp/app.log | tail -n 15
+      ```
+
+      O `def identificar` fica com 4 espaços; o corpo, com 8; o `return None` dentro do `if`, com 12.
+    concept: Token só no cabeçalho, recusado na URL
+    validatorRef: mob-token-url/python-flask/token-cabecalho-ind-v1
+    hints:
+      - level: 1
+        text: 'São duas mudanças: o método `identificar` e o `token_na_url` em `cliente/config.json`.'
+      - level: 2
+        text: O servidor precisa recusar o pedido quando há `token` na URL, mesmo que o cabeçalho também venha.
+      - level: 3
+        text: Copie o método da tarefa sem mudar o recuo e troque `true` por `false` no JSON.
+    points: 45
+policy:
+  sequentialUnlock: true
+  allowStepRetry: true
+  persistProgressAcrossReset: true
+  allowSolutionReveal: false
+  finalPassingScore: 100

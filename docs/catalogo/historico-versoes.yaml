@@ -444,3 +444,15 @@ labs:
     - version: 1.0.0
       published: 2026-11-17
       summary: "Versão inicial (família L10 mob-webview-html, ramo indústria e energia): aviso de turno exibido como HTML no WebView do app."
+  LAB-095:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: "Publicação inicial. App mobile da Pagomais manda o token de sessão na URL (?token=), que vaza no log de acesso; correção aceita o token só no cabeçalho Authorization e recusa ?token=."
+  LAB-096:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: "Publicação inicial. App mobile da Clínica Lumen manda o token de sessão na URL (?token=), que vaza no log de acesso; correção aceita o token só no cabeçalho Authorization e recusa ?token=."
+  LAB-097:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: "Publicação inicial. App mobile da Aurora Energia manda o token de sessão na URL (?token=), que vaza no log de acesso; correção aceita o token só no cabeçalho Authorization e recusa ?token=."

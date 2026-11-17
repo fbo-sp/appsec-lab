@@ -1,0 +1,198 @@
+# Família L9 mob-token-url (ADR-021, ADR-025): o que muda por ramo. O modelo comum está em ./modelo.
+# Depois de editar, rode:  uv run python scripts/gerar-familia.py mob-token-url
+# Usa o app mobile comum (mesmas marcas, logins e dados de mob-modo-teste). Logins e o nome estão espelhados
+# em apps/backend/app/validation/suites_familias.py (TOKENURL_RAMOS); os testes Docker conferem.
+# A falha (CWE-598, Mobile 2016 M3): o app manda o token de sessão na URL (cliente/config.json) e
+# services/identidade_service.py aceita; o token fica gravado em logs. Versão simulada: sem TLS real (MOB-13).
+ramos:
+- destino: LAB-095-mob-token-url-fintech
+  vars:
+    lab_id: LAB-095
+    versao: 1.0.0
+    codigo: L9-FIN
+    imagem: lab-095-mobile
+    ramo: fin
+    setor: financeiro
+    banco: pagomais_mobile
+    empresa: Pagomais
+    marca: Pagomais
+    app_nome: App Pagomais
+    cor: '#1d4ed8'
+    lista_titulo: Extrato
+    acao_titulo: Transferir R$ 500,00 por PIX
+    login_a: ana.ribeiro
+    senha_a: Ana#Pagomais26
+    nome_a: Ana Ribeiro Teixeira
+    chave_app: PGM-APP-KEY-7F3A91C2
+    doc_rotulo: CPF
+    extra_rotulo: renda mensal
+    seed_contas:
+    - - 1
+      - ana.ribeiro
+      - Ana Ribeiro Teixeira
+      - Ana#Pagomais26
+      - Saldo R$ 4.820,15
+      - 111.444.777-35
+      - Renda mensal R$ 9.800
+    - - 2
+      - carlos.moura
+      - Carlos Moura Pinto
+      - Carlos#Pagomais26
+      - Saldo R$ 12.310,00
+      - 222.555.888-46
+      - Renda mensal R$ 15.200
+    seed_itens:
+    - - 1
+      - 1
+      - PIX recebido
+      - Vale Insumos
+      - + R$ 1.250,00
+    - - 2
+      - 1
+      - Cartão final 4410
+      - Mercado Norte
+      - '- R$ 212,90'
+    - - 3
+      - 2
+      - PIX enviado
+      - Norte Transportes
+      - '- R$ 2.300,00'
+    missao: Mostrar que o token de sessão na URL fica gravado em logs e pode ser reaproveitado, e corrigir o servidor e o app para que o token só viaje no cabeçalho Authorization
+    titulo: o token de sessão que apareceu no log do proxy
+    papel: Pessoa desenvolvedora do time de apps do banco digital Pagomais
+    aplicacao: App Pagomais, o app em que o cliente consulta o extrato
+    contexto: O time de segurança de uma empresa cliente avisou a Pagomais que o log do proxy corporativo deles mostrava URLs da API do app com o token de sessão inteiro, de dezenas de funcionários que
+      usam o app no Wi-Fi da empresa.
+    historia_abertura: 'Você está no time de apps do banco digital Pagomais. Na segunda-feira, o time de segurança de uma grande empresa cliente mandou um e-mail preocupado: revisando o log do proxy corporativo,
+      eles encontraram centenas de URLs da API da Pagomais com `?token=...` no fim, de funcionários que usam o app no Wi-Fi da empresa. Qualquer pessoa com acesso a esse log, dentro da empresa ou no fornecedor
+      do proxy, tinha o token de sessão desses clientes.'
+    dominio_api: pagomais.exemplo
+    impacto: Quem lê o log (o time de TI de uma empresa, o fornecedor do proxy, uma ferramenta de monitoramento, um backup esquecido) cola o token num pedido e vê o extrato, o saldo e os dados do cliente,
+      sem senha nenhuma.
+- destino: LAB-096-mob-token-url-saude
+  vars:
+    lab_id: LAB-096
+    versao: 1.0.0
+    codigo: L9-SAU
+    imagem: lab-096-mobile
+    ramo: sau
+    setor: saude
+    banco: lumen_mobile
+    empresa: Clínica Lumen
+    marca: Lumen
+    app_nome: App Lumen Saúde
+    cor: '#0e7490'
+    lista_titulo: Meus exames
+    acao_titulo: Compartilhar laudo com o Dr. Paulo Reis
+    login_a: marcos.tavares
+    senha_a: Marcos#Lumen26
+    nome_a: Marcos Tavares Lima
+    chave_app: LUM-APP-KEY-3B71E0C9
+    doc_rotulo: CPF
+    extra_rotulo: diagnóstico (CID)
+    seed_contas:
+    - - 1
+      - marcos.tavares
+      - Marcos Tavares Lima
+      - Marcos#Lumen26
+      - Próxima consulta 20/11 às 14h30
+      - 333.666.999-57
+      - CID J45 asma
+    - - 2
+      - renata.borges
+      - Renata Borges Nunes
+      - Renata#Lumen26
+      - Próxima consulta 02/12 às 9h
+      - 444.777.000-68
+      - CID E11 diabetes
+    seed_itens:
+    - - 1
+      - 1
+      - Hemograma completo
+      - Resultado disponível
+      - 12/11
+    - - 2
+      - 1
+      - Consulta cardiologia
+      - Agendada
+      - 20/11
+    - - 3
+      - 2
+      - Ressonância de joelho
+      - Laudo em análise
+      - 08/11
+    missao: Mostrar que o token de sessão na URL fica gravado em logs e pode ser reaproveitado, e corrigir o servidor e o app para que o token só viaje no cabeçalho Authorization
+    titulo: o token de sessão que apareceu no log do Wi-Fi da clínica
+    papel: Pessoa desenvolvedora do time de apps da Clínica Lumen
+    aplicacao: App Lumen Saúde, o app em que o paciente consulta os exames
+    contexto: Uma clínica parceira avisou a Clínica Lumen que o log do filtro de conteúdo do Wi-Fi de pacientes mostrava URLs da API do app com o token de sessão inteiro de quem abria os exames na sala
+      de espera.
+    historia_abertura: 'Você está no time de apps da Clínica Lumen. Na terça-feira, a TI de uma clínica parceira ligou: o filtro de conteúdo do Wi-Fi da sala de espera grava as URLs acessadas, e lá estavam
+      centenas de URLs da API da Lumen com `?token=...` no fim, de pacientes que abriram os exames pelo app enquanto esperavam. Qualquer pessoa com acesso a esse log tinha o token de sessão desses pacientes.'
+    dominio_api: lumen.exemplo
+    impacto: Quem lê o log (a TI da clínica parceira, o fornecedor do filtro, um backup esquecido) cola o token num pedido e vê os exames e os dados do paciente, dado de saúde protegido pela LGPD, sem senha
+      nenhuma.
+- destino: LAB-097-mob-token-url-industria
+  vars:
+    lab_id: LAB-097
+    versao: 1.0.0
+    codigo: L9-IND
+    imagem: lab-097-mobile
+    ramo: ind
+    setor: industria-energia
+    banco: aurora_mobile
+    empresa: Aurora Energia
+    marca: Aurora
+    app_nome: App Aurora Campo
+    cor: '#b45309'
+    lista_titulo: Ordens de serviço
+    acao_titulo: Liberar manobra no disjuntor 7
+    login_a: diego.campos
+    senha_a: Diego#Aurora26
+    nome_a: Diego Campos Ferraz
+    chave_app: AUR-APP-KEY-C40D92B1
+    doc_rotulo: matrícula
+    extra_rotulo: endereço residencial
+    seed_contas:
+    - - 1
+      - diego.campos
+      - Diego Campos Ferraz
+      - Diego#Aurora26
+      - 3 ordens em aberto hoje
+      - MAT-40213
+      - Rua das Turbinas 120
+    - - 2
+      - sonia.barros
+      - Sonia Barros Teles
+      - Sonia#Aurora26
+      - 1 ordem em aberto hoje
+      - MAT-40877
+      - Avenida da Usina 45
+    seed_itens:
+    - - 1
+      - 1
+      - OS 4821
+      - Manutenção da bomba 4
+      - Hoje
+    - - 2
+      - 1
+      - OS 4822
+      - Inspeção da subestação 2
+      - Amanhã
+    - - 3
+      - 2
+      - OS 4825
+      - Parada da turbina 2
+      - 19/11
+    missao: Mostrar que o token de sessão na URL fica gravado em logs e pode ser reaproveitado, e corrigir o servidor e o app para que o token só viaje no cabeçalho Authorization
+    titulo: o token de sessão que apareceu no log da rede da subestação
+    papel: Pessoa desenvolvedora do time de apps da Aurora Energia
+    aplicacao: App Aurora Campo, o app em que o técnico de campo consulta as ordens de serviço
+    contexto: Numa auditoria da rede das subestações, a segurança de TA da Aurora Energia encontrou no log do proxy de saída URLs da API do app de campo com o token de sessão inteiro dos técnicos que usam
+      o app na subestação.
+    historia_abertura: Você está no time de apps da Aurora Energia. Na auditoria trimestral da rede das subestações, a segurança de TA revisou o log do proxy de saída e encontrou centenas de URLs da API
+      do app de campo com `?token=...` no fim, de técnicos que abriram as ordens de serviço pela rede da subestação. O log é copiado para um servidor de monitoramento de um fornecedor. Qualquer pessoa com
+      acesso a ele tinha o token de sessão dos técnicos.
+    dominio_api: aurora-campo.exemplo
+    impacto: Quem lê o log (o fornecedor de monitoramento, alguém com acesso ao servidor de logs) cola o token num pedido e vê as ordens de serviço da equipe, com locais e equipamentos da rede elétrica,
+      sem senha nenhuma.

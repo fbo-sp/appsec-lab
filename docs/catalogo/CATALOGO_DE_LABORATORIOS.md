@@ -134,6 +134,9 @@ Indicado como primeira atividade de qualquer turma, antes do primeiro laboratór
 | LAB-092 | L10-FIN · Qualidade do código do cliente: a mensagem do Pix que desenhou um botão no app | 1.0.0 | CWE-79 | A05 Injection (2025) | #1 CWE-79 Cross-site Scripting (2025) | Intermediário | 35 min |
 | LAB-093 | L10-SAU · Qualidade do código do cliente: o convite que desenhou um quadro no app do paciente | 1.0.0 | CWE-79 | A05 Injection (2025) | #1 CWE-79 Cross-site Scripting (2025) | Intermediário | 35 min |
 | LAB-094 | L10-IND · Qualidade do código do cliente: o aviso de turno que desenhou um quadro no app de campo | 1.0.0 | CWE-79 | A05 Injection (2025) | #1 CWE-79 Cross-site Scripting (2025) | Intermediário | 35 min |
+| LAB-095 | L9-FIN · Comunicação insegura: o token de sessão que apareceu no log do proxy | 1.0.0 | CWE-598 | A04 Cryptographic Failures (2025) | Não se enquadra; use o CWE (2025) | Iniciante | 35 min |
+| LAB-096 | L9-SAU · Comunicação insegura: o token de sessão que apareceu no log do Wi-Fi da clínica | 1.0.0 | CWE-598 | A04 Cryptographic Failures (2025) | Não se enquadra; use o CWE (2025) | Iniciante | 35 min |
+| LAB-097 | L9-IND · Comunicação insegura: o token de sessão que apareceu no log da rede da subestação | 1.0.0 | CWE-598 | A04 Cryptographic Failures (2025) | Não se enquadra; use o CWE (2025) | Iniciante | 35 min |
 
 ## LAB-001 · SQL Injection: a busca que expõe pacientes
 
@@ -4042,3 +4045,132 @@ Indicado como primeira atividade de qualquer turma, antes do primeiro laboratór
 | Versão | Criada em | Obsoleta em | Situação | O que mudou |
 |---|---|---|---|---|
 | 1.0.0 | 2026-11-17 | — | vigente | Versão inicial (família L10 mob-webview-html, ramo indústria e energia): aviso de turno exibido como HTML no WebView do app. |
+
+## LAB-095 · L9-FIN · Comunicação insegura: o token de sessão que apareceu no log do proxy
+
+- Versão vigente: 1.0.0
+- Cenário: App Pagomais, o app em que o cliente consulta o extrato
+- Papel do aluno: Pessoa desenvolvedora do time de apps do banco digital Pagomais
+- Linguagem / stack: python / flask
+- Nível: Iniciante · duração estimada: 35 min
+- Família: mob-token-url
+- Ramo: Financeiro
+- Módulo do curso: Trained
+
+### Classificação
+
+- CWE: CWE-598 (principal), CWE-532, CWE-319
+- OWASP Top 10 2025: A04 Cryptographic Failures
+- OWASP Top 10 2021: A02 Cryptographic Failures
+- SANS CWE Top 25 2025: Não se enquadra; use o CWE
+- SANS CWE Top 25 2024: Não se enquadra; use o CWE
+- OWASP Mobile Top 10 2024: M5 Insecure Communication
+- OWASP Mobile Top 10 2016: M3 Insecure Communication
+- OWASP MASVS 2023: MASVS-NETWORK-1
+
+### Objetivos
+
+- Entender por que um segredo na URL vaza mesmo com HTTPS
+- Encontrar o token de sessão no log e reaproveitá-lo
+- Saber onde o token deve viajar
+- Corrigir o servidor para recusar token na URL e o app para parar de mandá-lo
+
+### Etapas
+
+1. Conhecer o app e a configuração do token (10 pts)
+2. Achar o token no log e reaproveitá-lo (15 pts)
+3. Saber onde o token deve viajar (15 pts)
+4. Encontrar onde o servidor aceita o token da URL (15 pts)
+5. Recusar o token na URL e atualizar o app (45 pts)
+
+### Histórico de versões
+
+| Versão | Criada em | Obsoleta em | Situação | O que mudou |
+|---|---|---|---|---|
+| 1.0.0 | 2026-11-17 | — | vigente | Publicação inicial. App mobile da Pagomais manda o token de sessão na URL (?token=), que vaza no log de acesso; correção aceita o token só no cabeçalho Authorization e recusa ?token=. |
+
+## LAB-096 · L9-SAU · Comunicação insegura: o token de sessão que apareceu no log do Wi-Fi da clínica
+
+- Versão vigente: 1.0.0
+- Cenário: App Lumen Saúde, o app em que o paciente consulta os exames
+- Papel do aluno: Pessoa desenvolvedora do time de apps da Clínica Lumen
+- Linguagem / stack: python / flask
+- Nível: Iniciante · duração estimada: 35 min
+- Família: mob-token-url
+- Ramo: Saúde
+- Módulo do curso: Trained
+
+### Classificação
+
+- CWE: CWE-598 (principal), CWE-532, CWE-319
+- OWASP Top 10 2025: A04 Cryptographic Failures
+- OWASP Top 10 2021: A02 Cryptographic Failures
+- SANS CWE Top 25 2025: Não se enquadra; use o CWE
+- SANS CWE Top 25 2024: Não se enquadra; use o CWE
+- OWASP Mobile Top 10 2024: M5 Insecure Communication
+- OWASP Mobile Top 10 2016: M3 Insecure Communication
+- OWASP MASVS 2023: MASVS-NETWORK-1
+
+### Objetivos
+
+- Entender por que um segredo na URL vaza mesmo com HTTPS
+- Encontrar o token de sessão no log e reaproveitá-lo
+- Saber onde o token deve viajar
+- Corrigir o servidor para recusar token na URL e o app para parar de mandá-lo
+
+### Etapas
+
+1. Conhecer o app e a configuração do token (10 pts)
+2. Achar o token no log e reaproveitá-lo (15 pts)
+3. Saber onde o token deve viajar (15 pts)
+4. Encontrar onde o servidor aceita o token da URL (15 pts)
+5. Recusar o token na URL e atualizar o app (45 pts)
+
+### Histórico de versões
+
+| Versão | Criada em | Obsoleta em | Situação | O que mudou |
+|---|---|---|---|---|
+| 1.0.0 | 2026-11-17 | — | vigente | Publicação inicial. App mobile da Clínica Lumen manda o token de sessão na URL (?token=), que vaza no log de acesso; correção aceita o token só no cabeçalho Authorization e recusa ?token=. |
+
+## LAB-097 · L9-IND · Comunicação insegura: o token de sessão que apareceu no log da rede da subestação
+
+- Versão vigente: 1.0.0
+- Cenário: App Aurora Campo, o app em que o técnico de campo consulta as ordens de serviço
+- Papel do aluno: Pessoa desenvolvedora do time de apps da Aurora Energia
+- Linguagem / stack: python / flask
+- Nível: Iniciante · duração estimada: 35 min
+- Família: mob-token-url
+- Ramo: Indústria e Energia
+- Módulo do curso: Trained
+
+### Classificação
+
+- CWE: CWE-598 (principal), CWE-532, CWE-319
+- OWASP Top 10 2025: A04 Cryptographic Failures
+- OWASP Top 10 2021: A02 Cryptographic Failures
+- SANS CWE Top 25 2025: Não se enquadra; use o CWE
+- SANS CWE Top 25 2024: Não se enquadra; use o CWE
+- OWASP Mobile Top 10 2024: M5 Insecure Communication
+- OWASP Mobile Top 10 2016: M3 Insecure Communication
+- OWASP MASVS 2023: MASVS-NETWORK-1
+
+### Objetivos
+
+- Entender por que um segredo na URL vaza mesmo com HTTPS
+- Encontrar o token de sessão no log e reaproveitá-lo
+- Saber onde o token deve viajar
+- Corrigir o servidor para recusar token na URL e o app para parar de mandá-lo
+
+### Etapas
+
+1. Conhecer o app e a configuração do token (10 pts)
+2. Achar o token no log e reaproveitá-lo (15 pts)
+3. Saber onde o token deve viajar (15 pts)
+4. Encontrar onde o servidor aceita o token da URL (15 pts)
+5. Recusar o token na URL e atualizar o app (45 pts)
+
+### Histórico de versões
+
+| Versão | Criada em | Obsoleta em | Situação | O que mudou |
+|---|---|---|---|---|
+| 1.0.0 | 2026-11-17 | — | vigente | Publicação inicial. App mobile da Aurora Energia manda o token de sessão na URL (?token=), que vaza no log de acesso; correção aceita o token só no cabeçalho Authorization e recusa ?token=. |

@@ -3603,6 +3603,122 @@ def _webview(r: WebviewRamo) -> tuple[Suite, ...]:
     )
 
 
+# L9 mob-token-url: token de sessão aceito na URL (LAB-095 a LAB-097)
+
+
+@dataclass(frozen=True, slots=True)
+class TokenUrlRamo:
+    ramo: str
+    login_a: str
+    senha_a: str
+    nome_a: str  # trecho ASCII do nome da conta 1
+
+
+TOKENURL_RAMOS = (
+    TokenUrlRamo("fin", "ana.ribeiro", "Ana#Pagomais26", "Ana Ribeiro"),
+    TokenUrlRamo("sau", "marcos.tavares", "Marcos#Lumen26", "Marcos Tavares"),
+    TokenUrlRamo("ind", "diego.campos", "Diego#Aurora26", "Diego Campos"),
+)
+
+_TOKEN_LOGIN_RE = r'"token"\s*:\s*"([0-9a-f]+)"'  # noqa: S105 - regex do campo JSON, não é senha
+
+
+def _token_url(r: TokenUrlRamo) -> tuple[Suite, ...]:
+    credenciais: dict[str, object] = {"login": r.login_a, "senha": r.senha_a}
+    return (
+        AnswerSuite(
+            ref=f"mob-token-url/answer/config-{r.ramo}-v1",
+            version="1.0.0",
+            prompt="Valor de token_na_url",
+            accepted=("true", "verdadeiro", "sim"),
+            success_feedback="Isso. O app acrescenta ?token=... a cada pedido.",
+            failure_feedback="Ainda não. Abra cliente/config.json e veja o campo token_na_url.",
+        ),
+        AnswerSuite(
+            ref=f"mob-token-url/answer/reuso-{r.ramo}-v1",
+            version="1.0.0",
+            prompt="A API aceitou o token copiado do log?",
+            accepted=_SIM,
+            success_feedback="Exato: quem lê o log entra na conta, sem senha.",
+            failure_feedback="Ainda não. Rode os comandos da tarefa e veja se a resposta traz o nome da conta.",
+        ),
+        AnswerSuite(
+            ref=f"mob-token-url/answer/cabecalho-{r.ramo}-v1",
+            version="1.0.0",
+            prompt="Cabeçalho em que o token deve viajar",
+            accepted=("authorization", "authorization: bearer", "bearer", "cabeçalho authorization"),
+            success_feedback="Isso. Authorization: Bearer <token>, nunca na URL.",
+            failure_feedback="Ainda não. É o cabeçalho que o app já usa, com o esquema Bearer.",
+        ),
+        AnswerSuite(
+            ref=f"mob-token-url/answer/metodo-{r.ramo}-v1",
+            version="1.0.0",
+            prompt="Método que aceita o token da URL",
+            accepted=("identificar", "identificar()", "IdentidadeService.identificar"),
+            success_feedback="Isso. É em identificar que o token da URL precisa ser recusado.",
+            failure_feedback="Ainda não. Veja o método público de IdentidadeService.",
+        ),
+        HttpSuite(
+            ref=f"mob-token-url/python-flask/token-cabecalho-{r.ramo}-v1",
+            version="1.0.0",
+            logins=(
+                HttpLogin(
+                    name="a",
+                    path="/api/login",
+                    json=credenciais,
+                    token_field="token",  # noqa: S106 - nome do campo JSON, não é senha
+                ),
+            ),
+            checks=(
+                HttpCheck(
+                    id="cabecalho-funciona",
+                    description="Com o token no cabeçalho Authorization, o app continua funcionando.",
+                    path="/api/conta",
+                    as_user="a",
+                    contains=(r.nome_a,),
+                ),
+                HttpCheck(
+                    id="novo-login",
+                    description="Um novo login devolve um token (para as verificações seguintes).",
+                    path="/api/login",
+                    method="POST",
+                    json=credenciais,
+                    capture={"tok": _TOKEN_LOGIN_RE},
+                ),
+                HttpCheck(
+                    id="token-na-url-recusado",
+                    description="O token na URL, sem cabeçalho (como quem o copiou de um log), é recusado.",
+                    path="/api/conta?token={{tok}}",
+                    expect_status=401,
+                    not_contains=(r.nome_a,),
+                ),
+                HttpCheck(
+                    id="token-na-url-com-cabecalho-recusado",
+                    description="Um pedido com token na URL é recusado mesmo com o cabeçalho (a URL vazaria do mesmo jeito).",
+                    path="/api/itens?token={{tok}}",
+                    as_user="a",
+                    expect_status=401,
+                ),
+                HttpCheck(
+                    id="app-sem-token-na-url",
+                    description="O app não está mais configurado para mandar o token na URL (cliente/config.json).",
+                    path="/cliente/config.json",
+                    contains=('"token_na_url"',),
+                    not_contains=('"token_na_url": true', '"token_na_url":true'),
+                ),
+            ),
+            success_feedback=(
+                "Correção validada: o token só vale no cabeçalho, qualquer token na URL é recusado e o app "
+                "parou de mandá-lo lá."
+            ),
+            failure_feedback=(
+                "Algumas verificações falharam. Confira cada item abaixo: o método identificar precisa recusar "
+                "token na URL, e cliente/config.json precisa ter token_na_url false."
+            ),
+        ),
+    )
+
+
 SUITES_FAMILIAS: tuple[Suite, ...] = (
     tuple(s for r in XSS_RAMOS for s in _xss(r))
     + tuple(s for r in MASSA_RAMOS for s in _massa(r))
@@ -3628,6 +3744,7 @@ SUITES_FAMILIAS: tuple[Suite, ...] = (
     + tuple(s for r in COOKIE_RAMOS for s in _cookie(r))
     + tuple(s for r in DEEPLINK_RAMOS for s in _deep_link(r))
     + tuple(s for r in WEBVIEW_RAMOS for s in _webview(r))
+    + tuple(s for r in TOKENURL_RAMOS for s in _token_url(r))
     + tuple(
         s
         for r in MOB_RAMOS
