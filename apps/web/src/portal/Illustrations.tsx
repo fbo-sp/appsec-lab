@@ -515,6 +515,27 @@ const ILLUSTRATIONS: Record<string, { caption: string; body: () => ReactNode }> 
       />
     ),
   },
+  "dependencia-desatualizada": {
+    caption: "Componentes vulneráveis: a falha publicada de uma biblioteca vira falha do seu sistema até a versão ser atualizada.",
+    body: () => (
+      <Compare
+        bad={[
+          "Versão fixada em 2023 (hoje)",
+          <>
+            <span>{c("relatorix==2.1.0")} está na faixa afetada do AVISO-2026-031.</span>
+            <span>Um filtro de {c("..")} no seu código não basta: a biblioteca decodifica o nome depois.</span>
+          </>,
+        ]}
+        good={[
+          "Versão corrigida",
+          <>
+            <span>{c("relatorix==2.4.1")} confere que o modelo fica dentro da pasta.</span>
+            <span>SBOM e SCA avisam a próxima vez, antes do incidente.</span>
+          </>,
+        ]}
+      />
+    ),
+  },
   "bfla": {
     caption: "Autorização de função (BFLA): autenticar não é autorizar — cada função sensível confere o papel.",
     body: () => (

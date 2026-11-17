@@ -119,6 +119,9 @@ Indicado como primeira atividade de qualquer turma, antes do primeiro laboratór
 | LAB-077 | L2-FIN · Registro e monitoramento: as senhas erradas que ninguém viu | 1.0.0 | CWE-778 | A09 Security Logging and Alerting Failures (2025) | Não se enquadra; use o CWE (2025) | Intermediário | 35 min |
 | LAB-078 | L2-SAU · Registro e monitoramento: as senhas erradas que ninguém viu no portal do médico | 1.0.0 | CWE-778 | A09 Security Logging and Alerting Failures (2025) | Não se enquadra; use o CWE (2025) | Intermediário | 35 min |
 | LAB-079 | L2-IND · Registro e monitoramento: as senhas erradas que ninguém viu no portal de manobras | 1.0.0 | CWE-778 | A09 Security Logging and Alerting Failures (2025) | Não se enquadra; use o CWE (2025) | Intermediário | 35 min |
+| LAB-080 | L1-FIN · Componentes vulneráveis: o extrato gerado por uma biblioteca de três anos atrás | 1.0.0 | CWE-1395 | A03 Software Supply Chain Failures (2025) | Não se enquadra; use o CWE (2025) | Intermediário | 35 min |
+| LAB-081 | L1-SAU · Componentes vulneráveis: o laudo gerado por uma biblioteca de três anos atrás | 1.0.0 | CWE-1395 | A03 Software Supply Chain Failures (2025) | Não se enquadra; use o CWE (2025) | Intermediário | 35 min |
+| LAB-082 | L1-IND · Componentes vulneráveis: a ordem de serviço gerada por uma biblioteca de três anos atrás | 1.0.0 | CWE-1395 | A03 Software Supply Chain Failures (2025) | Não se enquadra; use o CWE (2025) | Intermediário | 35 min |
 
 ## LAB-001 · SQL Injection: a busca que expõe pacientes
 
@@ -3406,3 +3409,123 @@ Indicado como primeira atividade de qualquer turma, antes do primeiro laboratór
 | Versão | Criada em | Obsoleta em | Situação | O que mudou |
 |---|---|---|---|---|
 | 1.0.0 | 2026-11-17 | — | vigente | Versão inicial (família L2 log-auditoria, ramo indústria e energia): login sem registro das falhas na trilha de auditoria. |
+
+## LAB-080 · L1-FIN · Componentes vulneráveis: o extrato gerado por uma biblioteca de três anos atrás
+
+- Versão vigente: 1.0.0
+- Cenário: Altiva Home Broker, onde o investidor acompanha as movimentações e gera o extrato para impressão
+- Papel do aluno: Pessoa desenvolvedora do time de home broker da Corretora Altiva Investimentos
+- Linguagem / stack: python / flask
+- Nível: Intermediário · duração estimada: 35 min
+- Família: componente-desatualizado
+- Ramo: Financeiro
+- Módulo do curso: Trained
+
+### Classificação
+
+- CWE: CWE-1395 (principal), CWE-1104, CWE-22
+- OWASP Top 10 2025: A03 Software Supply Chain Failures
+- OWASP Top 10 2021: A06 Vulnerable and Outdated Components
+- SANS CWE Top 25 2025: Não se enquadra; use o CWE
+- SANS CWE Top 25 2024: Não se enquadra; use o CWE
+
+### Objetivos
+
+- Entender por que uma dependência desatualizada é uma falha da sua aplicação
+- Usar o inventário de dependências (requirements.txt e SBOM) para cruzar versões com um aviso de segurança
+- Reproduzir a falha publicada da biblioteca de forma controlada
+- Corrigir atualizando a dependência, e não com um filtro de texto no código
+
+### Etapas
+
+1. Conhecer o sistema e suas dependências (10 pts)
+2. Cruzar a versão com o aviso de segurança (15 pts)
+3. Reproduzir a falha publicada (15 pts)
+4. Decidir onde se corrige (15 pts)
+5. Atualizar a dependência (45 pts)
+
+### Histórico de versões
+
+| Versão | Criada em | Obsoleta em | Situação | O que mudou |
+|---|---|---|---|---|
+| 1.0.0 | 2026-11-17 | — | vigente | Versão inicial (família L1 componente-desatualizado, ramo financeiro): biblioteca de documentos com falha conhecida, corrigida atualizando a dependência. |
+
+## LAB-081 · L1-SAU · Componentes vulneráveis: o laudo gerado por uma biblioteca de três anos atrás
+
+- Versão vigente: 1.0.0
+- Cenário: Prisma Laudos, onde o paciente acompanha os exames liberados e gera o laudo para impressão
+- Papel do aluno: Pessoa desenvolvedora do time de sistemas do paciente da Rede Diagnóstica Prisma
+- Linguagem / stack: python / flask
+- Nível: Intermediário · duração estimada: 35 min
+- Família: componente-desatualizado
+- Ramo: Saúde
+- Módulo do curso: Trained
+
+### Classificação
+
+- CWE: CWE-1395 (principal), CWE-1104, CWE-22
+- OWASP Top 10 2025: A03 Software Supply Chain Failures
+- OWASP Top 10 2021: A06 Vulnerable and Outdated Components
+- SANS CWE Top 25 2025: Não se enquadra; use o CWE
+- SANS CWE Top 25 2024: Não se enquadra; use o CWE
+
+### Objetivos
+
+- Entender por que uma dependência desatualizada é uma falha da sua aplicação
+- Usar o inventário de dependências (requirements.txt e SBOM) para cruzar versões com um aviso de segurança
+- Reproduzir a falha publicada da biblioteca de forma controlada
+- Corrigir atualizando a dependência, e não com um filtro de texto no código
+
+### Etapas
+
+1. Conhecer o sistema e suas dependências (10 pts)
+2. Cruzar a versão com o aviso de segurança (15 pts)
+3. Reproduzir a falha publicada (15 pts)
+4. Decidir onde se corrige (15 pts)
+5. Atualizar a dependência (45 pts)
+
+### Histórico de versões
+
+| Versão | Criada em | Obsoleta em | Situação | O que mudou |
+|---|---|---|---|---|
+| 1.0.0 | 2026-11-17 | — | vigente | Versão inicial (família L1 componente-desatualizado, ramo saúde): biblioteca de documentos com falha conhecida, corrigida atualizando a dependência. |
+
+## LAB-082 · L1-IND · Componentes vulneráveis: a ordem de serviço gerada por uma biblioteca de três anos atrás
+
+- Versão vigente: 1.0.0
+- Cenário: Ferro Norte Manutenção, onde o técnico acompanha as ordens de serviço da área e gera a OS para impressão
+- Papel do aluno: Pessoa desenvolvedora do time de sistemas de manutenção da Siderúrgica Ferro Norte
+- Linguagem / stack: python / flask
+- Nível: Intermediário · duração estimada: 35 min
+- Família: componente-desatualizado
+- Ramo: Indústria e Energia
+- Módulo do curso: Trained
+
+### Classificação
+
+- CWE: CWE-1395 (principal), CWE-1104, CWE-22
+- OWASP Top 10 2025: A03 Software Supply Chain Failures
+- OWASP Top 10 2021: A06 Vulnerable and Outdated Components
+- SANS CWE Top 25 2025: Não se enquadra; use o CWE
+- SANS CWE Top 25 2024: Não se enquadra; use o CWE
+
+### Objetivos
+
+- Entender por que uma dependência desatualizada é uma falha da sua aplicação
+- Usar o inventário de dependências (requirements.txt e SBOM) para cruzar versões com um aviso de segurança
+- Reproduzir a falha publicada da biblioteca de forma controlada
+- Corrigir atualizando a dependência, e não com um filtro de texto no código
+
+### Etapas
+
+1. Conhecer o sistema e suas dependências (10 pts)
+2. Cruzar a versão com o aviso de segurança (15 pts)
+3. Reproduzir a falha publicada (15 pts)
+4. Decidir onde se corrige (15 pts)
+5. Atualizar a dependência (45 pts)
+
+### Histórico de versões
+
+| Versão | Criada em | Obsoleta em | Situação | O que mudou |
+|---|---|---|---|---|
+| 1.0.0 | 2026-11-17 | — | vigente | Versão inicial (família L1 componente-desatualizado, ramo indústria e energia): biblioteca de documentos com falha conhecida, corrigida atualizando a dependência. |

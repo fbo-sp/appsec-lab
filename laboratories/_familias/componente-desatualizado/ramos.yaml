@@ -1,0 +1,121 @@
+# Família L1 componente-desatualizado (ADR-021): o que muda por ramo. O modelo comum está em ./modelo.
+# Depois de editar, rode:  uv run python scripts/gerar-familia.py componente-desatualizado
+# Logins, senhas e o marcador do arquivo interno estão espelhados em
+# apps/backend/app/validation/suites_familias.py (COMPONENTE_RAMOS); os testes Docker conferem os dois.
+# A falha é de componente (OWASP A06:2021 / A03:2025, CWE-1395): requirements.txt fixa a relatorix
+# 2.1.0 (biblioteca FICTÍCIA no espelho interno), que abre modelos fora da pasta modelos/.
+ramos:
+  - destino: LAB-080-componente-desatualizado-banco
+    vars:
+      lab_id: LAB-080
+      versao: 1.0.0
+      codigo: L1-FIN
+      ramo: fin
+      setor: financeiro
+      imagem: lab-080-componente-desatualizado
+      titulo: o extrato gerado por uma biblioteca de três anos atrás
+      empresa: Corretora Altiva Investimentos
+      marca: "▲ Altiva"
+      app_nome: Altiva Home Broker
+      cor: "#1d4ed8"
+      papel: Pessoa desenvolvedora do time de home broker da Corretora Altiva Investimentos
+      aplicacao: Altiva Home Broker, onde o investidor acompanha as movimentações e gera o extrato para impressão
+      contexto: O time de segurança de produtos publicou o AVISO-2026-031 sobre a biblioteca interna relatorix, que gera os documentos para impressão. O home broker usa a relatorix desde 2023 e ninguém atualizou a versão desde então. O prazo para sistemas expostos à internet é de sete dias.
+      missao: Cruzar a versão da biblioteca com o aviso, reproduzir a falha publicada e corrigir atualizando a dependência
+      painel_titulo: Minha conta
+      painel_desc: Movimentações recentes da sua conta de investimentos.
+      login_desc: Entre com seu usuário e senha do Altiva Home Broker.
+      banco: altiva_home_broker
+      papel_usuario: Investidora
+      login_a: camila.rezende
+      senha_a: "Camila#Altiva26"
+      nome_a: Camila Rezende Prado
+      documento_nome: Extrato de movimentações
+      rotulo_titular: Investidora
+      rotulo_valor: Valor
+      time_seguranca: Time de Segurança de Produtos
+      data_aviso: "10/11/2026"
+      ano_app: "2023"
+      historia_abertura: 'Você é do time de home broker da Corretora Altiva Investimentos. Na segunda-feira, o Time de Segurança de Produtos publicou o AVISO-2026-031: a biblioteca interna relatorix, que gera os extratos para impressão, deixa ler arquivos fora da pasta de modelos. O aviso tem prazo de sete dias para sistemas expostos à internet, e o home broker é um deles. O detalhe constrangedor: a versão da relatorix no home broker é a mesma desde 2023, quando o sistema entrou no ar.'
+      seed_contas:
+        - [1, camila.rezende, Camila Rezende Prado, "Camila#Altiva26", investidora]
+      seed_itens:
+        - [1, "2026-11-03", "Compra de ações ALTV3 (100 un.)", "R$ 4.218,00"]
+        - [1, "2026-11-07", "Dividendos ALTV3", "R$ 86,40"]
+        - [1, "2026-11-12", "Aplicação CDB Altiva 110% CDI", "R$ 10.000,00"]
+  - destino: LAB-081-componente-desatualizado-saude
+    vars:
+      lab_id: LAB-081
+      versao: 1.0.0
+      codigo: L1-SAU
+      ramo: sau
+      setor: saude
+      imagem: lab-081-componente-desatualizado
+      titulo: o laudo gerado por uma biblioteca de três anos atrás
+      empresa: Rede Diagnóstica Prisma
+      marca: "◈ Prisma"
+      app_nome: Prisma Laudos
+      cor: "#0f766e"
+      papel: Pessoa desenvolvedora do time de sistemas do paciente da Rede Diagnóstica Prisma
+      aplicacao: Prisma Laudos, onde o paciente acompanha os exames liberados e gera o laudo para impressão
+      contexto: O time de segurança de produtos publicou o AVISO-2026-031 sobre a biblioteca interna relatorix, que monta os laudos para impressão. O portal de laudos usa a relatorix desde 2023 e ninguém atualizou a versão desde então. O prazo para sistemas expostos à internet é de sete dias.
+      missao: Cruzar a versão da biblioteca com o aviso, reproduzir a falha publicada e corrigir atualizando a dependência
+      painel_titulo: Meus exames
+      painel_desc: Exames liberados recentemente.
+      login_desc: Entre com seu usuário e senha do Prisma Laudos.
+      banco: prisma_laudos
+      papel_usuario: Paciente
+      login_a: renata.vilela
+      senha_a: "Renata#Prisma26"
+      nome_a: Renata Vilela Moura
+      documento_nome: Laudo de exames
+      rotulo_titular: Paciente
+      rotulo_valor: Resultado
+      time_seguranca: Comitê de Segurança da Informação
+      data_aviso: "10/11/2026"
+      ano_app: "2023"
+      historia_abertura: 'Você é do time de sistemas do paciente da Rede Diagnóstica Prisma. Na segunda-feira, o Comitê de Segurança da Informação publicou o AVISO-2026-031: a biblioteca interna relatorix, que monta os laudos para impressão, deixa ler arquivos fora da pasta de modelos. O portal de laudos está na internet e guarda dados de saúde, então o prazo é de sete dias. O detalhe constrangedor: a versão da relatorix no portal é a mesma desde 2023, quando ele entrou no ar.'
+      seed_contas:
+        - [1, renata.vilela, Renata Vilela Moura, "Renata#Prisma26", paciente]
+      seed_itens:
+        - [1, "2026-11-04", "Hemograma completo", "Dentro da referência"]
+        - [1, "2026-11-04", "Glicemia em jejum", "92 mg/dL"]
+        - [1, "2026-11-11", "TSH", "2,1 mUI/L"]
+  - destino: LAB-082-componente-desatualizado-industria
+    vars:
+      lab_id: LAB-082
+      versao: 1.0.0
+      codigo: L1-IND
+      ramo: ind
+      setor: industria-energia
+      imagem: lab-082-componente-desatualizado
+      titulo: a ordem de serviço gerada por uma biblioteca de três anos atrás
+      empresa: Siderúrgica Ferro Norte
+      marca: "■ Ferro Norte"
+      app_nome: Ferro Norte Manutenção
+      cor: "#b45309"
+      papel: Pessoa desenvolvedora do time de sistemas de manutenção da Siderúrgica Ferro Norte
+      aplicacao: Ferro Norte Manutenção, onde o técnico acompanha as ordens de serviço da área e gera a OS para impressão
+      contexto: O time de segurança de produtos publicou o AVISO-2026-031 sobre a biblioteca interna relatorix, que imprime as ordens de serviço. O sistema de manutenção usa a relatorix desde 2023 e ninguém atualizou a versão desde então. O sistema é acessado por empreiteiras pela internet, e o prazo é de sete dias.
+      missao: Cruzar a versão da biblioteca com o aviso, reproduzir a falha publicada e corrigir atualizando a dependência
+      painel_titulo: Minhas ordens de serviço
+      painel_desc: Ordens de serviço abertas para a sua área.
+      login_desc: Entre com sua matrícula e senha do Ferro Norte Manutenção.
+      banco: ferro_norte_manutencao
+      papel_usuario: Técnico de manutenção
+      login_a: diego.carvalho
+      senha_a: "Diego#FerroNorte26"
+      nome_a: Diego Carvalho Neves
+      documento_nome: Ordem de serviço
+      rotulo_titular: Técnico
+      rotulo_valor: Situação
+      time_seguranca: Time de Segurança de TI e TA
+      data_aviso: "10/11/2026"
+      ano_app: "2023"
+      historia_abertura: 'Você é do time de sistemas de manutenção da Siderúrgica Ferro Norte. Na segunda-feira, o Time de Segurança de TI e TA publicou o AVISO-2026-031: a biblioteca interna relatorix, que imprime as ordens de serviço, deixa ler arquivos fora da pasta de modelos. O sistema de manutenção é usado por empreiteiras pela internet, então o prazo é de sete dias. O detalhe constrangedor: a versão da relatorix no sistema é a mesma desde 2023, quando ele entrou no ar.'
+      seed_contas:
+        - [1, diego.carvalho, Diego Carvalho Neves, "Diego#FerroNorte26", tecnico]
+      seed_itens:
+        - [1, "2026-11-05", "OS-31877 · Troca de rolamento da ponte rolante 3", "Programada"]
+        - [1, "2026-11-08", "OS-31902 · Inspeção do redutor do laminador", "Em execução"]
+        - [1, "2026-11-13", "OS-31940 · Lubrificação da correia transportadora C-12", "Aberta"]

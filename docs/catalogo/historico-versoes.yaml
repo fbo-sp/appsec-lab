@@ -384,3 +384,15 @@ labs:
     - version: 1.0.0
       published: 2026-11-17
       summary: "Versão inicial (família L2 log-auditoria, ramo indústria e energia): login sem registro das falhas na trilha de auditoria."
+  LAB-080:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: "Versão inicial (família L1 componente-desatualizado, ramo financeiro): biblioteca de documentos com falha conhecida, corrigida atualizando a dependência."
+  LAB-081:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: "Versão inicial (família L1 componente-desatualizado, ramo saúde): biblioteca de documentos com falha conhecida, corrigida atualizando a dependência."
+  LAB-082:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: "Versão inicial (família L1 componente-desatualizado, ramo indústria e energia): biblioteca de documentos com falha conhecida, corrigida atualizando a dependência."

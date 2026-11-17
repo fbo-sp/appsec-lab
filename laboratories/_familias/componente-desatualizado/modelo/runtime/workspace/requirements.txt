@@ -1,0 +1,5 @@
+# Dependências da aplicação, com a versão fixada (pin). O ambiente do laboratório não tem internet:
+# os pacotes vêm do espelho interno em espelho/ (veja dependencias.py), como o Artifactory/Nexus
+# de uma empresa. Ao salvar este arquivo, a aplicação reinicia com as versões fixadas aqui.
+flask==3.1.2
+relatorix==2.1.0

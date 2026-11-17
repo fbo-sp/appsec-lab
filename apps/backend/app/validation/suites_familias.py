@@ -2892,6 +2892,118 @@ def _auditoria(r: AuditoriaRamo) -> tuple[Suite, ...]:
     )
 
 
+# L1 componente-desatualizado: dependência com falha conhecida (LAB-080 a LAB-082)
+
+
+@dataclass(frozen=True, slots=True)
+class ComponenteRamo:
+    ramo: str
+    login_a: str
+    senha_a: str
+    nome_a: str
+
+
+COMPONENTE_RAMOS = (
+    ComponenteRamo("fin", "camila.rezende", "Camila#Altiva26", "Camila Rezende Prado"),
+    ComponenteRamo("sau", "renata.vilela", "Renata#Prisma26", "Renata Vilela Moura"),
+    ComponenteRamo("ind", "diego.carvalho", "Diego#FerroNorte26", "Diego Carvalho Neves"),
+)
+
+# Marcador da primeira linha de config/integracoes_demo.ini, o arquivo interno FICTÍCIO do lab.
+_MARCADOR_INTERNO = "INTEGRACOES-DEMO"
+
+
+def _componente(r: ComponenteRamo) -> tuple[Suite, ...]:
+    return (
+        AnswerSuite(
+            ref=f"componente-desatualizado/answer/versao-{r.ramo}-v1",
+            version="1.0.0",
+            prompt="Versão da relatorix que a aplicação usa",
+            accepted=("2.1.0", "2.1", "relatorix==2.1.0", "v2.1.0"),
+            success_feedback="Isso. É a versão fixada desde que o sistema entrou no ar.",
+            failure_feedback="Ainda não. Veja a linha da relatorix em requirements.txt, depois do ==.",
+        ),
+        AnswerSuite(
+            ref=f"componente-desatualizado/answer/corrigida-{r.ramo}-v1",
+            version="1.0.0",
+            prompt="Versão da relatorix que corrige a falha",
+            accepted=("2.4.1", "relatorix==2.4.1", "v2.4.1"),
+            success_feedback="Isso. A 2.1.0 está na faixa afetada, e a 2.4.1 é a corrigida.",
+            failure_feedback="Ainda não. Veja a tabela de versões do aviso em avisos/.",
+        ),
+        AnswerSuite(
+            ref=f"componente-desatualizado/answer/marcador-{r.ramo}-v1",
+            version="1.0.0",
+            prompt="Texto da primeira linha do arquivo interno",
+            accepted=_com_variantes(_MARCADOR_INTERNO.lower(), "; integracoes-demo", "integracoes demo"),
+            success_feedback="Exato: o gerador de documentos entregou um arquivo de configuração interno.",
+            failure_feedback="Ainda não. Rode os dois comandos curl da tarefa e copie o texto depois do ;.",
+        ),
+        AnswerSuite(
+            ref=f"componente-desatualizado/answer/arquivo-{r.ramo}-v1",
+            version="1.0.0",
+            prompt="Arquivo onde a versão da relatorix é fixada",
+            accepted=("requirements.txt", "requirements", "/workspace/requirements.txt"),
+            success_feedback="Isso. É lá que se troca a versão fixada.",
+            failure_feedback="Ainda não. É o arquivo de dependências que você abriu na etapa 1.",
+        ),
+        HttpSuite(
+            ref=f"componente-desatualizado/python-flask/versao-corrigida-{r.ramo}-v1",
+            version="1.0.0",
+            logins=(HttpLogin(name="usuario", path="/login", form={"login": r.login_a, "senha": r.senha_a}),),
+            checks=(
+                HttpCheck(
+                    id="documento-padrao",
+                    description="O documento no modelo padrão continua sendo gerado.",
+                    path="/documento?modelo=padrao.html",
+                    as_user="usuario",
+                    contains=(r.nome_a,),
+                ),
+                HttpCheck(
+                    id="documento-detalhado",
+                    description="O modelo detalhado também continua funcionando.",
+                    path="/documento?modelo=detalhado.html",
+                    as_user="usuario",
+                    contains=(r.nome_a, "detalhado"),
+                ),
+                HttpCheck(
+                    id="modelo-fora-da-pasta",
+                    description="Um modelo com ../ não abre arquivos de fora da pasta de modelos.",
+                    path="/documento?modelo=../config/integracoes_demo.ini",
+                    as_user="usuario",
+                    expect_status_in=(200, 400, 403, 404),
+                    not_contains=(_MARCADOR_INTERNO,),
+                ),
+                HttpCheck(
+                    id="modelo-codificado",
+                    description="A forma codificada do ../ também não sai da pasta de modelos.",
+                    path="/documento?modelo=%252e%252e%252fconfig%252fintegracoes_demo.ini",
+                    as_user="usuario",
+                    expect_status_in=(200, 400, 403, 404),
+                    not_contains=(_MARCADOR_INTERNO,),
+                ),
+                HttpCheck(
+                    id="caminho-absoluto",
+                    description="Um caminho absoluto também não sai da pasta de modelos.",
+                    path="/documento?modelo=/workspace/config/integracoes_demo.ini",
+                    as_user="usuario",
+                    expect_status_in=(200, 400, 403, 404),
+                    not_contains=(_MARCADOR_INTERNO,),
+                ),
+            ),
+            success_feedback=(
+                "Correção validada: com a relatorix 2.4.1, os modelos legítimos continuam funcionando e "
+                "nenhuma forma de nome sai da pasta de modelos."
+            ),
+            failure_feedback=(
+                "Algumas verificações falharam. Confira cada item abaixo. A correção é atualizar a "
+                "relatorix em requirements.txt para a versão corrigida do aviso; um filtro de texto no "
+                "código não cobre a forma codificada."
+            ),
+        ),
+    )
+
+
 SUITES_FAMILIAS: tuple[Suite, ...] = (
     tuple(s for r in XSS_RAMOS for s in _xss(r))
     + tuple(s for r in MASSA_RAMOS for s in _massa(r))
@@ -2912,6 +3024,7 @@ SUITES_FAMILIAS: tuple[Suite, ...] = (
     + tuple(s for r in CONSUMO_RAMOS for s in _consumo(r))
     + tuple(s for r in RECURSOS_RAMOS for s in _recursos(r))
     + tuple(s for r in AUDITORIA_RAMOS for s in _auditoria(r))
+    + tuple(s for r in COMPONENTE_RAMOS for s in _componente(r))
     + tuple(
         s
         for r in MOB_RAMOS

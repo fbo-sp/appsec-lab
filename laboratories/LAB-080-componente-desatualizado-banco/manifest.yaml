@@ -1,0 +1,250 @@
+# LAB-080 (L1-FIN): biblioteca com falha conhecida (OWASP A06:2021 / A03:2025, CWE-1395) no Altiva Home Broker da Corretora Altiva Investimentos (Flask + SQLite).
+# CONTÉM VULNERABILIDADE INTENCIONAL. Uso exclusivo no runtime Docker LOCAL (ADR-008), em rede
+# interna da sessão. Dados 100% fictícios. Família L1 componente-desatualizado (ADR-021): gerado por
+# scripts/gerar-familia.py a partir de laboratories/_familias/componente-desatualizado; não edite este arquivo à mão.
+#
+# ATENÇÃO: o digest abaixo é uma FIXTURE (sha256 de um texto fixo), não uma imagem publicada.
+# scripts/lab-local.sh e .ps1 trocam pela imagem construída localmente antes de registrar.
+apiVersion: labs.cecyber.io/v1alpha1
+kind: AppSecLab
+metadata:
+  id: LAB-080
+  version: 1.0.0
+  title: "L1-FIN · Componentes vulneráveis: o extrato gerado por uma biblioteca de três anos atrás"
+  primaryCwe: CWE-1395
+  secondaryCwes: [CWE-1104, CWE-22]
+  family: componente-desatualizado
+  sectors: [financeiro]
+  courseModules: [trained]
+  classifications:
+    - framework: OWASP Top 10
+      edition: "2025"
+      entries:
+        - "A03 Software Supply Chain Failures"
+    - framework: OWASP Top 10
+      edition: "2021"
+      entries:
+        - "A06 Vulnerable and Outdated Components"
+    - framework: SANS CWE Top 25
+      edition: "2025"
+      entries:
+        - "Não se enquadra; use o CWE"
+    - framework: SANS CWE Top 25
+      edition: "2024"
+      entries:
+        - "Não se enquadra; use o CWE"
+learning:
+  singleVulnerability: true
+  estimatedMinutes: 35
+  difficulty: intermediate
+  objectives:
+    - Entender por que uma dependência desatualizada é uma falha da sua aplicação
+    - Usar o inventário de dependências (requirements.txt e SBOM) para cruzar versões com um aviso de segurança
+    - Reproduzir a falha publicada da biblioteca de forma controlada
+    - Corrigir atualizando a dependência, e não com um filtro de texto no código
+  story:
+    role: Pessoa desenvolvedora do time de home broker da Corretora Altiva Investimentos
+    application: Altiva Home Broker, onde o investidor acompanha as movimentações e gera o extrato para impressão
+    context: >-
+      O time de segurança de produtos publicou o AVISO-2026-031 sobre a biblioteca interna relatorix, que gera os documentos para impressão. O home broker usa a relatorix desde 2023 e ninguém atualizou a versão desde então. O prazo para sistemas expostos à internet é de sete dias.
+    mission: Cruzar a versão da biblioteca com o aviso, reproduzir a falha publicada e corrigir atualizando a dependência
+  wrapUp:
+    text: |
+      A aplicação agora usa a relatorix 2.4.1 e o modelo de documento não sai mais da pasta. Em um sistema real, vale reforçar:
+
+      - **Saiba o que você usa.** Mantenha um inventário de componentes (SBOM) de cada sistema, inclusive das dependências das dependências. Sem ele, um aviso como o AVISO-2026-031 vira uma caça manual em dezenas de repositórios.
+      - **Automatize o cruzamento.** Ferramentas de SCA (como `pip-audit`, OWASP Dependency-Check, Dependabot ou Renovate) comparam as versões fixadas com as bases de vulnerabilidades e abrem o pedido de atualização sozinhas.
+      - **Atualize de verdade.** Filtros de texto no seu código não corrigem a falha de uma biblioteca: ela pode decodificar, normalizar ou montar caminhos de um jeito que seu filtro não vê.
+      - **Componente sem manutenção também é risco.** Uma biblioteca parada há anos não recebe correções; planeje a troca antes do próximo aviso. A OWASP 2025 ampliou o tema para toda a cadeia de suprimentos (A03).
+    references:
+      - title: "OWASP Top 10:2021: A06 Vulnerable and Outdated Components"
+        url: https://owasp.org/Top10/A06_2021-Vulnerable_and_Outdated_Components/
+      - title: "OWASP Top 10:2025: A03 Software Supply Chain Failures"
+        url: https://top10.owasp.org/2025/A03_2025-Software_Supply_Chain_Failures/
+      - title: "CWE-1395: Dependency on Vulnerable Third-Party Component"
+        url: https://cwe.mitre.org/data/definitions/1395.html
+      - title: "OWASP CycloneDX (SBOM)"
+        url: https://cyclonedx.org/
+      - title: "OWASP Cheat Sheet: Vulnerable Dependency Management"
+        url: https://cheatsheetseries.owasp.org/cheatsheets/Vulnerable_Dependency_Management_Cheat_Sheet.html
+variants:
+  - id: python-flask
+    language: python
+    framework: flask
+    image: registry.local/labs/lab-080-componente-desatualizado@sha256:ad4ad0158999c9a8a1b92bc5dfae9e7f831486afa733e8adf409fed6cfc3605d
+    runtimeProfile: web-basic
+    workspacePath: /workspace
+    startup:
+      command: ["sh", "-c", "python -u -m flask --app app run --host 0.0.0.0 --port 8080 --reload --extra-files requirements.txt --no-debugger 2>&1 | tee -a /tmp/app.log"]
+      port: 8080
+    resources:
+      cpuMillicores: 500
+      memoryMiB: 512
+      storageMiB: 256
+      pidsMax: 64
+    session:
+      ttlMinutes: 45
+      maxRenewals: 2
+    interfaces: [editor, terminal, web]
+steps:
+  - id: conhecer
+    order: 1
+    title: Conhecer o sistema e suas dependências
+    explanation: |
+      Você é do time de home broker da Corretora Altiva Investimentos. Na segunda-feira, o Time de Segurança de Produtos publicou o AVISO-2026-031: a biblioteca interna relatorix, que gera os extratos para impressão, deixa ler arquivos fora da pasta de modelos. O aviso tem prazo de sete dias para sistemas expostos à internet, e o home broker é um deles. O detalhe constrangedor: a versão da relatorix no home broker é a mesma desde 2023, quando o sistema entrou no ar.
+
+      Quase todo sistema é feito mais de código de terceiros do que de código próprio. Cada biblioteca entra com uma **versão fixada** (o *pin*, como `relatorix==2.1.0`), e é essa versão que roda em produção até alguém atualizá-la. Quando uma falha é descoberta numa versão, todos os sistemas que a usam ficam vulneráveis, mesmo sem uma linha errada no código deles: é a falha de **componentes vulneráveis e desatualizados** (OWASP A06:2021, A03:2025).
+
+      ```ilustracao
+      dependencia-desatualizada
+      ```
+
+      Siga a geração do documento pelas camadas:
+
+      1. **Controller** (`controllers/painel_controller.py`): recebe o modelo escolhido na tela.
+      2. **Serviço** (`services/documento_service.py`): junta os dados da conta e chama a biblioteca.
+      3. **Biblioteca** `relatorix`: abre o modelo da pasta `modelos/` e preenche os campos. A versão usada está em `requirements.txt`.
+
+      As credenciais, neste laboratório, são:
+
+      - Investidora: `camila.rezende`, senha `Camila#Altiva26` (Camila Rezende Prado).
+    task: |
+      1. Na aba **Aplicação**, entre como `camila.rezende` / `Camila#Altiva26`, escolha o modelo **Padrão** e clique em **Gerar documento**.
+      2. Na aba **Código**, abra `requirements.txt`.
+
+      Informe abaixo a versão da biblioteca `relatorix` que a aplicação usa.
+    explore: |
+      **Veja o mesmo dado no inventário.** Abra `sbom.json`. É um SBOM (*Software Bill of Materials*) no formato CycloneDX: a lista de componentes do sistema, com nome, versão e identificador (`purl`). É o documento que o time de segurança consulta para saber quais sistemas usam uma biblioteca quando sai um aviso.
+
+      **Por que vale olhar.** No dia a dia, o SBOM é gerado no pipeline de build e inclui também as dependências das dependências, que não aparecem no `requirements.txt`.
+    concept: Cada dependência roda na versão fixada até alguém atualizá-la
+    validatorRef: componente-desatualizado/answer/versao-fin-v1
+    hints:
+      - level: 1
+        text: Procure a linha que começa com `relatorix` em `requirements.txt`.
+      - level: 2
+        text: A versão vem depois de `==`. A tela do painel também mostra a versão do gerador.
+      - level: 3
+        text: A resposta é `2.1.0`.
+    points: 10
+  - id: aviso
+    order: 2
+    title: Cruzar a versão com o aviso de segurança
+    explanation: |
+      Quando uma falha é encontrada numa biblioteca, o fornecedor (ou o time de segurança da empresa) publica um **aviso**: o que a falha permite, quais versões são afetadas e qual versão corrige. O trabalho de quem mantém o sistema é cruzar o aviso com o inventário: "eu uso uma versão afetada?"
+    task: |
+      Na aba **Código**, abra `avisos/AVISO-2026-031-relatorix.md` e compare com a versão da etapa 1.
+
+      Informe abaixo a versão da `relatorix` que corrige a falha.
+    explore: |
+      **Leia as notas de versão.** No espelho interno, abra `espelho/relatorix/2.4.1/CHANGELOG.md`. A linha "Segurança" diz exatamente o que mudou na 2.4.1.
+
+      **Por que vale olhar.** Antes de atualizar uma dependência em produção, o time lê o changelog para saber se a nova versão muda algum comportamento que o sistema usa. Aqui, a única mudança visível é a mensagem de erro.
+    concept: O aviso diz o que a falha permite, quem é afetado e qual versão corrige
+    validatorRef: componente-desatualizado/answer/corrigida-fin-v1
+    hints:
+      - level: 1
+        text: Veja a tabela "Versões afetadas e corrigidas" do aviso.
+      - level: 2
+        text: É a versão marcada como "Corrigida".
+      - level: 3
+        text: A resposta é `2.4.1`.
+    points: 15
+  - id: explorar
+    order: 3
+    title: Reproduzir a falha publicada
+    explanation: |
+      O aviso diz que a `relatorix` até a 2.4.0 abre o modelo pelo nome sem conferir se ele fica dentro da pasta `modelos/`. O nome do modelo vem da tela, no parâmetro `modelo` da rota `/documento`. Então um nome que sobe um nível com `../` faz o gerador abrir um arquivo de fora da pasta, como `config/integracoes_demo.ini`, um arquivo interno (fictício) que nunca deveria chegar ao navegador.
+    task: |
+      Na aba **Terminal**, entre com a conta da etapa 1 e peça o arquivo de configuração como se fosse um modelo:
+
+      ```bash
+      curl -s -c /tmp/c -d "login=camila.rezende&senha=Camila#Altiva26" http://127.0.0.1:8080/login > /dev/null
+      curl -s -b /tmp/c "http://127.0.0.1:8080/documento?modelo=../config/integracoes_demo.ini"
+      ```
+
+      Informe abaixo o texto que aparece na primeira linha da resposta, depois do `;`.
+    explore: |
+      **A forma codificada.** O aviso cita `%2e%2e%2f`, que é `../` codificado. Teste:
+
+      ```bash
+      curl -s -b /tmp/c "http://127.0.0.1:8080/documento?modelo=%252e%252e%252fconfig%252fintegracoes_demo.ini"
+      ```
+
+      O `%25` vira `%` quando o Flask lê o parâmetro, e a biblioteca decodifica de novo por conta própria (`unquote`). O código da aplicação vê `%2e%2e%2fconfig...`, sem nenhum `..` ou `/`, mas a biblioteca abre `../config/...`. **É por isso que um filtro de texto no seu código não corrige a falha de uma biblioteca.**
+    concept: A falha publicada da biblioteca vira uma falha do seu sistema
+    validatorRef: componente-desatualizado/answer/marcador-fin-v1
+    hints:
+      - level: 1
+        text: A primeira linha do arquivo `.ini` é um comentário que começa com `;`.
+      - level: 2
+        text: Também dá para abrir `config/integracoes_demo.ini` na aba **Código** e ver a mesma linha.
+      - level: 3
+        text: A resposta é `INTEGRACOES-DEMO`.
+    points: 15
+  - id: onde
+    order: 4
+    title: Decidir onde se corrige
+    explanation: |
+      A tentação é abrir `services/documento_service.py` e bloquear nomes com `..`. Não resolve: a biblioteca decodifica o nome depois do seu filtro (veja o **Explorar mais** da etapa 3), e a próxima falha da mesma versão não vai caber no seu filtro. O próprio aviso orienta: atualizar a dependência. A correção é trocar a versão fixada, no arquivo que declara as dependências.
+    task: |
+      Informe abaixo o nome do arquivo onde a versão da `relatorix` é fixada.
+    concept: Falha de componente se corrige atualizando o componente
+    validatorRef: componente-desatualizado/answer/arquivo-fin-v1
+    hints:
+      - level: 1
+        text: É o arquivo que você abriu na etapa 1.
+      - level: 2
+        text: É o arquivo que o `pip install -r` lê.
+      - level: 3
+        text: A resposta é `requirements.txt`.
+    points: 15
+  - id: corrigir
+    order: 5
+    title: Atualizar a dependência
+    explanation: |
+      **Por que a falha existe.** A aplicação fixa `relatorix==2.1.0`, uma versão afetada pelo AVISO-2026-031.
+
+      **A correção.** Fixar a versão corrigida, `2.4.1`. Ela confere, depois de decodificar o nome, que o caminho final fica dentro da pasta `modelos/`. Os modelos legítimos continuam funcionando.
+    task: |
+      Abra `requirements.txt` e troque a linha da `relatorix` por esta:
+
+      ```text
+      relatorix==2.4.1
+      ```
+
+      Salve com **Ctrl+S**. A aplicação reinicia com a nova versão (o painel passa a mostrar "relatorix 2.4.1"). Então:
+
+      1. entre de novo como `camila.rezende` e gere o documento no modelo **Padrão**, para ver que ele continua funcionando;
+      2. repita o `curl` da etapa 3 (os dois comandos) e veja a resposta "Modelo de documento não encontrado";
+      3. clique em **Validar**.
+    explore: |
+      **Confira qual versão foi carregada.** No **Terminal**:
+
+      ```bash
+      grep "espelho interno" /tmp/app.log
+      ```
+
+      O `app.log` também registra os acessos (linhas `GET /...`); o `grep` mostra só a linha de quais pacotes o carregador usou, uma por reinício.
+
+      **Se a aplicação não subir depois de salvar.** Uma versão que não existe no espelho gera um erro que lista as versões disponíveis:
+
+      ```bash
+      grep -iE "error|espelho" /tmp/app.log | tail -n 5
+      ```
+    concept: Atualizar a dependência para a versão corrigida
+    validatorRef: componente-desatualizado/python-flask/versao-corrigida-fin-v1
+    hints:
+      - level: 1
+        text: 'A mudança é só em `requirements.txt`, na linha da `relatorix`.'
+      - level: 2
+        text: Use a versão marcada como "Corrigida" no aviso da etapa 2.
+      - level: 3
+        text: A linha fica `relatorix==2.4.1`. Salve e espere o painel mostrar a nova versão.
+    points: 45
+policy:
+  sequentialUnlock: true
+  allowStepRetry: true
+  persistProgressAcrossReset: true
+  allowSolutionReveal: false
+  finalPassingScore: 100
