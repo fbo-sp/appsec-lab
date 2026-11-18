@@ -30,3 +30,7 @@ Avaliar gVisor, Kata e microVMs, regras de rede bloqueada e controles de privil�
 - [ ] Comparação de alternativas.
 - [ ] Threat model e controles mínimos aprovados.
 - [ ] Parecer formal e data de aceite.
+
+## Atualização 2026-11-18
+
+Recomendação técnica para produção no Proxmox, meta de 100 sessões simultâneas e checklist da PoC em `ADR-029-production-isolation-topology.md` (proposta, pendente de PoC; não altera o status deste ADR).

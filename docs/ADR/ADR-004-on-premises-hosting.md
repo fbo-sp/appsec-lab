@@ -44,3 +44,7 @@ Inventário CPU/RAM/disco/rede, hipervisor e nós disponíveis; testes de 30 ses
 ## Pendências
 
 Modelo de servidores, topologia VLANs/firewall, storage, SO, hipervisor, política de atualização, disaster recovery, orçamento e meta definitiva de simultaneidade.
+
+## Atualização 2026-11-18
+
+Recomendação técnica para produção no Proxmox, meta de 100 sessões simultâneas e checklist da PoC em `ADR-029-production-isolation-topology.md` (proposta, pendente de PoC; não altera o status deste ADR).
