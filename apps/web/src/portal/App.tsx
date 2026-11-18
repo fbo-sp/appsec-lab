@@ -1,6 +1,8 @@
-import { useCallback, useEffect, useState } from "react";
+import { Fragment, useCallback, useEffect, useState } from "react";
 import { api, ApiError, currentUser, setUser, type Lab, type LabSession } from "./api";
+import { FRAMEWORKS, isTutorial, MODULES, matchesFilter, readPref, SECTORS, writePref } from "./catalogFilter";
 import { SessionView } from "./SessionView";
+import { Aparencia } from "./Aparencia";
 
 type Route = { name: "catalog" } | { name: "lab"; labId: string; version: string } | { name: "session"; id: string };
 
@@ -35,6 +37,7 @@ export function App() {
           <span className="dev-badge" title="Autenticação de desenvolvimento local; não use em produção">
             modo local
           </span>
+          <Aparencia user={user} />
           <span className="user">{user}</span>
           <button className="link" onClick={() => (setUser(null), setUserState(null))}>
             trocar usuário
@@ -99,6 +102,10 @@ const DIFFICULTY: Record<string, string> = {
 function Catalog() {
   const labs = useAsync(() => api.labs(), []);
   const sessions = useAsync(() => api.sessions(), []);
+  const [sector, setSector] = useState(() => readPref("cecyber.filtro.ramo"));
+  const [module, setModule] = useState(() => readPref("cecyber.filtro.modulo"));
+  const [framework, setFramework] = useState(() => readPref("cecyber.filtro.classificacao"));
+  const visible = (labs.data?.items ?? []).filter((l) => matchesFilter(l, sector, module, framework));
   return (
     <main className="page">
       <h1>Laboratórios</h1>
@@ -123,18 +130,90 @@ function Catalog() {
           Nenhum laboratório publicado. Registre o LAB-000 com <code>scripts/lab-local.ps1</code>.
         </div>
       )}
+      {labs.data && labs.data.items.length > 0 && (
+        <div className="catalog-filters" role="group" aria-label="Filtrar laboratórios">
+          <label>
+            Ramo de atividade
+            <select
+              value={sector}
+              onChange={(e) => {
+                setSector(e.target.value);
+                writePref("cecyber.filtro.ramo", e.target.value);
+              }}
+            >
+              <option value="">Todos</option>
+              {Object.entries(SECTORS).map(([k, v]) => (
+                <option key={k} value={k}>
+                  {v}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Módulo do curso
+            <select
+              value={module}
+              onChange={(e) => {
+                setModule(e.target.value);
+                writePref("cecyber.filtro.modulo", e.target.value);
+              }}
+            >
+              <option value="">Todos</option>
+              {Object.entries(MODULES).map(([k, v]) => (
+                <option key={k} value={k}>
+                  {v}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Classificação
+            <select
+              value={framework}
+              onChange={(e) => {
+                setFramework(e.target.value);
+                writePref("cecyber.filtro.classificacao", e.target.value);
+              }}
+            >
+              <option value="">Todas</option>
+              {Object.entries(FRAMEWORKS).map(([k, v]) => (
+                <option key={k} value={k}>
+                  {v}
+                </option>
+              ))}
+            </select>
+          </label>
+          <span className="muted small">
+            {visible.length} de {labs.data.items.length}
+          </span>
+        </div>
+      )}
+      {labs.data && labs.data.items.length > 0 && visible.length === 0 && (
+        <div className="card empty">Nenhum laboratório para esse filtro.</div>
+      )}
       <div className="grid">
-        {labs.data?.items.map((lab) => (
+        {visible.map((lab) => (
           <article className="card lab-card" key={`${lab.labId}@${lab.version}`}>
             <div className="lab-card-head">
               <span className="lab-id">{lab.labId}</span>
-              <span className="tag">{lab.primaryCwe}</span>
+              <span className={`tag ${isTutorial(lab) ? "tag-tutorial" : ""}`}>
+                {isTutorial(lab) ? "Comece por aqui" : lab.primaryCwe}
+              </span>
             </div>
             <h3>{lab.title}</h3>
             <p className="muted small">
               {DIFFICULTY[lab.learning.difficulty] ?? lab.learning.difficulty} · ~{lab.learning.estimatedMinutes} min ·{" "}
               {lab.steps.length} {lab.steps.length === 1 ? "etapa" : "etapas"}
             </p>
+            {(lab.sectors?.length ?? 0) > 0 && (
+              <p className="lab-sectors">
+                {lab.sectors!.map((s) => (
+                  <span key={s} className={`tag tag-sector tag-${s}`}>
+                    {SECTORS[s] ?? s}
+                  </span>
+                ))}
+              </p>
+            )}
             <button className="primary" onClick={() => go(`/labs/${lab.labId}/${lab.version}`)}>
               Abrir
             </button>
@@ -180,9 +259,23 @@ function LabIntro({ labId, version }: { labId: string; version: string }) {
     <main className="page narrow">
       <a className="back" href="#/">← Laboratórios</a>
       <p className="eyebrow">
-        {l.labId} · versão {l.version} · {l.primaryCwe}
+        {l.labId} · versão {l.version} · {isTutorial(l) ? "tutorial, sem vulnerabilidade" : l.primaryCwe}
       </p>
       <h1>{l.title}</h1>
+      {((l.sectors?.length ?? 0) > 0 || (l.courseModules?.length ?? 0) > 0) && (
+        <p className="lab-sectors">
+          {(l.sectors ?? []).map((s) => (
+            <span key={s} className={`tag tag-sector tag-${s}`}>
+              {SECTORS[s] ?? s}
+            </span>
+          ))}
+          {(l.courseModules ?? []).map((m) => (
+            <span key={m} className="tag tag-module">
+              {MODULES[m] ?? m}
+            </span>
+          ))}
+        </p>
+      )}
       <section className="card story">
         <h2>Sua missão</h2>
         <dl>
@@ -233,7 +326,39 @@ function LabIntro({ labId, version }: { labId: string; version: string }) {
         </p>
         {error && <ErrorBox message={error} />}
       </section>
+      {!isTutorial(l) && <Classification lab={l} />}
     </main>
+  );
+}
+
+
+/** Bloco final da página de abertura (ADR-017): CWE e enquadramento em OWASP e SANS CWE Top 25. */
+function Classification({ lab }: { lab: Lab }) {
+  const rows = lab.classifications ?? [];
+  const cwes = [`${lab.primaryCwe}${lab.secondaryCwes.length ? " (principal)" : ""}`, ...lab.secondaryCwes];
+  return (
+    <section className="card classification" aria-labelledby="classification-title">
+      <h2 id="classification-title">Classificação</h2>
+      <dl>
+        <dt>CWE</dt>
+        <dd>{cwes.join(", ")}</dd>
+        {rows.map((c) => (
+          <Fragment key={`${c.framework} ${c.edition}`}>
+            <dt>
+              {c.framework} {c.edition}
+            </dt>
+            <dd>
+              {c.entries.map((e, i) => (
+                <span key={e}>
+                  {i > 0 && <span className="muted"> · </span>}
+                  {e}
+                </span>
+              ))}
+            </dd>
+          </Fragment>
+        ))}
+      </dl>
+    </section>
   );
 }
 

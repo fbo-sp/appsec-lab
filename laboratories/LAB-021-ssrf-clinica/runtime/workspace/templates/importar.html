@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block conteudo %}
+<h1>Central de Laudos</h1>
+<p class="ajuda">Importe o laudo informado pelo laboratório parceiro para anexar ao atendimento.</p>
+
+<form method="post" action="{{ url_for('importador.form') }}" class="cartao">
+  <label>URL do documento no sistema parceiro
+    <input name="url" type="text" value="{{ url }}" placeholder="http://127.0.0.1:8090/doc/1" required>
+  </label>
+  <button type="submit">Buscar prévia</button>
+  <p class="ajuda">O documento fica no <strong>Serviço de Documentos</strong> interno (<code>127.0.0.1:8090</code>). Cole a URL que o parceiro informou.</p>
+</form>
+
+{% if erro %}<p class="erro">Não foi possível buscar: {{ erro }}</p>{% endif %}
+
+{% if previa is not none %}
+<h2>Prévia do documento</h2>
+<pre class="previa">{{ previa }}</pre>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block titulo %}Ferrara Metais · Manutenção{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='estilo.css') }}">
+</head>
+<body>
+  <header class="topo">
+    <span class="marca">▲ Ferrara Metais</span>
+    <span class="sub">Portal de Manutenção · Planta Contagem</span>
+  </header>
+  <main>{% block conteudo %}{% endblock %}</main>
+  <footer>Ambiente de treinamento CECyber · dados fictícios · CLPs simulados</footer>
+</body>
+</html>

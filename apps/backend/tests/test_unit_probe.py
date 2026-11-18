@@ -1,0 +1,204 @@
+"""Probe de validação (ADR-010/ADR-015): sessões por usuário, token Bearer e status aceitos."""
+
+from __future__ import annotations
+
+import json
+import threading
+from collections.abc import Iterator
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+
+import pytest
+from app.validation import probe
+from app.validation.suites import HttpCheck, HttpLogin, HttpSuite
+
+
+class _App(BaseHTTPRequestHandler):
+    """Aplicação mínima: login por formulário (cookie) e por JSON (token)."""
+
+    def log_message(self, *args: object) -> None:  # silencia o servidor de teste
+        pass
+
+    def _send(self, status: int, body: str, headers: dict[str, str] | None = None) -> None:
+        data = body.encode()
+        self.send_response(status)
+        for k, v in (headers or {}).items():
+            self.send_header(k, v)
+        self.send_header("Content-Length", str(len(data)))
+        self.end_headers()
+        self.wfile.write(data)
+
+    def do_GET(self) -> None:
+        cookie = self.headers.get("Cookie", "")
+        auth = self.headers.get("Authorization", "")
+        if self.path == "/":
+            self._send(200, "ok")
+        elif self.path == "/eu":
+            who = cookie.removeprefix("quem=") if cookie.startswith("quem=") else "anonimo"
+            self._send(200, f"usuario={who}")
+        elif self.path == "/api":
+            self._send(200 if auth == "Bearer tok-123" else 401, auth or "sem token")
+        elif self.path == "/cors":
+            # Reflete a origem recebida (comportamento vulnerável), para testar expect_absent_headers.
+            origem = self.headers.get("Origin", "")
+            self._send(200, "dados", {"Access-Control-Allow-Origin": origem} if origem else {})
+        else:
+            self._send(404, "nao encontrado")
+
+    def do_POST(self) -> None:
+        length = int(self.headers.get("Content-Length", "0"))
+        body = self.rfile.read(length).decode()
+        if self.path == "/login":
+            who = body.split("usuario=")[1].split("&")[0]
+            self._send(302, "", {"Set-Cookie": f"quem={who}; Path=/", "Location": "/eu"})
+        elif self.path == "/api/login":
+            ok = json.loads(body).get("senha") == "certa"
+            self._send(200 if ok else 401, json.dumps({"token": "tok-123"} if ok else {"erro": "x"}))
+        else:
+            self._send(404, "")
+
+    def do_PATCH(self) -> None:
+        self._send(405, "metodo")
+
+
+@pytest.fixture(scope="module")
+def base() -> Iterator[str]:
+    srv = ThreadingHTTPServer(("127.0.0.1", 0), _App)
+    threading.Thread(target=srv.serve_forever, daemon=True).start()
+    try:
+        yield f"http://127.0.0.1:{srv.server_address[1]}"
+    finally:
+        srv.shutdown()
+
+
+def _run(base: str, suite: HttpSuite) -> dict[str, bool]:
+    started, results = probe.run(
+        {"base": base, "checks": suite.probe_checks(), "logins": suite.probe_logins(), "wait_seconds": 5}
+    )
+    assert started
+    return results
+
+
+def test_each_user_has_its_own_cookie_session_and_anonymous_has_none(base: str) -> None:
+    suite = HttpSuite(
+        ref="t",
+        version="1",
+        logins=(
+            HttpLogin(name="ana", path="/login", form={"usuario": "ana"}),
+            HttpLogin(name="bia", path="/login", form={"usuario": "bia"}),
+        ),
+        checks=(
+            HttpCheck(id="ana", description="", path="/eu", as_user="ana", contains=("usuario=ana",)),
+            HttpCheck(id="bia", description="", path="/eu", as_user="bia", contains=("usuario=bia",)),
+            HttpCheck(id="anon", description="", path="/eu", contains=("usuario=anonimo",)),
+        ),
+    )
+    assert _run(base, suite) == {"ana": True, "bia": True, "anon": True}
+
+
+def test_token_login_sets_bearer_and_explicit_headers_override(base: str) -> None:
+    suite = HttpSuite(
+        ref="t",
+        version="1",
+        logins=(
+            HttpLogin(name="api", path="/api/login", json={"senha": "certa"}, token_field="token"),
+            HttpLogin(name="falha", path="/api/login", json={"senha": "errada"}, token_field="token"),
+        ),
+        checks=(
+            HttpCheck(id="token", description="", path="/api", as_user="api"),
+            HttpCheck(
+                id="forjado",
+                description="",
+                path="/api",
+                headers={"Authorization": "Bearer x"},
+                expect_status_in=(401, 403),
+            ),
+            HttpCheck(id="login-falhou", description="", path="/", as_user="falha"),
+            HttpCheck(id="status-lista", description="", path="/nada", expect_status_in=(403, 404)),
+            HttpCheck(id="status-errado", description="", path="/nada", expect_status=200),
+            HttpCheck(
+                id="patch", description="", path="/api", method="PATCH", json={"a": 1}, expect_status=405
+            ),
+        ),
+    )
+    r = _run(base, suite)
+    assert r["token"] and r["forjado"] and r["status-lista"] and r["patch"], r
+    # Login que falha reprova (fail closed) as verificações daquele usuário; status fora do esperado também.
+    assert not r["login-falhou"] and not r["status-errado"], r
+
+
+def test_expect_absent_headers(base: str) -> None:
+    # /cors reflete a origem recebida em Access-Control-Allow-Origin (comportamento vulnerável).
+    suite = HttpSuite(
+        ref="t",
+        version="1",
+        checks=(
+            # Origem maliciosa é refletida => o cabeçalho CONTÉM "malicioso" => deve reprovar.
+            HttpCheck(
+                id="reflete-malicioso",
+                description="",
+                path="/cors",
+                headers={"Origin": "https://malicioso.example"},
+                expect_absent_headers={"Access-Control-Allow-Origin": "malicioso"},
+            ),
+            # Sem origem, o endpoint não emite o cabeçalho => ausente => trecho vazio aprova.
+            HttpCheck(
+                id="sem-cabecalho",
+                description="",
+                path="/cors",
+                expect_absent_headers={"Access-Control-Allow-Origin": ""},
+            ),
+            # Origem confiável refletida não casa o trecho proibido "malicioso" => aprova.
+            HttpCheck(
+                id="origem-confiavel",
+                description="",
+                path="/cors",
+                headers={"Origin": "https://portal.example"},
+                expect_absent_headers={"Access-Control-Allow-Origin": "malicioso"},
+            ),
+        ),
+    )
+    r = _run(base, suite)
+    assert not r["reflete-malicioso"], r
+    assert r["sem-cabecalho"] and r["origem-confiavel"], r
+
+
+def test_no_redirect_reads_the_3xx_response_itself(base: str) -> None:
+    # /login responde 302 com Set-Cookie e Location: /eu. Seguindo, a resposta final (/eu) não tem Set-Cookie.
+    login = {"usuario": "ana"}
+    suite = HttpSuite(
+        ref="t",
+        version="1",
+        checks=(
+            HttpCheck(
+                id="sem-seguir",
+                description="",
+                path="/login",
+                method="POST",
+                form=login,
+                no_redirect=True,
+                expect_status_in=(302,),
+                expect_headers={"Set-Cookie": "quem=ana"},
+            ),
+            HttpCheck(
+                id="seguindo",
+                description="",
+                path="/login",
+                method="POST",
+                form=login,
+                expect_headers={"Set-Cookie": "quem=ana"},
+            ),
+        ),
+    )
+    r = _run(base, suite)
+    assert r["sem-seguir"], r
+    assert not r["seguindo"], r
+
+
+def test_no_redirect_default_keeps_old_suite_digests() -> None:
+    from app.validation.suites import suite_digest
+
+    a = HttpSuite(ref="t", version="1", checks=(HttpCheck(id="x", description="", path="/"),))
+    b = HttpSuite(
+        ref="t", version="1", checks=(HttpCheck(id="x", description="", path="/", no_redirect=False),)
+    )
+    assert suite_digest(a) == suite_digest(b)

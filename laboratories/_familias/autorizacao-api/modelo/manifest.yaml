@@ -1,0 +1,237 @@
+# [[lab_id]] ([[codigo]]): autorização de função ausente (CWE-862) no [[app_nome]] da [[empresa]] (Flask + SQLite).
+# CONTÉM VULNERABILIDADE INTENCIONAL. Uso exclusivo no runtime Docker LOCAL (ADR-008), em rede
+# interna da sessão. Dados 100% fictícios. Família A15 autorizacao-api (ADR-021): gerado por
+# scripts/gerar-familia.py a partir de laboratories/_familias/autorizacao-api; não edite este arquivo à mão.
+#
+# ATENÇÃO: o digest abaixo é uma FIXTURE (sha256 de um texto fixo), não uma imagem publicada.
+# scripts/lab-local.sh e .ps1 trocam pela imagem construída localmente antes de registrar.
+apiVersion: labs.cecyber.io/v1alpha1
+kind: AppSecLab
+metadata:
+  id: [[lab_id]]
+  version: [[versao]]
+  title: "[[codigo]] · Autorização de função: [[titulo]]"
+  primaryCwe: CWE-862
+  secondaryCwes: [CWE-863]
+  family: autorizacao-api
+  sectors: [[[setor]]]
+  courseModules: [trained]
+  classifications:
+    - framework: OWASP Top 10
+      edition: "2025"
+      entries:
+        - "A01 Broken Access Control"
+    - framework: OWASP Top 10
+      edition: "2021"
+      entries:
+        - "A01 Broken Access Control"
+    - framework: OWASP API Security Top 10
+      edition: "2023"
+      entries:
+        - "API5 Broken Function Level Authorization"
+    - framework: SANS CWE Top 25
+      edition: "2025"
+      entries:
+        - "#4 CWE-862 Missing Authorization"
+    - framework: SANS CWE Top 25
+      edition: "2024"
+      entries:
+        - "#9 CWE-862 Missing Authorization"
+learning:
+  singleVulnerability: true
+  estimatedMinutes: 35
+  difficulty: intermediate
+  objectives:
+    - Distinguir autenticação (quem é) de autorização (o que pode fazer)
+    - Explorar a falha chamando a API administrativa como um usuário comum
+    - Reconhecer que cada função sensível precisa conferir o papel do usuário
+    - Corrigir exigindo o papel admin antes de executar a função
+  story:
+    role: [[papel]]
+    application: [[aplicacao]]
+    context: >-
+      [[contexto]]
+    mission: [[missao]]
+  wrapUp:
+    text: |
+      Agora a API administrativa só responde para o papel admin. Em um sistema real, vale reforçar:
+
+      - **Autenticar não é autorizar.** Saber quem é o usuário (ele fez login) não diz o que ele pode fazer. Cada função sensível precisa conferir, no servidor, se aquele usuário tem permissão para ela.
+      - **Autorização em nível de função (BFLA).** Esconder o link do menu de admin não protege a API: quem ataca chama a rota direto. A checagem de papel tem que estar na própria função, no servidor.
+      - **Negue por padrão.** Prefira liberar explicitamente (só `admin`) a bloquear casos conhecidos. Uma função nova deve começar negada para quem não tem papel suficiente.
+      - **O papel vem de fonte confiável.** O papel sai do banco e fica na sessão do servidor; nunca de um campo que o cliente mande no pedido (isso seria outra falha, de confiança no cliente).
+    references:
+      - title: "OWASP Top 10:2025: A01 Broken Access Control"
+        url: https://top10.owasp.org/2025/A01_2025-Broken_Access_Control/
+      - title: "OWASP Top 10:2021: A01 Broken Access Control"
+        url: https://owasp.org/Top10/A01_2021-Broken_Access_Control/
+      - title: "OWASP API Security Top 10 2023: API5 Broken Function Level Authorization"
+        url: https://owasp.org/API-Security/editions/2023/en/0xa5-broken-function-level-authorization/
+      - title: "CWE-862: Missing Authorization"
+        url: https://cwe.mitre.org/data/definitions/862.html
+      - title: "OWASP Cheat Sheet: Authorization"
+        url: https://cheatsheetseries.owasp.org/cheatsheets/Authorization_Cheat_Sheet.html
+variants:
+  - id: python-flask
+    language: python
+    framework: flask
+    image: registry.local/labs/[[imagem]]@sha256:[[digest_fixture]]
+    runtimeProfile: web-basic
+    workspacePath: /workspace
+    startup:
+      command: ["sh", "-c", "python -u -m flask --app app run --host 0.0.0.0 --port 8080 --reload --no-debugger 2>&1 | tee -a /tmp/app.log"]
+      port: 8080
+    resources:
+      cpuMillicores: 500
+      memoryMiB: 512
+      storageMiB: 256
+      pidsMax: 64
+    session:
+      ttlMinutes: 45
+      maxRenewals: 2
+    interfaces: [editor, terminal, web]
+steps:
+  - id: conhecer
+    order: 1
+    title: Conhecer a API administrativa e os papéis
+    explanation: |
+      [[historia_abertura]]
+
+      **Autenticação** diz quem é o usuário (ele fez login). **Autorização** diz o que ele pode fazer. A API administrativa lista todos os usuários e só o papel `admin` deveria usá-la. Quando uma função sensível não confere o papel, qualquer usuário autenticado a executa — é a falha de autorização em nível de função (BFLA).
+
+      ```ilustracao
+      bfla
+      ```
+
+      Siga a chamada pelas camadas:
+
+      1. **Controller** (`controllers/painel_controller.py`): a rota `/api/admin/usuarios` pergunta ao serviço se o papel pode administrar.
+      2. **Serviço** (`services/permissao_service.py`): responde se o papel pode usar as funções administrativas. **É aqui que falta conferir o papel.**
+
+      As credenciais, neste laboratório, são:
+
+      - Admin: `[[login_admin]]`, senha `[[senha_admin]]` (papel `admin`).
+      - Comum: `[[login_a]]`, senha `[[senha_a]]` (papel `comum`).
+    task: |
+      1. Na aba **Aplicação**, entre como admin (`[[login_admin]]` / `[[senha_admin]]`) e clique em "listar todos os usuários": você vê a lista completa. Depois **Sair**.
+      2. Na aba **Código**, abra `services/permissao_service.py`.
+
+      Informe abaixo o nome do método que decide se o papel pode usar as funções administrativas.
+    concept: Autorização em nível de função — conferir o papel antes de executar
+    validatorRef: autorizacao-api/answer/metodo-[[ramo]]-v1
+    hints:
+      - level: 1
+        text: 'Em `services/permissao_service.py`, a classe `PermissaoService` tem um único método público.'
+      - level: 2
+        text: É o método que o controller chama antes de listar os usuários.
+      - level: 3
+        text: O valor é `pode_administrar`.
+    points: 10
+  - id: explorar
+    order: 2
+    title: Chamar a API de admin como usuário comum
+    explanation: |
+      O método `pode_administrar` devolve `True` para qualquer papel — ele nem olha o papel recebido. Então um usuário comum, só por estar logado, consegue chamar a API administrativa.
+    task: |
+      Na aba **Aplicação**, entre agora como o usuário **comum** (`[[login_a]]` / `[[senha_a]]`). No navegador, abra a rota da API administrativa direto:
+
+      ```
+      /api/admin/usuarios
+      ```
+
+      (ou pela aba **Terminal**, com a sessão do comum, chame `curl` nessa rota). Veja que a lista completa de usuários volta, mesmo você sendo comum. Informe abaixo se o usuário comum **conseguiu** ou foi **barrado** ao chamar a API de admin.
+    explore: |
+      **Por que isso é grave.** A API devolve login, nome e papel de todo mundo — um mapa dos administradores para um próximo ataque. Em sistemas reais, funções assim criam, apagam ou promovem contas. Esconder o botão no menu não adianta: o atacante chama a rota direto.
+    concept: Sem conferir o papel, a função de admin fica aberta a todos
+    validatorRef: autorizacao-api/answer/resultado-[[ramo]]-v1
+    hints:
+      - level: 1
+        text: Veja se a resposta trouxe a lista de usuários ou uma negativa.
+      - level: 2
+        text: A API respondeu normalmente, mesmo para o usuário comum.
+      - level: 3
+        text: A resposta é `conseguiu`.
+    points: 15
+  - id: diferenca
+    order: 3
+    title: Separar autenticação de autorização
+    explanation: |
+      Estar logado (autenticado) não é o mesmo que ter permissão (autorizado). A API confere que o usuário fez login (`login_obrigatorio`), mas não confere o **papel**. Essas são duas perguntas diferentes, e as duas precisam de resposta.
+    task: |
+      Qual é a palavra para a checagem que falta — não "quem é o usuário", mas "o que ele pode fazer"?
+
+      Responda com uma palavra.
+    concept: Autenticação diz quem é; autorização diz o que pode fazer
+    validatorRef: autorizacao-api/answer/conceito-[[ramo]]-v1
+    hints:
+      - level: 1
+        text: Começa com "autor...".
+      - level: 2
+        text: É decidir o que um usuário TEM PERMISSÃO de fazer.
+      - level: 3
+        text: A resposta é `autorização`.
+    points: 15
+  - id: papel
+    order: 4
+    title: Nomear o que precisa ser conferido
+    explanation: |
+      A função administrativa só pode rodar para quem tem o papel certo. A correção é conferir, no servidor, se o papel do usuário é o de administrador antes de executar a função.
+    task: |
+      Que papel o usuário precisa ter para usar a API administrativa?
+
+      Responda com uma palavra (o papel exigido).
+    concept: Só o papel admin pode usar a função administrativa
+    validatorRef: autorizacao-api/answer/papel-[[ramo]]-v1
+    hints:
+      - level: 1
+        text: É o papel oposto de "comum".
+      - level: 2
+        text: Aparece no painel, no campo Papel, para a conta de administrador.
+      - level: 3
+        text: A resposta é `admin`.
+    points: 15
+  - id: corrigir
+    order: 5
+    title: Exigir o papel admin no serviço de permissão
+    explanation: |
+      **Por que a falha existe.** `pode_administrar` devolve `True` para todo mundo, sem olhar o papel.
+
+      **A correção.** Devolver verdadeiro só quando o papel for `admin`. Assim, o usuário comum recebe "acesso negado" (HTTP 403) e o admin continua liberado.
+    task: |
+      Abra `services/permissao_service.py` e troque o método `pode_administrar` inteiro por este:
+
+      ```python
+          def pode_administrar(self, papel: str) -> bool:
+              """Diz se o papel pode usar as funções administrativas."""
+              return papel == "admin"
+      ```
+
+      Salve com **Ctrl+S**. A aplicação reinicia. Então:
+
+      1. logado como o usuário **comum**, chame `/api/admin/usuarios` e veja que agora vem **acesso negado** (403);
+      2. logado como **admin**, chame a mesma rota e veja que a lista **continua** vindo;
+      3. clique em **Validar**.
+    explore: |
+      **Se algo não funcionar depois de salvar.** Um recuo errado derruba a aplicação. No **Terminal**:
+
+      ```bash
+      grep -iE "error|traceback" /tmp/app.log | tail -n 15
+      ```
+
+      **O que procurar.** `IndentationError` aponta a linha com recuo diferente: o `def pode_administrar` fica com 4 espaços; o corpo (`return papel == "admin"`), com 8.
+    concept: Correção da autorização conferindo o papel admin no servidor
+    validatorRef: autorizacao-api/python-flask/autorizacao-funcao-[[ramo]]-v1
+    hints:
+      - level: 1
+        text: 'A mudança é só em `services/permissao_service.py`, no método `pode_administrar`.'
+      - level: 2
+        text: "Devolva True só quando papel == \"admin\"."
+      - level: 3
+        text: Copie o método da tarefa sem mudar o recuo. O `def` fica com 4 espaços.
+    points: 45
+policy:
+  sequentialUnlock: true
+  allowStepRetry: true
+  persistProgressAcrossReset: true
+  allowSolutionReveal: false
+  finalPassingScore: 100

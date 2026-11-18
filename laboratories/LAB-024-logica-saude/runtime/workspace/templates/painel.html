@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block conteudo %}
+<h1>Portal do Beneficiário</h1>
+<p class="ajuda">Solicite o reembolso a partir do seu saldo aprovado.</p>
+
+<dl class="dados">
+  <dt>Titular</dt><dd>{{ conta.nome }}</dd>
+  <dt>Saldo de reembolso aprovado</dt><dd>R$ {{ "%.2f"|format(conta.saldo) }}</dd>
+</dl>
+
+<form method="post" action="{{ url_for('painel.resgatar') }}" class="cartao">
+  <label>Valor do reembolso (R$)
+    <input name="valor" type="text" placeholder="100,00" required>
+  </label>
+  <button type="submit">Solicitar reembolso</button>
+  <p class="ajuda">Informe o valor do reembolso a receber do seu saldo aprovado.</p>
+</form>
+
+{% if resultado %}<p class="banner reforcado">{{ resultado }}</p>{% endif %}
+{% if erro %}<p class="banner antigo">{{ erro }}</p>{% endif %}
+{% endblock %}

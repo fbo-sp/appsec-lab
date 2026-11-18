@@ -1,0 +1,267 @@
+# LAB-056 (MOB-04-FIN): biometria exigida só na tela do app (CWE-603) no App Pagomais da Pagomais (app mobile simulado, Flask + SQLite).
+# CONTÉM VULNERABILIDADE INTENCIONAL. Uso exclusivo no runtime Docker LOCAL (ADR-008), em rede
+# interna da sessão. Dados 100% fictícios. Família MOB-04 mob-biometria-cliente (ADR-021, ADR-025): gerado por
+# scripts/gerar-familia.py a partir de laboratories/_familias/mob-biometria-cliente; não edite este arquivo à mão.
+#
+# ATENÇÃO: o digest abaixo é uma FIXTURE (sha256 de um texto fixo), não uma imagem publicada.
+# scripts/lab-local.sh e .ps1 trocam pela imagem construída localmente antes de registrar.
+apiVersion: labs.cecyber.io/v1alpha1
+kind: AppSecLab
+metadata:
+  id: LAB-056
+  version: 1.0.0
+  title: "MOB-04-FIN · Biometria conferida só no app: a digital pedida só na tela"
+  primaryCwe: CWE-603
+  secondaryCwes: [CWE-287, CWE-306]
+  family: mob-biometria-cliente
+  sectors: [financeiro]
+  courseModules: [trained]
+  classifications:
+    - framework: OWASP Top 10
+      edition: "2025"
+      entries:
+        - "A07 Authentication Failures"
+    - framework: OWASP Top 10
+      edition: "2021"
+      entries:
+        - "A07 Identification and Authentication Failures"
+    - framework: OWASP API Security Top 10
+      edition: "2023"
+      entries:
+        - "API2 Broken Authentication"
+    - framework: SANS CWE Top 25
+      edition: "2025"
+      entries:
+        - "Não se enquadra; use o CWE"
+    - framework: SANS CWE Top 25
+      edition: "2024"
+      entries:
+        - "Não se enquadra; use o CWE"
+    - framework: OWASP Mobile Top 10
+      edition: "2024"
+      entries:
+        - "M3 Insecure Authentication/Authorization"
+    - framework: OWASP Mobile Top 10
+      edition: "2016"
+      entries:
+        - "M4 Insecure Authentication"
+    - framework: OWASP MASVS
+      edition: "2023"
+      entries:
+        - "MASVS-AUTH-2"
+        - "MASVS-AUTH-3"
+learning:
+  singleVulnerability: true
+  estimatedMinutes: 35
+  difficulty: intermediate
+  objectives:
+    - Entender a diferença entre a tela pedir a digital e o servidor exigir a digital
+    - Explorar a falha chamando a operação sensível direto na API, sem passar pela biometria
+    - Reconhecer que o servidor precisa receber e validar uma prova da biometria
+    - Corrigir o serviço da operação exigindo uma prova válida e recente
+  story:
+    role: >-
+      Pessoa desenvolvedora do time de apps do banco digital Pagomais
+    application: >-
+      App Pagomais, o app em que o cliente consulta o extrato e faz operações sensíveis
+    context: >-
+      O app de contas da Pagomais pede a digital antes de a transferência por PIX, mas a API executa a operação sem conferir se a biometria aconteceu.
+    mission: >-
+      Executar a operação sem a digital e corrigir a API para exigir uma prova válida da biometria
+  wrapUp:
+    text: |
+      Agora a operação sensível só é executada com uma prova recente da biometria, conferida pelo servidor. Em um app real, vale reforçar:
+
+      - **Tela não é controle.** Pedir a digital na interface é conforto do usuário. Se o servidor não confere nada, basta chamar a API direto (Terminal, proxy, app modificado ou Frida) para pular a tela.
+      - **A prova certa é criptográfica.** No Android, `BiometricPrompt` com `CryptoObject` libera uma chave do Keystore que só funciona depois da digital; no iOS, o Keychain com `kSecAccessControlBiometryCurrentSet` faz o mesmo. O app assina um desafio do servidor com essa chave e o servidor confere a assinatura.
+      - **Prova curta e amarrada.** A prova vale por pouco tempo, para uma conta e, de preferência, para aquela operação. Prova velha, de outra conta ou inventada é recusada.
+      - **Biometria local sozinha não autentica no servidor.** Um retorno `true` do sensor é só um booleano dentro de um app que o atacante controla.
+    references:
+      - title: "OWASP Mobile Top 10 2024: M3 Insecure Authentication/Authorization"
+        url: https://owasp.org/www-project-mobile-top-10/2023-risks/m3-insecure-authentication-authorization
+      - title: "OWASP MASVS"
+        url: https://mas.owasp.org/MASVS/
+      - title: "OWASP MASTG: Testing Local Authentication"
+        url: https://mas.owasp.org/MASTG/
+      - title: "Android: BiometricPrompt com CryptoObject"
+        url: https://developer.android.com/identity/sign-in/biometric-auth
+      - title: "CWE-603: Use of Client-Side Authentication"
+        url: https://cwe.mitre.org/data/definitions/603.html
+variants:
+  - id: python-flask
+    language: python
+    framework: flask
+    image: registry.local/labs/lab-056-mobile@sha256:4700d25eb533328d31b23fc2eb454497c16dfa16cbf5854d660384a2b512c083
+    runtimeProfile: web-basic
+    workspacePath: /workspace
+    startup:
+      command: ["sh", "-c", "python -u -m flask --app app run --host 0.0.0.0 --port 8080 --reload --no-debugger 2>&1 | tee -a /tmp/app.log"]
+      port: 8080
+    resources:
+      cpuMillicores: 500
+      memoryMiB: 512
+      storageMiB: 256
+      pidsMax: 64
+    session:
+      ttlMinutes: 45
+      maxRenewals: 2
+    interfaces: [editor, terminal, web]
+    platform: mobile
+steps:
+  - id: conhecer
+    order: 1
+    title: "Conhecer o app e achar quem executa a operação"
+    explanation: |
+      Você está no time de apps do banco digital Pagomais. No app de contas da Pagomais, a transferência por PIX exige a digital antes de continuar. Um teste de invasão mostrou que, com o token de uma sessão aberta, dá para chamar a mesma operação direto na API, sem passar pela digital.
+
+      **Um laboratório mobile.** Na aba **Aplicação**, o app aparece numa moldura de celular. Ele é um app **simulado** (não há emulador), mas fala com a API do servidor do mesmo jeito que um app Android ou iOS. Toda falha de app mobile termina numa decisão de segurança: quem a toma, o aparelho ou o servidor?
+
+      ```ilustracao
+      mob-biometria-cliente
+      ```
+
+      Siga a operação pelas camadas:
+
+      1. **App** (`static/app.js`): ao tocar em **Transferir R$ 500,00 por PIX**, mostra a folha **Confirme com a digital**. Depois do sensor, pede a prova em `POST /api/biometria/prova` e chama `POST /api/acao` enviando a prova em `X-Prova-Biometria`.
+      2. **Controller** (`controllers/api_controller.py`): recebe `POST /api/acao` e chama o serviço.
+      3. **Serviço** (`services/acao_service.py`): executa a operação. **É aqui que está a falha.**
+
+      As credenciais de teste deste laboratório são:
+
+      - Usuário `ana.ribeiro`, senha `Ana#Pagomais26` (Ana Ribeiro Teixeira).
+    task: |
+      1. Na aba **Aplicação**, entre no app do celular com `ana.ribeiro` e a senha `Ana#Pagomais26`. Toque em **Transferir R$ 500,00 por PIX** e depois em **Tocar no sensor**.
+      2. Na aba **Código**, abra `services/acao_service.py`.
+
+      Informe abaixo o nome do método que executa a operação (o que o controller chama).
+    concept: "Biometria no cliente: a tela pede, mas quem decide?"
+    validatorRef: mob-biometria-cliente/answer/metodo-fin-v1
+    hints:
+      - level: 1
+        text: "A classe `AcaoService` tem um método público além de `__init__`."
+      - level: 2
+        text: "É o método chamado em `POST /api/acao`."
+      - level: 3
+        text: "O valor é `executar`."
+    points: 10
+  - id: explorar
+    order: 2
+    title: "Executar a operação sem a digital"
+    explanation: |
+      A digital é pedida pela tela do app. Mas a API não sabe se a tela apareceu: ela só recebe pedidos HTTP. Você vai chamar a operação direto, com o token de uma sessão aberta, sem prova nenhuma.
+    task: |
+      No **Terminal**, entre pela API e guarde o token:
+
+      ```bash
+      TOKEN=$(curl -s -X POST http://127.0.0.1:8080/api/login \
+        -H "Content-Type: application/json" \
+        -d '{"login":"ana.ribeiro","senha":"Ana#Pagomais26"}' \
+        | python3 -c "import sys, json; print(json.load(sys.stdin)['token'])")
+      echo "$TOKEN"
+      ```
+
+      Agora chame a operação sem a prova da biometria:
+
+      ```bash
+      curl -s -X POST http://127.0.0.1:8080/api/acao -H "Authorization: Bearer $TOKEN"
+      ```
+
+      A operação foi executada sem a digital? Responda **sim** ou **não**.
+    explore: |
+      **Como isso acontece com um app de verdade.** Ferramentas como Frida trocam, em tempo de execução, o retorno do callback da biometria por "sucesso"; um proxy (Burp, mitmproxy) repete a chamada da API sem passar pela tela. Se a decisão está só no app, as duas técnicas funcionam.
+
+      **O que procurar no log.** `grep -i operacao /tmp/app.log` mostra as operações executadas e recusadas.
+    concept: "Sem conferir no servidor, a digital vira enfeite"
+    validatorRef: mob-biometria-cliente/answer/comportamento-fin-v1
+    hints:
+      - level: 1
+        text: "Veja se a resposta traz `executada`."
+      - level: 2
+        text: "Você não mandou o cabeçalho `X-Prova-Biometria`."
+      - level: 3
+        text: "A resposta é `sim`."
+    points: 15
+  - id: medida
+    order: 3
+    title: "Nomear o que o servidor precisa receber"
+    explanation: |
+      Para o servidor saber que a digital aconteceu, o app precisa mandar algo que só existe **depois** do sensor: uma prova emitida (no aparelho real, uma assinatura feita por uma chave do Keystore liberada pela digital). O servidor confere essa ___ antes de executar.
+    task: |
+      Complete: antes de executar, o servidor precisa conferir a ___ da biometria.
+
+      Responda com uma palavra.
+    concept: "O servidor confere a prova da biometria"
+    validatorRef: mob-biometria-cliente/answer/defesa-fin-v1
+    hints:
+      - level: 1
+        text: "Veja o nome do cabeçalho que o app envia."
+      - level: 2
+        text: "O cabeçalho é `X-Prova-Biometria`."
+      - level: 3
+        text: "A resposta é `prova`."
+    points: 15
+  - id: onde
+    order: 4
+    title: "Decidir quem exige a digital"
+    explanation: |
+      A tela de digital melhora a experiência e protege contra quem pega o celular desbloqueado. Mas a regra "esta operação exige biometria" só vale se for aplicada onde o atacante não mexe.
+    task: |
+      Quem deve decidir se a digital foi exigida antes da operação: o **app** ou o **servidor**?
+
+      Responda com uma palavra.
+    concept: "Quem decide é o servidor"
+    validatorRef: mob-biometria-cliente/answer/onde-fin-v1
+    hints:
+      - level: 1
+        text: "O app está nas mãos do usuário, e do atacante."
+      - level: 2
+        text: "Você pulou a tela chamando a API direto."
+      - level: 3
+        text: "A resposta é `servidor`."
+    points: 15
+  - id: corrigir
+    order: 5
+    title: "Exigir a prova da biometria no servidor"
+    explanation: |
+      **Por que a falha existe.** `executar` chama `_registrar` direto, sem olhar o parâmetro `prova`.
+
+      **A correção.** Antes de registrar, conferir que a prova existe, é desta conta e tem menos de 60 segundos (`self._provas.valida`). Se não for, levantar `PermissionError`: o controller responde `401 autenticacao recente exigida`.
+    task: |
+      Abra `services/acao_service.py` e troque as duas linhas do corpo de `executar` (a partir do comentário) por estas:
+
+      ```python
+              # O servidor exige a prova da digital, emitida para ESTA conta há menos de 60 s.
+              if not prova or not self._provas.valida(prova, conta_id):
+                  raise PermissionError("autenticacao recente exigida")
+              return self._registrar(conta_id)
+      ```
+
+      Salve com **Ctrl+S**. A aplicação reinicia. Então:
+
+      1. na aba **Aplicação**, entre de novo, toque em **Transferir R$ 500,00 por PIX** e em **Tocar no sensor**: a operação continua funcionando;
+      2. no **Terminal**, refaça o login e o `curl` sem a prova e veja `autenticacao recente exigida`;
+      3. clique em **Validar**.
+    explore: |
+      **Se algo não funcionar depois de salvar.** Um recuo errado derruba a aplicação e o app no celular para de responder. No **Terminal**:
+
+      ```bash
+      grep -iE "error|traceback" /tmp/app.log | tail -n 15
+      ```
+
+      **O que procurar.** `IndentationError` aponta a linha com recuo diferente: o corpo do método fica com 8 espaços e o que está dentro de um `if`, com 12. Copie o bloco da tarefa sem mudar o recuo.
+    concept: "Correção: sem prova válida da biometria, a operação é recusada"
+    validatorRef: mob-biometria-cliente/python-flask/prova-exigida-fin-v1
+    hints:
+      - level: 1
+        text: "A mudança é só em `services/acao_service.py`, no método `executar`."
+      - level: 2
+        text: "Use `self._provas.valida(prova, conta_id)`; só checar se o cabeçalho veio não basta."
+      - level: 3
+        text: "Copie o bloco da tarefa sem mudar o recuo: 8 espaços e 12 dentro do `if`."
+    points: 45
+policy:
+  sequentialUnlock: true
+  allowStepRetry: true
+  persistProgressAcrossReset: true
+  allowSolutionReveal: false
+  finalPassingScore: 100

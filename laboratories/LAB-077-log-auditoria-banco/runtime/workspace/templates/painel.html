@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block conteudo %}
+<h1>Painel do corretor</h1>
+<p class="ajuda">Dados da sua conta e a atividade de segurança registrada para ela.</p>
+
+<dl class="dados">
+  <dt>Titular</dt><dd>{{ conta.nome }}</dd>
+</dl>
+
+<h2>Atividade de segurança da sua conta</h2>
+<p class="ajuda">Os mesmos eventos que o time de monitoramento vê na trilha de auditoria.</p>
+<table class="lista">
+  <tr><th>Quando</th><th>Evento</th><th>Endereço</th></tr>
+  {% for momento, evento, ip in eventos %}
+  <tr><td>{{ momento }}</td><td><code>{{ evento }}</code></td><td>{{ ip }}</td></tr>
+  {% else %}
+  <tr><td colspan="3">Nenhum evento.</td></tr>
+  {% endfor %}
+</table>
+
+<p class="banner reforcado">Você está autenticado. Use <a href="{{ url_for('auth.sair') }}">Sair</a> para encerrar a sessão.</p>
+{% endblock %}

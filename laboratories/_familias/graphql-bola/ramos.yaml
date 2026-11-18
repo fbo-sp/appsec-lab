@@ -1,0 +1,97 @@
+# Família A17 graphql-bola (ADR-021): o que muda por ramo. O modelo comum está em ./modelo.
+# Depois de editar, rode:  uv run python scripts/gerar-familia.py graphql-bola
+# Logins/senhas e os pedidos fictícios estão espelhados em
+# apps/backend/app/validation/suites_familias.py (registro protegido); os testes Docker conferem os
+# dois lados. A falha é BOLA: services/pedido_service.py resolve o pedido só pelo id, sem conferir se
+# o pedido pertence ao usuário logado. Descrições sem acento de propósito: a resposta JSON é ASCII.
+ramos:
+  - destino: LAB-047-graphql-fintech
+    vars:
+      lab_id: LAB-047
+      versao: 1.0.0
+      codigo: A17-FIN
+      ramo: fin
+      setor: financeiro
+      imagem: lab-047-pedidos
+      titulo: o pedido de qualquer um, só trocando o id
+      empresa: Pagomais
+      marca: "₽ Pagomais"
+      app_nome: Portal de Pagamentos
+      cor: "#1d4ed8"
+      papel: Pessoa desenvolvedora do time de API da fintech Pagomais
+      aplicacao: Portal de Pagamentos, onde o cliente consulta seus pagamentos por uma API GraphQL
+      contexto: O cliente consulta seus pagamentos pela API GraphQL. Um teste de invasão alertou que, logado como um cliente, dá para ler o pagamento de outro cliente só trocando o id na query — BOLA.
+      missao: Confirmar que a API devolve o pedido de outro usuário e corrigir conferindo o dono no resolver
+      painel_titulo: Portal de Pagamentos
+      painel_desc: Consulte seus pagamentos pela API GraphQL.
+      login_desc: Entre com as credenciais do cliente para acessar seus pagamentos.
+      banco: pagomais_pedidos
+      login_a: ana.ribeiro
+      senha_a: "Ana#Pagomais26"
+      historia_abertura: 'Você está no time de API da fintech Pagomais. O cliente consulta seus pagamentos por uma API GraphQL (POST /graphql). O time de segurança abriu um chamado: logado como um cliente, dá para ler o pagamento de qualquer outro cliente só trocando o id na query. A API confere que você está logado, mas não confere se o pagamento pedido é seu — é BOLA, a autorização por objeto quebrada.'
+      seed_contas:
+        - [1, ana.ribeiro, Ana Ribeiro Teixeira, "Ana#Pagomais26"]
+        - [2, carlos.moura, Carlos Moura Pinto, "Carlos#Pagomais26"]
+      seed_pedidos:
+        - [1, 1, "Pagamento ao fornecedor Vale Insumos", 1250.0]
+        - [2, 2, "Pagamento ao fornecedor Norte Logistica", 2300.0]
+  - destino: LAB-048-graphql-saude
+    vars:
+      lab_id: LAB-048
+      versao: 1.0.0
+      codigo: A17-SAU
+      ramo: sau
+      setor: saude
+      imagem: lab-048-pedidos
+      titulo: o pedido de qualquer um, só trocando o id
+      empresa: Clínica Lumen
+      marca: "✚ Lumen"
+      app_nome: Portal de Exames
+      cor: "#0e7490"
+      papel: Pessoa desenvolvedora do time de API da Clínica Lumen
+      aplicacao: Portal de Exames, onde o paciente consulta seus pedidos de exame por uma API GraphQL
+      contexto: O paciente consulta seus pedidos de exame pela API GraphQL. Uma auditoria apontou que, logado como um paciente, dá para ler o pedido de exame de outro paciente só trocando o id na query — BOLA.
+      missao: Confirmar que a API devolve o pedido de outro usuário e corrigir conferindo o dono no resolver
+      painel_titulo: Portal de Exames
+      painel_desc: Consulte seus pedidos de exame pela API GraphQL.
+      login_desc: Entre com as credenciais do paciente para acessar seus pedidos de exame.
+      banco: lumen_pedidos
+      login_a: marcos.tavares
+      senha_a: "Marcos#Lumen26"
+      historia_abertura: 'Você é do time de API da Clínica Lumen. O paciente consulta seus pedidos de exame por uma API GraphQL (POST /graphql). Numa auditoria, a equipe apontou que, logado como um paciente, dá para ler o pedido de exame de qualquer outro paciente só trocando o id na query. A API confere que você está logado, mas não confere se o pedido de exame é seu — é BOLA, a autorização por objeto quebrada.'
+      seed_contas:
+        - [1, marcos.tavares, Marcos Tavares Lima, "Marcos#Lumen26"]
+        - [2, renata.borges, Renata Borges Nunes, "Renata#Lumen26"]
+      seed_pedidos:
+        - [1, 1, "Pedido de exame: hemograma completo", 90.0]
+        - [2, 2, "Pedido de exame: ressonancia de joelho", 850.0]
+  - destino: LAB-049-graphql-industria
+    vars:
+      lab_id: LAB-049
+      versao: 1.0.0
+      codigo: A17-IND
+      ramo: ind
+      setor: industria-energia
+      imagem: lab-049-pedidos
+      titulo: o pedido de qualquer um, só trocando o id
+      empresa: Aurora Energia
+      marca: "⚡ Aurora"
+      app_nome: Portal de Ordens
+      cor: "#b45309"
+      papel: Pessoa desenvolvedora do time de API da Aurora Energia
+      aplicacao: Portal de Ordens, onde o operador consulta suas ordens de serviço por uma API GraphQL
+      contexto: O operador consulta suas ordens de serviço pela API GraphQL. Um pentest apontou que, logado como um operador, dá para ler a ordem de outro operador só trocando o id na query — BOLA.
+      missao: Confirmar que a API devolve o pedido de outro usuário e corrigir conferindo o dono no resolver
+      painel_titulo: Portal de Ordens
+      painel_desc: Consulte suas ordens de serviço pela API GraphQL.
+      login_desc: Entre com as credenciais do operador para acessar suas ordens de serviço.
+      banco: aurora_pedidos
+      login_a: diego.campos
+      senha_a: "Diego#Aurora26"
+      historia_abertura: 'Você está no time de API da Aurora Energia. O operador consulta suas ordens de serviço por uma API GraphQL (POST /graphql). Um pentest apontou que, logado como um operador, dá para ler a ordem de serviço de qualquer outro operador só trocando o id na query. A API confere que você está logado, mas não confere se a ordem pedida é sua — é BOLA, a autorização por objeto quebrada.'
+      seed_contas:
+        - [1, diego.campos, Diego Campos Ferraz, "Diego#Aurora26"]
+        - [2, sonia.barros, Sonia Barros Teles, "Sonia#Aurora26"]
+      seed_pedidos:
+        - [1, 1, "Ordem de servico: manutencao da bomba 4", 4200.0]
+        - [2, 2, "Ordem de servico: parada da turbina 2", 9800.0]

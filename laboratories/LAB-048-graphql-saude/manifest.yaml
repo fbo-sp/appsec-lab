@@ -1,0 +1,243 @@
+# LAB-048 (A17-SAU): BOLA numa API GraphQL (CWE-639) no Portal de Exames da Clínica Lumen (Flask + SQLite).
+# CONTÉM VULNERABILIDADE INTENCIONAL. Uso exclusivo no runtime Docker LOCAL (ADR-008), em rede
+# interna da sessão. Dados 100% fictícios. Família A17 graphql-bola (ADR-021): gerado por
+# scripts/gerar-familia.py a partir de laboratories/_familias/graphql-bola; não edite este arquivo à mão.
+#
+# ATENÇÃO: o digest abaixo é uma FIXTURE (sha256 de um texto fixo), não uma imagem publicada.
+# scripts/lab-local.sh e .ps1 trocam pela imagem construída localmente antes de registrar.
+apiVersion: labs.cecyber.io/v1alpha1
+kind: AppSecLab
+metadata:
+  id: LAB-048
+  version: 1.0.0
+  title: "A17-SAU · BOLA em GraphQL: o pedido de qualquer um, só trocando o id"
+  primaryCwe: CWE-639
+  secondaryCwes: [CWE-285, CWE-862]
+  family: graphql-bola
+  sectors: [saude]
+  courseModules: [trained]
+  classifications:
+    - framework: OWASP Top 10
+      edition: "2025"
+      entries:
+        - "A01 Broken Access Control"
+    - framework: OWASP Top 10
+      edition: "2021"
+      entries:
+        - "A01 Broken Access Control"
+    - framework: OWASP API Security Top 10
+      edition: "2023"
+      entries:
+        - "API1 Broken Object Level Authorization"
+    - framework: SANS CWE Top 25
+      edition: "2025"
+      entries:
+        - "Não se enquadra; use o CWE"
+    - framework: SANS CWE Top 25
+      edition: "2024"
+      entries:
+        - "Não se enquadra; use o CWE"
+learning:
+  singleVulnerability: true
+  estimatedMinutes: 35
+  difficulty: intermediate
+  objectives:
+    - Entender que BOLA é a autorização por objeto quebrada, mesmo com o usuário autenticado
+    - Explorar a falha pedindo, pela API GraphQL, o objeto de outro usuário só trocando o id
+    - Reconhecer que o resolver precisa conferir o dono de cada objeto, não só se há login
+    - Corrigir o resolver conferindo que o objeto pertence ao usuário logado
+  story:
+    role: Pessoa desenvolvedora do time de API da Clínica Lumen
+    application: Portal de Exames, onde o paciente consulta seus pedidos de exame por uma API GraphQL
+    context: >-
+      O paciente consulta seus pedidos de exame pela API GraphQL. Uma auditoria apontou que, logado como um paciente, dá para ler o pedido de exame de outro paciente só trocando o id na query — BOLA.
+    mission: Confirmar que a API devolve o pedido de outro usuário e corrigir conferindo o dono no resolver
+  wrapUp:
+    text: |
+      Agora o resolver confere o dono de cada pedido, então um usuário só lê os seus. Em um sistema real, vale reforçar:
+
+      - **Autenticação não é autorização.** Saber *quem* é o usuário (login) é diferente de decidir *o que* ele pode ver. BOLA acontece quando a API confere o login mas devolve qualquer objeto pelo id, sem checar o dono. É a falha nº 1 da OWASP API Security Top 10.
+      - **A checagem é por objeto, no servidor.** Para cada objeto que a API devolve (pedido, exame, documento, conta), confira no servidor se o usuário logado tem direito àquele objeto específico. Não confie em id que vem do cliente como se fosse sempre o dele.
+      - **GraphQL não dá autorização de graça.** O resolver de cada campo precisa aplicar a mesma regra de acesso que você aplicaria numa rota REST. Trocar o transporte (REST, GraphQL, gRPC) não muda a responsabilidade.
+      - **Ids difíceis de adivinhar não resolvem.** Usar UUID em vez de 1, 2, 3 só dificulta o chute; não é controle de acesso. A defesa é checar o dono, não esconder o id.
+    references:
+      - title: "OWASP API Security Top 10 2023: API1 Broken Object Level Authorization"
+        url: https://owasp.org/API-Security/editions/2023/en/0xa1-broken-object-level-authorization/
+      - title: "OWASP Top 10:2025: A01 Broken Access Control"
+        url: https://top10.owasp.org/2025/A01_2025-Broken_Access_Control/
+      - title: "OWASP Top 10:2021: A01 Broken Access Control"
+        url: https://owasp.org/Top10/A01_2021-Broken_Access_Control/
+      - title: "CWE-639: Authorization Bypass Through User-Controlled Key"
+        url: https://cwe.mitre.org/data/definitions/639.html
+      - title: "OWASP Cheat Sheet: Authorization"
+        url: https://cheatsheetseries.owasp.org/cheatsheets/Authorization_Cheat_Sheet.html
+variants:
+  - id: python-flask
+    language: python
+    framework: flask
+    image: registry.local/labs/lab-048-pedidos@sha256:56e3073654c7fc7622fe738b7101f34601891098e190e8c7030f47e025248b42
+    runtimeProfile: web-basic
+    workspacePath: /workspace
+    startup:
+      command: ["sh", "-c", "python -u -m flask --app app run --host 0.0.0.0 --port 8080 --reload --no-debugger 2>&1 | tee -a /tmp/app.log"]
+      port: 8080
+    resources:
+      cpuMillicores: 500
+      memoryMiB: 512
+      storageMiB: 256
+      pidsMax: 64
+    session:
+      ttlMinutes: 45
+      maxRenewals: 2
+    interfaces: [editor, terminal, web]
+steps:
+  - id: conhecer
+    order: 1
+    title: Conhecer a API GraphQL e achar o resolver do pedido
+    explanation: |
+      Você é do time de API da Clínica Lumen. O paciente consulta seus pedidos de exame por uma API GraphQL (POST /graphql). Numa auditoria, a equipe apontou que, logado como um paciente, dá para ler o pedido de exame de qualquer outro paciente só trocando o id na query. A API confere que você está logado, mas não confere se o pedido de exame é seu — é BOLA, a autorização por objeto quebrada.
+
+      A consulta é feita por uma API `POST /graphql`, com um corpo JSON como `{"query": "{ pedido(id: 1) { descricao valor } }", "variables": {"id": 1}}`. (Para o laboratório ficar direto, a API é um GraphQL **simplificado**: só a operação `pedido` existe e o id vem de `variables.id`.)
+
+      ```ilustracao
+      graphql-bola
+      ```
+
+      Siga o pedido pelas camadas:
+
+      1. **Controller** (`controllers/painel_controller.py`): recebe a query, pega o id do usuário logado da sessão e chama o resolver.
+      2. **Serviço/resolver** (`services/pedido_service.py`): devolve o pedido. **É aqui que falta conferir o dono.**
+
+      As credenciais válidas de um usuário, neste laboratório, são:
+
+      - Usuário `marcos.tavares`, senha `Marcos#Lumen26` (dono do pedido de id `1`).
+    task: |
+      1. Na aba **Aplicação**, entre com `marcos.tavares` e a senha `Marcos#Lumen26`. Você chega ao **Portal de Exames**.
+      2. Na aba **Código**, abra `services/pedido_service.py`.
+
+      Informe abaixo o nome do método que resolve o pedido (o que o controller chama).
+    concept: BOLA — a API devolve o objeto pelo id sem conferir o dono
+    validatorRef: graphql-bola/answer/metodo-sau-v1
+    hints:
+      - level: 1
+        text: 'Em `services/pedido_service.py`, a classe `PedidoService` tem um único método público.'
+      - level: 2
+        text: É o método que o controller chama, passando o id do usuário logado e o id do pedido.
+      - level: 3
+        text: O valor é `resolver`.
+    points: 10
+  - id: explorar
+    order: 2
+    title: Pedir o pedido de outro usuário só trocando o id
+    explanation: |
+      O resolver recebe o id do usuário logado **e** o id do pedido, mas usa só o id do pedido para buscar no banco. Ele não compara o dono do pedido com quem está logado. Então, trocando o id na query, você pede o objeto de qualquer outro usuário.
+    task: |
+      Logado como `marcos.tavares` (dono do pedido `1`), use o **Terminal** para pedir o pedido de **outro** usuário, de id `2`:
+
+      ```bash
+      curl -s -b /tmp/cookie.txt -c /tmp/cookie.txt \
+        -X POST http://127.0.0.1:8080/login \
+        --data "login=marcos.tavares&senha=Marcos#Lumen26" -o /dev/null
+      curl -s -b /tmp/cookie.txt -H "Content-Type: application/json" \
+        -X POST http://127.0.0.1:8080/graphql \
+        --data '{"query":"{ pedido(id: 2) { descricao valor } }","variables":{"id":2}}'
+      ```
+
+      Veja que a resposta traz a descrição do pedido `2`, que **não é seu**. Informe abaixo se a API **devolve** o pedido de outro usuário ou **nega** o acesso.
+    explore: |
+      **Por que isso é grave.** Com um laço trocando o id (`1, 2, 3, …`), um atacante baixa os objetos de todos os usuários — dados de pagamento, exames, ordens. É exatamente o cenário de BOLA/IDOR: a API confia num id que o cliente escolhe. Ids em UUID só dificultam o chute; não são controle de acesso.
+    concept: Trocando o id, a API devolve o objeto de outro usuário
+    validatorRef: graphql-bola/answer/comportamento-sau-v1
+    hints:
+      - level: 1
+        text: Compare a descrição que voltou com a do seu próprio pedido (id `1`).
+      - level: 2
+        text: O pedido `2` é de outro usuário, mas a API devolveu mesmo assim.
+      - level: 3
+        text: A resposta é `devolve`.
+    points: 15
+  - id: medida
+    order: 3
+    title: Nomear o que o resolver precisa conferir
+    explanation: |
+      A API já confere que você está **logado** (a rota exige login). O que falta é conferir, para **cada objeto**, se ele pertence ao usuário logado. O resolver tem o id do usuário logado em mãos; basta comparar com o dono do pedido.
+    task: |
+      Complete a frase: antes de devolver o pedido, o resolver precisa conferir se o ___ do pedido é o usuário logado.
+
+      Responda com uma palavra (quem é o titular do objeto).
+    concept: O resolver precisa conferir o dono do objeto
+    validatorRef: graphql-bola/answer/defesa-sau-v1
+    hints:
+      - level: 1
+        text: É quem o pedido pertence; está na coluna `dono_id` do pedido.
+      - level: 2
+        text: Compare `pedido.dono_id` com o id do usuário logado.
+      - level: 3
+        text: A resposta é `dono`.
+    points: 15
+  - id: onde
+    order: 4
+    title: Separar estar logado de ter direito ao objeto
+    explanation: |
+      É tentador achar que, se a rota exige login, está tudo protegido. Não está: **autenticação** responde *quem é você*; **autorização por objeto** responde *você pode ver este objeto específico?*. BOLA é exatamente confundir as duas — exigir login e esquecer de checar o dono de cada objeto.
+    task: |
+      Estar autenticado (logado) já garante, sozinho, que você só consegue ver os **seus** pedidos?
+
+      Responda com uma palavra: sim ou não.
+    concept: Autenticação não é autorização por objeto
+    validatorRef: graphql-bola/answer/onde-sau-v1
+    hints:
+      - level: 1
+        text: Você estava logado e mesmo assim leu o pedido de outro usuário.
+      - level: 2
+        text: Login diz quem você é; não diz a quais objetos você tem direito.
+      - level: 3
+        text: A resposta é `não`.
+    points: 15
+  - id: corrigir
+    order: 5
+    title: Conferir o dono do pedido no resolver
+    explanation: |
+      **Por que a falha existe.** `resolver` recebe `usuario_id`, mas busca o pedido só por `pedido_id` e devolve. O dono nunca é comparado.
+
+      **A correção.** Depois de buscar o pedido, conferir se ele existe **e** se o `dono_id` é o usuário logado. Se não for (ou não existir), devolver `None` — a API responde "acesso negado", sem vazar o objeto de ninguém.
+    task: |
+      Abra `services/pedido_service.py` e troque o corpo do método `resolver` (as duas linhas a partir do comentário) por este:
+
+      ```python
+              # Confere o dono: só devolve o pedido se ele pertencer ao usuário logado.
+              pedido = self._repositorio.buscar(pedido_id)
+              if pedido is None or pedido.dono_id != usuario_id:
+                  return None
+              return pedido
+      ```
+
+      Salve com **Ctrl+S**. A aplicação reinicia. Então, no **Terminal** (logado como `marcos.tavares`):
+
+      1. peça o pedido `1` (o seu) e veja que ele continua voltando;
+      2. peça o pedido `2` (de outro) e veja que agora a resposta é **"acesso negado"**;
+      3. clique em **Validar**.
+    explore: |
+      **Se algo não funcionar depois de salvar.** Um recuo errado derruba a aplicação. No **Terminal**:
+
+      ```bash
+      grep -iE "error|traceback" /tmp/app.log | tail -n 15
+      ```
+
+      **O que procurar.** `IndentationError` aponta a linha com recuo diferente: o corpo do método fica com 8 espaços e o `return None` de dentro do `if` com 12. Copie o bloco da tarefa sem mudar o recuo.
+    concept: Correção do BOLA conferindo o dono do objeto no resolver
+    validatorRef: graphql-bola/python-flask/resolver-protegido-sau-v1
+    hints:
+      - level: 1
+        text: 'A mudança é só em `services/pedido_service.py`, no método `resolver`.'
+      - level: 2
+        text: "Depois de buscar, compare `pedido.dono_id` com `usuario_id` e devolva `None` se não baterem."
+      - level: 3
+        text: Copie o bloco da tarefa sem mudar o recuo. O corpo do método fica com 8 espaços.
+    points: 45
+policy:
+  sequentialUnlock: true
+  allowStepRetry: true
+  persistProgressAcrossReset: true
+  allowSolutionReveal: false
+  finalPassingScore: 100

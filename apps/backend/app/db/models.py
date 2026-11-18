@@ -38,6 +38,8 @@ class User(Base):
     idp_subject: Mapped[str] = mapped_column(String(255), unique=True)
     display_name: Mapped[str | None] = mapped_column(String(200))
     created_at: Mapped[datetime] = mapped_column(TZ)
+    # ADR-026: aparência escolhida pelo usuário (claro | codigo | escuro); None = padrão do portal.
+    ui_theme: Mapped[str | None] = mapped_column(String(16))
 
 
 class Lab(Base):

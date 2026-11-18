@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block conteudo %}
+<h1>Área do Cooperado</h1>
+<p class="ajuda">Seu acesso ao Acesso Cooperado da Credimova.</p>
+
+<dl class="dados">
+  <dt>Nome</dt><dd>{{ session['usuario_nome'] }}</dd>
+  <dt>Acesso</dt><dd>Acesso Cooperado</dd>
+</dl>
+
+{% if reforcada %}
+<p class="banner reforcado">Sua senha está guardada no formato reforçado (com sal e custo de cálculo).</p>
+{% else %}
+<p class="banner antigo">Sua senha ainda está guardada no formato antigo, importado do sistema legado "Cooperar 2000". Esse formato é o alvo da correção deste laboratório.</p>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,318 @@
+# LAB-010 (A5-IND): Mass Assignment (CWE-915) no Portal de Fornecedores da Termoverde Geração (Flask + SQLite).
+# CONTÉM VULNERABILIDADE INTENCIONAL. Uso exclusivo no runtime Docker LOCAL (ADR-008), em rede
+# interna da sessão. Dados 100% fictícios (domínio .example). Família A5 mass-assignment (ADR-021): gerado
+# por scripts/gerar-familia.py a partir de laboratories/_familias/mass-assignment; não edite à mão.
+#
+# ATENÇÃO: o digest abaixo é uma FIXTURE (sha256 de um texto fixo), não uma imagem publicada.
+# scripts/lab-local.sh e .ps1 trocam pela imagem construída localmente antes de registrar.
+apiVersion: labs.cecyber.io/v1alpha1
+kind: AppSecLab
+metadata:
+  id: LAB-010
+  version: 1.0.0
+  title: "A5-IND · Mass Assignment: o fornecedor que se aprovou sozinho"
+  primaryCwe: CWE-915
+  secondaryCwes: []
+  family: mass-assignment
+  sectors: [industria-energia]
+  courseModules: [master]
+  classifications:
+    - framework: OWASP Top 10
+      edition: "2025"
+      entries:
+        - "A08 Software or Data Integrity Failures"
+    - framework: OWASP Top 10
+      edition: "2021"
+      entries:
+        - "A08 Software and Data Integrity Failures"
+    - framework: OWASP API Security Top 10
+      edition: "2023"
+      entries:
+        - "API3 Broken Object Property Level Authorization"
+    - framework: OWASP API Security Top 10
+      edition: "2019"
+      entries:
+        - "API6 Mass Assignment"
+    - framework: SANS CWE Top 25
+      edition: "2025"
+      entries:
+        - "Não se enquadra; use o CWE"
+    - framework: SANS CWE Top 25
+      edition: "2024"
+      entries:
+        - "Não se enquadra; use o CWE"
+learning:
+  singleVulnerability: true
+  estimatedMinutes: 35
+  difficulty: beginner
+  objectives:
+    - Ler uma API JSON e descobrir quais campos o servidor guarda para cada usuário
+    - Entender por que repassar o corpo inteiro da requisição para o banco permite alterar campos protegidos
+    - Elevar o próprio benefício e o próprio perfil de acesso com uma única requisição, com dados fictícios
+    - Corrigir a falha com uma lista de campos permitidos no serviço, sem quebrar a edição legítima
+  story:
+    role: Desenvolvedor(a) do time de sistemas corporativos da Termoverde Geração
+    application: Portal de Fornecedores, tela "Meu perfil" e a API /api/perfil
+    context: >-
+      Fornecedores atualizam o próprio cadastro pelo Portal de Fornecedores, que usa a API de perfil. O time de compras estranhou um fornecedor pequeno faturando pedidos grandes sem aprovação e pediu uma análise da API.
+    mission: Descobrir como a categoria mudou, demonstrar o impacto e corrigir o serviço
+  wrapUp:
+    text: |
+      Agora a API só grava os campos que a regra de negócio permite ao próprio usuário. Em um sistema real, vale reforçar outras camadas:
+
+      - **Um objeto de entrada por operação.** Em vez de um dicionário solto, declare o que cada rota aceita (por exemplo, um modelo `pydantic` ou um `dataclass` só com `email` e `telefone`) e recuse campos extras. Frameworks chamam isso de *DTO* ou *schema* de entrada.
+      - **Lista de permissão, nunca de bloqueio.** Uma lista de campos proibidos esquece a próxima coluna criada no banco. A lista de permitidos falha do jeito seguro: um campo novo só fica editável quando alguém decide isso.
+      - **Campos sensíveis com rota própria.** Mudar `perfil` ou `categoria` é uma operação de outra pessoa (um administrador, um fluxo de aprovação), com autorização e trilha de auditoria próprias.
+      - **O mesmo erro em ORMs.** `Model(**request.json)`, `obj.update(request.json)`, `setattr` em laço, `fill()` sem `$fillable` no Laravel e *binding* automático no Spring e no ASP.NET são a mesma falha com outro nome.
+      - **A resposta também conta.** A API devolve o perfil e o categoria do fornecedor do usuário. Devolver só o necessário (OWASP API3) dificulta descobrir os campos internos.
+    references:
+      - title: "OWASP Cheat Sheet: Mass Assignment"
+        url: https://cheatsheetseries.owasp.org/cheatsheets/Mass_Assignment_Cheat_Sheet.html
+      - title: "OWASP API Security Top 10 2023: API3 Broken Object Property Level Authorization"
+        url: https://owasp.org/API-Security/editions/2023/en/0xa3-broken-object-property-level-authorization/
+      - title: "OWASP Top 10:2025: A08 Software or Data Integrity Failures"
+        url: https://owasp.org/Top10/2025/A08_2025-Software_or_Data_Integrity_Failures/
+      - title: "CWE-915: Improperly Controlled Modification of Dynamically-Determined Object Attributes"
+        url: https://cwe.mitre.org/data/definitions/915.html
+variants:
+  - id: python-flask
+    language: python
+    framework: flask
+    image: registry.local/labs/lab-010-massa@sha256:bd73890c1fd4eb749f86b2dc75637cdcb95985df0a322318a2283433714306a9
+    runtimeProfile: web-basic
+    workspacePath: /workspace
+    startup:
+      # A saída do processo (inclusive erros de importação) também vai para /tmp/app.log.
+      command: ["sh", "-c", "python -u -m flask --app app run --host 0.0.0.0 --port 8080 --reload --no-debugger 2>&1 | tee -a /tmp/app.log"]
+      port: 8080
+    resources:
+      cpuMillicores: 500
+      memoryMiB: 512
+      storageMiB: 256
+      pidsMax: 64
+    session:
+      ttlMinutes: 45
+      maxRenewals: 2
+    interfaces: [editor, terminal, web]
+steps:
+  - id: conhecer
+    order: 1
+    title: Conhecer a tela Meu perfil
+    explanation: |
+      Na **atribuição em massa** (*mass assignment*), a aplicação recebe um conjunto de campos do usuário e grava **todos** de uma vez no objeto ou na tabela. Se ninguém confere **quais** campos chegaram, o usuário altera também o que não aparece na tela.
+
+      A tela **Meu perfil** do Portal de Fornecedores deixa o fornecedor trocar só o e-mail e o telefone. Por baixo, ela chama uma API JSON:
+
+      - `GET /api/perfil` devolve os dados do usuário logado;
+      - `PATCH /api/perfil` recebe um JSON com os campos a atualizar.
+
+      As credenciais de teste deste laboratório são:
+
+      - Fornecedor Rafael Dutra, da Dutra Manutenção Elétrica: usuário `rafael.dutra`, senha `Rafael@2026`.
+    task: |
+      1. Na aba **Aplicação**, entre com o usuário `rafael.dutra` e a senha `Rafael@2026`.
+      2. Em **Atualizar contato**, troque o telefone por qualquer outro número e clique em **Salvar**.
+      3. Na barra de endereço da aba **Aplicação**, abra `/api/perfil` e veja o JSON que a tela usa.
+
+      Informe abaixo o valor do campo `perfil` no JSON.
+    explore: |
+      **Por que olhar a API, e não só a tela.** A tela mostra 6 informações e deixa editar 2. A API mostra **todos** os campos que o servidor guarda para você, com o nome exato de cada um. É assim que um atacante descobre o que tentar alterar: lendo as respostas da própria aplicação.
+
+      **O que procurar.** Campos que dizem **o que você pode fazer** (`perfil`) ou **quanto vale a sua conta** (`categoria`). Nenhum deles aparece no formulário, mas os dois estão no mesmo registro que o telefone.
+    concept: Campos visíveis na API além dos editáveis na tela
+    validatorRef: mass-assignment/answer/role-ind-v1
+    hints:
+      - level: 1
+        text: Digite `/api/perfil` na barra de endereço da aba **Aplicação** e pressione Enter. O resultado é um JSON.
+      - level: 2
+        text: Procure, no JSON, a chave `"perfil"`. O valor está entre aspas logo depois dos dois-pontos.
+      - level: 3
+        text: O valor é `fornecedor`.
+    points: 10
+  - id: ler-codigo
+    order: 2
+    title: Seguir o JSON até o banco
+    explanation: |
+      O JSON do `PATCH` passa por três camadas:
+
+      1. **Controller** (`controllers/perfil_controller.py`): lê o corpo com `request.get_json()` e chama o serviço.
+      2. **Serviço** (`services/perfil_service.py`): o método `atualizar_perfil` confere o formato do e-mail e do telefone e repassa o dicionário **inteiro** para o repositório.
+      3. **Repositório** (`repositories/usuario_repository.py`): o método `atualizar` monta o `UPDATE` com cada chave do dicionário que for uma coluna da tabela (`COLUNAS_ATUALIZAVEIS`).
+
+      ```ilustracao
+      mass-assignment
+      ```
+
+      A lista do repositório evita SQL injection pelo nome do campo, mas não diz **quem** pode alterar **o quê**. O comentário do serviço revela a suposição do time: "a tela só envia e-mail e telefone". O servidor confia no formulário.
+    task: |
+      Na aba **Código**, abra `services/perfil_service.py` e veja o dicionário `DESCRICOES`, que traduz cada valor de `categoria` em benefício para o fornecedor.
+
+      Informe abaixo o valor de `categoria` que dá o **maior** benefício.
+    concept: Confiança no formulário em vez de regra no servidor
+    validatorRef: mass-assignment/answer/business-value-ind-v1
+    hints:
+      - level: 1
+        text: '`DESCRICOES` fica no topo do arquivo, logo depois dos imports. Cada linha é `"valor": "benefício"`.'
+      - level: 2
+        text: 'O seu valor atual é `padrao`. Procure o outro.'
+      - level: 3
+        text: O valor é `estrategico`.
+    points: 15
+  - id: elevar-beneficio
+    order: 3
+    title: Mudar o próprio categoria do fornecedor
+    explanation: |
+      O navegador só manda o que o JavaScript da tela monta. Mas qualquer pessoa pode chamar a mesma API com outra ferramenta, por exemplo o `curl`, e mandar **outros** campos no JSON.
+
+      O primeiro comando faz login e guarda o cookie de sessão em `/tmp/sessao.txt`. O segundo envia um `PATCH` com o campo `categoria`, que a tela nunca envia.
+
+      Na Termoverde, um fornecedor estratégico fatura pedidos de até R$ 750 mil sem passar pela mesa de compras. É o atalho para notas superfaturadas sem nenhuma aprovação.
+    task: |
+      Na aba **Terminal**, rode os dois comandos, um de cada vez:
+
+      ```bash
+      curl -s -c /tmp/sessao.txt -d "login=rafael.dutra&senha=Rafael@2026" http://127.0.0.1:8080/login > /dev/null
+      ```
+
+      ```bash
+      curl -s -b /tmp/sessao.txt -X PATCH -H "Content-Type: application/json" -d '{"categoria": "estrategico"}' http://127.0.0.1:8080/api/perfil
+      ```
+
+      Depois, na aba **Aplicação**, clique em **recarregar** na tela **Meu perfil**. A linha **Categoria do fornecedor** mudou.
+
+      Informe abaixo o novo valor máximo de pedido sem aprovação, só com números (por exemplo, 5000).
+    explore: |
+      **Por que ler o log depois do ataque.** O serviço registra quais campos cada `PATCH` gravou. Em um incidente real, é esse registro que mostra ao time de resposta que alguém mexeu em um campo que a tela não oferece. Filtre só a linha que interessa (o `/tmp/app.log` também registra cada acesso, como `GET /perfil 200`):
+
+      ```bash
+      grep "Perfil atualizado" /tmp/app.log
+      ```
+
+      **O que procurar.** A linha do seu `PATCH` traz `campos=['categoria']`, enquanto a da tela traz `campos=['email', 'telefone']`. Sem esse log, a alteração só apareceria quando o prejuízo já tivesse acontecido.
+    concept: A API aceita campos que a tela não envia
+    validatorRef: mass-assignment/answer/business-benefit-ind-v1
+    hints:
+      - level: 1
+        text: Copie cada comando com o botão **copiar** e cole no terminal. O segundo comando devolve o JSON do seu perfil já alterado.
+      - level: 2
+        text: Se o JSON veio com `categoria` igual a `estrategico`, o ataque funcionou. Recarregue **Meu perfil** e leia a linha **Categoria do fornecedor**.
+      - level: 3
+        text: A resposta é `750000`.
+    points: 20
+  - id: elevar-perfil
+    order: 4
+    title: Virar comprador
+    explanation: |
+      O mesmo `PATCH` aceita a coluna `perfil`, que decide quem entra na **Mesa de compras**. Tela interna em que os compradores aprovam pedidos e veem os contatos de todos os fornecedores cadastrados.
+
+      Na Termoverde, o comprador aprova pedidos. Um fornecedor com esse perfil aprovaria os próprios pedidos e veria os contatos e as categorias dos concorrentes.
+
+      A aplicação lê o perfil **do banco** a cada requisição, então a mudança vale na hora, sem novo login. Em aplicações que guardam o perfil no login, bastaria sair e entrar de novo.
+    task: |
+      1. Na aba **Terminal**, rode (a sessão de `/tmp/sessao.txt` continua valendo):
+
+         ```bash
+         curl -s -b /tmp/sessao.txt -X PATCH -H "Content-Type: application/json" -d '{"perfil": "comprador"}' http://127.0.0.1:8080/api/perfil
+         ```
+
+      2. Na aba **Aplicação**, clique em **recarregar**. O menu agora mostra **Mesa de compras**. Clique nele.
+
+      Informe abaixo o valor de **Código de aprovação de pedidos do turno**.
+    explore: |
+      **Por que este passo é mais grave que o anterior.** Na etapa 3 você mudou um dado **seu**. Aqui você ganhou o acesso de outra função e passou a ver os dados de **todos** os usuários, inclusive o de quem trabalha na Termoverde Geração. É uma elevação de privilégio vertical feita só com um campo a mais no JSON.
+
+      **O que procurar.** Na tabela da Mesa de compras, a coluna **Perfil** mostra o seu usuário ao lado da equipe interna. Para quem audita, nada indica que você não deveria estar ali, a não ser o log da etapa 3.
+    concept: Elevação de privilégio por atribuição em massa
+    validatorRef: mass-assignment/answer/privileged-key-ind-v1
+    hints:
+      - level: 1
+        text: 'Se o link não apareceu, confira se o JSON devolvido pelo `curl` tem `"perfil": "comprador"` e recarregue a aba **Aplicação**.'
+      - level: 2
+        text: Você também pode digitar `/compras` na barra de endereço. O valor fica logo abaixo da descrição da página, destacado em amarelo.
+      - level: 3
+        text: O valor é `TMV-CMP-9054-RL`.
+    points: 15
+  - id: corrigir
+    order: 5
+    title: Corrigir com uma lista de campos permitidos
+    explanation: |
+      A correção fica no **serviço**, onde mora a regra de negócio: o fornecedor pode alterar **apenas** `email` e `telefone`. O serviço monta um dicionário novo só com esses campos e repassa **esse** dicionário ao repositório.
+
+      É uma **lista de permissão**. Uma lista de bloqueio (apagar `perfil` e `categoria` do JSON) parece resolver, mas esquece outras colunas que o repositório aceita, como `login` e `senha_hash`, e qualquer coluna criada no futuro.
+
+      ```ilustracao
+      lista-permissao-campos
+      ```
+    task: |
+      Na aba **Código**, abra `services/perfil_service.py`. O método `atualizar_perfil` está assim:
+
+      ```python
+          def atualizar_perfil(self, usuario_id: int, dados: dict) -> Usuario:
+              """Atualiza os dados de contato do próprio usuário (tela Meu perfil).
+
+              A tela só envia e-mail e telefone, então o JSON recebido vai direto para o repositório.
+              """
+              if not isinstance(dados, dict) or not dados:
+                  raise ValueError("Envie em JSON os campos que quer atualizar.")
+              self._validar_contato(dados)
+              self._repositorio.atualizar(usuario_id, dados)
+              logger.info("Perfil atualizado: usuario=%s campos=%s", usuario_id, sorted(dados))
+              return self._repositorio.buscar_por_id(usuario_id)
+      ```
+
+      Troque o método inteiro por:
+
+      ```python
+          def atualizar_perfil(self, usuario_id: int, dados: dict) -> Usuario:
+              """Atualiza os dados de contato do próprio usuário (tela Meu perfil).
+
+              Só os campos de CAMPOS_EDITAVEIS chegam ao repositório; os outros são ignorados.
+              """
+              if not isinstance(dados, dict):
+                  raise ValueError("Envie em JSON os campos que quer atualizar.")
+              permitidos = {campo: dados[campo] for campo in CAMPOS_EDITAVEIS if campo in dados}
+              if not permitidos:
+                  raise ValueError("Informe e-mail ou telefone.")
+              self._validar_contato(permitidos)
+              self._repositorio.atualizar(usuario_id, permitidos)
+              logger.info("Perfil atualizado: usuario=%s campos=%s", usuario_id, sorted(permitidos))
+              return self._repositorio.buscar_por_id(usuario_id)
+      ```
+
+      E acrescente, logo acima de `class PerfilService:`, a linha:
+
+      ```python
+      CAMPOS_EDITAVEIS = ("email", "telefone")  # o que o próprio usuário pode alterar
+      ```
+
+      Salve com **Ctrl+S**. A aplicação reinicia e o banco volta ao estado inicial. Então:
+
+      1. no **Terminal**, rode de novo os dois comandos da etapa 3 (login e `PATCH` com `categoria`): o `PATCH` agora responde `{"erro": "Informe e-mail ou telefone."}`, e **Meu perfil** continua com `padrao`;
+      2. na aba **Aplicação**, clique em **Sair** e entre de novo com `rafael.dutra` e senha `Rafael@2026` (credenciais na etapa 1), troque o telefone e clique em **Salvar**: a edição legítima continua funcionando;
+      3. clique em **Validar**.
+    explore: |
+      **Se algo não funcionar depois de salvar.** Um erro de recuo ou um nome digitado errado faz a aplicação parar. No **Terminal**, filtre as linhas de erro (o log também traz os acessos `GET /perfil 200`):
+
+      ```bash
+      grep -iE "error|traceback" /tmp/app.log | tail -n 15
+      ```
+
+      **O que procurar.** `IndentationError` aponta a linha com recuo diferente do resto do método (use 4 espaços por nível). `NameError: name 'CAMPOS_EDITAVEIS' is not defined` indica que faltou a linha acima da classe.
+
+      **Por que testar uma lista de bloqueio.** Troque, só para ver, a correção por `dados.pop("perfil", None)` e rode `curl ... -d '{"login": "outro.usuario"}'`. O login muda: a lista de bloqueio esqueceu uma coluna. Depois volte para a lista de permissão.
+    concept: Lista de permissão de campos (allowlist) na regra de negócio
+    validatorRef: mass-assignment/python-flask/allowlist-ind-v1
+    hints:
+      - level: 1
+        text: O serviço não deve repassar `dados` ao repositório. Ele deve montar um dicionário novo só com `email` e `telefone`.
+      - level: 2
+        text: 'A linha-chave é `permitidos = {campo: dados[campo] for campo in CAMPOS_EDITAVEIS if campo in dados}`, e as chamadas seguintes usam `permitidos`.'
+      - level: 3
+        text: Copie o método inteiro da tarefa, mantendo 4 espaços antes de `def`, e a linha `CAMPOS_EDITAVEIS = ("email", "telefone")` sem recuo, acima da classe.
+    points: 40
+policy:
+  sequentialUnlock: true
+  allowStepRetry: true
+  persistProgressAcrossReset: true
+  allowSolutionReveal: false
+  finalPassingScore: 100

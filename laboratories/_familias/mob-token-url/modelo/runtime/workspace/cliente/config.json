@@ -1,0 +1,5 @@
+{
+  "_comentario": "Configuração empacotada no app (vai dentro do APK/IPA). Lida pelo app ao abrir.",
+  "api_base": "https://api.[[dominio_api]]",
+  "token_na_url": true
+}

@@ -29,6 +29,13 @@ metadata:
   status: draft
   primaryCwe: CWE-89
   secondaryCwes: []
+  classifications:              # opcional (ADR-017); uma entrada por lista E por edição
+    - framework: OWASP Top 10
+      edition: "2025"
+      entries: ["A05 Injection"]
+    - framework: SANS CWE Top 25
+      edition: "2025"
+      entries: ["#2 CWE-89 SQL Injection"]
 learning:
   singleVulnerability: true
   estimatedMinutes: 25
@@ -67,6 +74,8 @@ steps:
     title: Investigar a consulta
     explanation: Identifique onde dados do usuário são incorporados à query
     task: Localize a função que recebe o identificador do pedido
+    explore: |
+      Opcional. Por que vale ler /tmp/app.log e que tipo de achado aparece ali.
     concept: Consultas SQL parametrizadas
     validatorRef: sqli/python-flask/inspect-v1
     hints:
@@ -116,6 +125,8 @@ policy:
 8. Comandos devem seguir política de execução; não aceitar shells arbitrários de manifestos não confiáveis no plano de controle.
 9. As variantes devem mapear o **mesmo objetivo pedagógico** para validadores equivalentes; não presumir que testes binários sejam idênticos.
 10. Publicação é atômica e gera assinatura/digest da release; releases anteriores não mudam.
+11. `metadata.classifications` (ADR-017) registra o enquadramento do lab no OWASP Top 10 (atual e anterior), no OWASP API Security Top 10 quando couber e no SANS CWE Top 25 (atual e anterior). Quando não se enquadra, a entrada diz isso e o CWE orienta. Cada versão nova deve constar em `docs/catalogo/historico-versoes.yaml`, e o catálogo `docs/catalogo/CATALOGO_DE_LABORATORIOS.md` é regenerado por `scripts/gen-catalogo.py` (o CI confere).
+12. `task` traz **somente o necessário para concluir a etapa** (ADR-019). Verificações e explorações complementares (ler logs, conferir o pior caso, solucionar problemas) vão em `steps[].explore`, aberto por um botão "Explorar mais" na interface; esse texto deve explicar **por que** vale explorar e **que tipo de achado** pode aparecer, não só o comando.
 
 ## 4. Separação de conteúdo e runtime
 
@@ -133,6 +144,10 @@ Não há HTML.
 
 Campos opcionais:
 - `steps[].references[]` (`title`, `url` https, até 8);
+- `steps[].explore` (Markdown restrito): estudo complementar opcional da etapa (ADR-019), aberto pelo botão "Explorar mais". Não vale pontos e não é preciso para concluir a etapa;
+- `metadata.family`, `metadata.sectors` e `metadata.courseModules` (ADR-021): família da vulnerabilidade (slug), ramos de atividade do cenário (`financeiro`, `saude`, `industria-energia`) e módulos do curso (`foundation`, `trained`, `expert`, `master`). Opcionais; alimentam o filtro do painel e o catálogo;
+- `variants[].platform` (`web` padrão | `mobile`, ADR-025): com `mobile` o portal mostra a aplicação numa moldura de celular na aba Aplicação; o restante do layout não muda;
+- `variants[].interfaces` aceita `attacker` (ADR-022): o lab publica páginas estáticas fictícias na porta 8090 do contêiner e o gateway as serve numa origem própria (site do atacante). Só para labs cujo ataque parte de outra página, como CSRF;
 - `learning.wrapUp` (`text` em Markdown e `references`), exibido como "Para ir além" ao concluir o laboratório.
 
 ## 5. Pipeline mínimo de publicação

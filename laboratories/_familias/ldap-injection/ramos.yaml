@@ -1,0 +1,106 @@
+# Família A18 ldap-injection (ADR-021): o que muda por ramo. O modelo comum está em ./modelo.
+# Depois de editar, rode:  uv run python scripts/gerar-familia.py ldap-injection
+# Logins/senhas e o diretório fictício estão espelhados em
+# apps/backend/app/validation/suites_familias.py (registro protegido); os testes Docker conferem os
+# dois lados. A falha é injeção de LDAP: services/busca_service.py junta o nome CRU no filtro
+# (cn=NOME), então um * digitado vira curinga e lista o diretório inteiro.
+ramos:
+  - destino: LAB-044-ldap-fintech
+    vars:
+      lab_id: LAB-044
+      versao: 1.0.0
+      codigo: A18-FIN
+      ramo: fin
+      setor: financeiro
+      imagem: lab-044-diretorio
+      titulo: a busca que lista o diretório inteiro
+      empresa: Pagomais
+      marca: "₽ Pagomais"
+      app_nome: Diretório Corporativo
+      cor: "#1d4ed8"
+      papel: Pessoa desenvolvedora do time de plataforma interna da fintech Pagomais
+      aplicacao: Diretório Corporativo, onde o funcionário busca colegas pelo nome e vê nome e setor
+      contexto: O funcionário entra no Diretório Corporativo e busca colegas pelo nome. Um teste de invasão alertou que, digitando apenas um asterisco na busca, a tela lista o diretório inteiro — injeção de LDAP.
+      missao: Confirmar que a busca por um curinga lista todo o diretório e corrigir escapando os caracteres especiais do filtro
+      painel_titulo: Diretório Corporativo
+      painel_desc: Busque um colega pelo nome para ver o setor dele.
+      login_desc: Entre com as credenciais do funcionário para acessar o diretório.
+      banco: pagomais_diretorio
+      login_a: ti.suporte
+      senha_a: "TI#Pagomais26"
+      nome_a: Ana Ribeiro Teixeira
+      historia_abertura: 'Você está no time de plataforma interna da fintech Pagomais. O funcionário entra no Diretório Corporativo e busca colegas pelo nome para ver em que setor cada um trabalha. O time de segurança abriu um chamado: digitando só um asterisco na busca, a tela devolve o diretório inteiro de uma vez. Isso é injeção de LDAP — o nome digitado está virando sintaxe de filtro em vez de ser tratado como texto.'
+      seed_contas:
+        - [1, ti.suporte, Equipe de TI, "TI#Pagomais26"]
+      seed_diretorio:
+        - [Ana Ribeiro Teixeira, Contas]
+        - [Carlos Moura Pinto, Crédito]
+        - [Juliana Alves Castro, Prevenção a Fraudes]
+        - [Rafael Dias Nogueira, Tesouraria]
+        - [Beatriz Lima Fontes, Atendimento]
+  - destino: LAB-045-ldap-saude
+    vars:
+      lab_id: LAB-045
+      versao: 1.0.0
+      codigo: A18-SAU
+      ramo: sau
+      setor: saude
+      imagem: lab-045-diretorio
+      titulo: a busca que lista o diretório inteiro
+      empresa: Clínica Lumen
+      marca: "✚ Lumen"
+      app_nome: Diretório de Profissionais
+      cor: "#0e7490"
+      papel: Pessoa desenvolvedora do time de produtos digitais da Clínica Lumen
+      aplicacao: Diretório de Profissionais, onde a equipe busca profissionais pelo nome e vê a especialidade
+      contexto: A equipe entra no Diretório de Profissionais e busca profissionais pelo nome. Uma auditoria apontou que, digitando apenas um asterisco na busca, a tela lista o diretório inteiro — injeção de LDAP.
+      missao: Confirmar que a busca por um curinga lista todo o diretório e corrigir escapando os caracteres especiais do filtro
+      painel_titulo: Diretório de Profissionais
+      painel_desc: Busque um profissional pelo nome para ver a especialidade dele.
+      login_desc: Entre com as credenciais da equipe para acessar o diretório.
+      banco: lumen_diretorio
+      login_a: ti.suporte
+      senha_a: "TI#Lumen26"
+      nome_a: Marcos Tavares Lima
+      historia_abertura: 'Você é do time de produtos digitais da Clínica Lumen. A equipe entra no Diretório de Profissionais e busca profissionais pelo nome para ver a especialidade de cada um. Numa auditoria, a equipe apontou que, digitando só um asterisco na busca, a tela devolve o diretório inteiro de uma vez. Isso é injeção de LDAP — o nome digitado está virando sintaxe de filtro em vez de ser tratado como texto.'
+      seed_contas:
+        - [1, ti.suporte, Equipe de TI, "TI#Lumen26"]
+      seed_diretorio:
+        - [Marcos Tavares Lima, Clínica Geral]
+        - [Renata Borges Nunes, Cardiologia]
+        - [Paulo Sérgio Amaral, Ortopedia]
+        - [Camila Rocha Prado, Pediatria]
+        - [Daniela Freitas Melo, Enfermagem]
+  - destino: LAB-046-ldap-industria
+    vars:
+      lab_id: LAB-046
+      versao: 1.0.0
+      codigo: A18-IND
+      ramo: ind
+      setor: industria-energia
+      imagem: lab-046-diretorio
+      titulo: a busca que lista o diretório inteiro
+      empresa: Aurora Energia
+      marca: "⚡ Aurora"
+      app_nome: Diretório de Equipe
+      cor: "#b45309"
+      papel: Pessoa desenvolvedora do time de sistemas internos da Aurora Energia
+      aplicacao: Diretório de Equipe, onde o operador busca colegas pelo nome e vê a unidade
+      contexto: O operador entra no Diretório de Equipe e busca colegas pelo nome. Um pentest apontou que, digitando apenas um asterisco na busca, a tela lista o diretório inteiro — injeção de LDAP.
+      missao: Confirmar que a busca por um curinga lista todo o diretório e corrigir escapando os caracteres especiais do filtro
+      painel_titulo: Diretório de Equipe
+      painel_desc: Busque um colega pelo nome para ver a unidade dele.
+      login_desc: Entre com as credenciais do operador para acessar o diretório.
+      banco: aurora_diretorio
+      login_a: ti.suporte
+      senha_a: "TI#Aurora26"
+      nome_a: Diego Campos Ferraz
+      historia_abertura: 'Você está no time de sistemas internos da Aurora Energia. O operador entra no Diretório de Equipe e busca colegas pelo nome para ver em que unidade cada um trabalha. Um pentest apontou que, digitando só um asterisco na busca, a tela devolve o diretório inteiro de uma vez. Isso é injeção de LDAP — o nome digitado está virando sintaxe de filtro em vez de ser tratado como texto.'
+      seed_contas:
+        - [1, ti.suporte, Equipe de TI, "TI#Aurora26"]
+      seed_diretorio:
+        - [Diego Campos Ferraz, Operação]
+        - [Sonia Barros Teles, Manutenção]
+        - [Henrique Vasco Pires, Subestação]
+        - [Larissa Pacheco Ramos, Segurança do Trabalho]
+        - [Otávio Mendes Braga, Logística]

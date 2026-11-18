@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block conteudo %}
+<h1>Meu histórico</h1>
+<p class="ajuda">Seus atendimentos no Hospital Monte Sereno.</p>
+
+<dl class="dados">
+  <dt>Titular</dt><dd>{{ conta.nome }}</dd>
+</dl>
+
+<p>O app Monte Sereno busca os atendimentos pela API, 20 por vez:</p>
+<p><a href="/api/atendimentos?limite=20&pagina=1"><code>/api/atendimentos?limite=20&amp;pagina=1</code></a></p>
+<p class="ajuda">Próxima página: <a href="/api/atendimentos?limite=20&pagina=2"><code>pagina=2</code></a>.</p>
+
+<p class="banner reforcado">Você está autenticado. Use <a href="{{ url_for('auth.sair') }}">Sair</a> para encerrar a sessão.</p>
+{% endblock %}

@@ -1,0 +1,96 @@
+# Família A15 autorizacao-api (ADR-021): o que muda por ramo. O modelo comum está em ./modelo.
+# Depois de editar, rode:  uv run python scripts/gerar-familia.py autorizacao-api
+# Logins, senhas e papéis estão espelhados em apps/backend/app/validation/suites_familias.py (registro
+# protegido); os testes Docker conferem os dois. A falha é de autorização (BFLA): services/
+# permissao_service.py libera a API administrativa para qualquer usuário autenticado, sem conferir o papel.
+ramos:
+  - destino: LAB-038-autorizacao-banco
+    vars:
+      lab_id: LAB-038
+      versao: 1.0.0
+      codigo: A15-FIN
+      ramo: fin
+      setor: financeiro
+      imagem: lab-038-autorizacao
+      titulo: a API de admin aberta para todos
+      empresa: Banco Lumina
+      marca: "● Lumina"
+      app_nome: Console Interno
+      cor: "#1d4ed8"
+      papel: Pessoa desenvolvedora do time de backoffice do Banco Lumina
+      aplicacao: Console Interno, onde funcionários acessam, conforme o papel, as funções de atendimento e as administrativas
+      contexto: O Console Interno tem uma API administrativa que lista todos os usuários e deveria ser só do papel admin. Um teste de invasão alertou que a API não confere o papel — um funcionário comum, logado, chama a API de admin e recebe a lista completa.
+      missao: Confirmar que o usuário comum usa a API administrativa e corrigir exigindo o papel admin
+      painel_titulo: Console Interno
+      painel_desc: Seu acesso ao Console Interno do Banco Lumina.
+      login_desc: Entre com as credenciais do funcionário para acessar o console.
+      banco: lumina_console
+      login_admin: paula.couto
+      senha_admin: "Paula#Lumina26"
+      login_a: joao.mendes
+      senha_a: "Joao#Lumina26"
+      historia_abertura: 'Você está no time de backoffice do Banco Lumina. O Console Interno tem uma API administrativa (/api/admin/usuarios) que lista todos os usuários e deveria ser só do papel admin. O time de segurança abriu um chamado: a API não confere o papel, e um teste de invasão mostrou que um funcionário comum, logado, chama a API de admin e recebe a lista completa.'
+      seed_contas:
+        - [1, paula.couto, Paula Couto Lemos, "Paula#Lumina26", admin]
+        - [2, joao.mendes, João Mendes Faria, "Joao#Lumina26", comum]
+        - [3, carla.vieira, Carla Vieira Pontes, "Carla#Lumina26", comum]
+  - destino: LAB-039-autorizacao-saude
+    vars:
+      lab_id: LAB-039
+      versao: 1.0.0
+      codigo: A15-SAU
+      ramo: sau
+      setor: saude
+      imagem: lab-039-autorizacao
+      titulo: a API de admin aberta para todos
+      empresa: Hospital Santa Clara
+      marca: "✚ Santa Clara"
+      app_nome: Console Interno
+      cor: "#0e7490"
+      papel: Pessoa desenvolvedora do time de sistemas do Hospital Santa Clara
+      aplicacao: Console Interno, onde a equipe acessa, conforme o papel, as funções de atendimento e as administrativas
+      contexto: O Console Interno tem uma API administrativa que lista todos os usuários e deveria ser só do papel admin. Numa auditoria, a equipe apontou que a API não confere o papel — um usuário comum, logado, chama a API de admin e recebe a lista completa.
+      missao: Confirmar que o usuário comum usa a API administrativa e corrigir exigindo o papel admin
+      painel_titulo: Console Interno
+      painel_desc: Seu acesso ao Console Interno do Hospital Santa Clara.
+      login_desc: Entre com as credenciais da equipe para acessar o console.
+      banco: santaclara_console
+      login_admin: sandra.rocha
+      senha_admin: "Sandra#SantaClara26"
+      login_a: pedro.alves
+      senha_a: "Pedro#SantaClara26"
+      historia_abertura: 'Você é do time de sistemas do Hospital Santa Clara. O Console Interno tem uma API administrativa (/api/admin/usuarios) que lista todos os usuários e deveria ser só do papel admin. Numa auditoria, a equipe apontou que a API não confere o papel, e que um usuário comum, logado, chama a API de admin e recebe a lista completa.'
+      seed_contas:
+        - [1, sandra.rocha, Sandra Rocha Peixoto, "Sandra#SantaClara26", admin]
+        - [2, pedro.alves, Pedro Alves Macedo, "Pedro#SantaClara26", comum]
+        - [3, marta.lopes, Marta Lopes Brandão, "Marta#SantaClara26", comum]
+  - destino: LAB-040-autorizacao-industria
+    vars:
+      lab_id: LAB-040
+      versao: 1.0.0
+      codigo: A15-IND
+      ramo: ind
+      setor: industria-energia
+      imagem: lab-040-autorizacao
+      titulo: a API de admin aberta para todos
+      empresa: Petroquímica Horizonte
+      marca: "⬢ Horizonte"
+      app_nome: Console Interno
+      cor: "#9a3412"
+      papel: Pessoa desenvolvedora do time digital da Petroquímica Horizonte
+      aplicacao: Console Interno, onde a equipe acessa, conforme o papel, as funções operacionais e as administrativas
+      contexto: O Console Interno tem uma API administrativa que lista todos os usuários e deveria ser só do papel admin. Antes de uma auditoria, a equipe apontou que a API não confere o papel — um usuário comum, logado, chama a API de admin e recebe a lista completa.
+      missao: Confirmar que o usuário comum usa a API administrativa e corrigir exigindo o papel admin
+      painel_titulo: Console Interno
+      painel_desc: Seu acesso ao Console Interno da Petroquímica Horizonte.
+      login_desc: Entre com as credenciais da equipe para acessar o console.
+      banco: horizonte_console
+      login_admin: claudia.reis
+      senha_admin: "Claudia#Horizonte26"
+      login_a: felipe.gomes
+      senha_a: "Felipe#Horizonte26"
+      historia_abertura: 'Você é do time digital da Petroquímica Horizonte. O Console Interno tem uma API administrativa (/api/admin/usuarios) que lista todos os usuários e deveria ser só do papel admin. A equipe apontou que a API não confere o papel, e que um usuário comum, logado, chama a API de admin e recebe a lista completa.'
+      seed_contas:
+        - [1, claudia.reis, Cláudia Reis Amorim, "Claudia#Horizonte26", admin]
+        - [2, felipe.gomes, Felipe Gomes Teles, "Felipe#Horizonte26", comum]
+        - [3, bruno.castro, Bruno Castro Lima, "Bruno#Horizonte26", comum]

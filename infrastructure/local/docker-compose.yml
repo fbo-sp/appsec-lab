@@ -21,6 +21,7 @@ x-backend-env: &backend-env
   GATEWAY_TICKET_SECRET: ${GATEWAY_TICKET_SECRET:-local-dev-only-gateway-ticket-secret-0001}
   GATEWAY_WORKSPACE_URL: http://127.0.0.1:8001
   GATEWAY_PREVIEW_URL: http://127.0.0.1:8002
+  GATEWAY_ATTACKER_URL: http://127.0.0.1:8003
   PORTAL_ORIGIN: http://127.0.0.1:8000
 
 services:
@@ -84,6 +85,7 @@ services:
     ports:
       - "127.0.0.1:8001:8001"
       - "127.0.0.1:8002:8002"
+      - "127.0.0.1:8003:8003"
     depends_on:
       migrate: { condition: service_completed_successfully }
     healthcheck:

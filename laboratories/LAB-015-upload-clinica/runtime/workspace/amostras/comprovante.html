@@ -1,0 +1,19 @@
+<!doctype html>
+<!-- ARQUIVO FORJADO DE DEMONSTRAÇÃO (laboratório LAB-015, CECyber AppSec Labs). -->
+<!-- Parece um pedido médico, mas é uma página HTML com JavaScript. -->
+<!-- DEMONSTRAÇÃO INOFENSIVA: este script só prova que foi executado; não lê nem envia dado nenhum. -->
+<html lang="pt-BR">
+<head><meta charset="utf-8"><title>Pedido médico</title></head>
+<body style="font-family: sans-serif; max-width: 640px; margin: 2rem auto">
+  <h1>Pedido médico</h1>
+  <p>Carregando o documento…</p>
+  <p id="prova" style="background:#fff1b8; padding:.5rem"></p>
+  <script>
+    // Prova inofensiva de execução: se você lê a marca abaixo, o navegador executou este HTML
+    // na origem da aplicação (não baixou um documento). Num ataque real, um script aqui agiria
+    // no lugar de quem abrisse o arquivo. Esta versão não lê nem envia nada.
+    document.getElementById("prova").textContent =
+      "XSS-OK: HTML executado na origem " + location.host;
+  </script>
+</body>
+</html>

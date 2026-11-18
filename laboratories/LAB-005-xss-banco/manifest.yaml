@@ -1,0 +1,340 @@
+# LAB-005 (A1-FIN): Cross-Site Scripting (CWE-79) no Internet Banking da Banco Aurora Digital (Flask + SQLite).
+# CONTÉM VULNERABILIDADE INTENCIONAL. Uso exclusivo no runtime Docker LOCAL (ADR-008), em rede
+# interna da sessão. Dados 100% fictícios (domínio .example). Família A1 XSS (ADR-021): gerado por
+# scripts/gerar-familia.py a partir de laboratories/_familias/xss; não edite este arquivo à mão.
+#
+# ATENÇÃO: o digest abaixo é uma FIXTURE (sha256 de um texto fixo), não uma imagem publicada.
+# scripts/lab-local.sh e .ps1 trocam pela imagem construída localmente antes de registrar.
+apiVersion: labs.cecyber.io/v1alpha1
+kind: AppSecLab
+metadata:
+  id: LAB-005
+  version: 1.0.0
+  title: "A1-FIN · XSS: a busca de favorecidos que rouba a sessão"
+  primaryCwe: CWE-79
+  secondaryCwes: []
+  family: xss
+  sectors: [financeiro]
+  courseModules: [trained, master]
+  classifications:
+    - framework: OWASP Top 10
+      edition: "2025"
+      entries:
+        - "A05 Injection"
+    - framework: OWASP Top 10
+      edition: "2021"
+      entries:
+        - "A03 Injection"
+    - framework: SANS CWE Top 25
+      edition: "2025"
+      entries:
+        - "#1 CWE-79 Cross-site Scripting"
+    - framework: SANS CWE Top 25
+      edition: "2024"
+      entries:
+        - "#1 CWE-79 Cross-site Scripting"
+learning:
+  singleVulnerability: true
+  estimatedMinutes: 40
+  difficulty: beginner
+  objectives:
+    - Seguir o texto digitado pelo usuário desde o formulário até o HTML da resposta
+    - Entender por que uma lista de bloqueio (remover <script>) não impede XSS
+    - Demonstrar XSS refletido e armazenado lendo cookies sem HttpOnly, com dados fictícios
+    - Corrigir a falha deixando o Jinja2 codificar a saída, sem quebrar a busca legítima
+  story:
+    role: Desenvolvedor(a) do time de canais digitais do Banco Aurora Digital
+    application: Internet Banking, telas "Meus favorecidos" e "Painel antifraude"
+    context: >-
+      Um teste de invasão apontou XSS na busca de favorecidos de PIX. O time removeu a tag script do texto digitado e deu o problema por resolvido. A equipe de segurança pediu uma segunda opinião antes da liberação.
+    mission: Provar se a proteção funciona, medir o impacto para clientes e gerentes e corrigir o código
+  wrapUp:
+    text: |
+      Agora o texto digitado sempre chega à página como **texto**, nunca como HTML. Em um sistema real, vale reforçar outras camadas:
+
+      - **Cookies sensíveis com HttpOnly.** O cookie de sessão do Flask já era HttpOnly e por isso não apareceu no ataque. O `dispositivo` e o `aprovacao_gerente` não eram: se o front-end não precisa lê-los, marque `httponly=True` em `set_cookie`.
+      - **Content Security Policy (CSP).** O cabeçalho `Content-Security-Policy: script-src 'self'` impede scripts embutidos na página e atributos como `onerror`. É uma segunda barreira, não substitui a codificação da saída.
+      - **Quando o HTML é necessário.** Se o usuário realmente precisa formatar texto, use uma biblioteca de sanitização com lista de permissão (por exemplo `nh3`), nunca uma lista de bloqueio feita à mão.
+      - **Cada contexto tem sua codificação.** O autoescape do Jinja2 protege o corpo do HTML e atributos entre aspas. Dentro de `<script>`, em URLs ou em CSS as regras são outras: o OWASP tem um guia para cada contexto.
+      - **O mesmo vale em outros frameworks.** React escapa por padrão, mas `dangerouslySetInnerHTML` faz o papel do `|safe`. Procure esses pontos em revisões de código.
+    references:
+      - title: "OWASP Cheat Sheet: Cross Site Scripting Prevention"
+        url: https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html
+      - title: "OWASP Top 10:2025: A05 Injection"
+        url: https://owasp.org/Top10/2025/A05_2025-Injection/
+      - title: "CWE-79: Improper Neutralization of Input During Web Page Generation"
+        url: https://cwe.mitre.org/data/definitions/79.html
+      - title: "MDN: Content Security Policy"
+        url: https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/CSP
+variants:
+  - id: python-flask
+    language: python
+    framework: flask
+    image: registry.local/labs/lab-005-xss@sha256:3909959744d28ebbeab3e4b824c77c8b057e1addb286e596847ce0e772c324b0
+    runtimeProfile: web-basic
+    workspacePath: /workspace
+    startup:
+      # A saída do processo (inclusive erros de importação) também vai para /tmp/app.log.
+      command: ["sh", "-c", "python -u -m flask --app app run --host 0.0.0.0 --port 8080 --reload --no-debugger 2>&1 | tee -a /tmp/app.log"]
+      port: 8080
+    resources:
+      cpuMillicores: 500
+      memoryMiB: 512
+      storageMiB: 256
+      pidsMax: 64
+    session:
+      ttlMinutes: 45
+      maxRenewals: 2
+    interfaces: [editor, terminal, web]
+steps:
+  - id: conhecer
+    order: 1
+    title: Conhecer a aplicação
+    explanation: |
+      Um **Cross-Site Scripting (XSS)** acontece quando o texto digitado por alguém vira **código** dentro da página de outra pessoa: HTML ou JavaScript que o navegador executa como se fosse da própria aplicação.
+
+      Para achar esse ponto, siga o texto do usuário pelas camadas:
+
+      1. **Controller** (`controllers/favorecido_controller.py`): recebe a requisição e lê o campo `q` da busca.
+      2. **Serviço** (`services/favorecido_service.py`): aplica as regras de negócio, como limpar o texto.
+      3. **Repositório** (`repositories/favorecido_repository.py`): consulta o banco, sempre com parâmetros.
+      4. **Template** (`templates/favorecidos.html`): monta o HTML que volta para o navegador.
+
+      As credenciais de teste deste laboratório são:
+
+      - Cliente Marina Costa Ribeiro: usuário `marina.costa`, senha `Marina@2026`;
+      - Gerente Renata Alves Pacheco: usuário `renata.gerente`, senha `Gerente#Aurora26`.
+    task: |
+      1. Na aba **Aplicação**, entre com o usuário `marina.costa` e a senha `Marina@2026`.
+      2. Na tela **Meus favorecidos**, busque por `ana` e repare na linha **Resultados para**, que repete o que você digitou.
+      3. Na aba **Código**, abra `controllers/favorecido_controller.py`, veja que o termo vai para o serviço e abra `services/favorecido_service.py`.
+      4. Encontre o método que o time criou para **limpar** o texto digitado.
+
+      Informe abaixo o nome desse método.
+    concept: Fluxo do dado não confiável até o HTML da resposta
+    validatorRef: xss/answer/locate-cleaner-fin-v1
+    hints:
+      - level: 1
+        text: O controller chama `servico.buscar(...)`. Dentro de `buscar`, a primeira linha transforma o termo antes de consultar o banco.
+      - level: 2
+        text: O método fica no topo da classe `FavorecidoService` e usa a expressão regular `_TAG_SCRIPT`.
+      - level: 3
+        text: O método é `limpar_texto`.
+    points: 10
+  - id: testar-protecao
+    order: 2
+    title: Testar a proteção do time
+    explanation: |
+      Depois de um teste de invasão, o time criou `limpar_texto`, que remove a tag `<script>` do que o usuário digita. É uma **lista de bloqueio**: tenta adivinhar o que é perigoso e apagar.
+
+      ```ilustracao
+      xss-lista-bloqueio
+      ```
+
+      O Jinja2, que monta as páginas do Flask, já tem uma proteção melhor ligada por padrão, o **autoescape**: ao imprimir `{{ termo }}`, ele troca `<` por `&lt;` e `>` por `&gt;`. O navegador mostra os sinais na tela, mas não os interpreta como tags.
+
+      Essa proteção pode ser desligada em um ponto específico com o filtro `|safe`, que diz ao Jinja2 que o texto é HTML confiável e pode ir para a página como está.
+    task: |
+      Na aba **Aplicação**, faça duas buscas, uma de cada vez, e compare:
+
+      ```text
+      <script>alert(1)</script>
+      ```
+
+      ```text
+      <b>ana</b>
+      ```
+
+      Na primeira, o `<script>` some. Na segunda, a palavra aparece em **negrito** na linha **Resultados para**: o navegador interpretou o `<b>` como HTML.
+
+      Na aba **Código**, abra `templates/favorecidos.html` e encontre a linha que imprime o termo. Informe abaixo o nome do **filtro do Jinja2** que faz o termo ir para a página sem codificação (sem o `|`).
+    explore: |
+      **Por que comparar as duas buscas.** A primeira mostra que a lista de bloqueio funciona para o caso que o time imaginou. A segunda mostra que ela não resolve o problema: qualquer outra tag passa. Este é o achado típico de uma revisão de segurança: a proteção existe, mas protege contra um único exemplo.
+
+      **Veja o HTML que o navegador recebeu.** No **Terminal**, faça a mesma busca com `curl` e compare as duas linhas que repetem o termo:
+
+      ```bash
+      curl -s -c /tmp/c.txt -d "login=marina.costa&senha=Marina@2026" http://127.0.0.1:8080/login > /dev/null
+      curl -s -b /tmp/c.txt "http://127.0.0.1:8080/favorecidos?q=%3Cb%3Eteste%3C%2Fb%3E" | grep -E "value=|Resultados"
+      ```
+
+      **O que procurar.** No campo de busca (`value=`), o Jinja2 codificou o termo como `&lt;b&gt;`. Na linha **Resultados para**, o mesmo termo saiu como `<b>`. A diferença entre as duas linhas é exatamente o `|safe`.
+    concept: Autoescape do Jinja2 e o filtro |safe
+    validatorRef: xss/answer/safe-filter-fin-v1
+    hints:
+      - level: 1
+        text: Procure a linha com `Resultados para` no template. O termo está entre `{{` e `}}`.
+      - level: 2
+        text: Depois do nome da variável vem um `|` e o nome de um filtro. É ele que desliga a codificação.
+      - level: 3
+        text: "A linha é `Resultados para <mark>{{ termo|safe }}</mark>`. Responda `safe`."
+    points: 15
+  - id: xss-refletido
+    order: 3
+    title: Executar JavaScript pela busca
+    explanation: |
+      Sem `<script>`, ainda dá para executar JavaScript. Atributos de **evento** do HTML, como `onerror`, rodam código quando algo acontece com o elemento. Uma imagem com endereço inválido sempre dispara o `onerror`:
+
+      ```html
+      <img src=x onerror="this.outerHTML=document.cookie">
+      ```
+
+      O código troca a própria imagem pelo conteúdo de `document.cookie`, os **cookies que o JavaScript da página consegue ler**. Este é um **XSS refletido**: o ataque vem na própria requisição (aqui, no parâmetro `q` do endereço). Um atacante mandaria o link pronto para a vítima, por e-mail ou mensagem.
+
+      Ao entrar, o Internet Banking grava o cookie `dispositivo`, o token que vincula o navegador ao cliente e libera PIX sem pedir um novo código. Ele foi criado **sem HttpOnly**, para o front-end antigo ler.
+
+      No Banco Aurora, o golpe mais provável é um SMS do tipo "Seu PIX foi bloqueado, confira aqui", com um link para a busca de favorecidos do próprio Internet Banking. O endereço é legítimo, por isso o cliente confia e clica.
+
+      ```ilustracao
+      xss-refletido
+      ```
+    task: |
+      Na aba **Aplicação**, ainda logado com `marina.costa`, busque por:
+
+      ```text
+      <img src=x onerror="this.outerHTML=document.cookie">
+      ```
+
+      Na linha **Resultados para** aparecem os cookies legíveis pela página, no formato `nome=valor`. Informe abaixo o **valor** do cookie `dispositivo`. Todos os dados deste laboratório são fictícios.
+    explore: |
+      **Por que o cookie de sessão não apareceu.** O Flask guarda o login no cookie `session`, que sai com a marca **HttpOnly**: o navegador o envia nas requisições, mas não deixa o JavaScript ler. O `dispositivo` não tem essa marca. É a diferença entre o atacante conseguir ou não roubar o dado com XSS.
+
+      **Veja os atributos no cabeçalho.** No **Terminal**:
+
+      ```bash
+      curl -s -i -d "login=marina.costa&senha=Marina@2026" http://127.0.0.1:8080/login | grep -i set-cookie
+      ```
+
+      **O que procurar.** A linha do `session` termina com `HttpOnly`; a do `dispositivo`, não. Num ataque real, em vez de mostrar o cookie na tela, o script o enviaria para um servidor do atacante com `fetch`. Este laboratório não tem acesso à internet, então o efeito fica visível só para você.
+    concept: XSS refletido e roubo de cookies sem HttpOnly
+    validatorRef: xss/answer/client-cookie-fin-v1
+    hints:
+      - level: 1
+        text: Copie a entrada inteira, com as aspas, e cole no campo de busca. O resultado aparece onde antes ficava o termo destacado.
+      - level: 2
+        text: "Os cookies aparecem separados por `;`. Procure o trecho que começa com `dispositivo=`."
+      - level: 3
+        text: "O valor tem o formato `AUR-DSP-XXXX-NNNN`."
+    points: 20
+  - id: xss-armazenado
+    order: 4
+    title: Atingir a equipe com XSS armazenado
+    explanation: |
+      No XSS **armazenado**, o código malicioso fica gravado no banco e roda para **todo mundo** que abre a página onde ele aparece, sem precisar de link.
+
+      ```ilustracao
+      xss-armazenado
+      ```
+
+      Na tela da gerente Renata, o campo **Apelido** de cada favorecido é impresso com `|safe` em `templates/painel.html`, porque alguém quis permitir formatação. O texto vem de qualquer usuário do Internet Banking.
+
+      O impacto é maior: a equipe interna tem mais privilégios. O cookie `aprovacao_gerente` guarda a chave que o gerente usa para aprovar PIX acima do limite do cliente.
+
+      No Banco Aurora, quem abre o painel antifraude é a gerente Renata, várias vezes por dia. Com o código rodando no navegador dela, o atacante levaria a chave que aprova PIX acima do limite dos clientes.
+    task: |
+      1. Na aba **Aplicação**, ainda logado com `marina.costa`, use o formulário **Cadastrar favorecido**: preencha **Nome do favorecido** com qualquer texto e **Apelido** com:
+
+         ```text
+         <img src=x onerror="this.outerHTML=document.cookie">
+         ```
+
+         Clique em **Cadastrar**.
+      2. Clique em **Sair** e entre de novo, agora como gerente Renata: usuário `renata.gerente`, senha `Gerente#Aurora26` (as credenciais também estão na etapa 1).
+      3. Na tela **Painel antifraude**, a linha que você cadastrou mostra os cookies da equipe na coluna **Apelido**.
+
+      Informe abaixo o **valor** do cookie `aprovacao_gerente`.
+    explore: |
+      **Por que este ataque é mais grave que o da etapa 3.** No refletido, a vítima precisa clicar num link. No armazenado, basta a gerente Renata fazer o trabalho de sempre: abrir o painel. O mesmo código roda para cada pessoa da equipe que abrir a tela, até alguém apagar o registro.
+
+      **Veja o registro gravado.** No **Terminal**, consulte o banco:
+
+      ```bash
+      python -c "import sqlite3; [print(l) for l in sqlite3.connect('/tmp/banco.db').execute('SELECT id, nome, nota FROM favorecidos ORDER BY id DESC LIMIT 3')]"
+      ```
+
+      **O que procurar.** O banco guardou o texto exatamente como você digitou: a limpeza só remove `<script>`. O problema não é o dado no banco, e sim o momento em que ele vira HTML. Por isso a correção é na **saída**, no template.
+    concept: XSS armazenado e o impacto em usuários privilegiados
+    validatorRef: xss/answer/staff-cookie-fin-v1
+    hints:
+      - level: 1
+        text: Depois de cadastrar, a linha aparece na sua lista com o texto do ataque visível (na sua tela o campo é codificado). O código só roda na tela da equipe.
+      - level: 2
+        text: "Para trocar de usuário, clique em **Sair** no topo da página e entre com `renata.gerente` e senha `Gerente#Aurora26`."
+      - level: 3
+        text: "O valor tem o formato `AUR-APR-NNNN-XX`."
+    points: 15
+  - id: corrigir
+    order: 5
+    title: Corrigir codificando a saída
+    explanation: |
+      **Por que a falha existe.** O texto do usuário vira HTML porque dois templates desligam o autoescape com `|safe`. A limpeza no serviço tenta bloquear um único formato de ataque, e existem centenas.
+
+      **A correção: codificar a saída.** Deixe o Jinja2 fazer o trabalho dele. Sem `|safe`, `<img src=x onerror=...>` vira `&lt;img src=x onerror=...&gt;`: o usuário vê exatamente o que digitou, e o navegador não executa nada. Essa é a regra principal contra XSS: **codificar o dado no momento em que ele é inserido na página**, de acordo com o contexto (aqui, HTML).
+
+      ```ilustracao
+      xss-codificacao-saida
+      ```
+
+      **Por que não melhorar a lista de bloqueio?** Porque sempre falta um caso: `<svg onload=...>`, `<details open ontoggle=...>`, letras maiúsculas e minúsculas misturadas. A validação desta etapa testa várias dessas formas.
+    task: |
+      **1.** Abra `templates/favorecidos.html` na aba **Código**. A linha do resultado está assim:
+
+      ```html
+      <p class="resultado">Resultados para <mark>{{ termo|safe }}</mark></p>
+      ```
+
+      Troque por:
+
+      ```html
+      <p class="resultado">Resultados para <mark>{{ termo }}</mark></p>
+      ```
+
+      **2.** Abra `templates/painel.html`. A célula da coluna **Apelido** está assim:
+
+      ```html
+          <tr><td>{{ autor }}</td><td>{{ item.nome }}</td><td>{{ item.detalhe }}</td><td>{{ item.nota|safe }}</td></tr>
+      ```
+
+      Troque `{{ item.nota|safe }}` por `{{ item.nota }}`, deixando o resto da linha igual.
+
+      Salve os dois arquivos com **Ctrl+S**. Os templates valem na hora. Então:
+
+      1. ainda como gerente Renata, recarregue o painel: o ataque aparece como **texto**;
+      2. clique em **Sair**, entre de novo com `marina.costa` e senha `Marina@2026`, e repita a busca da etapa 3: o texto aparece, e nenhum cookie;
+      3. busque por `D'Ávila` e confirme que **Padaria D'Ávila Ltda** continua aparecendo;
+      4. clique em **Validar**.
+    explore: |
+      **Se algo não funcionar depois de salvar.** Uma chave `}}` apagada sem querer gera *Internal Server Error*. No **Terminal**, filtre as linhas de erro (o log também traz os acessos `GET / 200`):
+
+      ```bash
+      grep -iE "error|traceback" /tmp/app.log | tail -n 15
+      ```
+
+      **O que procurar.** Uma linha `jinja2.exceptions.TemplateSyntaxError` diz o arquivo e a linha. Compare com o trecho da tarefa.
+
+      **E a função `limpar_texto`?** Pode ficar, mas não é ela que protege. Experimente buscar `<svg onload=alert(1)>` antes e depois da correção: antes, a lista de bloqueio deixa passar; depois, o autoescape transforma em texto. Conferir se ainda existe `|safe` no projeto é um bom hábito:
+
+      ```bash
+      grep -rn "|safe" templates/
+      ```
+    concept: Codificação de saída (output encoding) por contexto
+    validatorRef: xss/python-flask/output-encoding-fin-v1
+    hints:
+      - level: 1
+        text: A mudança é só nos templates. Controller, serviço e repositório não mudam.
+      - level: 2
+        text: "Há dois `|safe` no projeto: um em `templates/favorecidos.html` e outro em `templates/painel.html`. Os dois precisam sair."
+      - level: 3
+        text: "Use exatamente `<mark>{{ termo }}</mark>` em `favorecidos.html` e `<td>{{ item.nota }}</td>` em `painel.html`. Se a validação falhar, veja na aba **Validação** qual verificação não passou e confira o log com `grep -iE \"error|traceback\" /tmp/app.log | tail`."
+    references:
+      - title: "Jinja2: escape automático e o filtro safe"
+        url: https://jinja.palletsprojects.com/en/stable/templates/#html-escaping
+      - title: "OWASP Cheat Sheet: Cross Site Scripting Prevention"
+        url: https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html
+    points: 40
+policy:
+  sequentialUnlock: true
+  allowStepRetry: true
+  persistProgressAcrossReset: true
+  allowSolutionReveal: false
+  finalPassingScore: 100

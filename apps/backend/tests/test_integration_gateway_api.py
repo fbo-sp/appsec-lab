@@ -16,7 +16,16 @@ from fastapi.testclient import TestClient
 from sqlalchemy import Engine, select
 from sqlalchemy.orm import Session, sessionmaker
 
-from tests.conftest import ADMIN, ALICE, BOB, GATEWAY_SECRET, FakeClock, create_session, drain
+from tests.conftest import (
+    ADMIN,
+    ALICE,
+    BOB,
+    GATEWAY_SECRET,
+    FakeClock,
+    benign_manifest,
+    create_session,
+    drain,
+)
 
 pytestmark = pytest.mark.integration
 
@@ -134,3 +143,39 @@ def test_list_own_sessions(client: TestClient, registered: dict[str, Any], worke
     sid = _ready(client, worker)
     assert [s["sessionId"] for s in client.get("/api/v1/sessions", headers=ALICE).json()["items"]] == [sid]
     assert client.get("/api/v1/sessions", headers=BOB).json()["items"] == []
+
+
+def test_attacker_ticket_only_for_variants_with_attacker_interface(
+    client: TestClient, registered: dict[str, Any], worker: WorkerContext
+) -> None:
+    """ADR-022: o site do atacante só existe quando a variante declara a interface ``attacker``."""
+    sid = _ready(client, worker)
+    assert client.get(f"/api/v1/sessions/{sid}", headers=ALICE).json()["interfaces"] == [
+        "editor",
+        "terminal",
+        "web",
+    ]
+    r = _ticket(client, sid, "attacker")
+    assert r.status_code == 409 and r.json()["error"]["code"] == "ATTACKER_SITE_UNAVAILABLE"
+
+    data = benign_manifest()
+    data["metadata"]["version"] = "0.2.2"
+    data["metadata"]["family"] = "csrf"
+    data["metadata"]["sectors"] = ["financeiro"]
+    data["metadata"]["courseModules"] = ["trained"]
+    data["variants"][0]["interfaces"] = ["editor", "terminal", "web", "attacker"]
+    assert client.post("/api/v1/admin/lab-releases", json=data, headers=ADMIN).status_code == 201
+    body = {"labId": "LAB-000", "version": "0.2.2", "variantId": "python-http"}
+    sid2 = create_session(client, ALICE, key="key-attacker-01", body=body).json()["sessionId"]
+    drain(worker)
+    assert "attacker" in client.get(f"/api/v1/sessions/{sid2}", headers=ALICE).json()["interfaces"]
+    url = _ticket(client, sid2, "attacker").json()["url"]
+    assert url.startswith("http://127.0.0.1:8003/__cecyber/auth?ticket=")
+    # Só o dono recebe o ticket do site do atacante.
+    assert _ticket(client, sid2, "attacker", headers=BOB).status_code == 404
+
+    lab = client.get("/api/v1/labs/LAB-000/releases/0.2.2", headers=ALICE).json()
+    assert (
+        lab["family"] == "csrf" and lab["sectors"] == ["financeiro"] and lab["courseModules"] == ["trained"]
+    )
+    assert lab["variants"][0]["interfaces"] == ["editor", "terminal", "web", "attacker"]

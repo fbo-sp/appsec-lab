@@ -1,0 +1,121 @@
+# Família A6 ssrf (ADR-021): o que muda por ramo de atividade. O modelo comum está em ./modelo.
+# Depois de editar, rode:  uv run python scripts/gerar-familia.py ssrf
+# Logins da equipe, destino legítimo e a credencial vazada estão espelhados em
+# apps/backend/app/validation/suites_familias.py (registro protegido); os testes Docker conferem os dois.
+# A falha é SSRF no importador por URL (services/importador_service.py): o servidor busca qualquer URL
+# informada, então dá para apontar para o console interno (127.0.0.1:9000) e ler credenciais.
+ramos:
+  - destino: LAB-020-ssrf-cooperativa
+    vars:
+      lab_id: LAB-020
+      versao: 1.0.0
+      codigo: A6-FIN
+      ramo: fin
+      setor: financeiro
+      imagem: lab-020-ssrf
+      titulo: o importador de comprovantes que busca qualquer URL
+      empresa: Cooperativa Credimova
+      marca: "◆ Credimova"
+      app_nome: Mesa de Crédito
+      cor: "#1d4ed8"
+      papel: Pessoa desenvolvedora da squad de crédito da Cooperativa Credimova
+      aplicacao: Mesa de Crédito, onde a equipe importa o comprovante de renda enviado pelo parceiro para analisar a proposta
+      contexto: A Mesa de Crédito importa o comprovante de renda a partir de uma URL que o sistema parceiro informa; o servidor busca essa URL e mostra a prévia. Um teste de invasão alertou que o campo de URL não valida o destino, e que dá para fazer o servidor buscar endereços internos.
+      missao: Confirmar que o importador pode ser levado a buscar um serviço interno e corrigir restringindo o destino
+      mesa_titulo: Mesa de Crédito
+      mesa_desc: Importe o comprovante de renda informado pelo parceiro para analisar a proposta.
+      login_desc: Entre com as credenciais da equipe de crédito para acessar a Mesa.
+      login_staff: analista.credito
+      senha_staff: "Analista#Cred26"
+      nome_staff: Marina Aguiar Gomes
+      papel_staff: Analista de crédito
+      login_staff2: supervisor.mesa
+      senha_staff2: "Supervisor#Cred26"
+      nome_staff2: Rodrigo Sena Vilela
+      papel_staff2: Supervisor da mesa
+      doc_conteudo: |
+        COMPROVANTE DE RENDA (documento fictício — parceiro Credimova)
+        Proponente: Marina Aguiar Gomes
+        Renda bruta mensal: R$ 7.420,00
+        Vínculo: CLT
+        Documento conferido pelo parceiro em 2026-11-10.
+      doc_trecho: Renda bruta mensal
+      meta_servico: provedor-de-pagamentos
+      meta_chave: CHAVE-FICTICIA-CREDIMOVA-NAO-USAR
+      historia_abertura: 'Você está na squad de crédito da Cooperativa Credimova. A Mesa de Crédito importa o comprovante de renda a partir de uma URL que o sistema parceiro informa: o servidor abre essa URL e mostra a prévia para o analista. O time de segurança abriu um chamado: o campo de URL não confere o destino, e um teste de invasão mostrou que o servidor pode ser levado a buscar endereços internos da cooperativa.'
+  - destino: LAB-021-ssrf-clinica
+    vars:
+      lab_id: LAB-021
+      versao: 1.0.0
+      codigo: A6-SAU
+      ramo: sau
+      setor: saude
+      imagem: lab-021-ssrf
+      titulo: o importador de laudos que busca qualquer URL
+      empresa: Clínica Sampaio
+      marca: "✚ Sampaio"
+      app_nome: Central de Laudos
+      cor: "#0e7490"
+      papel: Pessoa desenvolvedora do time de sistemas da Clínica Sampaio
+      aplicacao: Central de Laudos, onde a recepção importa o laudo enviado pelo laboratório parceiro
+      contexto: A Central de Laudos importa o laudo a partir de uma URL que o laboratório parceiro informa; o servidor busca essa URL e mostra a prévia. Numa auditoria, a equipe apontou que o campo de URL não valida o destino, permitindo levar o servidor a buscar serviços internos.
+      missao: Confirmar que o importador pode ser levado a buscar um serviço interno e corrigir restringindo o destino
+      mesa_titulo: Central de Laudos
+      mesa_desc: Importe o laudo informado pelo laboratório parceiro para anexar ao atendimento.
+      login_desc: Entre com as credenciais da recepção para acessar a Central de Laudos.
+      login_staff: recepcao.laudos
+      senha_staff: "Recepcao#Sampaio26"
+      nome_staff: Rafael Antunes Barreto
+      papel_staff: Atendente da recepção
+      login_staff2: coord.laudos
+      senha_staff2: "Coord#Sampaio26"
+      nome_staff2: Carla Menezes Pires
+      papel_staff2: Coordenadora de laudos
+      doc_conteudo: |
+        LAUDO DE EXAME (documento fictício — laboratório parceiro Sampaio)
+        Paciente: Rafael Antunes Barreto
+        Exame: Hemograma completo
+        Resultado: dentro dos valores de referência
+        Laudo liberado pelo parceiro em 2026-11-10.
+      doc_trecho: Hemograma completo
+      meta_servico: integracao-laboratorio
+      meta_chave: CHAVE-FICTICIA-SAMPAIO-NAO-USAR
+      historia_abertura: 'Você é do time de sistemas da Clínica Sampaio. A Central de Laudos importa o laudo a partir de uma URL que o laboratório parceiro informa: o servidor abre essa URL e mostra a prévia para a recepção. Numa auditoria, a equipe apontou que o campo de URL não confere o destino, e que o servidor pode ser levado a buscar serviços internos da clínica.'
+  - destino: LAB-022-ssrf-siderurgica
+    vars:
+      lab_id: LAB-022
+      versao: 1.0.0
+      codigo: A6-IND
+      ramo: ind
+      setor: industria-energia
+      imagem: lab-022-ssrf
+      titulo: o importador de documentos técnicos que busca qualquer URL
+      empresa: Siderúrgica Pindorama
+      marca: "⬢ Pindorama"
+      app_nome: Portal de Engenharia
+      cor: "#9a3412"
+      papel: Pessoa desenvolvedora do time de sistemas industriais da Siderúrgica Pindorama
+      aplicacao: Portal de Engenharia, onde a equipe importa o documento técnico enviado pelo fornecedor
+      contexto: O Portal de Engenharia importa a ficha técnica a partir de uma URL que o fornecedor informa; o servidor busca essa URL e mostra a prévia. Antes da certificação ISO/IEC 27001, uma auditoria apontou que o campo de URL não valida o destino, permitindo levar o servidor a buscar serviços internos da planta.
+      missao: Confirmar que o importador pode ser levado a buscar um serviço interno e corrigir restringindo o destino
+      mesa_titulo: Importação de Documentos Técnicos
+      mesa_desc: Importe a ficha técnica informada pelo fornecedor para anexar à ordem de compra.
+      login_desc: Entre com as credenciais da engenharia para acessar o portal.
+      login_staff: eng.processos
+      senha_staff: "Engenharia#Pind26"
+      nome_staff: Diego Farias Lobo
+      papel_staff: Engenheiro de processos
+      login_staff2: coord.engenharia
+      senha_staff2: "Coord#Pind26"
+      nome_staff2: Tânia Rocha Sampaio
+      papel_staff2: Coordenadora de engenharia
+      doc_conteudo: |
+        FICHA TECNICA (documento fictício — fornecedor Pindorama)
+        Item: Chapa de aço laminado a quente
+        Espessura: 6,3 mm
+        Norma: ABNT NBR 6650
+        Ficha conferida pelo fornecedor em 2026-11-10.
+      doc_trecho: Chapa de aço laminado
+      meta_servico: monitoramento-industrial
+      meta_chave: CHAVE-FICTICIA-PINDORAMA-NAO-USAR
+      historia_abertura: 'Você é do time de sistemas industriais da Siderúrgica Pindorama. O Portal de Engenharia importa a ficha técnica a partir de uma URL que o fornecedor informa: o servidor abre essa URL e mostra a prévia para a engenharia. Na preparação para a certificação ISO/IEC 27001, a auditoria apontou que o campo de URL não confere o destino, e que o servidor pode ser levado a buscar serviços internos da planta.'

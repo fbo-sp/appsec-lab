@@ -1,0 +1,3 @@
+CHAVE-INTERNA
+Arquivo interno da Operadora Vitalis — NÃO deve ser acessível pelo download de documentos.
+CHAVE_INTERNA=vitalis-kms-24c7be

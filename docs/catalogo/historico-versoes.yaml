@@ -1,0 +1,470 @@
+# Histórico de versões dos laboratórios (ADR-017). Fonte para docs/catalogo/CATALOGO_DE_LABORATORIOS.md.
+#
+# Ao criar um lab ou publicar uma versão nova:
+#   1. acrescente a versão aqui, com a data de publicação e um resumo da mudança;
+#   2. rode `uv run python scripts/gen-catalogo.py` para regenerar o catálogo.
+# O CI falha se a versão de um manifesto não estiver aqui ou se o catálogo estiver desatualizado.
+# A data em que uma versão ficou obsoleta é a data de publicação da versão seguinte (calculada).
+# Datas: publicação no repositório (ambiente local); quando houver implantação, valerá a data de publicação nela.
+labs:
+  LAB-000:
+    - version: 0.1.0
+      published: 2026-11-11
+      summary: Primeira versão do lab benigno de verificação do motor.
+    - version: 0.2.0
+      published: 2026-11-12
+      summary: Etapas com validação, progresso e dicas.
+    - version: 0.2.1
+      published: 2026-11-13
+      summary: Texto da dica 1 ajustado às abas do workspace.
+    - version: 1.0.0
+      published: 2026-11-15
+      summary: Vira o tutorial da plataforma, com 5 etapas sobre a tela, a barra de endereço, o terminal, as dicas e a validação.
+    - version: 1.0.1
+      published: 2026-11-15
+      summary: Etapa do terminal ganha um "Explorar mais" de exemplo, apresentando o estudo complementar opcional da plataforma.
+  LAB-001:
+    - version: 1.0.0
+      published: 2026-11-13
+      summary: Primeira versão (SQL Injection, Clínica VidaPlena).
+    - version: 1.0.1
+      published: 2026-11-13
+      summary: Trecho da correção com o recuo real do método (evita IndentationError). Aprovada pelo PO.
+    - version: 1.0.2
+      published: 2026-11-15
+      summary: Classificação OWASP e SANS CWE Top 25; referência do OWASP Top 10 atualizada para 2025.
+    - version: 1.0.3
+      published: 2026-11-15
+      summary: Texto das tarefas com só o necessário; verificação de log e solução de problemas movidas para "Explorar mais"; ataque a repetir mostrado por extenso na etapa 5.
+    - version: 1.0.4
+      published: 2026-11-15
+      summary: Leitura do log usa grep da linha útil em vez de tail (o /tmp/app.log também registra os acessos GET / 200, que escondiam a linha no tail).
+  LAB-002:
+    - version: 1.0.0
+      published: 2026-11-13
+      summary: Primeira versão (IDOR, Banco Vértice Digital).
+    - version: 1.0.1
+      published: 2026-11-14
+      summary: Etapa 4 com contagem correta (34) e busca do PIX de R$ 487.900,00; etapa 2 explica a barra de endereço.
+    - version: 1.0.2
+      published: 2026-11-15
+      summary: Classificação OWASP, OWASP API e SANS CWE Top 25; referência do OWASP Top 10 atualizada para 2025.
+    - version: 1.0.3
+      published: 2026-11-15
+      summary: Texto das tarefas enxuto; log, pior caso do PIX e solução de problemas em "Explorar mais"; navegação pela barra de endereço explicitada na etapa 5.
+    - version: 1.0.4
+      published: 2026-11-15
+      summary: Leitura do log usa grep da linha útil em vez de tail (os acessos GET / 200 no /tmp/app.log escondiam a linha no tail).
+  LAB-003:
+    - version: 1.0.0
+      published: 2026-11-13
+      summary: Primeira versão (JWT sem verificação de assinatura, Orbe Cartões, Node.js).
+    - version: 1.0.1
+      published: 2026-11-15
+      summary: Classificação OWASP, OWASP API e SANS CWE Top 25; referência ao OWASP Top 10:2025 A07.
+    - version: 1.0.2
+      published: 2026-11-15
+      summary: Etapas 4 e 5 com só o necessário na tarefa; leitura do log e solução de problemas em "Explorar mais"; relogin na aba Aplicação explicitado (Sair e entrar com as credenciais da Larissa, da etapa 1).
+    - version: 1.0.3
+      published: 2026-11-15
+      summary: Leitura do log usa grep da linha útil, por exemplo grep da mensagem "Limite alterado", em vez de tail, porque os acessos GET / 200 no /tmp/app.log escondiam a linha.
+  LAB-004:
+    - version: 1.0.0
+      published: 2026-11-13
+      summary: Primeira versão (Command Injection, Ferrara Metais).
+    - version: 1.0.1
+      published: 2026-11-13
+      summary: Correção do fim de linha (CRLF) que quebrava o diag-clp no Windows.
+    - version: 1.0.2
+      published: 2026-11-15
+      summary: Classificação OWASP e SANS CWE Top 25; referência do OWASP Top 10 atualizada para 2025.
+    - version: 1.0.3
+      published: 2026-11-15
+      summary: Texto das tarefas enxuto; leitura do log e solução de problemas em "Explorar mais"; ataque a repetir mostrado por extenso na etapa 5.
+    - version: 1.0.4
+      published: 2026-11-15
+      summary: Leitura do log usa grep da linha útil, por exemplo grep da mensagem "Executando", em vez de tail, porque os acessos GET / 200 no /tmp/app.log escondiam a linha.
+  LAB-005:
+    - version: 1.0.0
+      published: 2026-11-16
+      summary: Primeira versão (XSS refletido e armazenado, Banco Aurora Digital; família xss, ramo Financeiro).
+  LAB-006:
+    - version: 1.0.0
+      published: 2026-11-16
+      summary: Primeira versão (XSS refletido e armazenado, Rede Lumina Diagnósticos; família xss, ramo Saúde).
+  LAB-007:
+    - version: 1.0.0
+      published: 2026-11-16
+      summary: Primeira versão (XSS refletido e armazenado, Voltera Distribuidora de Energia; família xss, ramo Indústria e Energia).
+  LAB-008:
+    - version: 1.0.0
+      published: 2026-11-16
+      summary: Primeira versão (Mass Assignment na API de perfil, Trilha Pay; família mass-assignment, ramo Financeiro).
+  LAB-009:
+    - version: 1.0.0
+      published: 2026-11-16
+      summary: Primeira versão (Mass Assignment na API de perfil, Sereno Saúde; família mass-assignment, ramo Saúde).
+  LAB-010:
+    - version: 1.0.0
+      published: 2026-11-16
+      summary: Primeira versão (Mass Assignment na API de perfil, Termoverde Geração; família mass-assignment, ramo Indústria e Energia).
+  LAB-011:
+    - version: 1.0.0
+      published: 2026-11-16
+      summary: Primeira versão (CSRF na troca da chave PIX de indenização, Vínculo Seguros; família csrf, ramo Financeiro).
+  LAB-012:
+    - version: 1.0.0
+      published: 2026-11-16
+      summary: Primeira versão (CSRF na troca do e-mail de laudos, Vitalis Hospitais; família csrf, ramo Saúde).
+  LAB-013:
+    - version: 1.0.0
+      published: 2026-11-16
+      summary: Primeira versão (CSRF na troca do celular do plantão de alarmes, Correnteza Geração; família csrf, ramo Indústria e Energia).
+  LAB-014:
+    - version: 1.0.0
+      published: 2026-11-16
+      summary: Primeira versão (upload irrestrito levando a XSS armazenado, Cooperativa Credimova; família upload, ramo Financeiro).
+  LAB-015:
+    - version: 1.0.0
+      published: 2026-11-16
+      summary: Primeira versão (upload irrestrito levando a XSS armazenado, Clínica Sampaio; família upload, ramo Saúde).
+  LAB-016:
+    - version: 1.0.0
+      published: 2026-11-16
+      summary: Primeira versão (upload irrestrito levando a XSS armazenado, Siderúrgica Pindorama; família upload, ramo Indústria e Energia).
+  LAB-017:
+    - version: 1.0.0
+      published: 2026-11-16
+      summary: Primeira versão (armazenamento inseguro de senha em MD5, Cooperativa Credimova; família senha, ramo Financeiro).
+  LAB-018:
+    - version: 1.0.0
+      published: 2026-11-16
+      summary: Primeira versão (armazenamento inseguro de senha em MD5, Laboratórios Helios; família senha, ramo Saúde).
+  LAB-019:
+    - version: 1.0.0
+      published: 2026-11-16
+      summary: Primeira versão (armazenamento inseguro de senha em MD5, Siderúrgica Pindorama; família senha, ramo Indústria e Energia).
+  LAB-020:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (SSRF no importador por URL, Cooperativa Credimova; família ssrf, ramo Financeiro).
+  LAB-021:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (SSRF no importador por URL, Clínica Sampaio; família ssrf, ramo Saúde).
+  LAB-022:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (SSRF no importador por URL, Siderúrgica Pindorama; família ssrf, ramo Indústria e Energia).
+  LAB-023:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (falha de lógica de negócio no resgate, Cooperativa Credimova; família logica-negocio, ramo Financeiro).
+  LAB-024:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (falha de lógica de negócio no reembolso, Sereno Saúde; família logica-negocio, ramo Saúde).
+  LAB-025:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (falha de lógica de negócio no uso de créditos, Voltera Distribuidora de Energia; família logica-negocio, ramo Indústria e Energia).
+  LAB-026:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (login sem limite de tentativas / força bruta, Pagomais; família tentativas-login, ramo Financeiro).
+  LAB-027:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (login sem limite de tentativas / força bruta, Clínica Lumen; família tentativas-login, ramo Saúde).
+  LAB-028:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (login sem limite de tentativas / força bruta, Metalúrgica Aurora; família tentativas-login, ramo Indústria e Energia).
+  LAB-029:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (CORS mal configurado que reflete qualquer origem, Corretora Montara; família cors, ramo Financeiro).
+  LAB-030:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (CORS mal configurado que reflete qualquer origem, Operadora Vitalis; família cors, ramo Saúde).
+  LAB-031:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (CORS mal configurado que reflete qualquer origem, Corrente Energia; família cors, ramo Indústria e Energia).
+  LAB-032:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (path traversal no download de documentos, Corretora Montara; família path-traversal, ramo Financeiro).
+  LAB-033:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (path traversal no download de documentos, Operadora Vitalis; família path-traversal, ramo Saúde).
+  LAB-034:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (path traversal no download de documentos, Corrente Energia; família path-traversal, ramo Indústria e Energia).
+  LAB-035:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (loja confia no custo enviado pelo cliente, Cooperativa Credimova; família confianca-cliente, ramo Financeiro).
+  LAB-036:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (loja confia no custo enviado pelo cliente, Sereno Saúde; família confianca-cliente, ramo Saúde).
+  LAB-037:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (loja confia no custo enviado pelo cliente, Voltera Distribuidora de Energia; família confianca-cliente, ramo Indústria e Energia).
+  LAB-038:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (API administrativa sem conferência de papel / BFLA, Banco Lumina; família autorizacao-api, ramo Financeiro).
+  LAB-039:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (API administrativa sem conferência de papel / BFLA, Hospital Santa Clara; família autorizacao-api, ramo Saúde).
+  LAB-040:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (API administrativa sem conferência de papel / BFLA, Petroquímica Horizonte; família autorizacao-api, ramo Indústria e Energia).
+  LAB-041:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (erros verbosos / traceback na resposta da API, Fintech Nimbo; família erros-verbosos, ramo Financeiro).
+  LAB-042:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (erros verbosos / traceback na resposta da API, Operadora Prisma; família erros-verbosos, ramo Saúde).
+  LAB-043:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (erros verbosos / traceback na resposta da API, Metalúrgica Delta; família erros-verbosos, ramo Indústria e Energia).
+  LAB-044:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (injeção de LDAP na busca do diretório, Fintech Pagomais; família ldap-injection, ramo Financeiro).
+  LAB-045:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (injeção de LDAP na busca do diretório, Clínica Lumen; família ldap-injection, ramo Saúde).
+  LAB-046:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (injeção de LDAP na busca do diretório, Aurora Energia; família ldap-injection, ramo Indústria e Energia).
+  LAB-047:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (BOLA em API GraphQL de pedidos, Fintech Pagomais; família graphql-bola, ramo Financeiro).
+  LAB-048:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (BOLA em API GraphQL de pedidos, Clínica Lumen; família graphql-bola, ramo Saúde).
+  LAB-049:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (BOLA em API GraphQL de pedidos, Aurora Energia; família graphql-bola, ramo Indústria e Energia).
+  LAB-050:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (lab mobile, chave de api embutida no app, Pagomais; família mob-chave-embutida, ramo Financeiro).
+  LAB-051:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (lab mobile, chave de api embutida no app, Clínica Lumen; família mob-chave-embutida, ramo Saúde).
+  LAB-052:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (lab mobile, chave de api embutida no app, Aurora Energia; família mob-chave-embutida, ramo Indústria e Energia).
+  LAB-053:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (lab mobile, senha guardada no aparelho, Pagomais; família mob-dados-locais, ramo Financeiro).
+  LAB-054:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (lab mobile, senha guardada no aparelho, Clínica Lumen; família mob-dados-locais, ramo Saúde).
+  LAB-055:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (lab mobile, senha guardada no aparelho, Aurora Energia; família mob-dados-locais, ramo Indústria e Energia).
+  LAB-056:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (lab mobile, biometria conferida só no app, Pagomais; família mob-biometria-cliente, ramo Financeiro).
+  LAB-057:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (lab mobile, biometria conferida só no app, Clínica Lumen; família mob-biometria-cliente, ramo Saúde).
+  LAB-058:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (lab mobile, biometria conferida só no app, Aurora Energia; família mob-biometria-cliente, ramo Indústria e Energia).
+  LAB-059:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (lab mobile, sessão que não morre no logout, Pagomais; família mob-sessao-logout, ramo Financeiro).
+  LAB-060:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (lab mobile, sessão que não morre no logout, Clínica Lumen; família mob-sessao-logout, ramo Saúde).
+  LAB-061:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (lab mobile, sessão que não morre no logout, Aurora Energia; família mob-sessao-logout, ramo Indústria e Energia).
+  LAB-062:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (lab mobile, api que devolve dados demais, Pagomais; família mob-dados-demais, ramo Financeiro).
+  LAB-063:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (lab mobile, api que devolve dados demais, Clínica Lumen; família mob-dados-demais, ramo Saúde).
+  LAB-064:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (lab mobile, api que devolve dados demais, Aurora Energia; família mob-dados-demais, ramo Indústria e Energia).
+  LAB-065:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (lab mobile, modo de teste esquecido, Pagomais; família mob-modo-teste, ramo Financeiro).
+  LAB-066:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (lab mobile, modo de teste esquecido, Clínica Lumen; família mob-modo-teste, ramo Saúde).
+  LAB-067:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (lab mobile, modo de teste esquecido, Aurora Energia; família mob-modo-teste, ramo Indústria e Energia).
+  LAB-068:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (versão 1 da API de comprovantes esquecida no ar, Banco Cobalto; família api-inventario, ramo Financeiro).
+  LAB-069:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (versão 1 da API de exames esquecida no ar, Laboratórios Íris; família api-inventario, ramo Saúde).
+  LAB-070:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (versão 1 da API de faturas esquecida no ar, Elétrica Serra Azul; família api-inventario, ramo Indústria e Energia).
+  LAB-071:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (resposta do bureau de crédito gravada sem conferir o contrato, Fintech Vértix; família api-consumo-parceiro, ramo Financeiro).
+  LAB-072:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (resposta da rede credenciada gravada sem conferir o contrato, Operadora Bem Cuidar; família api-consumo-parceiro, ramo Saúde).
+  LAB-073:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (cotação do fornecedor gravada sem conferir o contrato, Siderúrgica Alvorada; família api-consumo-parceiro, ramo Indústria e Energia).
+  LAB-074:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (API de extrato sem teto de página, Corretora Pináculo; família api-recursos, ramo Financeiro).
+  LAB-075:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (API de histórico de atendimentos sem teto de página, Hospital Monte Sereno; família api-recursos, ramo Saúde).
+  LAB-076:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: Primeira versão (API de leituras de sensores sem teto de página, Ventura Energia Eólica; família api-recursos, ramo Indústria e Energia).
+  LAB-077:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: "Versão inicial (família L2 log-auditoria, ramo financeiro): login sem registro das falhas na trilha de auditoria."
+  LAB-078:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: "Versão inicial (família L2 log-auditoria, ramo saúde): login sem registro das falhas na trilha de auditoria."
+  LAB-079:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: "Versão inicial (família L2 log-auditoria, ramo indústria e energia): login sem registro das falhas na trilha de auditoria."
+  LAB-080:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: "Versão inicial (família L1 componente-desatualizado, ramo financeiro): biblioteca de documentos com falha conhecida, corrigida atualizando a dependência."
+  LAB-081:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: "Versão inicial (família L1 componente-desatualizado, ramo saúde): biblioteca de documentos com falha conhecida, corrigida atualizando a dependência."
+  LAB-082:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: "Versão inicial (família L1 componente-desatualizado, ramo indústria e energia): biblioteca de documentos com falha conhecida, corrigida atualizando a dependência."
+  LAB-083:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: "Versão inicial (família L4 pacote-assinatura, ramo financeiro): pacote de regras antifraude aplicado sem conferir a assinatura HMAC."
+  LAB-084:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: "Versão inicial (família L4 pacote-assinatura, ramo saúde): tabela de valores críticos aplicada sem conferir a assinatura HMAC."
+  LAB-085:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: "Versão inicial (família L4 pacote-assinatura, ramo indústria e energia): parâmetros de linha aplicados sem conferir a assinatura HMAC."
+  LAB-086:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: "Versão inicial (família L3 cookie-transporte, ramo financeiro): cookie de sessão sem Secure, HttpOnly e SameSite e sem HSTS."
+  LAB-087:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: "Versão inicial (família L3 cookie-transporte, ramo saúde): cookie de sessão sem Secure, HttpOnly e SameSite e sem HSTS."
+  LAB-088:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: "Versão inicial (família L3 cookie-transporte, ramo indústria e energia): cookie de sessão sem Secure, HttpOnly e SameSite e sem HSTS."
+  LAB-089:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: "Versão inicial (família L8 mob-deep-link, ramo financeiro): deep link que faz o Pix sem confirmação do usuário."
+  LAB-090:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: "Versão inicial (família L8 mob-deep-link, ramo saúde): deep link que compartilha laudos sem confirmação do usuário."
+  LAB-091:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: "Versão inicial (família L8 mob-deep-link, ramo indústria e energia): deep link que libera manobra sem confirmação do usuário."
+  LAB-092:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: "Versão inicial (família L10 mob-webview-html, ramo financeiro): mensagem do Pix exibida como HTML no WebView do app."
+  LAB-093:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: "Versão inicial (família L10 mob-webview-html, ramo saúde): convite com recado exibido como HTML no WebView do app."
+  LAB-094:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: "Versão inicial (família L10 mob-webview-html, ramo indústria e energia): aviso de turno exibido como HTML no WebView do app."
+  LAB-095:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: "Publicação inicial. App mobile da Pagomais manda o token de sessão na URL (?token=), que vaza no log de acesso; correção aceita o token só no cabeçalho Authorization e recusa ?token=."
+  LAB-096:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: "Publicação inicial. App mobile da Clínica Lumen manda o token de sessão na URL (?token=), que vaza no log de acesso; correção aceita o token só no cabeçalho Authorization e recusa ?token=."
+  LAB-097:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: "Publicação inicial. App mobile da Aurora Energia manda o token de sessão na URL (?token=), que vaza no log de acesso; correção aceita o token só no cabeçalho Authorization e recusa ?token=."
+  LAB-098:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: "Publicação inicial. App mobile da Pagomais modificado libera o Cashback em dobro do plano pago; correção decide pelo cadastro e confere o selo de integridade da loja simulada (Code Tampering)."
+  LAB-099:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: "Publicação inicial. App mobile da Clínica Lumen modificado libera a Teleconsulta imediata do plano Ouro; correção decide pelo cadastro e confere o selo de integridade da loja simulada (Code Tampering)."
+  LAB-100:
+    - version: 1.0.0
+      published: 2026-11-17
+      summary: "Publicação inicial. App mobile da Aurora Energia modificado libera o Relatório de ativos do supervisor; correção decide pelo cadastro e confere o selo de integridade da loja simulada (Code Tampering)."

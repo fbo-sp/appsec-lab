@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block conteudo %}
+<h1>[[painel_titulo]]</h1>
+<p class="ajuda">[[painel_desc]]</p>
+
+<dl class="dados">
+  <dt>Titular</dt><dd>{{ conta.nome }}</dd>
+</dl>
+
+<p>O app [[app_movel]] busca os [[recurso_plural]] pela API, 20 por vez:</p>
+<p><a href="/api/[[recurso]]?limite=20&pagina=1"><code>/api/[[recurso]]?limite=20&amp;pagina=1</code></a></p>
+<p class="ajuda">Próxima página: <a href="/api/[[recurso]]?limite=20&pagina=2"><code>pagina=2</code></a>.</p>
+
+<p class="banner reforcado">Você está autenticado. Use <a href="{{ url_for('auth.sair') }}">Sair</a> para encerrar a sessão.</p>
+{% endblock %}

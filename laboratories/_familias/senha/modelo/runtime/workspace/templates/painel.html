@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block conteudo %}
+<h1>[[painel_titulo]]</h1>
+<p class="ajuda">[[painel_desc]]</p>
+
+<dl class="dados">
+  <dt>Nome</dt><dd>{{ session['usuario_nome'] }}</dd>
+  <dt>Acesso</dt><dd>[[app_nome]]</dd>
+</dl>
+
+{% if reforcada %}
+<p class="banner reforcado">Sua senha está guardada no formato reforçado (com sal e custo de cálculo).</p>
+{% else %}
+<p class="banner antigo">Sua senha ainda está guardada no formato antigo, importado do sistema legado "[[sistema_legado]]". Esse formato é o alvo da correção deste laboratório.</p>
+{% endif %}
+{% endblock %}

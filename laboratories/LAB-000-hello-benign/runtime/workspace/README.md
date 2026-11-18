@@ -1,3 +1,4 @@
-# LAB-000 — workspace de exemplo
+# LAB-000 — tutorial da plataforma
 
-Arquivos editáveis da sessão. Altere `index.html` e recarregue a pré-visualização.
+Arquivos editáveis da sessão. Na última etapa do tutorial, altere `index.html`, salve com Ctrl+S
+e confira o resultado na aba Aplicação.

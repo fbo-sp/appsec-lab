@@ -1,0 +1,103 @@
+# Família A10 confianca-cliente (ADR-021): o que muda por ramo. O modelo comum está em ./modelo.
+# Depois de editar, rode:  uv run python scripts/gerar-familia.py confianca-cliente
+# Logins e senhas estão espelhados em apps/backend/app/validation/suites_familias.py (registro
+# protegido); os testes Docker conferem os dois. Seed fixo em todos os ramos: saldo 500 pontos,
+# produto 1 custa 300, produto 2 custa 150. A falha é de confiança no cliente: services/loja_service.py
+# debita o custo que veio do formulário, em vez do custo real do produto (no banco).
+ramos:
+  - destino: LAB-035-confianca-cooperativa
+    vars:
+      lab_id: LAB-035
+      versao: 1.0.0
+      codigo: A10-FIN
+      ramo: fin
+      setor: financeiro
+      imagem: lab-035-confianca
+      titulo: a loja que confia no preço do cliente
+      empresa: Cooperativa Credimova
+      marca: "◆ Credimova"
+      app_nome: Clube de Pontos
+      cor: "#1d4ed8"
+      papel: Pessoa desenvolvedora da squad de engajamento da Cooperativa Credimova
+      aplicacao: Clube de Pontos, onde o cooperado resgata produtos gastando pontos do programa de fidelidade
+      contexto: O cooperado resgata produtos no Clube de Pontos gastando pontos. Um teste de invasão alertou que o resgate confia no custo que vem do formulário — dá para resgatar um produto caro informando um custo de 1 ponto.
+      missao: Confirmar que a loja aceita um custo adulterado e corrigir usando o custo real do produto
+      painel_titulo: Clube de Pontos
+      painel_desc: Resgate produtos com os seus pontos.
+      login_desc: Entre com as credenciais do cooperado para acessar o Clube de Pontos.
+      banco: credimova_pontos
+      login_a: marina.gomes
+      senha_a: "Marina#Cred26"
+      nome_a: Marina Aguiar Gomes
+      historia_abertura: 'Você está na squad de engajamento da Cooperativa Credimova. O cooperado resgata produtos no Clube de Pontos gastando pontos. O time de segurança abriu um chamado: o resgate confia no custo que chega do formulário, e um teste de invasão mostrou que dá para resgatar um produto de 300 pontos informando um custo de 1 ponto.'
+      seed_contas:
+        - [1, marina.gomes, Marina Aguiar Gomes, "Marina#Cred26", 500.0]
+        - [2, rodrigo.sena, Rodrigo Sena Vilela, "Rodrigo#Cred26", 500.0]
+        - [3, helena.prado, Helena Prado Antunes, "Helena#Cred26", 500.0]
+      seed_produtos:
+        - [1, Fone de ouvido sem fio, 300]
+        - [2, Garrafa térmica, 150]
+  - destino: LAB-036-confianca-saude
+    vars:
+      lab_id: LAB-036
+      versao: 1.0.0
+      codigo: A10-SAU
+      ramo: sau
+      setor: saude
+      imagem: lab-036-confianca
+      titulo: a loja que confia no preço do cliente
+      empresa: Sereno Saúde
+      marca: "✚ Sereno"
+      app_nome: Clube de Bem-Estar
+      cor: "#0e7490"
+      papel: Pessoa desenvolvedora do time de produtos digitais da operadora Sereno Saúde
+      aplicacao: Clube de Bem-Estar, onde o beneficiário resgata produtos gastando pontos do programa de saúde
+      contexto: O beneficiário resgata produtos no Clube de Bem-Estar gastando pontos. Numa auditoria, a equipe apontou que o resgate confia no custo que vem do formulário — dá para resgatar um produto caro informando um custo de 1 ponto.
+      missao: Confirmar que a loja aceita um custo adulterado e corrigir usando o custo real do produto
+      painel_titulo: Clube de Bem-Estar
+      painel_desc: Resgate produtos com os seus pontos.
+      login_desc: Entre com as credenciais do beneficiário para acessar o Clube de Bem-Estar.
+      banco: sereno_pontos
+      login_a: rafael.antunes
+      senha_a: "Rafael#Sereno26"
+      nome_a: Rafael Antunes Barreto
+      historia_abertura: 'Você é do time de produtos digitais da operadora Sereno Saúde. O beneficiário resgata produtos no Clube de Bem-Estar gastando pontos. Numa auditoria, a equipe apontou que o resgate confia no custo que chega do formulário, e que dá para resgatar um produto de 300 pontos informando um custo de 1 ponto.'
+      seed_contas:
+        - [1, rafael.antunes, Rafael Antunes Barreto, "Rafael#Sereno26", 500.0]
+        - [2, carla.menezes, Carla Menezes Pires, "Carla#Sereno26", 500.0]
+        - [3, bruno.dias, Bruno Dias Correia, "Bruno#Sereno26", 500.0]
+      seed_produtos:
+        - [1, Smartband de atividades, 300]
+        - [2, Kit de faixas de exercício, 150]
+  - destino: LAB-037-confianca-energia
+    vars:
+      lab_id: LAB-037
+      versao: 1.0.0
+      codigo: A10-IND
+      ramo: ind
+      setor: industria-energia
+      imagem: lab-037-confianca
+      titulo: a loja que confia no preço do cliente
+      empresa: Voltera Distribuidora de Energia
+      marca: "⚡ Voltera"
+      app_nome: Clube de Vantagens
+      cor: "#9a3412"
+      papel: Pessoa desenvolvedora do time digital da Voltera Distribuidora de Energia
+      aplicacao: Clube de Vantagens, onde o cliente resgata produtos gastando pontos do programa de relacionamento
+      contexto: O cliente resgata produtos no Clube de Vantagens gastando pontos. Antes de uma auditoria, a equipe apontou que o resgate confia no custo que vem do formulário — dá para resgatar um produto caro informando um custo de 1 ponto.
+      missao: Confirmar que a loja aceita um custo adulterado e corrigir usando o custo real do produto
+      painel_titulo: Clube de Vantagens
+      painel_desc: Resgate produtos com os seus pontos.
+      login_desc: Entre com as credenciais do cliente para acessar o Clube de Vantagens.
+      banco: voltera_pontos
+      login_a: diego.farias
+      senha_a: "Diego#Voltera26"
+      nome_a: Diego Farias Lobo
+      historia_abertura: 'Você é do time digital da Voltera Distribuidora de Energia. O cliente resgata produtos no Clube de Vantagens gastando pontos. A equipe apontou que o resgate confia no custo que chega do formulário, e que dá para resgatar um produto de 300 pontos informando um custo de 1 ponto.'
+      seed_contas:
+        - [1, diego.farias, Diego Farias Lobo, "Diego#Voltera26", 500.0]
+        - [2, tania.rocha, Tânia Rocha Sampaio, "Tania#Voltera26", 500.0]
+        - [3, marcos.vidal, Marcos Vidal Nunes, "Marcos#Voltera26", 500.0]
+      seed_produtos:
+        - [1, Lâmpada inteligente, 300]
+        - [2, Tomada com medição, 150]

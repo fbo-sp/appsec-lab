@@ -1,0 +1,6 @@
+endereco;nome;linha;latencia_ms
+10.20.1.11;CLP Forno de Reaquecimento 01;Laminação;3
+10.20.1.15;CLP Prensa Hidráulica 02;Estamparia;4
+10.20.1.22;CLP Esteira de Bobinas 03;Expedição;6
+10.20.2.31;CLP Ponte Rolante 04;Laminação;5
+10.20.2.40;CLP Resfriamento 05;Utilidades;8

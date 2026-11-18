@@ -3,6 +3,7 @@
 # Pré-requisitos: uv, PostgreSQL local (scripts/dev-db.sh start). Nenhum contêiner é executado.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+LAB000_VERSION="$(grep -E '^  version:' "$ROOT/laboratories/LAB-000-hello-benign/manifest.yaml" | head -1 | sed -E 's/.*version:[[:space:]]*"?([^"[:space:]]+)"?.*/\1/')"
 LOGDIR="${LOGDIR:-$(mktemp -d)}"; mkdir -p "$LOGDIR"
 export APP_ENV=local AUTH_MODE=dev RUNTIME_ADAPTER=fake WORKER_POLL_SECONDS=0.2 RECONCILE_INTERVAL_SECONDS=1
 export DATABASE_URL="${DATABASE_URL:-$("$ROOT/scripts/dev-db.sh" url)}"
@@ -24,11 +25,11 @@ curl -s "${ADMIN[@]}" -H "Content-Type: application/yaml" --data-binary @"$ROOT/
 echo "== 2. Criar sessão (Idempotency-Key)"
 KEY="demo-$(date +%s%N)"
 SID=$(curl -s "${ALUNO[@]}" -H "Idempotency-Key: $KEY" -H "Content-Type: application/json" \
-  -d '{"labId":"LAB-000","version":"0.2.1","variantId":"python-http"}' "$API/api/v1/sessions" | python3 -c 'import json,sys; print(json.load(sys.stdin)["sessionId"])')
+  -d "{\"labId\":\"LAB-000\",\"version\":\"$LAB000_VERSION\",\"variantId\":\"python-http\"}" "$API/api/v1/sessions" | python3 -c 'import json,sys; print(json.load(sys.stdin)["sessionId"])')
 echo "sessionId=$SID"
 echo "== 3. Repetir com a mesma chave (deve retornar a mesma sessão)"
 curl -s "${ALUNO[@]}" -H "Idempotency-Key: $KEY" -H "Content-Type: application/json" \
-  -d '{"labId":"LAB-000","version":"0.2.1","variantId":"python-http"}' "$API/api/v1/sessions" | python3 -c 'import json,sys; print(json.load(sys.stdin)["sessionId"])'
+  -d "{\"labId\":\"LAB-000\",\"version\":\"$LAB000_VERSION\",\"variantId\":\"python-http\"}" "$API/api/v1/sessions" | python3 -c 'import json,sys; print(json.load(sys.stdin)["sessionId"])'
 echo "== 4. Aguardar READY"
 for _ in $(seq 1 50); do
   ST=$(curl -s "${ALUNO[@]}" "$API/api/v1/sessions/$SID" | python3 -c 'import json,sys; print(json.load(sys.stdin)["status"])')

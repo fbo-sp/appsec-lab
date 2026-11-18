@@ -222,6 +222,7 @@ def progress_view(db: Session, s: LabSession, now: datetime) -> dict[str, Any]:
             item.update(
                 explanation=m["explanation"],
                 task=m["task"],
+                explore=m.get("explore"),
                 concept=m.get("concept"),
                 references=m.get("references", []),
                 validation={

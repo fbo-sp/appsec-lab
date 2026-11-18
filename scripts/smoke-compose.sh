@@ -21,8 +21,14 @@ API=http://127.0.0.1:8000
 trap '"${COMPOSE[@]}" logs --no-color api worker | tail -40; "${COMPOSE[@]}" down -v >/dev/null 2>&1 || true' EXIT
 "${COMPOSE[@]}" up -d --wait "${BUILD[@]}"
 json() { python3 -c "import json,sys; print(json.load(sys.stdin)$1)"; }
+# Site do atacante (ADR-022): sem grant, nada é servido; ticket inválido é recusado.
+[ "$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8003/)" = "403" ]
+[ "$(curl -s -o /dev/null -w "%{http_code}" "http://127.0.0.1:8003/__cecyber/auth?ticket=x")" = "401" ]
+# Versão do LAB-000 lida do próprio manifesto, para o smoke não quebrar a cada bump de versão.
+LAB000_VERSION="$(grep -E '^  version:' "$ROOT/laboratories/LAB-000-hello-benign/manifest.yaml" | head -1 | sed -E 's/.*version:[[:space:]]*"?([^"[:space:]]+)"?.*/\1/')"
+# 60 s: com ~100 imagens de laboratório recém-construídas, o runner de CI demora mais para provisionar.
 wait_status() {
-  for _ in $(seq 1 40); do
+  for _ in $(seq 1 120); do
     st=$(curl -sf -H "X-Dev-User: smoke" "$API/api/v1/sessions/$1" | json '["status"]')
     [ "$st" = "$2" ] && { echo "$st"; return 0; }; sleep 0.5
   done; echo "esperado $2, obtido $st" >&2; return 1
@@ -36,7 +42,7 @@ else
   [ "$code" = "201" ] || { echo "registro falhou: $code" >&2; exit 1; }
 fi
 SID=$(curl -sf -H "X-Dev-User: smoke" -H "Idempotency-Key: smoke-key-0001" -H "Content-Type: application/json" \
-  -d '{"labId":"LAB-000","version":"0.2.1","variantId":"python-http"}' "$API/api/v1/sessions" | json '["sessionId"]')
+  -d "{\"labId\":\"LAB-000\",\"version\":\"$LAB000_VERSION\",\"variantId\":\"python-http\"}" "$API/api/v1/sessions" | json '["sessionId"]')
 wait_status "$SID" READY
 if [ "$DOCKER_RT" = 1 ]; then
   C="cecyber-lab-$SID"
@@ -68,8 +74,12 @@ if [ "$DOCKER_RT" = 1 ]; then
     curl -sf -H "X-Dev-User: smoke" -H "Idempotency-Key: $3" -H "Content-Type: application/json" \
       -d "$2" "$API/api/v1/sessions/$SID/steps/$1/evaluations"
   }
-  [ "$(evaluate explore '{"answer":"lab"}' smoke-eval-0001 | json '["status"]')" = "PASSED" ]
-  EV=$(evaluate edit-page '{}' smoke-eval-0002 | json '["evaluationId"]')
+  # Tutorial (ADR-018): quatro etapas de resposta liberam a etapa http de edição.
+  [ "$(evaluate conhecer-tela '{"answer":"AZUL-17"}' smoke-eval-0001 | json '["status"]')" = "PASSED" ]
+  [ "$(evaluate barra-endereco '{"answer":"VERDE-58"}' smoke-eval-0003 | json '["status"]')" = "PASSED" ]
+  [ "$(evaluate usar-terminal '{"answer":"lab"}' smoke-eval-0004 | json '["status"]')" = "PASSED" ]
+  [ "$(evaluate usar-dicas '{"answer":"LARANJA-23"}' smoke-eval-0005 | json '["status"]')" = "PASSED" ]
+  EV=$(evaluate editar-validar '{}' smoke-eval-0002 | json '["evaluationId"]')
   for _ in $(seq 1 90); do
     EVST=$(curl -sf -H "X-Dev-User: smoke" "$API/api/v1/sessions/$SID/evaluations/$EV" | json '["status"]')
     case "$EVST" in QUEUED|RUNNING) sleep 1;; *) break;; esac

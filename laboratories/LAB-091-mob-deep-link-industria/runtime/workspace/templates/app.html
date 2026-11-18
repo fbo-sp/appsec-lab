@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>App Aurora Campo</title>
+  <link rel="stylesheet" href="/static/estilo.css">
+  <style>:root { --marca: #b45309; }</style>
+</head>
+<body>
+  <!-- App mobile SIMULADO (ADR-025): aparece dentro da moldura de celular da aba Aplicação. -->
+  <div class="status" aria-hidden="true"><span>9:41</span><span>5G ▮▮▮ 100%</span></div>
+  <main id="app" class="app"></main>
+  <script>
+    window.LAB = {
+      marca: "Aurora",
+      lista: "Ordens de serviço",
+      acao: "Liberar manobra no disjuntor 7",
+      operacao: "liberação de manobra",
+      acaoAlvo: "Disjuntor 7 · SE Aurora Norte",
+      acaoDetalhe: "Manobra programada OS-1182",
+      link: "auroracampo://manobra?alvo=Disjuntor+12+SE+Aurora+Sul&detalhe=Religar+alimentador+energizado",
+      notificacao: { app: "E-mail", remetente: "Centro de Operação <co-aurora@exemplo.net>", texto: "URGENTE: confirme a liberação da manobra no app Aurora Campo pelo link abaixo." },
+      recursos: {{ recursos|tojson }}
+    };
+  </script>
+  <script src="/static/app.js"></script>
+</body>
+</html>

@@ -15,7 +15,9 @@ from cecyber_contracts import (
 from cecyber_contracts.__main__ import schema_json
 
 ROOT = Path(__file__).resolve().parents[3]
-BENIGN = ROOT / "laboratories" / "LAB-000-hello-benign" / "manifest.yaml"
+# Manifesto mínimo de referência: o LAB-000 0.2.1 congelado (o lab real virou o tutorial, ADR-018).
+BENIGN = ROOT / "apps" / "backend" / "tests" / "fixtures" / "lab000-engine-0.2.1.yaml"
+TUTORIAL = ROOT / "laboratories" / "LAB-000-hello-benign" / "manifest.yaml"
 SCHEMA = ROOT / "packages" / "contracts" / "schemas" / "appseclab.v1alpha1.schema.json"
 
 
@@ -34,6 +36,12 @@ def test_benign_manifest_is_valid(manifest: dict[str, Any]) -> None:
     m = validate_manifest(manifest)
     assert m.metadata.id == "LAB-000"
     assert m.variants[0].network.egress_profile == "deny-all"
+
+
+def test_tutorial_manifest_is_valid() -> None:
+    m = validate_manifest(load_manifest(TUTORIAL))
+    assert m.metadata.id == "LAB-000" and m.metadata.primary_cwe == "CWE-1000"
+    assert len(m.steps) == 5 and m.metadata.classifications is None
 
 
 def test_schema_file_matches_model() -> None:
@@ -160,7 +168,17 @@ def test_issues_have_location(manifest: dict[str, Any]) -> None:
 
 def test_optional_content_fields_do_not_change_existing_digests(manifest: dict[str, Any]) -> None:
     dumped = canonical_manifest_json_for(manifest)
-    assert '"references"' not in dumped and '"wrapUp"' not in dumped
+    assert '"references"' not in dumped and '"wrapUp"' not in dumped and '"explore":' not in dumped
+
+
+def test_explore_is_accepted_and_optional(manifest: dict[str, Any]) -> None:
+    before = canonical_manifest_json_for(manifest)
+    assert '"explore":' not in before
+    manifest["steps"][0]["explore"] = "Opcional: por que ler o **log** e o que procurar."
+    m = validate_manifest(manifest)
+    assert m.steps[0].explore is not None and m.steps[1].explore is None
+    after = canonical_manifest_json_for(manifest)
+    assert '"explore":' in after
 
 
 def canonical_manifest_json_for(data: dict[str, Any]) -> str:
@@ -193,3 +211,74 @@ def test_references_and_wrap_up_are_accepted(manifest: dict[str, Any]) -> None:
 def test_reference_urls_must_be_plain_https(manifest: dict[str, Any], url: str) -> None:
     manifest["steps"][0]["references"] = [{"title": "x", "url": url}]
     assert codes(manifest)
+
+
+# --- ADR-017: classificação em listas de referência ----------------------------------------------
+
+
+def test_classifications_are_optional_and_do_not_change_existing_digests(manifest: dict[str, Any]) -> None:
+    assert '"classifications"' not in canonical_manifest_json_for(manifest)
+
+
+def test_classifications_are_accepted(manifest: dict[str, Any]) -> None:
+    manifest["metadata"]["classifications"] = [
+        {"framework": "OWASP Top 10", "edition": "2025", "entries": ["A05 Injection"]},
+        {"framework": "SANS CWE Top 25", "edition": "2025", "entries": ["#2 CWE-89 SQL Injection"]},
+    ]
+    m = validate_manifest(manifest)
+    assert m.metadata.classifications is not None and m.metadata.classifications[0].edition == "2025"
+
+
+@pytest.mark.parametrize(
+    "item",
+    [
+        {"framework": "OWASP Top 10", "edition": "25", "entries": ["A05 Injection"]},
+        {"framework": "OWASP Top 10", "edition": "2025", "entries": []},
+        {"framework": "", "edition": "2025", "entries": ["A05 Injection"]},
+        {"framework": "OWASP Top 10", "edition": "2025", "entries": ["A05"], "extra": 1},
+    ],
+)
+def test_invalid_classification_is_rejected(manifest: dict[str, Any], item: dict[str, Any]) -> None:
+    manifest["metadata"]["classifications"] = [item]
+    with pytest.raises(ManifestValidationError):
+        validate_manifest(manifest)
+
+
+def test_family_sectors_and_modules_are_optional_and_keep_digests(manifest: dict[str, Any]) -> None:
+    """ADR-021: os campos novos não aparecem quando ausentes, então o digest dos labs atuais não muda."""
+    dumped = canonical_manifest_json_for(manifest)
+    assert '"family":' not in dumped and '"sectors":' not in dumped and '"courseModules":' not in dumped
+
+
+def test_family_sectors_and_modules_are_accepted(manifest: dict[str, Any]) -> None:
+    manifest["metadata"]["family"] = "xss"
+    manifest["metadata"]["sectors"] = ["financeiro"]
+    manifest["metadata"]["courseModules"] = ["trained", "master"]
+    m = validate_manifest(manifest)
+    assert m.metadata.family == "xss"
+    assert [s.value for s in m.metadata.sectors or ()] == ["financeiro"]
+    assert [c.value for c in m.metadata.course_modules or ()] == ["trained", "master"]
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("sectors", ["varejo"]),
+        ("sectors", []),
+        ("courseModules", ["avancado"]),
+        ("family", "XSS Refletido"),
+    ],
+)
+def test_invalid_family_sector_or_module_is_rejected(
+    manifest: dict[str, Any], field: str, value: Any
+) -> None:
+    manifest["metadata"][field] = value
+    with pytest.raises(ManifestValidationError):
+        validate_manifest(manifest)
+
+
+def test_attacker_interface_is_accepted(manifest: dict[str, Any]) -> None:
+    """ADR-022: variante com site do atacante (porta 8090 do contêiner, servida pelo gateway)."""
+    manifest["variants"][0]["interfaces"] = ["editor", "terminal", "web", "attacker"]
+    m = validate_manifest(manifest)
+    assert "attacker" in [i.value for i in m.variants[0].interfaces]

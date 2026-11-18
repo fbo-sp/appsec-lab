@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block conteudo %}
+<h1>Minhas ordens de serviço</h1>
+<p class="ajuda">Ordens de serviço abertas para a sua área.</p>
+
+<dl class="dados">
+  <dt>Técnico</dt><dd>{{ conta.nome }}</dd>
+</dl>
+
+<table class="lista">
+  <tr><th>Data</th><th>Descrição</th><th>Situação</th></tr>
+  {% for data, descricao, valor in itens %}
+  <tr><td>{{ data }}</td><td>{{ descricao }}</td><td>{{ valor }}</td></tr>
+  {% endfor %}
+</table>
+
+<h2>Ordem de serviço para impressão</h2>
+<form method="get" action="{{ url_for('painel.documento') }}">
+  <label>Modelo
+    <select name="modelo">
+      {% for arquivo, rotulo in modelos %}<option value="{{ arquivo }}">{{ rotulo }}</option>{% endfor %}
+    </select>
+  </label>
+  <button type="submit">Gerar documento</button>
+</form>
+<p class="ajuda">Gerador de documentos: relatorix {{ versao }}</p>
+
+{% if erro %}<p class="banner antigo">{{ erro }}</p>{% endif %}
+<p class="banner reforcado">Use <a href="{{ url_for('auth.sair') }}">Sair</a> para encerrar a sessão.</p>
+{% endblock %}

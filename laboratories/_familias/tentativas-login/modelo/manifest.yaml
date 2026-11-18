@@ -1,0 +1,248 @@
+# [[lab_id]] ([[codigo]]): login sem limite de tentativas (CWE-307) no [[app_nome]] da [[empresa]] (Flask + SQLite).
+# CONTÉM VULNERABILIDADE INTENCIONAL. Uso exclusivo no runtime Docker LOCAL (ADR-008), em rede
+# interna da sessão. Dados 100% fictícios. Família A13 tentativas-login (ADR-021): gerado por
+# scripts/gerar-familia.py a partir de laboratories/_familias/tentativas-login; não edite este arquivo à mão.
+#
+# ATENÇÃO: o digest abaixo é uma FIXTURE (sha256 de um texto fixo), não uma imagem publicada.
+# scripts/lab-local.sh e .ps1 trocam pela imagem construída localmente antes de registrar.
+apiVersion: labs.cecyber.io/v1alpha1
+kind: AppSecLab
+metadata:
+  id: [[lab_id]]
+  version: [[versao]]
+  title: "[[codigo]] · Força bruta no login: [[titulo]]"
+  primaryCwe: CWE-307
+  secondaryCwes: [CWE-770]
+  family: tentativas-login
+  sectors: [[[setor]]]
+  courseModules: [trained]
+  classifications:
+    - framework: OWASP Top 10
+      edition: "2025"
+      entries:
+        - "A07 Authentication Failures"
+    - framework: OWASP Top 10
+      edition: "2021"
+      entries:
+        - "A07 Identification and Authentication Failures"
+    - framework: OWASP API Security Top 10
+      edition: "2023"
+      entries:
+        - "API2 Broken Authentication"
+    - framework: SANS CWE Top 25
+      edition: "2025"
+      entries:
+        - "Não se enquadra; use o CWE"
+    - framework: SANS CWE Top 25
+      edition: "2024"
+      entries:
+        - "Não se enquadra; use o CWE"
+learning:
+  singleVulnerability: true
+  estimatedMinutes: 35
+  difficulty: intermediate
+  objectives:
+    - Entender por que um login sem limite de tentativas permite ataque de força bruta
+    - Explorar a falha enviando várias tentativas de senha seguidas, sem bloqueio
+    - Reconhecer que o limite precisa ser contado no servidor, por usuário
+    - Corrigir limitando as tentativas por usuário na camada de serviço
+  story:
+    role: [[papel]]
+    application: [[aplicacao]]
+    context: >-
+      [[contexto]]
+    mission: [[missao]]
+  wrapUp:
+    text: |
+      Agora o login bloqueia o usuário depois de poucas tentativas erradas seguidas, e a força bruta deixa de ser viável. Em um sistema real, vale reforçar:
+
+      - **Senha com hash não defende contra força bruta online.** O hash protege as senhas se o banco vazar; ele não impede ninguém de testar senha após senha na tela de login. São defesas para problemas diferentes.
+      - **Conte as tentativas no servidor, por identificador.** Travar o botão no navegador não adianta: quem ataca manda o pedido direto. O servidor é que precisa contar as tentativas falhas — por usuário e também por origem (IP) — e recusar quando passar do limite.
+      - **Prefira atraso progressivo e janela de tempo a bloqueio permanente.** Bloquear para sempre vira um jeito fácil de trancar a conta de uma vítima (negação de serviço). O comum é liberar de novo depois de uma janela, aumentar o atraso a cada falha (backoff) e exigir um segundo fator ou CAPTCHA.
+      - **Registre e monitore.** Uma rajada de logins falhos para um mesmo usuário, ou a partir de um mesmo IP, é um sinal clássico de ataque. Registrar a tentativa recusada ajuda a detectar o abuso cedo.
+    references:
+      - title: "OWASP Top 10:2025: A07 Authentication Failures"
+        url: https://top10.owasp.org/2025/A07_2025-Authentication_Failures/
+      - title: "OWASP Top 10:2021: A07 Identification and Authentication Failures"
+        url: https://owasp.org/Top10/A07_2021-Identification_and_Authentication_Failures/
+      - title: "OWASP API Security Top 10 2023: API2 Broken Authentication"
+        url: https://owasp.org/API-Security/editions/2023/en/0xa2-broken-authentication/
+      - title: "CWE-307: Improper Restriction of Excessive Authentication Attempts"
+        url: https://cwe.mitre.org/data/definitions/307.html
+      - title: "OWASP Cheat Sheet: Authentication (credential stuffing e força bruta)"
+        url: https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html
+variants:
+  - id: python-flask
+    language: python
+    framework: flask
+    image: registry.local/labs/[[imagem]]@sha256:[[digest_fixture]]
+    runtimeProfile: web-basic
+    workspacePath: /workspace
+    startup:
+      command: ["sh", "-c", "python -u -m flask --app app run --host 0.0.0.0 --port 8080 --reload --no-debugger 2>&1 | tee -a /tmp/app.log"]
+      port: 8080
+    resources:
+      cpuMillicores: 500
+      memoryMiB: 512
+      storageMiB: 256
+      pidsMax: 64
+    session:
+      ttlMinutes: 45
+      maxRenewals: 2
+    interfaces: [editor, terminal, web]
+steps:
+  - id: conhecer
+    order: 1
+    title: Conhecer o login e achar o serviço de autenticação
+    explanation: |
+      [[historia_abertura]]
+
+      A falha deste laboratório **não** é o armazenamento da senha: ela já é guardada com hash forte. A falha é de outro tipo — o login aceita **tentativas ilimitadas**, então um atacante pode testar senha após senha (força bruta) até acertar.
+
+      ```ilustracao
+      forca-bruta
+      ```
+
+      Siga o login pelas camadas:
+
+      1. **Controller** (`controllers/auth_controller.py`): recebe usuário e senha do formulário e chama o serviço.
+      2. **Serviço** (`services/auth_service.py`): confere a senha e devolve a conta. **É aqui que falta contar as tentativas.**
+
+      As credenciais válidas de um usuário, neste laboratório, são:
+
+      - Usuário `[[login_a]]`, senha `[[senha_a]]`.
+    task: |
+      1. Na aba **Aplicação**, entre com `[[login_a]]` e a senha `[[senha_a]]`. Você chega ao **[[painel_titulo]]**. Depois clique em **Sair**.
+      2. Na aba **Código**, abra `services/auth_service.py`.
+
+      Informe abaixo o nome do método que confere o login e a senha (o que o controller chama).
+    concept: Força bruta — testar senhas sem limite de tentativas
+    validatorRef: tentativas-login/answer/metodo-[[ramo]]-v1
+    hints:
+      - level: 1
+        text: 'Em `services/auth_service.py`, a classe `AuthService` tem um único método público.'
+      - level: 2
+        text: É o método que o controller chama para conferir usuário e senha.
+      - level: 3
+        text: O valor é `autenticar`.
+    points: 10
+  - id: explorar
+    order: 2
+    title: Testar várias senhas seguidas, sem bloqueio
+    explanation: |
+      O método `autenticar` só responde "bate" ou "não bate". Ele não conta quantas vezes seguidas aquele usuário errou. Então nada impede de tentar senha após senha: é exatamente assim que funciona um ataque de força bruta ou de *credential stuffing* (testar listas de senhas vazadas).
+    task: |
+      Na aba **Aplicação**, na tela de login, tente entrar como `[[login_a]]` com uma senha **errada** (por exemplo `senha1`). Você recebe "Usuário ou senha inválidos.". Repita com `senha2`, `senha3`, `senha4`, `senha5`, `senha6`…
+
+      Veja que a aplicação **continua aceitando novas tentativas**, sempre com a mesma mensagem — nunca bloqueia. Informe abaixo se, depois de muitas tentativas erradas, o login **bloqueia** ou **continua** aceitando tentativas.
+    explore: |
+      **Por que isso é grave.** Num sistema real, um atacante não digita na tela: ele manda centenas de pedidos por segundo direto para `/login`, com `curl` ou um script, variando a senha. Sem limite, é só questão de tempo até acertar uma senha fraca. Contar as tentativas no servidor é o que torna esse ataque inviável.
+    concept: Sem limite de tentativas, o login aceita força bruta
+    validatorRef: tentativas-login/answer/comportamento-[[ramo]]-v1
+    hints:
+      - level: 1
+        text: Repare que a mensagem é sempre a mesma, por mais que você erre.
+      - level: 2
+        text: Nenhuma tela de "muitas tentativas" aparece; o login nunca trava.
+      - level: 3
+        text: A resposta é `continua`.
+    points: 15
+  - id: medida
+    order: 3
+    title: Nomear a defesa que falta
+    explanation: |
+      A defesa contra força bruta online é limitar o número de **tentativas** de login seguidas e bloquear quando passar do limite. A contagem precisa ser **por usuário** (e, idealmente, também por IP), para não deixar um atacante testar senhas à vontade.
+    task: |
+      Complete a frase: para impedir a força bruta, o login precisa limitar o número de ___ por usuário.
+
+      Responda com uma palavra (o que se conta e se limita a cada login falho).
+    concept: A defesa é limitar as tentativas de login por usuário
+    validatorRef: tentativas-login/answer/defesa-[[ramo]]-v1
+    hints:
+      - level: 1
+        text: É o que o atacante faz muitas vezes seguidas até acertar.
+      - level: 2
+        text: Cada senha testada é uma delas.
+      - level: 3
+        text: A resposta é `tentativas`.
+    points: 15
+  - id: onde
+    order: 4
+    title: Decidir onde o limite tem que valer
+    explanation: |
+      Dá para desabilitar o botão de login no navegador depois de algumas tentativas. Isso ajuda o usuário honesto, mas **não defende nada**: quem ataca manda o pedido direto para a aplicação (por `curl`, por exemplo), sem passar pela tela.
+
+      O limite que realmente vale é o que o **servidor** conta e aplica, na camada de serviço, antes de conferir a senha. É lá que você vai colocá-lo.
+    task: |
+      Onde a contagem das tentativas precisa ser feita para valer de verdade: no navegador (cliente) ou no servidor?
+
+      Responda com uma palavra.
+    concept: O limite de tentativas é contado e aplicado no servidor
+    validatorRef: tentativas-login/answer/onde-[[ramo]]-v1
+    hints:
+      - level: 1
+        text: O atacante não usa a sua tela de login; ele fala direto com a aplicação.
+      - level: 2
+        text: A trava do navegador é só conforto; a que vale roda do outro lado.
+      - level: 3
+        text: A resposta é `servidor`.
+    points: 15
+  - id: corrigir
+    order: 5
+    title: Limitar as tentativas no serviço de autenticação
+    explanation: |
+      **Por que a falha existe.** `autenticar` confere a senha e responde, sem nunca contar quantas vezes aquele usuário errou. Sem contagem, não há como bloquear.
+
+      **A correção.** Guardar, por usuário, quantas tentativas falharam. Se passar de um limite (aqui, 5), recusar o login — mesmo com a senha certa — até a contagem zerar. A cada falha, somar 1; a cada acerto, zerar.
+    task: |
+      Abra `services/auth_service.py` e troque o método `autenticar` inteiro por este (note as duas linhas novas de classe, `LIMITE` e `_tentativas`, logo antes do método):
+
+      ```python
+          # Quantas tentativas seguidas de login são permitidas por usuário antes de bloquear.
+          LIMITE = 5
+          _tentativas: dict[str, int] = {}
+
+          def autenticar(self, login: str, senha: str) -> Conta | None:
+              """Confere login e senha e devolve a conta (ou None se não baterem)."""
+              chave = login.strip().lower()
+              if self._tentativas.get(chave, 0) >= self.LIMITE:
+                  raise ValueError("Muitas tentativas de login. Tente novamente mais tarde.")
+              encontrado = self._repositorio.buscar_por_login(chave)
+              if encontrado is not None:
+                  conta, senha_hash = encontrado
+                  if check_password_hash(senha_hash, senha):
+                      self._tentativas[chave] = 0
+                      return conta
+              self._tentativas[chave] = self._tentativas.get(chave, 0) + 1
+              return None
+      ```
+
+      Salve com **Ctrl+S**. A aplicação reinicia. Então, na aba **Aplicação**:
+
+      1. erre a senha de `[[login_a]]` cinco vezes seguidas;
+      2. na sexta tentativa, veja que aparece **"Muitas tentativas de login"** — o login travou;
+      3. clique em **Validar**.
+    explore: |
+      **Se algo não funcionar depois de salvar.** Um recuo errado derruba a aplicação. No **Terminal**:
+
+      ```bash
+      grep -iE "error|traceback" /tmp/app.log | tail -n 15
+      ```
+
+      **O que procurar.** `IndentationError` aponta a linha com recuo diferente: `LIMITE` e `_tentativas` ficam com 4 espaços (atributos de classe), o `def autenticar` também com 4, e o corpo com 8. Copie o bloco da tarefa sem mudar o recuo.
+    concept: Correção da força bruta com limite de tentativas por usuário no servidor
+    validatorRef: tentativas-login/python-flask/login-protegido-[[ramo]]-v1
+    hints:
+      - level: 1
+        text: 'A mudança é só em `services/auth_service.py`, no método `autenticar` (mais dois atributos de classe).'
+      - level: 2
+        text: "Conte as falhas por usuário num dicionário e recuse quando passar de 5."
+      - level: 3
+        text: Copie o bloco da tarefa sem mudar o recuo. `LIMITE`, `_tentativas` e `def autenticar` ficam com 4 espaços.
+    points: 45
+policy:
+  sequentialUnlock: true
+  allowStepRetry: true
+  persistProgressAcrossReset: true
+  allowSolutionReveal: false
+  finalPassingScore: 100

@@ -1,0 +1,251 @@
+# LAB-053 (MOB-02-FIN): senha guardada em texto puro no armazenamento do app (CWE-312) no App Pagomais da Pagomais (app mobile simulado, Flask + SQLite).
+# CONTÉM VULNERABILIDADE INTENCIONAL. Uso exclusivo no runtime Docker LOCAL (ADR-008), em rede
+# interna da sessão. Dados 100% fictícios. Família MOB-02 mob-dados-locais (ADR-021, ADR-025): gerado por
+# scripts/gerar-familia.py a partir de laboratories/_familias/mob-dados-locais; não edite este arquivo à mão.
+#
+# ATENÇÃO: o digest abaixo é uma FIXTURE (sha256 de um texto fixo), não uma imagem publicada.
+# scripts/lab-local.sh e .ps1 trocam pela imagem construída localmente antes de registrar.
+apiVersion: labs.cecyber.io/v1alpha1
+kind: AppSecLab
+metadata:
+  id: LAB-053
+  version: 1.0.0
+  title: "MOB-02-FIN · Senha guardada no aparelho: a senha do usuário escrita no aparelho"
+  primaryCwe: CWE-312
+  secondaryCwes: [CWE-922, CWE-256]
+  family: mob-dados-locais
+  sectors: [financeiro]
+  courseModules: [foundation]
+  classifications:
+    - framework: OWASP Top 10
+      edition: "2025"
+      entries:
+        - "A04 Cryptographic Failures"
+    - framework: OWASP Top 10
+      edition: "2021"
+      entries:
+        - "A02 Cryptographic Failures"
+    - framework: SANS CWE Top 25
+      edition: "2025"
+      entries:
+        - "Não se enquadra; use o CWE"
+    - framework: SANS CWE Top 25
+      edition: "2024"
+      entries:
+        - "Não se enquadra; use o CWE"
+    - framework: OWASP Mobile Top 10
+      edition: "2024"
+      entries:
+        - "M9 Insecure Data Storage"
+    - framework: OWASP Mobile Top 10
+      edition: "2016"
+      entries:
+        - "M2 Insecure Data Storage"
+    - framework: OWASP MASVS
+      edition: "2023"
+      entries:
+        - "MASVS-STORAGE-1"
+learning:
+  singleVulnerability: true
+  estimatedMinutes: 30
+  difficulty: beginner
+  objectives:
+    - Entender o que um app guarda no aparelho e quem consegue ler esses arquivos
+    - Encontrar a senha do usuário gravada em texto puro nas preferências do app
+    - Reconhecer que, para manter a sessão, basta guardar um token de curta duração
+    - Corrigir o armazenamento local para nunca gravar a senha
+  story:
+    role: >-
+      Pessoa desenvolvedora do time de apps do banco digital Pagomais
+    application: >-
+      App Pagomais, o app em que o cliente consulta o extrato
+    context: >-
+      Depois do login, o app de contas da Pagomais grava nas preferências do aparelho tudo o que usou para entrar, inclusive a senha em texto puro.
+    mission: >-
+      Encontrar a senha gravada no aparelho e corrigir o app para guardar só o necessário
+  wrapUp:
+    text: |
+      Agora o app guarda só o login e o token, e a senha não sai da tela de login. Em um app real, vale reforçar:
+
+      - **O aparelho não é cofre.** Arquivos do app (SharedPreferences, NSUserDefaults, SQLite, arquivos em cache) são lidos com root/jailbreak, por backup, por ferramentas forenses ou por malware com acesso ao armazenamento.
+      - **Senha não se guarda.** Para manter a sessão, guarde um token curto, que o servidor pode revogar. Para entrar de novo sem digitar a senha, use biometria liberando um token, não a senha.
+      - **Segredos vão no armazenamento seguro da plataforma.** Android Keystore (com EncryptedSharedPreferences) e iOS Keychain guardam chaves fora do alcance de quem só copia os arquivos do app.
+      - **Menos dados, menos risco.** Antes de gravar algo, pergunte se o app precisa disso offline. O que não é gravado não vaza.
+    references:
+      - title: "OWASP Mobile Top 10 2024: M9 Insecure Data Storage"
+        url: https://owasp.org/www-project-mobile-top-10/2023-risks/m9-insecure-data-storage
+      - title: "OWASP MASVS"
+        url: https://mas.owasp.org/MASVS/
+      - title: "OWASP MASTG: Data Storage on Android"
+        url: https://mas.owasp.org/MASTG/
+      - title: "CWE-312: Cleartext Storage of Sensitive Information"
+        url: https://cwe.mitre.org/data/definitions/312.html
+      - title: "Android: EncryptedSharedPreferences"
+        url: https://developer.android.com/reference/androidx/security/crypto/EncryptedSharedPreferences
+variants:
+  - id: python-flask
+    language: python
+    framework: flask
+    image: registry.local/labs/lab-053-mobile@sha256:cab7f14a15acca007fbfcf9d88e619214557a93eeb12f522d511e8e5e9865c7c
+    runtimeProfile: web-basic
+    workspacePath: /workspace
+    startup:
+      command: ["sh", "-c", "python -u -m flask --app app run --host 0.0.0.0 --port 8080 --reload --no-debugger 2>&1 | tee -a /tmp/app.log"]
+      port: 8080
+    resources:
+      cpuMillicores: 500
+      memoryMiB: 512
+      storageMiB: 256
+      pidsMax: 64
+    session:
+      ttlMinutes: 45
+      maxRenewals: 2
+    interfaces: [editor, terminal, web]
+    platform: mobile
+steps:
+  - id: conhecer
+    order: 1
+    title: "Conhecer o app e achar o que ele grava no aparelho"
+    explanation: |
+      Você está no time de apps do banco digital Pagomais. Um cliente perdeu o celular e, na análise do incidente, a perícia copiou os arquivos do app de contas da Pagomais e achou a senha dele escrita por extenso. O time de segurança pediu para revisar o que o app guarda no aparelho depois do login.
+
+      **Um laboratório mobile.** Na aba **Aplicação**, o app aparece numa moldura de celular. Ele é um app **simulado** (não há emulador), mas fala com a API do servidor do mesmo jeito que um app Android ou iOS. Toda falha de app mobile termina numa decisão de segurança: quem a toma, o aparelho ou o servidor?
+
+      ```ilustracao
+      mob-dados-locais
+      ```
+
+      Siga o login pelas camadas:
+
+      1. **Controller** (`controllers/api_controller.py`): `POST /api/login` confere a senha, emite o token e pede ao aparelho para guardar a sessão.
+      2. **Aparelho** (`dispositivo/sessao_local.py`): grava as preferências do app no celular. **É aqui que está a falha.**
+
+      No laboratório, o aparelho é simulado: o que o app grava fica em `/tmp/dispositivo.db`. O script `ver_aparelho.py` mostra esse conteúdo, como faria quem copia os arquivos do app.
+
+      As credenciais de teste deste laboratório são:
+
+      - Usuário `ana.ribeiro`, senha `Ana#Pagomais26` (Ana Ribeiro Teixeira).
+    task: |
+      1. Na aba **Aplicação**, entre no app do celular com `ana.ribeiro` e a senha `Ana#Pagomais26`.
+      2. Na aba **Código**, abra `dispositivo/sessao_local.py`.
+
+      Informe abaixo o nome do método que o app chama, logo depois do login, para guardar a sessão.
+    concept: "Armazenamento local: o que o app grava fica no aparelho"
+    validatorRef: mob-dados-locais/answer/metodo-fin-v1
+    hints:
+      - level: 1
+        text: "A classe `SessaoLocal` tem um método público além de `__init__`."
+      - level: 2
+        text: "É o método chamado em `POST /api/login`."
+      - level: 3
+        text: "O valor é `guardar`."
+    points: 10
+  - id: explorar
+    order: 2
+    title: "Ler o que o app gravou no aparelho"
+    explanation: |
+      Você já entrou no app na etapa anterior. Agora faça o papel de quem pegou o aparelho e copiou os arquivos do app.
+    task: |
+      No **Terminal**:
+
+      ```bash
+      python3 ver_aparelho.py
+      ```
+
+      Veja as chaves gravadas. Qual dado sensível do usuário aparece escrito por extenso? Responda com uma palavra.
+    explore: |
+      **Onde isso fica num aparelho de verdade.** No Android, `SharedPreferences` vira um XML em `/data/data/<pacote>/shared_prefs/`; no iOS, `UserDefaults` vira um plist dentro do contêiner do app. Com root/jailbreak, `adb backup` (quando o app permite backup) ou uma ferramenta forense, esses arquivos saem do aparelho em minutos.
+
+      **Por que é grave.** Muita gente reusa a senha em outros serviços; uma senha vazada do celular abre portas fora do app.
+    concept: "A senha fica legível no aparelho"
+    validatorRef: mob-dados-locais/answer/comportamento-fin-v1
+    hints:
+      - level: 1
+        text: "Compare as chaves gravadas com o que você digitou no login."
+      - level: 2
+        text: "É o que você digitou no campo protegido do login."
+      - level: 3
+        text: "A resposta é `senha`."
+    points: 15
+  - id: medida
+    order: 3
+    title: "Nomear o que basta guardar"
+    explanation: |
+      O app guarda a sessão para o usuário não digitar a senha toda vez. Mas, para continuar logado, o app não precisa da senha: precisa do valor que a API devolveu no login e que ele já envia em `Authorization: Bearer ...`.
+    task: |
+      Complete: para manter a sessão, basta o app guardar o ___ emitido no login.
+
+      Responda com uma palavra.
+    concept: "Para manter a sessão, basta o token"
+    validatorRef: mob-dados-locais/answer/defesa-fin-v1
+    hints:
+      - level: 1
+        text: "Veja o que `POST /api/login` devolve."
+      - level: 2
+        text: "É o valor enviado em `Authorization: Bearer`."
+      - level: 3
+        text: "A resposta é `token`."
+    points: 15
+  - id: onde
+    order: 4
+    title: "Decidir se a senha precisa ficar no aparelho"
+    explanation: |
+      Às vezes a senha é guardada "para facilitar": entrar de novo sozinho, reenviar quando o token expira. Mas isso troca uma conveniência por um risco permanente. Quando o token expira, o certo é pedir login de novo (ou usar biometria liberando um token guardado no Keystore/Keychain).
+    task: |
+      O app precisa guardar a senha no aparelho para manter o usuário logado?
+
+      Responda **sim** ou **não**.
+    concept: "Senha nunca fica no aparelho"
+    validatorRef: mob-dados-locais/answer/onde-fin-v1
+    hints:
+      - level: 1
+        text: "A API já identifica o usuário pelo token."
+      - level: 2
+        text: "A senha só é usada uma vez, no login."
+      - level: 3
+        text: "A resposta é `não`."
+    points: 15
+  - id: corrigir
+    order: 5
+    title: "Guardar só o login e o token"
+    explanation: |
+      **Por que a falha existe.** `guardar` grava `login`, `senha` e `token` nas preferências do app.
+
+      **A correção.** Gravar só o necessário para manter a sessão: o login (para mostrar na tela) e o token. A senha continua sendo recebida pelo método, mas não vai para o aparelho.
+    task: |
+      Abra `dispositivo/sessao_local.py` e troque as duas linhas do corpo de `guardar` (a partir do comentário) por estas:
+
+      ```python
+              # Guarda só o necessário para manter a sessão: nunca a senha.
+              self._gravar({"login": login, "token": token})
+      ```
+
+      Salve com **Ctrl+S**. A aplicação reinicia. Então:
+
+      1. na aba **Aplicação**, entre de novo no app e veja que tudo continua funcionando;
+      2. no **Terminal**, rode `python3 ver_aparelho.py` e veja que a senha não aparece mais;
+      3. clique em **Validar**.
+    explore: |
+      **Se algo não funcionar depois de salvar.** Um recuo errado derruba a aplicação e o app no celular para de responder. No **Terminal**:
+
+      ```bash
+      grep -iE "error|traceback" /tmp/app.log | tail -n 15
+      ```
+
+      **O que procurar.** `IndentationError` aponta a linha com recuo diferente: o corpo do método fica com 8 espaços e o que está dentro de um `if`, com 12. Copie o bloco da tarefa sem mudar o recuo.
+    concept: "Correção: o aparelho guarda o token, nunca a senha"
+    validatorRef: mob-dados-locais/python-flask/sem-senha-no-aparelho-fin-v1
+    hints:
+      - level: 1
+        text: "A mudança é só em `dispositivo/sessao_local.py`, no método `guardar`."
+      - level: 2
+        text: "Tire a chave `senha` do dicionário gravado; guardar um hash da senha também não vale."
+      - level: 3
+        text: "Copie o bloco da tarefa sem mudar o recuo: 8 espaços."
+    points: 45
+policy:
+  sequentialUnlock: true
+  allowStepRetry: true
+  persistProgressAcrossReset: true
+  allowSolutionReveal: false
+  finalPassingScore: 100

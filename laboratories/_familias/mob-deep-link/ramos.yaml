@@ -1,0 +1,229 @@
+# Família L8 mob-deep-link (ADR-021, ADR-025): o que muda por ramo. O modelo comum está em ./modelo.
+# Depois de editar, rode:  uv run python scripts/gerar-familia.py mob-deep-link
+# Usa o app mobile comum (mesmas marcas, logins e dados de mob-modo-teste). Logins e o alvo do link estão
+# espelhados em apps/backend/app/validation/suites_familias.py (DEEPLINK_RAMOS); os testes Docker conferem.
+# A falha (CWE-939): services/operacao_service.py executa na hora a operação que chega por deep link,
+# sem a confirmação do usuário que o fluxo normal exige.
+ramos:
+- destino: LAB-089-mob-deep-link-fintech
+  vars:
+    lab_id: LAB-089
+    versao: 1.0.0
+    codigo: L8-FIN
+    imagem: lab-089-mobile
+    ramo: fin
+    setor: financeiro
+    banco: pagomais_mobile
+    empresa: Pagomais
+    marca: Pagomais
+    app_nome: App Pagomais
+    cor: '#1d4ed8'
+    lista_titulo: Extrato
+    acao_titulo: Transferir R$ 500,00 por PIX
+    login_a: ana.ribeiro
+    senha_a: Ana#Pagomais26
+    nome_a: Ana Ribeiro Teixeira
+    chave_app: PGM-APP-KEY-7F3A91C2
+    doc_rotulo: CPF
+    extra_rotulo: renda mensal
+    seed_contas:
+    - - 1
+      - ana.ribeiro
+      - Ana Ribeiro Teixeira
+      - Ana#Pagomais26
+      - Saldo R$ 4.820,15
+      - 111.444.777-35
+      - Renda mensal R$ 9.800
+    - - 2
+      - carlos.moura
+      - Carlos Moura Pinto
+      - Carlos#Pagomais26
+      - Saldo R$ 12.310,00
+      - 222.555.888-46
+      - Renda mensal R$ 15.200
+    seed_itens:
+    - - 1
+      - 1
+      - PIX recebido
+      - Vale Insumos
+      - + R$ 1.250,00
+    - - 2
+      - 1
+      - Cartão final 4410
+      - Mercado Norte
+      - '- R$ 212,90'
+    - - 3
+      - 2
+      - PIX enviado
+      - Norte Transportes
+      - '- R$ 2.300,00'
+    missao: Mostrar que um link aberto no celular executa a operação sem o usuário confirmar e corrigir o servidor para exigir a confirmação de uso único também nesse caminho
+    titulo: o link do WhatsApp que fez o Pix sozinho
+    papel: Pessoa desenvolvedora do time de apps do banco digital Pagomais
+    aplicacao: App Pagomais, o app em que o cliente consulta o extrato e faz Pix
+    contexto: 'O marketing da Pagomais lançou a campanha "Pix em um toque": um link pagomais://pix abre o app com o Pix já preenchido. Clientes começaram a reclamar de Pix que não fizeram, todos depois
+      de tocar num link recebido pelo WhatsApp.'
+    historia_abertura: 'Você está no time de apps do banco digital Pagomais. Há um mês, o marketing lançou a campanha "Pix em um toque": um link `pagomais://pix?...`, enviado por e-mail e redes sociais,
+      abre o app com o Pix já preenchido. Esta semana, a central recebeu 37 reclamações de Pix de R$ 1.950,00 para "Premios Cashback Ltda", que os clientes juram não ter feito. Todos tinham tocado num link
+      recebido pelo WhatsApp prometendo cashback.'
+    operacao_nome: Pix
+    esquema: pagomais
+    rota_link: pix
+    acao_alvo: Vale Insumos Ltda
+    acao_detalhe: R$ 500,00
+    link_campanha: pagomais://pix?alvo=Premios+Cashback+Ltda&detalhe=R$+1.950,00
+    link_alvo: Premios Cashback Ltda
+    link_detalhe: R$ 1.950,00
+    notif_app: WhatsApp
+    notif_remetente: +55 11 94821-7730
+    notif_texto: 'Pagomais: você ganhou R$ 150 de cashback! Toque no link para resgatar no app.'
+    impacto: Qualquer pessoa que consiga fazer um link chegar ao celular do cliente (WhatsApp, SMS, e-mail, um QR Code numa vitrine) faz um Pix da conta dele, no valor e para a chave que quiser, com um
+      único toque.
+- destino: LAB-090-mob-deep-link-saude
+  vars:
+    lab_id: LAB-090
+    versao: 1.0.0
+    codigo: L8-SAU
+    imagem: lab-090-mobile
+    ramo: sau
+    setor: saude
+    banco: lumen_mobile
+    empresa: Clínica Lumen
+    marca: Lumen
+    app_nome: App Lumen Saúde
+    cor: '#0e7490'
+    lista_titulo: Meus exames
+    acao_titulo: Compartilhar laudo com o Dr. Paulo Reis
+    login_a: marcos.tavares
+    senha_a: Marcos#Lumen26
+    nome_a: Marcos Tavares Lima
+    chave_app: LUM-APP-KEY-3B71E0C9
+    doc_rotulo: CPF
+    extra_rotulo: diagnóstico (CID)
+    seed_contas:
+    - - 1
+      - marcos.tavares
+      - Marcos Tavares Lima
+      - Marcos#Lumen26
+      - Próxima consulta 20/11 às 14h30
+      - 333.666.999-57
+      - CID J45 asma
+    - - 2
+      - renata.borges
+      - Renata Borges Nunes
+      - Renata#Lumen26
+      - Próxima consulta 02/12 às 9h
+      - 444.777.000-68
+      - CID E11 diabetes
+    seed_itens:
+    - - 1
+      - 1
+      - Hemograma completo
+      - Resultado disponível
+      - 12/11
+    - - 2
+      - 1
+      - Consulta cardiologia
+      - Agendada
+      - 20/11
+    - - 3
+      - 2
+      - Ressonância de joelho
+      - Laudo em análise
+      - 08/11
+    missao: Mostrar que um link aberto no celular executa a operação sem o usuário confirmar e corrigir o servidor para exigir a confirmação de uso único também nesse caminho
+    titulo: o link do SMS que compartilhou os laudos sozinho
+    papel: Pessoa desenvolvedora do time de apps da Clínica Lumen
+    aplicacao: App Lumen Saúde, o app em que o paciente consulta e compartilha os exames
+    contexto: Para agilizar o encaminhamento, a Clínica Lumen criou links lumen://compartilhar que abrem o app e compartilham o laudo com o médico indicado. Pacientes descobriram laudos compartilhados com
+      uma "clínica parceira" que nunca autorizaram, depois de tocar num link recebido por SMS.
+    historia_abertura: Você está no time de apps da Clínica Lumen. Para agilizar o encaminhamento, os médicos mandam ao paciente um link `lumen://compartilhar?...` que abre o app e compartilha o laudo com
+      o especialista. Esta semana, a ouvidoria recebeu reclamações de pacientes que encontraram todos os laudos compartilhados com uma tal "Clinica Parceira Bem Estar", que nunca autorizaram. Todos tinham
+      tocado num SMS dizendo que o laudo estava pronto.
+    operacao_nome: compartilhamento de laudo
+    esquema: lumen
+    rota_link: compartilhar
+    acao_alvo: Dr. Paulo Reis (CRM 48211)
+    acao_detalhe: Hemograma completo
+    link_campanha: lumen://compartilhar?alvo=Clinica+Parceira+Bem+Estar&detalhe=Todos+os+laudos
+    link_alvo: Clinica Parceira Bem Estar
+    link_detalhe: Todos os laudos
+    notif_app: Mensagens
+    notif_remetente: LUMEN-INFO
+    notif_texto: 'Clínica Lumen: seu laudo está pronto. Toque no link para ver no app.'
+    impacto: Qualquer pessoa que consiga fazer um link chegar ao celular do paciente compartilha os laudos dele com quem quiser, com um único toque. Laudo é dado pessoal sensível pela LGPD, e o compartilhamento
+      sem consentimento é um incidente a comunicar.
+- destino: LAB-091-mob-deep-link-industria
+  vars:
+    lab_id: LAB-091
+    versao: 1.0.0
+    codigo: L8-IND
+    imagem: lab-091-mobile
+    ramo: ind
+    setor: industria-energia
+    banco: aurora_mobile
+    empresa: Aurora Energia
+    marca: Aurora
+    app_nome: App Aurora Campo
+    cor: '#b45309'
+    lista_titulo: Ordens de serviço
+    acao_titulo: Liberar manobra no disjuntor 7
+    login_a: diego.campos
+    senha_a: Diego#Aurora26
+    nome_a: Diego Campos Ferraz
+    chave_app: AUR-APP-KEY-C40D92B1
+    doc_rotulo: matrícula
+    extra_rotulo: endereço residencial
+    seed_contas:
+    - - 1
+      - diego.campos
+      - Diego Campos Ferraz
+      - Diego#Aurora26
+      - 3 ordens em aberto hoje
+      - MAT-40213
+      - Rua das Turbinas 120
+    - - 2
+      - sonia.barros
+      - Sonia Barros Teles
+      - Sonia#Aurora26
+      - 1 ordem em aberto hoje
+      - MAT-40877
+      - Avenida da Usina 45
+    seed_itens:
+    - - 1
+      - 1
+      - OS 4821
+      - Manutenção da bomba 4
+      - Hoje
+    - - 2
+      - 1
+      - OS 4822
+      - Inspeção da subestação 2
+      - Amanhã
+    - - 3
+      - 2
+      - OS 4825
+      - Parada da turbina 2
+      - 19/11
+    missao: Mostrar que um link aberto no celular executa a operação sem o usuário confirmar e corrigir o servidor para exigir a confirmação de uso único também nesse caminho
+    titulo: o link do e-mail que liberou a manobra sozinho
+    papel: Pessoa desenvolvedora do time de apps da Aurora Energia
+    aplicacao: App Aurora Campo, o app em que o técnico de campo consulta as ordens de serviço e libera manobras
+    contexto: Para acelerar o atendimento de emergência, o centro de operação da Aurora Energia manda links auroracampo://manobra que abrem o app na liberação da manobra. Um técnico recebeu um e-mail externo
+      com um link desses e, ao tocar, a manobra foi liberada sem nenhuma tela de confirmação.
+    historia_abertura: Você está no time de apps da Aurora Energia. Para acelerar emergências, o centro de operação manda ao técnico um link `auroracampo://manobra?...` que abre o app já na liberação da
+      manobra. Na madrugada de domingo, o técnico de plantão recebeu um e-mail de um endereço externo, se passando pelo centro de operação, e tocou no link. A manobra "Religar alimentador energizado" no
+      disjuntor 12 da SE Aurora Sul foi liberada sem nenhuma tela de confirmação. O supervisor só a barrou porque estranhou o horário.
+    operacao_nome: liberação de manobra
+    esquema: auroracampo
+    rota_link: manobra
+    acao_alvo: Disjuntor 7 · SE Aurora Norte
+    acao_detalhe: Manobra programada OS-1182
+    link_campanha: auroracampo://manobra?alvo=Disjuntor+12+SE+Aurora+Sul&detalhe=Religar+alimentador+energizado
+    link_alvo: Disjuntor 12 SE Aurora Sul
+    link_detalhe: Religar alimentador energizado
+    notif_app: E-mail
+    notif_remetente: Centro de Operação <co-aurora@exemplo.net>
+    notif_texto: 'URGENTE: confirme a liberação da manobra no app Aurora Campo pelo link abaixo.'
+    impacto: Qualquer pessoa que consiga fazer um link chegar ao celular do técnico libera uma manobra em equipamento da rede elétrica com um único toque, sem que o técnico veja o que está liberando. Em
+      campo, isso é risco de acidente com quem está trabalhando no equipamento.

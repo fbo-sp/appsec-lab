@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block conteudo %}
+<h1>[[rotulo_busca]]</h1>
+<form method="get" action="{{ url_for('[[entidade]].buscar') }}" class="busca">
+  <input name="q" value="{{ termo }}" placeholder="[[placeholder_busca]]" aria-label="[[rotulo_busca]]">
+  <button type="submit">Buscar</button>
+</form>
+
+{% if termo %}
+{# O serviço já remove <script> do termo, então o destaque pode ir direto para a página. #}
+<p class="resultado">Resultados para <mark>{{ termo|safe }}</mark></p>
+{% endif %}
+
+<table class="lista">
+  <thead><tr><th>[[label_nome]]</th><th>[[label_detalhe]]</th><th>[[label_nota]]</th></tr></thead>
+  <tbody>
+  {% for item in itens %}
+    <tr><td>{{ item.nome }}</td><td>{{ item.detalhe }}</td><td>{{ item.nota }}</td></tr>
+  {% else %}
+    <tr><td colspan="3" class="vazio">Nada encontrado.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+
+<h2>[[titulo_cadastro]]</h2>
+{% if erro %}<p class="erro">{{ erro }}</p>{% endif %}
+<form method="post" action="{{ url_for('[[entidade]].cadastrar') }}" class="cartao cadastro">
+  <label>[[label_nome]] <input name="nome" required></label>
+  <label>[[label_detalhe]] <input name="detalhe"></label>
+  <label>[[label_nota]] <input name="nota" placeholder="[[placeholder_nota]]"></label>
+  <button type="submit">Cadastrar</button>
+</form>
+{% endblock %}

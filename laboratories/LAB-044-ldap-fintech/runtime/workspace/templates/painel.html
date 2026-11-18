@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block conteudo %}
+<h1>Diretório Corporativo</h1>
+<p class="ajuda">Busque um colega pelo nome para ver o setor dele.</p>
+
+<form class="busca" method="get" action="{{ url_for('painel.buscar') }}">
+  <label for="nome">Buscar pessoa por nome</label>
+  <input type="text" id="nome" name="nome" value="{{ nome or '' }}" placeholder="ex.: nome do colega" autofocus>
+  <button type="submit">Buscar</button>
+</form>
+
+{% if pessoas is not none %}
+  {% if pessoas %}
+  <table class="dados">
+    <thead><tr><th>Nome (cn)</th><th>Setor</th></tr></thead>
+    <tbody>
+      {% for p in pessoas %}
+      <tr><td>{{ p.cn }}</td><td>{{ p.setor }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <p class="ajuda">{{ pessoas|length }} pessoa(s) encontrada(s) para “{{ nome }}”.</p>
+  {% else %}
+  <p class="banner">Nenhuma pessoa encontrada para “{{ nome }}”.</p>
+  {% endif %}
+{% endif %}
+
+<p class="banner reforcado">Você está autenticado como {{ conta.nome }}. Use <a href="{{ url_for('auth.sair') }}">Sair</a> para encerrar a sessão.</p>
+{% endblock %}

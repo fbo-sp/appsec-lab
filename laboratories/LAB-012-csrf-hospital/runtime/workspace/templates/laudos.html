@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block conteudo %}
+<h1>Envio de laudos</h1>
+<p class="ajuda">E-mail que recebe os laudos dos seus exames assim que ficam prontos.</p>
+<dl class="dados cartao">
+  <dt>E-mail para laudos atual</dt><dd><span class="chave">{{ dados.email_laudos }}</span></dd>
+</dl>
+
+<h2>Alterar e-mail para envio de laudos</h2>
+<form method="post" action="{{ url_for('laudos.alterar') }}" class="cartao">
+  <label>E-mail para laudos <input name="email_laudos" placeholder="seu.email@provedor.com.br" required></label>
+  <button type="submit">Salvar</button>
+</form>
+
+<h2>Histórico de alterações</h2>
+<table class="lista">
+  <tr><th>Quando</th><th>Antes</th><th>Depois</th></tr>
+  {% for h in historico %}
+  <tr><td>{{ h.quando }}</td><td>{{ h.valor_anterior }}</td><td>{{ h.valor_novo }}</td></tr>
+  {% endfor %}
+</table>
+{% endblock %}

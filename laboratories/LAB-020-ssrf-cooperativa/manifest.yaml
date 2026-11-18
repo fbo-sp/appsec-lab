@@ -1,0 +1,276 @@
+# LAB-020 (A6-FIN): SSRF (CWE-918) no importador por URL do Mesa de Crédito da Cooperativa Credimova (Flask).
+# CONTÉM VULNERABILIDADE INTENCIONAL. Uso exclusivo no runtime Docker LOCAL (ADR-008), em rede
+# interna da sessão. Dados 100% fictícios. Família A6 ssrf (ADR-021): gerado por
+# scripts/gerar-familia.py a partir de laboratories/_familias/ssrf; não edite este arquivo à mão.
+#
+# ATENÇÃO: o digest abaixo é uma FIXTURE (sha256 de um texto fixo), não uma imagem publicada.
+# scripts/lab-local.sh e .ps1 trocam pela imagem construída localmente antes de registrar.
+apiVersion: labs.cecyber.io/v1alpha1
+kind: AppSecLab
+metadata:
+  id: LAB-020
+  version: 1.0.0
+  title: "A6-FIN · SSRF: o importador de comprovantes que busca qualquer URL"
+  primaryCwe: CWE-918
+  secondaryCwes: []
+  family: ssrf
+  sectors: [financeiro]
+  courseModules: [trained, master]
+  classifications:
+    - framework: OWASP Top 10
+      edition: "2025"
+      entries:
+        - "A01 Broken Access Control"
+    - framework: OWASP Top 10
+      edition: "2021"
+      entries:
+        - "A10 Server-Side Request Forgery (SSRF)"
+    - framework: OWASP API Security Top 10
+      edition: "2023"
+      entries:
+        - "API7 Server Side Request Forgery"
+    - framework: SANS CWE Top 25
+      edition: "2025"
+      entries:
+        - "#22 CWE-918"
+    - framework: SANS CWE Top 25
+      edition: "2024"
+      entries:
+        - "#19 CWE-918"
+learning:
+  singleVulnerability: true
+  estimatedMinutes: 40
+  difficulty: intermediate
+  objectives:
+    - "Entender o que é SSRF: fazer o servidor da aplicação buscar uma URL escolhida por quem ataca"
+    - Explorar a falha usando o importador para ler um serviço interno que o usuário não deveria alcançar
+    - Entender por que "é só uma busca de documento" vira acesso à infraestrutura interna
+    - Corrigir com uma lista de permissão (allowlist) de destinos, validada no servidor
+  story:
+    role: Pessoa desenvolvedora da squad de crédito da Cooperativa Credimova
+    application: Mesa de Crédito, onde a equipe importa o comprovante de renda enviado pelo parceiro para analisar a proposta
+    context: >-
+      A Mesa de Crédito importa o comprovante de renda a partir de uma URL que o sistema parceiro informa; o servidor busca essa URL e mostra a prévia. Um teste de invasão alertou que o campo de URL não valida o destino, e que dá para fazer o servidor buscar endereços internos.
+    mission: Confirmar que o importador pode ser levado a buscar um serviço interno e corrigir restringindo o destino
+  wrapUp:
+    text: |
+      Agora o importador só busca o destino que ele realmente precisa — o **Serviço de Documentos** — e recusa qualquer outro endereço. Em um sistema real, vale reforçar:
+
+      - **Allowlist, não blocklist.** Tentar *bloquear* o que é perigoso (127.0.0.1, 169.254.169.254, `file://`, `localhost`...) é uma corrida perdida: sempre sobra uma forma de escrever o mesmo endereço (octal, IPv6, DNS que resolve para interno, redirecionamento). Liste o que é **permitido** — host, porta e esquema exatos — e recuse o resto.
+      - **Valide o destino, não só a string.** Resolva o nome e confira o IP de destino, porque um nome aparentemente externo pode resolver para um endereço interno (ataque de *DNS rebinding*). Recuse redirecionamentos, senão um destino permitido pode te empurrar para um proibido.
+      - **Trate o metadados da nuvem como hostil.** Em ambientes de nuvem, o endpoint de metadados (ex.: `169.254.169.254`) entrega credenciais temporárias. SSRF que o alcança vira comprometimento da conta. Prefira IMDSv2 (exige token) e bloqueie o acesso de rede a ele a partir das aplicações.
+      - **Menos privilégio de rede.** O serviço que busca URLs externas não deveria ter rota para a rede interna de administração. Segmentar a rede limita o estrago mesmo quando a validação falha.
+    references:
+      - title: "OWASP Cheat Sheet: Server-Side Request Forgery Prevention"
+        url: https://cheatsheetseries.owasp.org/cheatsheets/Server_Side_Request_Forgery_Prevention_Cheat_Sheet.html
+      - title: "OWASP Top 10:2021: A10 Server-Side Request Forgery (SSRF)"
+        url: https://owasp.org/Top10/A10_2021-Server-Side_Request_Forgery_%28SSRF%29/
+      - title: "OWASP Top 10:2025: A01 Broken Access Control"
+        url: https://top10.owasp.org/2025/A01_2025-Broken_Access_Control/
+      - title: "OWASP API Security Top 10 2023: API7 Server Side Request Forgery"
+        url: https://owasp.org/API-Security/editions/2023/en/0xa7-server-side-request-forgery/
+      - title: "CWE-918: Server-Side Request Forgery (SSRF)"
+        url: https://cwe.mitre.org/data/definitions/918.html
+variants:
+  - id: python-flask
+    language: python
+    framework: flask
+    image: registry.local/labs/lab-020-ssrf@sha256:e7d4b48dd8111eb2cf4a0cdd18a7eb180440b2cdba8636663425293121e510b2
+    runtimeProfile: web-basic
+    workspacePath: /workspace
+    startup:
+      command: ["sh", "-c", "python -u -m flask --app app run --host 0.0.0.0 --port 8080 --reload --no-debugger 2>&1 | tee -a /tmp/app.log"]
+      port: 8080
+    resources:
+      cpuMillicores: 500
+      memoryMiB: 512
+      storageMiB: 256
+      pidsMax: 64
+    session:
+      ttlMinutes: 45
+      maxRenewals: 2
+    interfaces: [editor, terminal, web]
+steps:
+  - id: conhecer
+    order: 1
+    title: Conhecer a Mesa e achar onde o servidor busca a URL
+    explanation: |
+      Você está na squad de crédito da Cooperativa Credimova. A Mesa de Crédito importa o comprovante de renda a partir de uma URL que o sistema parceiro informa: o servidor abre essa URL e mostra a prévia para o analista. O time de segurança abriu um chamado: o campo de URL não confere o destino, e um teste de invasão mostrou que o servidor pode ser levado a buscar endereços internos da cooperativa.
+
+      A tela tem uma função cômoda: você cola a **URL de um documento** no sistema parceiro e a aplicação mostra a prévia. O detalhe importante é **quem** faz essa busca. Não é o seu navegador: é o **servidor** da aplicação que abre a URL e traz o conteúdo de volta.
+
+      ```ilustracao
+      ssrf-fluxo
+      ```
+
+      Quando o servidor busca uma URL que veio de fora, sem conferir o destino, quem controla a URL controla **para onde o servidor vai**. Isso é o **SSRF** (Server-Side Request Forgery): o atacante usa o servidor como "procurador" para alcançar endereços que ele, de fora, não alcançaria — inclusive serviços internos.
+
+      Siga a busca pelas camadas:
+
+      1. **Controller** (`controllers/importador_controller.py`): recebe a URL do formulário e chama o serviço.
+      2. **Serviço** (`services/importador_service.py`): **abre a URL no servidor**. É aqui que está a decisão de segurança.
+
+      As credenciais de acesso à Mesa, neste laboratório, são:
+
+      - Analista de crédito: usuário `analista.credito`, senha `Analista#Cred26`.
+    task: |
+      1. Na aba **Aplicação**, entre com `analista.credito` e a senha `Analista#Cred26`. Você chega à **Mesa de Crédito**.
+      2. Ainda na aba **Aplicação**, busque um documento legítimo colando a URL `http://127.0.0.1:8090/doc/1` e clicando em **Buscar prévia**. Veja a prévia aparecer.
+      3. Na aba **Código**, abra `services/importador_service.py`.
+
+      Informe abaixo o nome da função usada para abrir a URL no servidor (o nome que aparece depois de `urllib.request.`).
+    concept: SSRF — o servidor busca uma URL escolhida por quem envia o pedido
+    validatorRef: ssrf/answer/funcao-busca-fin-v1
+    hints:
+      - level: 1
+        text: 'Em `services/importador_service.py`, o método `importar` tem uma linha com `urllib.request.____(url, ...)`.'
+      - level: 2
+        text: É a função padrão do Python para abrir uma URL e ler a resposta.
+      - level: 3
+        text: O valor é `urlopen`.
+    points: 10
+  - id: explorar
+    order: 2
+    title: Usar o importador para ler um serviço interno
+    explanation: |
+      Como o servidor busca **qualquer** URL que você mandar, nada impede de apontar para um endereço **interno** — um que só a rede da Cooperativa Credimova enxerga e que você, de fora, jamais acessaria direto.
+
+      Na rede interna existe o **Console de Infraestrutura**, em `http://127.0.0.1:9000`, usado pela equipe de operações. Ele guarda, entre outras coisas, **credenciais de integração** em `/infra/credenciais`. Esse console nunca deveria ser alcançável pela tela de importar — mas, como o servidor busca o que você mandar, o importador vira uma ponte até ele.
+    task: |
+      Na aba **Aplicação**, na **Mesa de Crédito**, cole a URL do console interno no campo e clique em **Buscar prévia**:
+
+      ```
+      http://127.0.0.1:9000/infra/credenciais
+      ```
+
+      A prévia vai mostrar um JSON com as credenciais internas. Informe abaixo o valor do campo `chave_integracao`.
+    explore: |
+      **Por que isso é grave.** Você, pela tela de uma aplicação de negócio, leu um segredo de infraestrutura. Em um ambiente de nuvem, o alvo clássico é o **endpoint de metadados** (`http://169.254.169.254/...`), que entrega credenciais temporárias da máquina — e um SSRF que o alcança costuma virar o comprometimento da conta inteira. O servidor fez isso "de boa-fé": para ele, era só mais uma busca de documento.
+    concept: SSRF alcançando um serviço interno (console/metadados) que vaza segredo
+    validatorRef: ssrf/answer/credencial-vazada-fin-v1
+    hints:
+      - level: 1
+        text: Cole a URL do console no mesmo campo onde você buscou o documento legítimo.
+      - level: 2
+        text: A prévia é um JSON; o valor que interessa está no campo `chave_integracao`.
+      - level: 3
+        text: O valor é `CHAVE-FICTICIA-CREDIMOVA-NAO-USAR`.
+    points: 15
+  - id: alcance
+    order: 3
+    title: Ver que o importador não distingue destino nenhum
+    explanation: |
+      O problema não é o console existir: é o importador **não checar o destino**. Para ele, `http://127.0.0.1:8090/doc/1` (o documento legítimo) e `http://127.0.0.1:9000/infra/credenciais` (o console interno) são a mesma coisa — duas URLs para abrir.
+
+      ```ilustracao
+      ssrf-allowlist
+      ```
+
+      A pergunta certa não é "como bloqueio o console?". É: **para onde o importador *precisa* ir?** A resposta é um único lugar — o **Serviço de Documentos**. Tudo o mais deve ser recusado.
+    task: |
+      O importador tem exatamente um destino legítimo: o Serviço de Documentos interno, onde ficam os documentos do parceiro.
+
+      Informe abaixo o endereço (host e porta) desse destino legítimo, no formato `host:porta`, como aparece na URL do documento que você buscou na etapa 1.
+    concept: A defesa parte do destino permitido, não da lista de proibidos
+    validatorRef: ssrf/answer/destino-legitimo-fin-v1
+    hints:
+      - level: 1
+        text: É o endereço que aparece na URL `http://____/doc/1` que você buscou na etapa 1.
+      - level: 2
+        text: Host e porta separados por dois-pontos.
+      - level: 3
+        text: O valor é `127.0.0.1:8090`.
+    points: 15
+  - id: allowlist
+    order: 4
+    title: Escolher a defesa certa contra SSRF
+    explanation: |
+      Dá para tentar **bloquear** o que é perigoso: recusar `127.0.0.1`, `localhost`, `169.254.169.254`, `file://`... Isso é uma **lista de proibidos** (blocklist), e ela quase sempre falha, porque existem muitas formas de escrever o mesmo endereço (octal, IPv6, um nome de DNS que resolve para interno, um redirecionamento no meio do caminho).
+
+      A defesa robusta é o contrário: uma **lista de permissão** (allowlist). Você descreve **exatamente** o que é aceito — o esquema (`http`), o host e a porta do Serviço de Documentos — e recusa todo o resto. É o que você vai implementar: comparar o destino da URL com o único destino permitido e, se não bater, nem fazer a busca.
+    task: |
+      Qual é o nome da abordagem de defesa em que você define **o que é permitido** e recusa todo o resto (em vez de tentar listar o que é proibido)?
+
+      Responda com o termo (em inglês ou em português).
+    concept: Allowlist (lista de permissão) de destinos, em vez de blocklist
+    validatorRef: ssrf/answer/defesa-fin-v1
+    hints:
+      - level: 1
+        text: É o oposto de "lista de proibidos" (blocklist).
+      - level: 2
+        text: Em português, "lista de permissão".
+      - level: 3
+        text: O valor é `allowlist` (ou "lista de permissão").
+    points: 15
+  - id: corrigir
+    order: 5
+    title: Corrigir o importador com uma lista de permissão
+    explanation: |
+      **Por que a falha existe.** O serviço abre com `urlopen` qualquer URL que chega no formulário, sem conferir o destino. Quem controla a URL controla para onde o servidor vai.
+
+      **A correção.** Antes de buscar, separar a URL em esquema/host/porta e comparar com o **único destino permitido** (o Serviço de Documentos, `http://127.0.0.1:8090`). Se não bater, levanta um erro e nem faz a busca. Assim, o documento legítimo continua funcionando e o console interno (ou `file://`, ou qualquer outro endereço) é recusado.
+    task: |
+      Abra `services/importador_service.py`.
+
+      **1.** Troque o bloco de imports do topo:
+
+      ```python
+      import urllib.request
+      ```
+
+      por este (acrescenta `urllib.parse`, para separar a URL):
+
+      ```python
+      import urllib.parse
+      import urllib.request
+      ```
+
+      **2.** Troque o método `importar` inteiro por este (acrescenta a lista de permissão e a checagem do destino):
+
+      ```python
+          # Único destino que o importador pode acessar (o Serviço de Documentos interno).
+          PERMITIDO = ("http", "127.0.0.1", 8090)
+
+          def importar(self, url: str) -> str:
+              """Busca o documento na URL informada e devolve o conteúdo para a prévia."""
+              if not url:
+                  raise ValueError("Informe a URL do documento.")
+              partes = urllib.parse.urlsplit(url)
+              destino = (partes.scheme, partes.hostname, partes.port or 80)
+              if destino != self.PERMITIDO:
+                  raise ValueError("Destino não permitido: o importador só acessa o Serviço de Documentos.")
+              with urllib.request.urlopen(url, timeout=3) as resposta:  # noqa: S310
+                  return resposta.read().decode("utf-8", "replace")[:4000]
+      ```
+
+      Salve com **Ctrl+S**. A aplicação reinicia. Então, na aba **Aplicação**:
+
+      1. busque de novo `http://127.0.0.1:8090/doc/1` — a prévia do documento continua funcionando;
+      2. tente `http://127.0.0.1:9000/infra/credenciais` — agora a resposta é "Destino não permitido";
+      3. clique em **Validar**.
+    explore: |
+      **Se algo não funcionar depois de salvar.** Um recuo errado ou um import faltando derruba a aplicação. No **Terminal**:
+
+      ```bash
+      grep -iE "error|traceback" /tmp/app.log | tail -n 15
+      ```
+
+      **O que procurar.** `NameError: name 'urllib'` indica import faltando. `IndentationError` aponta a linha com recuo diferente: o atributo `PERMITIDO` e o `def importar` ficam com 4 espaços; o corpo do método, com 8.
+
+      **Ir além da allowlist simples.** Num sistema real, você ainda recusaria **redirecionamentos** (um destino permitido pode te mandar para um proibido) e resolveria o nome para conferir o **IP** de destino (contra *DNS rebinding*). Aqui o destino é fixo, então a comparação direta já resolve a lição.
+    concept: Correção do SSRF com allowlist de destino validada no servidor
+    validatorRef: ssrf/python-flask/importador-allowlist-fin-v1
+    hints:
+      - level: 1
+        text: 'São duas mudanças, as duas em `services/importador_service.py`: o import e o método `importar`.'
+      - level: 2
+        text: 'Separe a URL com `urllib.parse.urlsplit` e compare `(scheme, hostname, port)` com o destino permitido.'
+      - level: 3
+        text: Copie os dois trechos da tarefa sem mudar o recuo. O `def importar` fica com 4 espaços antes de `def`.
+    points: 45
+policy:
+  sequentialUnlock: true
+  allowStepRetry: true
+  persistProgressAcrossReset: true
+  allowSolutionReveal: false
+  finalPassingScore: 100

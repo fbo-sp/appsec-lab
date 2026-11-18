@@ -1,0 +1,250 @@
+# LAB-023 (A8-FIN): falha de lógica de negócio (CWE-840) no Resgate de Investimento da Cooperativa Credimova (Flask + SQLite).
+# CONTÉM VULNERABILIDADE INTENCIONAL. Uso exclusivo no runtime Docker LOCAL (ADR-008), em rede
+# interna da sessão. Dados 100% fictícios. Família A8 logica-negocio (ADR-021): gerado por
+# scripts/gerar-familia.py a partir de laboratories/_familias/logica-negocio; não edite este arquivo à mão.
+#
+# ATENÇÃO: o digest abaixo é uma FIXTURE (sha256 de um texto fixo), não uma imagem publicada.
+# scripts/lab-local.sh e .ps1 trocam pela imagem construída localmente antes de registrar.
+apiVersion: labs.cecyber.io/v1alpha1
+kind: AppSecLab
+metadata:
+  id: LAB-023
+  version: 1.0.0
+  title: "A8-FIN · Lógica de negócio: o resgate que aceita qualquer valor"
+  primaryCwe: CWE-840
+  secondaryCwes: [CWE-20]
+  family: logica-negocio
+  sectors: [financeiro]
+  courseModules: [foundation]
+  classifications:
+    - framework: OWASP Top 10
+      edition: "2025"
+      entries:
+        - "A06 Insecure Design"
+    - framework: OWASP Top 10
+      edition: "2021"
+      entries:
+        - "A04 Insecure Design"
+    - framework: OWASP API Security Top 10
+      edition: "2023"
+      entries:
+        - "API6 Unrestricted Access to Sensitive Business Flows"
+    - framework: SANS CWE Top 25
+      edition: "2025"
+      entries:
+        - "Não se enquadra; use o CWE"
+    - framework: SANS CWE Top 25
+      edition: "2024"
+      entries:
+        - "Não se enquadra; use o CWE"
+learning:
+  singleVulnerability: true
+  estimatedMinutes: 35
+  difficulty: intermediate
+  objectives:
+    - Entender o que é uma falha de lógica de negócio e por que ela passa pelos testes funcionais
+    - Explorar a falha pedindo um resgate acima do saldo e um valor negativo
+    - Reconhecer que a regra de negócio precisa ser conferida no servidor, não confiada ao cliente
+    - Corrigir aplicando as regras (valor positivo e dentro do saldo) na camada de serviço
+  story:
+    role: Pessoa desenvolvedora da squad de investimentos da Cooperativa Credimova
+    application: autoatendimento de Resgate de Investimento, onde o cooperado resgata parte do saldo investido para a conta corrente
+    context: >-
+      O cooperado resgata, por conta própria, parte do saldo investido para a conta corrente. Um teste de invasão alertou que o resgate confia no valor enviado no formulário sem conferir as regras de negócio — dá para resgatar um valor acima do saldo ou até um valor negativo.
+    mission: Confirmar que o resgate aceita valores que deveria recusar e corrigir aplicando as regras de negócio
+  wrapUp:
+    text: |
+      Agora o resgate só acontece quando o valor respeita as regras de negócio: positivo e dentro do saldo disponível. Em um sistema real, vale reforçar:
+
+      - **Falha de lógica de negócio não é um bug de código — é uma regra esquecida.** O código "funciona": ele resgata. O que faltava era a regra que diz *quando* resgatar é válido. Esse tipo de falha passa batido nos testes funcionais (que checam o caminho feliz) e só aparece quando alguém envia um valor que ninguém imaginou — negativo, zero, maior que o saldo.
+      - **Valide no servidor, sempre.** O formulário pode ter um `min="0"` e um máximo, mas isso é só conforto para o usuário honesto: quem ataca manda o pedido direto, sem o formulário. A regra que vale é a que roda no servidor, na camada de serviço, antes de efetivar a operação.
+      - **Pense nos limites.** Para cada valor que o usuário controla, pergunte: pode ser negativo? zero? muito grande? fracionado? Em dinheiro, cuidado também com arredondamento e com contas que podem ficar negativas.
+      - **Registre e monitore.** Operações que violam uma regra de negócio (resgate acima do saldo, muitos resgates seguidos) são ótimos sinais de fraude. Registrar a tentativa recusada ajuda a detectar o abuso cedo.
+    references:
+      - title: "OWASP Top 10:2025: A06 Insecure Design"
+        url: https://top10.owasp.org/2025/A06_2025-Insecure_Design/
+      - title: "OWASP Top 10:2021: A04 Insecure Design"
+        url: https://owasp.org/Top10/A04_2021-Insecure_Design/
+      - title: "OWASP API Security Top 10 2023: API6 Unrestricted Access to Sensitive Business Flows"
+        url: https://owasp.org/API-Security/editions/2023/en/0xa6-unrestricted-access-to-sensitive-business-flows/
+      - title: "CWE-840: Business Logic Errors"
+        url: https://cwe.mitre.org/data/definitions/840.html
+      - title: "OWASP Cheat Sheet: Input Validation"
+        url: https://cheatsheetseries.owasp.org/cheatsheets/Input_Validation_Cheat_Sheet.html
+variants:
+  - id: python-flask
+    language: python
+    framework: flask
+    image: registry.local/labs/lab-023-logica@sha256:def0560a435632040031d0b935975c4789cd62ae36fdc1ba2e0c963e7620618d
+    runtimeProfile: web-basic
+    workspacePath: /workspace
+    startup:
+      command: ["sh", "-c", "python -u -m flask --app app run --host 0.0.0.0 --port 8080 --reload --no-debugger 2>&1 | tee -a /tmp/app.log"]
+      port: 8080
+    resources:
+      cpuMillicores: 500
+      memoryMiB: 512
+      storageMiB: 256
+      pidsMax: 64
+    session:
+      ttlMinutes: 45
+      maxRenewals: 2
+    interfaces: [editor, terminal, web]
+steps:
+  - id: conhecer
+    order: 1
+    title: Conhecer o resgate e achar a regra de negócio
+    explanation: |
+      Você está na squad de investimentos da Cooperativa Credimova. O cooperado resgata, por conta própria, parte do saldo investido para a conta corrente. O time de segurança abriu um chamado: o resgate confia no valor que chega do formulário sem conferir as regras de negócio, e um teste de invasão mostrou que dá para resgatar mais do que o saldo investido — ou até informar um valor negativo.
+
+      Uma falha de **lógica de negócio** não é um erro de sintaxe nem uma injeção: é uma **regra de negócio que faltou**. O código funciona — ele resgata — mas ninguém conferiu *quando* resgatar é válido. Por isso esse tipo de falha passa pelos testes do caminho feliz e só aparece quando alguém envia um valor que ninguém imaginou.
+
+      ```ilustracao
+      logica-validacao
+      ```
+
+      Siga o resgate pelas camadas:
+
+      1. **Controller** (`controllers/painel_controller.py`): recebe o valor do formulário e chama o serviço.
+      2. **Serviço** (`services/resgate_service.py`): decide o que fazer com o valor. **É aqui que a regra de negócio deveria estar.**
+
+      As credenciais de acesso, neste laboratório, são:
+
+      - Titular: usuário `marina.gomes`, senha `Marina#Cred26` (saldo inicial de R$ 500,00).
+    task: |
+      1. Na aba **Aplicação**, entre com `marina.gomes` e a senha `Marina#Cred26`. Você chega ao **Resgate de Investimento** e vê seu saldo.
+      2. Faça um resgate legítimo: informe `100` e confirme. O saldo cai para R$ 400,00.
+      3. Na aba **Código**, abra `services/resgate_service.py`.
+
+      Informe abaixo o nome do método que executa o resgate (o que o controller chama).
+    concept: Falha de lógica de negócio — uma regra de negócio que faltou
+    validatorRef: logica-negocio/answer/metodo-fin-v1
+    hints:
+      - level: 1
+        text: 'Em `services/resgate_service.py`, a classe `ResgateService` tem um único método público.'
+      - level: 2
+        text: É o método que o controller chama para efetivar o resgate.
+      - level: 3
+        text: O valor é `resgatar`.
+    points: 10
+  - id: explorar
+    order: 2
+    title: Pedir um resgate que deveria ser impossível
+    explanation: |
+      O método `resgatar` pega o valor do formulário e **debita direto do saldo**, sem conferir nada. Então nada impede de pedir um valor **acima do saldo** — ou até um valor **negativo**, que em vez de debitar acabaria creditando.
+
+      Vamos provar isso pela própria tela. Seu saldo agora é R$ 400,00.
+    task: |
+      Na aba **Aplicação**, no **Resgate de Investimento**, faça um resgate de um valor **bem acima do seu saldo**: informe `999999` e confirme.
+
+      Veja que a aplicação **aceita** e registra a operação (o saldo fica negativo). Informe abaixo se o resgate acima do saldo foi **aceito** ou **recusado**.
+    explore: |
+      **Teste também o valor negativo.** Informe `-200` e confirme: a aplicação aceita, e como ela faz "saldo menos o valor", o saldo **aumenta** — o usuário se credita sozinho. É a mesma falha pela outra ponta: nenhum valor é conferido. Num sistema real, isso é fraude direta (dinheiro, reembolso ou crédito que não existia).
+    concept: Sem validação, o servidor aceita valores que violam a regra de negócio
+    validatorRef: logica-negocio/answer/aceito-fin-v1
+    hints:
+      - level: 1
+        text: Olhe a mensagem que aparece depois de confirmar o resgate de 999999.
+      - level: 2
+        text: A aplicação registra a operação em vez de recusar.
+      - level: 3
+        text: A resposta é `aceito`.
+    points: 15
+  - id: regra
+    order: 3
+    title: Nomear a regra que faltou
+    explanation: |
+      Duas regras de negócio simples bastam para fechar a falha:
+
+      - o valor do resgate precisa ser **positivo** (maior que zero);
+      - o valor **não pode passar do saldo** disponível.
+
+      A segunda é a que trava o resgate de R$ 999999 que você acabou de fazer: não dá para resgatar mais do que você tem.
+    task: |
+      Complete a regra: o valor do resgate não pode ser maior que o quê?
+
+      Responda com uma palavra (o que limita o valor que você pode resgatar).
+    concept: "A regra de negócio: valor positivo e dentro do saldo disponível"
+    validatorRef: logica-negocio/answer/limite-fin-v1
+    hints:
+      - level: 1
+        text: É o quanto você tem disponível para resgatar.
+      - level: 2
+        text: Aparece no painel como "Saldo investido disponível".
+      - level: 3
+        text: A resposta é `saldo`.
+    points: 15
+  - id: onde
+    order: 4
+    title: Decidir onde a regra tem que valer
+    explanation: |
+      Dá para esconder o campo, colocar um `min="0"` no formulário ou travar o botão no navegador. Isso ajuda o usuário honesto, mas **não defende nada**: quem ataca manda o pedido direto para a aplicação (por `curl`, por exemplo), sem passar pelo formulário.
+
+      A regra que realmente vale é a que roda **no servidor**, na camada de serviço, antes de efetivar a operação. É lá que você vai colocá-la.
+    task: |
+      Onde a regra de negócio precisa ser conferida para valer de verdade: no navegador (cliente) ou no servidor?
+
+      Responda com uma palavra.
+    concept: Regra de negócio é validada no servidor, nunca confiada ao cliente
+    validatorRef: logica-negocio/answer/onde-fin-v1
+    hints:
+      - level: 1
+        text: O atacante não usa o seu formulário; ele fala direto com a aplicação.
+      - level: 2
+        text: A checagem do navegador é só conforto; a que vale roda do outro lado.
+      - level: 3
+        text: A resposta é `servidor`.
+    points: 15
+  - id: corrigir
+    order: 5
+    title: Aplicar a regra de negócio no serviço
+    explanation: |
+      **Por que a falha existe.** `resgatar` debita o valor direto do saldo, sem conferir se ele é positivo e se cabe no saldo. Quem envia o pedido escolhe o valor.
+
+      **A correção.** Antes de debitar, conferir as duas regras: valor maior que zero e valor menor ou igual ao saldo. Se qualquer uma falhar, levantar um erro e **não** debitar.
+    task: |
+      Abra `services/resgate_service.py` e troque o método `resgatar` inteiro por este:
+
+      ```python
+          def resgatar(self, conta_id: int, valor: float) -> float:
+              """Resgata o valor pedido do saldo da conta e devolve o novo saldo."""
+              conta = self._repositorio.buscar(conta_id)
+              if conta is None:
+                  raise ValueError("Conta não encontrada.")
+              if valor <= 0:
+                  raise ValueError("O valor deve ser positivo.")
+              if valor > conta.saldo:
+                  raise ValueError("Valor acima do saldo disponível.")
+              self._repositorio.debitar(conta_id, valor)
+              return conta.saldo - valor
+      ```
+
+      Salve com **Ctrl+S**. A aplicação reinicia e o banco volta ao estado inicial (saldo de R$ 500,00). Então, na aba **Aplicação**:
+
+      1. faça um resgate legítimo (`100`) e veja que continua funcionando;
+      2. tente `999999` e depois `-200`: agora os dois são **recusados**;
+      3. clique em **Validar**.
+    explore: |
+      **Se algo não funcionar depois de salvar.** Um recuo errado derruba a aplicação. No **Terminal**:
+
+      ```bash
+      grep -iE "error|traceback" /tmp/app.log | tail -n 15
+      ```
+
+      **O que procurar.** `IndentationError` aponta a linha com recuo diferente: o `def resgatar` fica com 4 espaços; o corpo, com 8. As duas checagens (`if valor <= 0` e `if valor > conta.saldo`) ficam antes do `self._repositorio.debitar(...)`.
+    concept: Correção da falha de lógica de negócio com validação no servidor
+    validatorRef: logica-negocio/python-flask/resgate-validado-fin-v1
+    hints:
+      - level: 1
+        text: 'A mudança é só em `services/resgate_service.py`, no método `resgatar`.'
+      - level: 2
+        text: "Acrescente duas checagens antes de debitar: valor positivo e valor dentro do saldo."
+      - level: 3
+        text: Copie o método da tarefa sem mudar o recuo. O `def resgatar` fica com 4 espaços antes de `def`.
+    points: 45
+policy:
+  sequentialUnlock: true
+  allowStepRetry: true
+  persistProgressAcrossReset: true
+  allowSolutionReveal: false
+  finalPassingScore: 100

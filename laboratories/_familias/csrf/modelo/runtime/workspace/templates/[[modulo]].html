@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block conteudo %}
+<h1>[[tela_titulo]]</h1>
+<p class="ajuda">[[tela_desc]]</p>
+<dl class="dados cartao">
+  <dt>[[campo_label]] atual</dt><dd><span class="chave">{{ dados.[[campo]] }}</span></dd>
+</dl>
+
+<h2>Alterar [[campo_label_minusculo]]</h2>
+<form method="post" action="{{ url_for('[[modulo]].alterar') }}" class="cartao">
+  <label>[[campo_label]] <input name="[[campo]]" placeholder="[[placeholder]]" required></label>
+  <button type="submit">Salvar</button>
+</form>
+
+<h2>Histórico de alterações</h2>
+<table class="lista">
+  <tr><th>Quando</th><th>Antes</th><th>Depois</th></tr>
+  {% for h in historico %}
+  <tr><td>{{ h.quando }}</td><td>{{ h.valor_anterior }}</td><td>{{ h.valor_novo }}</td></tr>
+  {% endfor %}
+</table>
+{% endblock %}

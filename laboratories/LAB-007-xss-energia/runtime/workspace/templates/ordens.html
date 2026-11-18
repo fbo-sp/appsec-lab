@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block conteudo %}
+<h1>Minhas ordens</h1>
+<form method="get" action="{{ url_for('ordem.buscar') }}" class="busca">
+  <input name="q" value="{{ termo }}" placeholder="Equipamento" aria-label="Minhas ordens">
+  <button type="submit">Buscar</button>
+</form>
+
+{% if termo %}
+{# O serviço já remove <script> do termo, então o destaque pode ir direto para a página. #}
+<p class="resultado">Resultados para <mark>{{ termo|safe }}</mark></p>
+{% endif %}
+
+<table class="lista">
+  <thead><tr><th>Equipamento</th><th>Subestação</th><th>Relato do técnico</th></tr></thead>
+  <tbody>
+  {% for item in itens %}
+    <tr><td>{{ item.nome }}</td><td>{{ item.detalhe }}</td><td>{{ item.nota }}</td></tr>
+  {% else %}
+    <tr><td colspan="3" class="vazio">Nada encontrado.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+
+<h2>Abrir ordem de serviço</h2>
+{% if erro %}<p class="erro">{{ erro }}</p>{% endif %}
+<form method="post" action="{{ url_for('ordem.cadastrar') }}" class="cartao cadastro">
+  <label>Equipamento <input name="nome" required></label>
+  <label>Subestação <input name="detalhe"></label>
+  <label>Relato do técnico <input name="nota" placeholder="Ex.: ruído, disparo, aquecimento"></label>
+  <button type="submit">Cadastrar</button>
+</form>
+{% endblock %}

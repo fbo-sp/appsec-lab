@@ -1,0 +1,194 @@
+# Família L4 pacote-assinatura (ADR-021): o que muda por ramo. O modelo comum está em ./modelo.
+# Depois de editar, rode:  uv run python scripts/gerar-familia.py pacote-assinatura
+# Logins, senhas, a chave HMAC FICTÍCIA e o parâmetro alterado estão espelhados em
+# apps/backend/app/validation/suites_familias.py (PACOTE_RAMOS); os testes Docker conferem os dois.
+# A falha é de integridade (OWASP A08, CWE-345): services/pacote_service.py aplica o pacote sem conferir
+# a assinatura HMAC. A assinatura de pacote_json foi calculada com chave_fornecedor sobre o conteúdo
+# canônico (JSON sem a assinatura, chaves ordenadas, separadores compactos); ao mudar o pacote, recalcule.
+ramos:
+- destino: LAB-083-pacote-assinatura-banco
+  vars:
+    lab_id: LAB-083
+    versao: 1.0.0
+    codigo: L4-FIN
+    ramo: fin
+    setor: financeiro
+    imagem: lab-083-pacote-assinatura
+    titulo: a tabela de regras antifraude que ninguém conferiu
+    empresa: Banco Solaris
+    marca: ☀ Solaris
+    app_nome: Solaris Antifraude
+    cor: '#b45309'
+    papel: Pessoa desenvolvedora do time de prevenção a fraudes do Banco Solaris
+    aplicacao: Solaris Antifraude, o motor que decide quais Pix e compras passam direto, vão para análise ou são bloqueados
+    contexto: As regras do motor antifraude chegam em pacotes do bureau parceiro, assinados com HMAC. Uma auditoria interna perguntou se o motor confere a assinatura antes de aplicar, e ninguém soube responder
+      com certeza.
+    missao: Mostrar que um pacote alterado depois de assinado é aplicado e corrigir a importação para conferir a assinatura do fornecedor antes de aplicar
+    painel_titulo: Regras antifraude em vigor
+    painel_desc: Limites e critérios que o motor aplica a cada transação.
+    login_desc: Entre com seu usuário do time de prevenção a fraudes.
+    banco: solaris_antifraude
+    pacote_tipo: regras antifraude
+    fornecedor: Bureau Atento Antifraude
+    papel_usuario: Analista de prevenção a fraudes
+    login_a: beatriz.nogueira
+    senha_a: Beatriz#Solaris26
+    nome_a: Beatriz Nogueira Sales
+    pacote_arquivo: regras-antifraude-2026.11.1.json
+    versao_inicial: 2026.10.3
+    versao_pacote: 2026.11.1
+    param: limite_pix_noturno
+    param_desc: o limite de Pix noturno sem análise
+    valor_ok: '1000'
+    valor_mal: '50000'
+    chave_fornecedor: lab-fin-chave-hmac-ficticia-bureau-2026
+    impacto: 'Se um pacote adulterado é aceito, quem conseguir alterar o arquivo no caminho (no servidor de troca de arquivos, num e-mail, num repositório) muda as regras do banco: um limite de Pix noturno
+      de R$ 50.000 sem análise é exatamente o que um golpista precisa.'
+    historia_abertura: 'Você é do time de prevenção a fraudes do Banco Solaris. As regras do motor antifraude não são escritas aqui: chegam do Bureau Atento Antifraude, toda semana, num pacote JSON assinado
+      com HMAC e deixado num servidor de troca de arquivos. Esta semana, a auditoria interna perguntou: "se alguém com acesso a esse servidor trocar um número no arquivo, o motor percebe?". Ninguém soube
+      responder com certeza.'
+    pacote_json: "{\n  \"fornecedor\": \"Bureau Atento Antifraude\",\n  \"versao\": \"2026.11.1\",\n  \"parametros\": {\n    \"limite_pix_noturno\": 1000,\n    \"score_minimo_aprovacao\": 720,\n    \"dias_dispositivo_novo\"\
+      : 3\n  },\n  \"assinatura\": \"3a84d25a664101b8cb1ca92d3e5640cb752581febf1f2133122dab7453d03ea6\"\n}"
+    seed_contas:
+    - - 1
+      - beatriz.nogueira
+      - Beatriz Nogueira Sales
+      - Beatriz#Solaris26
+      - analista
+    seed_parametros:
+    - - limite_pix_noturno
+      - Valor máximo de Pix entre 20h e 6h sem análise
+      - 1000
+      - R$
+    - - score_minimo_aprovacao
+      - Score mínimo para aprovar sem análise
+      - 700
+      - pontos
+    - - dias_dispositivo_novo
+      - Dias de quarentena de um dispositivo novo
+      - 3
+      - dias
+- destino: LAB-084-pacote-assinatura-saude
+  vars:
+    lab_id: LAB-084
+    versao: 1.0.0
+    codigo: L4-SAU
+    ramo: sau
+    setor: saude
+    imagem: lab-084-pacote-assinatura
+    titulo: a tabela de valores críticos que ninguém conferiu
+    empresa: Hospital Bom Pastor
+    marca: ✚ Bom Pastor
+    app_nome: Bom Pastor Alertas Clínicos
+    cor: '#0f766e'
+    papel: Pessoa desenvolvedora do time de sistemas clínicos do Hospital Bom Pastor
+    aplicacao: Bom Pastor Alertas Clínicos, que avisa a equipe de enfermagem quando um resultado de exame passa de um valor crítico
+    contexto: As tabelas de valores críticos chegam em pacotes do laboratório de apoio, assinados com HMAC. A comissão de segurança do paciente perguntou se o sistema confere a assinatura antes de aplicar,
+      e ninguém soube responder com certeza.
+    missao: Mostrar que um pacote alterado depois de assinado é aplicado e corrigir a importação para conferir a assinatura do fornecedor antes de aplicar
+    painel_titulo: Valores críticos em vigor
+    painel_desc: Limites que disparam o alerta para a equipe de enfermagem.
+    login_desc: Entre com seu usuário de sistemas clínicos.
+    banco: bompastor_alertas
+    pacote_tipo: valores críticos de exames
+    fornecedor: Laboratório de Apoio Analítica
+    papel_usuario: Farmacêutica clínica
+    login_a: luciana.ferraz
+    senha_a: Luciana#BomPastor26
+    nome_a: Luciana Ferraz Duarte
+    pacote_arquivo: valores-criticos-2026.11.1.json
+    versao_inicial: 2026.09.2
+    versao_pacote: 2026.11.1
+    param: potassio_critico_max
+    param_desc: o limite de potássio crítico
+    valor_ok: '6.0'
+    valor_mal: '9.0'
+    chave_fornecedor: lab-sau-chave-hmac-ficticia-analitica-2026
+    impacto: 'Se um pacote adulterado é aceito, quem conseguir alterar o arquivo no caminho muda quando o alerta dispara: com o potássio crítico em 9,0 mmol/L, um paciente com 7,5 não gera alerta nenhum
+      para a enfermagem.'
+    historia_abertura: 'Você é do time de sistemas clínicos do Hospital Bom Pastor. A tabela de valores críticos, que decide quando um resultado de exame vira alerta para a enfermagem, não é mantida aqui:
+      chega do Laboratório de Apoio Analítica num pacote JSON assinado com HMAC, deixado num servidor de troca de arquivos. Na última reunião, a comissão de segurança do paciente perguntou: "se alguém trocar
+      um número nesse arquivo, o sistema percebe?". Ninguém soube responder com certeza.'
+    pacote_json: "{\n  \"fornecedor\": \"Laboratório de Apoio Analítica\",\n  \"versao\": \"2026.11.1\",\n  \"parametros\": {\n    \"glicemia_critica_min\": 50,\n    \"hemoglobina_critica_min\": 7.0,\n\
+      \    \"potassio_critico_max\": 6.0\n  },\n  \"assinatura\": \"0024598efef7994d1a2e038ce21dbe00e8a68d3b76fe969f2945a075ebe96686\"\n}"
+    seed_contas:
+    - - 1
+      - luciana.ferraz
+      - Luciana Ferraz Duarte
+      - Luciana#BomPastor26
+      - farmaceutica
+    seed_parametros:
+    - - glicemia_critica_min
+      - Glicemia abaixo da qual o alerta dispara
+      - 50
+      - mg/dL
+    - - hemoglobina_critica_min
+      - Hemoglobina abaixo da qual o alerta dispara
+      - 7.0
+      - g/dL
+    - - potassio_critico_max
+      - Potássio acima do qual o alerta dispara
+      - 6.0
+      - mmol/L
+- destino: LAB-085-pacote-assinatura-industria
+  vars:
+    lab_id: LAB-085
+    versao: 1.0.0
+    codigo: L4-IND
+    ramo: ind
+    setor: industria-energia
+    imagem: lab-085-pacote-assinatura
+    titulo: o pacote de parâmetros do laminador que ninguém conferiu
+    empresa: Aços Cruzeiro
+    marca: ✦ Aços Cruzeiro
+    app_nome: Cruzeiro Parâmetros de Linha
+    cor: '#a16207'
+    papel: Pessoa desenvolvedora do time de automação da Aços Cruzeiro
+    aplicacao: Cruzeiro Parâmetros de Linha, que distribui para os CLPs da laminação os limites de operação da linha
+    contexto: Os limites de operação da laminação chegam em pacotes do integrador de automação, assinados com HMAC. A segurança de TA perguntou se o sistema confere a assinatura antes de mandar os valores
+      para os CLPs, e ninguém soube responder com certeza.
+    missao: Mostrar que um pacote alterado depois de assinado é aplicado e corrigir a importação para conferir a assinatura do fornecedor antes de aplicar
+    painel_titulo: Parâmetros de linha em vigor
+    painel_desc: Limites de operação enviados aos CLPs da laminação a quente.
+    login_desc: Entre com sua matrícula do time de automação.
+    banco: cruzeiro_parametros
+    pacote_tipo: parâmetros de linha
+    fornecedor: Integradora Vértice Automação
+    papel_usuario: Engenheiro de automação
+    login_a: rafael.antunes
+    senha_a: Rafael#Cruzeiro26
+    nome_a: Rafael Antunes Prates
+    pacote_arquivo: parametros-laminacao-2026.11.1.json
+    versao_inicial: 2026.10.1
+    versao_pacote: 2026.11.1
+    param: temperatura_max_forno
+    param_desc: a temperatura máxima do forno de reaquecimento
+    valor_ok: '1250'
+    valor_mal: '1600'
+    chave_fornecedor: lab-ind-chave-hmac-ficticia-vertice-2026
+    impacto: 'Se um pacote adulterado é aceito, quem conseguir alterar o arquivo no caminho muda os limites que os CLPs aceitam: com o forno liberado até 1.600 °C, a linha opera fora do projeto, com risco
+      de dano ao equipamento e de acidente.'
+    historia_abertura: 'Você é do time de automação da Aços Cruzeiro. Os limites de operação da laminação a quente não são definidos aqui: chegam da Integradora Vértice Automação num pacote JSON assinado
+      com HMAC, deixado num servidor de troca de arquivos, e o sistema os distribui para os CLPs da linha. Depois de um incidente noticiado numa siderúrgica de outro país, a segurança de TA perguntou: "se
+      alguém trocar um número nesse arquivo, o sistema percebe antes de mandar para os CLPs?". Ninguém soube responder com certeza.'
+    pacote_json: "{\n  \"fornecedor\": \"Integradora Vértice Automação\",\n  \"versao\": \"2026.11.1\",\n  \"parametros\": {\n    \"pressao_max_hidraulica\": 210,\n    \"temperatura_max_forno\": 1250,\n\
+      \    \"velocidade_max_laminador\": 11.5\n  },\n  \"assinatura\": \"638ccd5d97dfa69622e9e391e3d8a446c80dbbc82c565c7630fd1c690b8f5993\"\n}"
+    seed_contas:
+    - - 1
+      - rafael.antunes
+      - Rafael Antunes Prates
+      - Rafael#Cruzeiro26
+      - engenheiro
+    seed_parametros:
+    - - pressao_max_hidraulica
+      - Pressão máxima do sistema hidráulico
+      - 210
+      - bar
+    - - temperatura_max_forno
+      - Temperatura máxima do forno de reaquecimento
+      - 1250
+      - °C
+    - - velocidade_max_laminador
+      - Velocidade máxima do laminador
+      - 12.0
+      - m/s

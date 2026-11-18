@@ -1,0 +1,133 @@
+# Família L7 api-recursos (ADR-021): o que muda por ramo. O modelo comum está em ./modelo.
+# Depois de editar, rode:  uv run python scripts/gerar-familia.py api-recursos
+# Logins, senhas, rota, prefixo e total estão espelhados em
+# apps/backend/app/validation/suites_familias.py (RECURSOS_RAMOS); os testes Docker conferem os dois.
+# A falha é de consumo irrestrito de recursos (OWASP API4): o serviço de listagem usa o limite de página
+# que o cliente mandar, sem teto (e LIMIT -1 do SQLite abre tudo).
+ramos:
+  - destino: LAB-074-api-recursos-banco
+    vars:
+      lab_id: LAB-074
+      versao: 1.0.0
+      codigo: L7-FIN
+      ramo: fin
+      setor: financeiro
+      imagem: lab-074-api-recursos
+      titulo: o extrato que derrubou a API no fechamento do mês
+      empresa: Corretora Pináculo
+      marca: "▲ Pináculo"
+      app_nome: Pináculo Invest
+      cor: "#0f172a"
+      papel: Pessoa desenvolvedora do time de plataforma da Corretora Pináculo
+      aplicacao: Pináculo Invest, onde o investidor acompanha o extrato de movimentações pelo navegador e pelo app
+      contexto: No último dia útil do mês, a API de extrato da Pináculo Invest ficou fora do ar por 40 minutos. O time de infraestrutura achou no log chamadas de um robô de agregação com limite=1000000, repetidas a cada poucos segundos, que faziam o banco ler o histórico inteiro de cada conta.
+      missao: Reproduzir a listagem sem teto de forma contida, entender onde falta o limite e aplicá-lo no servidor
+      painel_titulo: Extrato
+      painel_desc: Movimentações da sua conta de investimentos.
+      login_desc: Entre com seu usuário e senha da Pináculo Invest.
+      banco: pinaculo_invest
+      recurso: lancamentos
+      recurso_plural: lançamentos
+      recurso_singular: lançamento
+      recurso_singular_arquivo: lancamento
+      classe: Lancamento
+      prefixo: LCT-
+      total: 3000
+      app_movel: Pináculo
+      login_a: eduardo.saraiva
+      senha_a: "Eduardo#Pinaculo26"
+      nome_a: Eduardo Saraiva Monteiro
+      custo_extra: 'Recursos não são só CPU e memória: na mesma API, o envio do código de confirmação por SMS não tinha limite por conta, e cada SMS custa à corretora. Um robô que dispara milhares de códigos gera prejuízo direto, sem derrubar nada.'
+      historia_abertura: 'Você é do time de plataforma da Corretora Pináculo. No último dia útil do mês, a API de extrato ficou fora do ar por 40 minutos, bem na hora em que os clientes conferiam o fechamento. No log, a infraestrutura achou um robô de agregação chamando /api/lancamentos com limite=1000000 a cada poucos segundos. O chamado chegou ao seu time: por que a API aceitou?'
+      seed_contas:
+        - [1, eduardo.saraiva, Eduardo Saraiva Monteiro, "Eduardo#Pinaculo26", cliente]
+      modelos:
+        - ["Compra de ações PNXA4", -1520.4]
+        - ["Dividendos PNXA4", 86.75]
+        - ["Aplicação CDB Pináculo 110% CDI", -5000.0]
+        - ["Resgate Tesouro Selic", 2310.18]
+        - ["Taxa de custódia", -12.9]
+  - destino: LAB-075-api-recursos-saude
+    vars:
+      lab_id: LAB-075
+      versao: 1.0.0
+      codigo: L7-SAU
+      ramo: sau
+      setor: saude
+      imagem: lab-075-api-recursos
+      titulo: o histórico de atendimentos que travou o agendamento
+      empresa: Hospital Monte Sereno
+      marca: "✚ Monte Sereno"
+      app_nome: Monte Sereno Paciente
+      cor: "#047857"
+      papel: Pessoa desenvolvedora do time de sistemas do Hospital Monte Sereno
+      aplicacao: Monte Sereno Paciente, onde o paciente consulta o histórico de atendimentos e agenda consultas pelo navegador e pelo app
+      contexto: Numa segunda-feira de manhã, o agendamento do Monte Sereno Paciente ficou lento por quase uma hora. O time de infraestrutura achou no log um integrador de um convênio chamando a API de histórico com limite=500000, em sequência, para cada paciente.
+      missao: Reproduzir a listagem sem teto de forma contida, entender onde falta o limite e aplicá-lo no servidor
+      painel_titulo: Meu histórico
+      painel_desc: Seus atendimentos no Hospital Monte Sereno.
+      login_desc: Entre com seu usuário e senha do Monte Sereno Paciente.
+      banco: montesereno_paciente
+      recurso: atendimentos
+      recurso_plural: atendimentos
+      recurso_singular: atendimento
+      recurso_singular_arquivo: atendimento
+      classe: Atendimento
+      prefixo: ATD-
+      total: 3000
+      app_movel: Monte Sereno
+      login_a: patricia.lins
+      senha_a: "Patricia#Sereno26"
+      nome_a: Patrícia Lins Albuquerque
+      custo_extra: 'Recursos não são só CPU e memória: o lembrete de consulta por SMS também não tinha limite por paciente, e cada mensagem custa ao hospital. Um robô que dispara lembretes sem parar gera prejuízo e ainda incomoda o paciente.'
+      historia_abertura: 'Você é do time de sistemas do Hospital Monte Sereno. Numa segunda-feira de manhã, o agendamento de consultas ficou lento por quase uma hora e a central telefônica lotou. No log, a infraestrutura achou o integrador de um convênio chamando /api/atendimentos com limite=500000, em sequência, para cada paciente. O chamado chegou ao seu time: por que a API aceitou?'
+      seed_contas:
+        - [1, patricia.lins, Patrícia Lins Albuquerque, "Patricia#Sereno26", paciente]
+      modelos:
+        - ["Consulta clínica geral · coparticipação", 35.0]
+        - ["Coleta de exames laboratoriais", 0.0]
+        - ["Retorno cardiologia · coparticipação", 35.0]
+        - ["Ultrassonografia de abdome", 0.0]
+        - ["Pronto atendimento · coparticipação", 60.0]
+  - destino: LAB-076-api-recursos-industria
+    vars:
+      lab_id: LAB-076
+      versao: 1.0.0
+      codigo: L7-IND
+      ramo: ind
+      setor: industria-energia
+      imagem: lab-076-api-recursos
+      titulo: as leituras dos sensores que derrubaram o painel da usina
+      empresa: Ventura Energia Eólica
+      marca: "≋ Ventura"
+      app_nome: Ventura Operação
+      cor: "#0369a1"
+      papel: Pessoa desenvolvedora do time de automação da Ventura Energia Eólica
+      aplicacao: Ventura Operação, onde a equipe de campo acompanha as leituras dos aerogeradores pelo navegador e pelo app
+      contexto: Durante uma tempestade, o painel do Ventura Operação parou de responder por 25 minutos, justo quando os técnicos precisavam ver a vibração das turbinas. O time de automação achou no log uma planilha de análise chamando a API de leituras com limite=2000000 a cada atualização.
+      missao: Reproduzir a listagem sem teto de forma contida, entender onde falta o limite e aplicá-lo no servidor
+      painel_titulo: Leituras do parque
+      painel_desc: Leituras do aerogerador AG-14 do Parque Ventos do Cabo.
+      login_desc: Entre com seu usuário e senha do Ventura Operação.
+      banco: ventura_operacao
+      recurso: leituras
+      recurso_plural: leituras
+      recurso_singular: leitura
+      recurso_singular_arquivo: leitura
+      classe: Leitura
+      prefixo: LEI-
+      total: 3000
+      app_movel: Ventura Campo
+      login_a: tiago.andrade
+      senha_a: "Tiago#Ventura26"
+      nome_a: Tiago Andrade Moreira
+      custo_extra: 'Recursos não são só CPU e memória: o alerta por SMS para a equipe de plantão também não tinha limite, e cada mensagem tem custo. Um robô que dispara alertas sem parar gera prejuízo e faz a equipe ignorar os alertas de verdade.'
+      historia_abertura: 'Você é do time de automação da Ventura Energia Eólica. Durante uma tempestade, o painel de operação parou de responder por 25 minutos, justo quando os técnicos precisavam acompanhar a vibração das turbinas. No log, o time achou uma planilha de análise chamando /api/leituras com limite=2000000 a cada atualização. O chamado chegou ao seu time: por que a API aceitou?'
+      seed_contas:
+        - [1, tiago.andrade, Tiago Andrade Moreira, "Tiago#Ventura26", tecnico]
+      modelos:
+        - ["AG-14 · vento 11,2 m/s · potência 2,9 MW", 2.9]
+        - ["AG-14 · vento 8,4 m/s · potência 1,7 MW", 1.7]
+        - ["AG-14 · vibração do mancal 3,1 mm/s", 3.1]
+        - ["AG-14 · temperatura do gerador 68 °C", 68.0]
+        - ["AG-14 · vento 14,9 m/s · potência 3,4 MW", 3.4]

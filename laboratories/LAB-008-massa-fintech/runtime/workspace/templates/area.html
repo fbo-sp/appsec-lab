@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block conteudo %}
+<h1>Backoffice de crédito</h1>
+<p class="ajuda">Tela interna em que os analistas aprovam aumentos de limite e veem os dados cadastrais de todos os clientes.</p>
+<p>Código de aprovação de limite do turno: <span class="chave">{{ chave }}</span></p>
+<table class="lista">
+  <tr><th>Nome</th><th>Usuário</th><th>E-mail</th><th>Telefone</th><th>Perfil</th><th>Pacote da conta</th></tr>
+  {% for u in usuarios %}
+  <tr><td>{{ u.nome }}</td><td>{{ u.login }}</td><td>{{ u.email }}</td><td>{{ u.telefone }}</td><td>{{ u.perfil }}</td><td>{{ u.pacote }}</td></tr>
+  {% endfor %}
+</table>
+{% endblock %}

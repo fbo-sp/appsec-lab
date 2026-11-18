@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useRef, useState, type JSX } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type JSX } from "react";
 import { EditorView, basicSetup } from "codemirror";
-import { EditorState, type Extension } from "@codemirror/state";
+import { Compartment, EditorState, type Extension } from "@codemirror/state";
 import { keymap } from "@codemirror/view";
 import { python } from "@codemirror/lang-python";
 import { html } from "@codemirror/lang-html";
@@ -8,6 +8,7 @@ import { javascript } from "@codemirror/lang-javascript";
 import { sql } from "@codemirror/lang-sql";
 import { Terminal } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
+import { temaEditorEscuro } from "./editorTheme";
 import { listDir, readFile, terminalUrl, writeFile, type Entry } from "./agent";
 
 function language(path: string): Extension[] {
@@ -38,6 +39,53 @@ function useViewFromParent(): View {
   return view;
 }
 
+// ADR-026: o portal informa o modo de aparência; "codigo" e "escuro" deixam a área de código escura.
+// Guardamos o último modo nesta origem para a página já abrir com as cores certas.
+type Escuro = boolean;
+const TEMA_KEY = "cecyber.tema.workspace";
+
+function lerEscuro(): Escuro {
+  try {
+    return localStorage.getItem(TEMA_KEY) === "escuro";
+  } catch {
+    return false;
+  }
+}
+
+// O ouvinte é registrado já ao carregar o módulo, antes do evento load do iframe: o portal envia o
+// modo no onLoad, e um ouvinte criado num efeito do React podia chegar tarde e perder a mensagem.
+let escuroAtual: Escuro = lerEscuro();
+const ouvintesEscuro = new Set<() => void>();
+
+function definirEscuro(novo: Escuro): void {
+  escuroAtual = novo;
+  document.documentElement.dataset.tema = novo ? "escuro" : "claro";
+  try {
+    localStorage.setItem(TEMA_KEY, novo ? "escuro" : "claro");
+  } catch {
+    /* sem armazenamento local */
+  }
+  ouvintesEscuro.forEach((l) => l());
+}
+
+if (typeof window !== "undefined" && window.parent !== window) {
+  window.addEventListener("message", (e: MessageEvent) => {
+    if (e.source !== window.parent) return;
+    const d = e.data as { type?: unknown; tema?: unknown } | null;
+    if (d && d.type === "cecyber:tema" && (d.tema === "claro" || d.tema === "codigo" || d.tema === "escuro")) {
+      definirEscuro(d.tema !== "claro");
+    }
+  });
+}
+if (typeof document !== "undefined") document.documentElement.dataset.tema = escuroAtual ? "escuro" : "claro";
+
+function useEscuroFromParent(): Escuro {
+  return useSyncExternalStore(
+    (l) => (ouvintesEscuro.add(l), () => ouvintesEscuro.delete(l)),
+    () => escuroAtual,
+  );
+}
+
 // Avisa o portal de que o aluno está usando o editor/terminal (ADR-014: encerramento por inatividade).
 // A mensagem não carrega dados; o portal só aceita da origem do workspace.
 function useReportActivity() {
@@ -57,6 +105,10 @@ function useReportActivity() {
 
 export function Workspace() {
   const paneView = useViewFromParent();
+  const escuro = useEscuroFromParent();
+  const temaEditor = useRef(new Compartment());
+  const escuroRef = useRef(escuro);
+  escuroRef.current = escuro;
   useReportActivity();
   const [tree, setTree] = useState<Record<string, Entry[]>>({});
   const [open, setOpen] = useState<Set<string>>(new Set([""]));
@@ -66,6 +118,9 @@ export function Workspace() {
   const [error, setError] = useState<string>();
   const editorEl = useRef<HTMLDivElement>(null);
   const view = useRef<EditorView | undefined>(undefined);
+  useEffect(() => {
+    view.current?.dispatch({ effects: temaEditor.current.reconfigure(escuro ? temaEditorEscuro : []) });
+  }, [escuro]);
   const fileRef = useRef<string | undefined>(undefined);
 
   const loadDir = useCallback(async (path: string) => {
@@ -115,6 +170,7 @@ export function Workspace() {
             keymap.of([{ key: "Mod-s", preventDefault: true, run: () => (save(), true) }]),
             EditorView.updateListener.of((u) => u.docChanged && setDirty(true)),
             EditorView.theme({ "&": { height: "100%" }, ".cm-scroller": { fontFamily: "ui-monospace, Consolas, monospace" } }),
+            temaEditor.current.of(escuroRef.current ? temaEditorEscuro : []),
           ],
         }),
       });

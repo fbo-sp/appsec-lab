@@ -1,0 +1,211 @@
+# Família A1 XSS (ADR-021): o que muda por ramo de atividade. O modelo comum está em ./modelo.
+# Depois de editar, rode:  uv run python scripts/gerar-familia.py xss
+# Os valores de resposta (cookies) e os textos usados pelo validador estão espelhados em
+# apps/backend/app/validation/suites_familias.py (registro protegido); os testes Docker conferem os dois.
+ramos:
+  - destino: LAB-005-xss-banco
+    vars:
+      historia_refletido: "No Banco Aurora, o golpe mais provável é um SMS do tipo \"Seu PIX foi bloqueado, confira aqui\", com um link para a busca de favorecidos do próprio Internet Banking. O endereço é legítimo, por isso o cliente confia e clica."
+      historia_armazenado: "No Banco Aurora, quem abre o painel antifraude é a gerente Renata, várias vezes por dia. Com o código rodando no navegador dela, o atacante levaria a chave que aprova PIX acima do limite dos clientes."
+      lab_id: LAB-005
+      versao: 1.0.0
+      codigo: A1-FIN
+      ramo: fin
+      setor: financeiro
+      imagem: lab-005-xss
+      titulo: a busca de favorecidos que rouba a sessão
+      empresa: Banco Aurora Digital
+      marca: "◆ Aurora Digital"
+      app_nome: Internet Banking
+      cor: "#0f5a4a"
+      papel: Desenvolvedor(a) do time de canais digitais do Banco Aurora Digital
+      aplicacao: Internet Banking, telas "Meus favorecidos" e "Painel antifraude"
+      contexto: Um teste de invasão apontou XSS na busca de favorecidos de PIX. O time removeu a tag script do texto digitado e deu o problema por resolvido. A equipe de segurança pediu uma segunda opinião antes da liberação.
+      missao: Provar se a proteção funciona, medir o impacto para clientes e gerentes e corrigir o código
+      banco: banco
+      tabela: favorecidos
+      entidade: favorecido
+      Entidade: Favorecido
+      ENTIDADES: FAVORECIDOS
+      entidade_label: favorecido
+      entidades_label: favorecidos
+      artigo_entidade: o
+      genero: o
+      label_nome: Nome do favorecido
+      label_nome_minusculo: nome do favorecido
+      label_detalhe: Chave PIX
+      label_nota: Apelido
+      rota: favorecidos
+      rotulo_busca: Meus favorecidos
+      rotulo_busca_minusculo: busca de favorecidos
+      placeholder_busca: Nome do favorecido
+      placeholder_nota: "Ex.: aluguel, faxina"
+      titulo_cadastro: Cadastrar favorecido
+      painel_titulo: Painel antifraude
+      painel_titulo_minusculo: painel antifraude
+      painel_desc: Últimos favorecidos cadastrados pelos clientes, para a análise de fraude feita pelos gerentes.
+      cookie_cliente: dispositivo
+      segredo_cliente_desc: o token que vincula o navegador ao cliente e libera PIX sem pedir um novo código
+      formato_segredo_cliente: AUR-DSP-XXXX-NNNN
+      cookie_staff: aprovacao_gerente
+      segredo_staff_desc: a chave que o gerente usa para aprovar PIX acima do limite do cliente
+      formato_segredo_staff: AUR-APR-NNNN-XX
+      cliente_login: marina.costa
+      cliente_senha: Marina@2026
+      cliente_desc: Cliente Marina Costa Ribeiro
+      staff_login: renata.gerente
+      staff_senha: "Gerente#Aurora26"
+      staff_desc: Gerente Renata Alves Pacheco
+      staff_desc_curta: gerente Renata
+      staff_cargo: gerentes de relacionamento
+      termo_exemplo: ana
+      termo_legitimo: D'Ávila
+      item_legitimo: Padaria D'Ávila Ltda
+      seed_usuarios:
+        - [1, marina.costa, Marina Costa Ribeiro, comum, Marina@2026, AUR-DSP-7Q4M-2210]
+        - [2, rodrigo.lima, Rodrigo Tavares Lima, comum, Rodrigo@2026, AUR-DSP-3K8P-4471]
+        - [3, renata.gerente, Renata Alves Pacheco, equipe, "Gerente#Aurora26", AUR-APR-5531-KX]
+      seed_itens:
+        - [1, Ana Paula Souza, ana.souza@email.example, Faxina quinzenal]
+        - [1, Padaria D'Ávila Ltda, 12.345.678/0001-**, Pão de sexta]
+        - [1, Condomínio Jardim das Flores, condominio@jardimflores.example, Condomínio]
+        - [1, Luciana Prado, "+55 11 9****-3321", Aluguel]
+        - [2, Mariana Lopes, mariana.lopes@email.example, Irmã]
+        - [2, Escola Pequeno Saber Ltda, financeiro@pequenosaber.example, Mensalidade]
+  - destino: LAB-006-xss-saude
+    vars:
+      historia_refletido: "Na Rede Lumina, o golpe típico é uma mensagem \"Seu laudo está disponível\", com um link para a busca de exames do portal verdadeiro. O paciente vê o endereço da Lumina e entra sem desconfiar."
+      historia_armazenado: "Na Rede Lumina, a atendente Carla confere o painel de coleta a cada agendamento. Com a credencial dela, o atacante veria exames e observações de saúde de outros pacientes, dados sensíveis pela LGPD."
+      lab_id: LAB-006
+      versao: 1.0.0
+      codigo: A1-SAU
+      ramo: sau
+      setor: saude
+      imagem: lab-006-xss
+      titulo: a busca de exames que rouba o acesso aos laudos
+      empresa: Rede Lumina Diagnósticos
+      marca: "✚ Lumina Diagnósticos"
+      app_nome: Portal do Paciente
+      cor: "#1d4f86"
+      papel: Desenvolvedor(a) do time de produtos digitais da Rede Lumina Diagnósticos
+      aplicacao: Portal do Paciente, telas "Meus exames" e "Fila de atendimento"
+      contexto: Uma auditoria apontou XSS na busca de exames do Portal do Paciente. O time removeu a tag script do texto digitado e considerou o caso encerrado. Laudos e dados de saúde são dados pessoais sensíveis na LGPD, então o DPO pediu uma verificação independente.
+      missao: Provar se a proteção funciona, medir o impacto para pacientes e atendentes e corrigir o código
+      banco: lumina
+      tabela: exames
+      entidade: exame
+      Entidade: Exame
+      ENTIDADES: EXAMES
+      entidade_label: exame
+      entidades_label: exames
+      artigo_entidade: o
+      genero: o
+      label_nome: Exame
+      label_nome_minusculo: nome do exame
+      label_detalhe: Unidade
+      label_nota: Observação para a coleta
+      rota: exames
+      rotulo_busca: Meus exames
+      rotulo_busca_minusculo: busca de exames
+      placeholder_busca: Nome do exame
+      placeholder_nota: "Ex.: em jejum, uso medicação"
+      titulo_cadastro: Agendar exame
+      painel_titulo: Fila de atendimento
+      painel_titulo_minusculo: fila de atendimento
+      painel_desc: Exames agendados pelos pacientes, com as observações para a equipe da coleta.
+      cookie_cliente: app_paciente
+      segredo_cliente_desc: o token do aplicativo que libera a visualização de laudos sem pedir a senha de novo
+      formato_segredo_cliente: LUM-APP-XXXX-NNNN
+      cookie_staff: credencial_atendente
+      segredo_staff_desc: a credencial do atendente, que permite alterar cadastros e liberar laudos
+      formato_segredo_staff: LUM-ATD-NNNN-XX
+      cliente_login: julia.andrade
+      cliente_senha: Julia@2026
+      cliente_desc: Paciente Júlia Andrade Lima
+      staff_login: carla.atendente
+      staff_senha: "Atende#Lumina26"
+      staff_desc: Atendente Carla Menezes Farias
+      staff_desc_curta: atendente Carla
+      staff_cargo: atendentes das unidades
+      termo_exemplo: hemo
+      termo_legitimo: 25-OH
+      item_legitimo: Vitamina D (25-OH)
+      seed_usuarios:
+        - [1, julia.andrade, Júlia Andrade Lima, comum, Julia@2026, LUM-APP-5D2R-8814]
+        - [2, paulo.mendes, Paulo Mendes Rocha, comum, Paulo@2026, LUM-APP-9H3T-1127]
+        - [3, carla.atendente, Carla Menezes Farias, equipe, "Atende#Lumina26", LUM-ATD-2290-QZ]
+      seed_itens:
+        - [1, Hemograma completo, Unidade Centro, Em jejum desde as 22h]
+        - [1, Vitamina D (25-OH), Unidade Centro, Uso suplemento]
+        - [1, Glicemia de jejum, Unidade Jardins, Prefiro coleta cedo]
+        - [1, TSH e T4 livre, Unidade Jardins, ""]
+        - [2, Ressonância magnética de joelho, Unidade Paulista, Tenho claustrofobia leve]
+        - [2, Hemograma completo, Unidade Paulista, ""]
+  - destino: LAB-007-xss-energia
+    vars:
+      historia_refletido: "Na Voltera, o golpe mais provável é uma mensagem para o técnico de campo, \"Ordem urgente no alimentador 04\", com um link para a busca de ordens do próprio sistema, aberto no tablet de campo."
+      historia_armazenado: "Na Voltera, a operadora Helena acompanha o painel do Centro de Operação o turno inteiro. Com o código de manobra dela, o atacante poderia pedir manobras na rede elétrica em nome do COD."
+      lab_id: LAB-007
+      versao: 1.0.0
+      codigo: A1-IND
+      ramo: ind
+      setor: industria-energia
+      imagem: lab-007-xss
+      titulo: a ordem de serviço que executa no centro de operação
+      empresa: Voltera Distribuidora de Energia
+      marca: "⚡ Voltera Energia"
+      app_nome: Portal de Chamados de Campo
+      cor: "#8a4b08"
+      papel: Desenvolvedor(a) do time de sistemas de operação da Voltera Distribuidora de Energia
+      aplicacao: Portal de Chamados de Campo, telas "Minhas ordens" e "Painel do Centro de Operação"
+      contexto: Um teste de invasão apontou XSS no portal usado pelas equipes de campo. O time removeu a tag script do texto digitado e fechou o chamado. Como o mesmo portal é aberto pelos operadores que comandam manobras na rede elétrica, a segurança pediu uma revisão antes da próxima liberação.
+      missao: Provar se a proteção funciona, medir o impacto para técnicos e operadores e corrigir o código
+      banco: voltera
+      tabela: ordens
+      entidade: ordem
+      Entidade: Ordem
+      ENTIDADES: ORDENS
+      entidade_label: ordem de serviço
+      entidades_label: ordens de serviço
+      artigo_entidade: a
+      genero: a
+      label_nome: Equipamento
+      label_nome_minusculo: equipamento
+      label_detalhe: Subestação
+      label_nota: Relato do técnico
+      rota: ordens
+      rotulo_busca: Minhas ordens
+      rotulo_busca_minusculo: busca de ordens de serviço
+      placeholder_busca: Equipamento
+      placeholder_nota: "Ex.: ruído, disparo, aquecimento"
+      titulo_cadastro: Abrir ordem de serviço
+      painel_titulo: Painel do Centro de Operação
+      painel_titulo_minusculo: painel do centro de operação
+      painel_desc: Ordens de serviço abertas pelas equipes de campo, para despacho pelos operadores do Centro de Operação da Distribuição.
+      cookie_cliente: campo_token
+      segredo_cliente_desc: o token do tablet de campo, que autoriza abrir ordens em nome da equipe
+      formato_segredo_cliente: VOL-TAB-XXXX-NNNN
+      cookie_staff: cod_manobra
+      segredo_staff_desc: a credencial do operador que autoriza manobras remotas na rede elétrica
+      formato_segredo_staff: VOL-MNB-NNNN-XX
+      cliente_login: tiago.nunes
+      cliente_senha: Campo@2026
+      cliente_desc: Técnico de campo Tiago Nunes Batista
+      staff_login: helena.cod
+      staff_senha: "Operador#Volt26"
+      staff_desc: Operadora do Centro de Operação Helena Duarte Vaz
+      staff_desc_curta: operadora Helena
+      staff_cargo: operadores do Centro de Operação
+      termo_exemplo: religador
+      termo_legitimo: R-12
+      item_legitimo: Religador R-12 (Alim. 04)
+      seed_usuarios:
+        - [1, tiago.nunes, Tiago Nunes Batista, comum, Campo@2026, VOL-TAB-4C7N-6602]
+        - [2, bruna.teixeira, Bruna Teixeira Lopes, comum, Bruna@2026, VOL-TAB-8M1K-3390]
+        - [3, helena.cod, Helena Duarte Vaz, equipe, "Operador#Volt26", VOL-MNB-7718-TW]
+      seed_itens:
+        - [1, Religador R-12 (Alim. 04), SE Vale Verde, Disparo intermitente após chuva]
+        - [1, "Transformador TR-2 13,8 kV", SE Centro, Ruído acima do normal]
+        - [1, Chave seccionadora CS-31, SE Vale Verde, Inspeção termográfica]
+        - [2, Banco de capacitores BC-7, SE Porto Novo, Fusível queimado]
+        - [2, Religador R-03 (Alim. 11), SE Porto Novo, ""]

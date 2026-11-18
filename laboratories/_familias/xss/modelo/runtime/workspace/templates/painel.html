@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block conteudo %}
+<h1>[[painel_titulo]]</h1>
+<p class="ajuda">[[painel_desc]]</p>
+<table class="lista">
+  <thead><tr><th>Cadastrad[[genero]] por</th><th>[[label_nome]]</th><th>[[label_detalhe]]</th><th>[[label_nota]]</th></tr></thead>
+  <tbody>
+  {% for item, autor in recentes %}
+    {# [[label_nota]] pode ter formatação (negrito, ícones), então vai como HTML. #}
+    <tr><td>{{ autor }}</td><td>{{ item.nome }}</td><td>{{ item.detalhe }}</td><td>{{ item.nota|safe }}</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

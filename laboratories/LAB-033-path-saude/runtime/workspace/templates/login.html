@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block conteudo %}
+<h1>Entrar</h1>
+<p class="ajuda">Entre com as credenciais do beneficiário para acessar os documentos.</p>
+<form method="post" action="{{ url_for('auth.entrar') }}" class="cartao login">
+  <label>Usuário <input name="login" type="text" autocomplete="username" required></label>
+  <label>Senha <input name="senha" type="password" autocomplete="current-password" required></label>
+  {% if erro %}<p class="erro">{{ erro }}</p>{% endif %}
+  <button type="submit">Entrar</button>
+</form>
+{% endblock %}

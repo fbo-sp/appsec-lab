@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block conteudo %}
+<h1>Conta para indenização</h1>
+<p class="ajuda">Chave PIX em que a Vínculo deposita as indenizações de sinistros aprovados.</p>
+<dl class="dados cartao">
+  <dt>Chave PIX atual</dt><dd><span class="chave">{{ dados.chave_pix }}</span></dd>
+</dl>
+
+<h2>Alterar chave PIX de indenização</h2>
+<form method="post" action="{{ url_for('indenizacao.alterar') }}" class="cartao">
+  <label>Chave PIX <input name="chave_pix" placeholder="E-mail, CPF ou celular cadastrado no seu banco" required></label>
+  <button type="submit">Salvar</button>
+</form>
+
+<h2>Histórico de alterações</h2>
+<table class="lista">
+  <tr><th>Quando</th><th>Antes</th><th>Depois</th></tr>
+  {% for h in historico %}
+  <tr><td>{{ h.quando }}</td><td>{{ h.valor_anterior }}</td><td>{{ h.valor_novo }}</td></tr>
+  {% endfor %}
+</table>
+{% endblock %}

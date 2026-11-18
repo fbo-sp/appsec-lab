@@ -1,0 +1,5 @@
+DOCUMENTO-EXTRATO
+[[empresa]] — Extrato (documento de treinamento, dados fictícios)
+Titular: [[nome_a]]
+Período: 11/2026
+Saldo final: R$ 0,00

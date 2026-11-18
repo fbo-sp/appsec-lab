@@ -1,0 +1,253 @@
+# LAB-087 (L3-SAU): cookie de sessão sem Secure, HttpOnly e SameSite e sem HSTS (OWASP A02:2021 / A04:2025, CWE-614) no Aliança Médico Conveniado da Cooperativa Médica Aliança (Flask + SQLite).
+# CONTÉM VULNERABILIDADE INTENCIONAL. Uso exclusivo no runtime Docker LOCAL (ADR-008), em rede
+# interna da sessão. Dados 100% fictícios. Família L3 cookie-transporte (ADR-021): gerado por
+# scripts/gerar-familia.py a partir de laboratories/_familias/cookie-transporte; não edite este arquivo à mão.
+#
+# ATENÇÃO: o digest abaixo é uma FIXTURE (sha256 de um texto fixo), não uma imagem publicada.
+# scripts/lab-local.sh e .ps1 trocam pela imagem construída localmente antes de registrar.
+apiVersion: labs.cecyber.io/v1alpha1
+kind: AppSecLab
+metadata:
+  id: LAB-087
+  version: 1.0.0
+  title: "L3-SAU · Proteção no transporte: o cookie de sessão do médico que viajou aberto no Wi-Fi do hospital"
+  primaryCwe: CWE-614
+  secondaryCwes: [CWE-1004, CWE-319, CWE-1275]
+  family: cookie-transporte
+  sectors: [saude]
+  courseModules: [trained]
+  classifications:
+    - framework: OWASP Top 10
+      edition: "2025"
+      entries:
+        - "A04 Cryptographic Failures"
+    - framework: OWASP Top 10
+      edition: "2021"
+      entries:
+        - "A02 Cryptographic Failures"
+    - framework: SANS CWE Top 25
+      edition: "2025"
+      entries:
+        - "Não se enquadra; use o CWE"
+    - framework: SANS CWE Top 25
+      edition: "2024"
+      entries:
+        - "Não se enquadra; use o CWE"
+learning:
+  singleVulnerability: true
+  estimatedMinutes: 35
+  difficulty: intermediate
+  objectives:
+    - Entender por que o cookie de sessão vale tanto quanto a senha
+    - Ler o Set-Cookie e os cabeçalhos de uma resposta pelo Terminal
+    - Saber o que Secure, HttpOnly, SameSite e HSTS protegem
+    - Corrigir as opções do cookie e enviar o HSTS em toda resposta
+  story:
+    role: Pessoa desenvolvedora do time de sistemas da rede credenciada da Cooperativa Médica Aliança
+    application: Aliança Médico Conveniado, onde médicos conveniados consultam a agenda e as guias de atendimento dos pacientes
+    context: >-
+      Um médico conveniado acessou o portal pelo Wi-Fi de visitantes de um hospital, por um favorito antigo em HTTP. O time de segurança, num teste no mesmo Wi-Fi, conseguiu reaproveitar o cookie de sessão e ver a agenda com nomes e procedimentos dos pacientes. O portal tem HTTPS no balanceador, mas o cookie não tem nenhuma proteção.
+    mission: Ler o cookie de sessão que o login entrega, entender o que falta nele e corrigir as flags do cookie e o HSTS
+  wrapUp:
+    text: |
+      Agora o cookie de sessão só viaja por HTTPS, fica fora do alcance do JavaScript e não é enviado por outros sites, e o navegador é instruído a usar sempre HTTPS. Em um sistema real, vale reforçar:
+
+      - **HTTPS de ponta a ponta.** O balanceador redireciona HTTP para HTTPS e usa só TLS 1.2 ou 1.3. Sem certificado válido, `Secure` e HSTS não protegem nada.
+      - **HSTS com cuidado.** Comece com um `max-age` curto, confirme que todos os subdomínios têm HTTPS e só então use `includeSubDomains` com um ano. A lista de *preload* dos navegadores é difícil de desfazer.
+      - **`SameSite=Lax` é o mínimo.** Para áreas críticas (troca de senha, transferência), combine com token anti-CSRF; veja a família de CSRF (LAB-011 a LAB-013).
+      - **Sessão curta e renovada.** Expire a sessão por inatividade, gere um novo identificador no login e invalide-o no servidor ao sair.
+    references:
+      - title: "OWASP Top 10:2021: A02 Cryptographic Failures"
+        url: https://owasp.org/Top10/A02_2021-Cryptographic_Failures/
+      - title: "OWASP Top 10:2025: A04 Cryptographic Failures"
+        url: https://top10.owasp.org/2025/A04_2025-Cryptographic_Failures/
+      - title: "CWE-614: Sensitive Cookie in HTTPS Session Without 'Secure' Attribute"
+        url: https://cwe.mitre.org/data/definitions/614.html
+      - title: "OWASP Cheat Sheet: Session Management (Cookies)"
+        url: https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html
+      - title: "OWASP Cheat Sheet: HTTP Strict Transport Security"
+        url: https://cheatsheetseries.owasp.org/cheatsheets/HTTP_Strict_Transport_Security_Cheat_Sheet.html
+variants:
+  - id: python-flask
+    language: python
+    framework: flask
+    image: registry.local/labs/lab-087-cookie-transporte@sha256:4d8ccdb6f4ca491ac8e3639ef0079e3c542f74950e0d67ad8072d46c2f3027fc
+    runtimeProfile: web-basic
+    workspacePath: /workspace
+    startup:
+      command: ["sh", "-c", "python -u -m flask --app app run --host 0.0.0.0 --port 8080 --reload --no-debugger 2>&1 | tee -a /tmp/app.log"]
+      port: 8080
+    resources:
+      cpuMillicores: 500
+      memoryMiB: 512
+      storageMiB: 256
+      pidsMax: 64
+    session:
+      ttlMinutes: 45
+      maxRenewals: 2
+    interfaces: [editor, terminal, web]
+steps:
+  - id: conhecer
+    order: 1
+    title: Conhecer a sessão e o incidente
+    explanation: |
+      Você é do time de sistemas da rede credenciada da Cooperativa Médica Aliança. Na quinta-feira, um médico conveniado abriu o portal pelo Wi-Fi de visitantes de um hospital, a partir de um favorito antigo, ainda com `http://`. O time de segurança, fazendo um teste no mesmo Wi-Fi, capturou o cookie de sessão e, colando-o no próprio navegador, viu a agenda do médico com nomes e procedimentos dos pacientes. O portal tem HTTPS no balanceador, mas o cookie de sessão sai sem nenhuma proteção.
+
+      Depois do login, a aplicação entrega ao navegador um **cookie de sessão**. Em cada pedido seguinte, o navegador devolve esse cookie, e é por ele que a aplicação sabe quem você é. Quem copia o cookie vira você, sem precisar da senha. Por isso o cookie precisa de proteção para viajar e para ficar guardado no navegador. Quando ela falta, é uma falha de **proteção de dados no transporte** (OWASP A02:2021, A04:2025).
+
+      ```ilustracao
+      cookie-flags
+      ```
+
+      Quem decide como o cookie sai:
+
+      1. **Controller** (`controllers/auth_controller.py`): confere a senha e grava a conta na sessão.
+      2. **Configuração** (`config.py`): as opções `SESSION_COOKIE_*` dizem com quais proteções o Flask escreve o cookie, e `CABECALHOS_SEGURANCA` lista os cabeçalhos que `app.py` acrescenta a toda resposta. **É aqui que está a falha.**
+
+      As credenciais, neste laboratório, são:
+
+      - Médico conveniado: `dr.otavio.mendes`, senha `Otavio#Alianca26` (Dr. Otávio Mendes Rocha).
+    task: |
+      Na aba **Aplicação**, entre como `dr.otavio.mendes` / `Otavio#Alianca26` e veja o painel. Depois, na aba **Código**, abra `config.py`.
+
+      Informe abaixo o nome do cookie de sessão (o valor de `SESSION_COOKIE_NAME`).
+    concept: Quem tem o cookie de sessão é você
+    validatorRef: cookie-transporte/answer/nome-sau-v1
+    hints:
+      - level: 1
+        text: Procure `SESSION_COOKIE_NAME` em `config.py`.
+      - level: 2
+        text: É o nome padrão do Flask.
+      - level: 3
+        text: A resposta é `session`.
+    points: 10
+  - id: explorar
+    order: 2
+    title: Ler o cookie que o login entrega
+    explanation: |
+      O navegador esconde os cabeçalhos, mas o `curl -i` mostra a resposta inteira. No login, o cabeçalho `Set-Cookie` cria o cookie e, no fim da linha, traz as **flags** que o protegem:
+
+      - **`Secure`**: o navegador só envia o cookie por HTTPS, nunca por HTTP aberto.
+      - **`HttpOnly`**: o JavaScript da página não consegue ler o cookie (`document.cookie`).
+      - **`SameSite`**: o navegador não envia o cookie em pedidos que começam em outro site.
+    task: |
+      Na aba **Terminal**, faça o login e veja só a linha do cookie:
+
+      ```bash
+      curl -s -i --noproxy '*' -d "login=dr.otavio.mendes&senha=Otavio#Alianca26" http://127.0.0.1:8080/login | grep -i "^set-cookie"
+      ```
+
+      Quantas das três flags (`Secure`, `HttpOnly`, `SameSite`) aparecem na linha? Informe o número.
+    explore: |
+      **O que um atacante na mesma rede vê.** Num Wi-Fi de visitantes, quem está na mesma rede vê o tráfego HTTP em texto claro. Sem `Secure`, um único acesso por um favorito antigo com `http://` leva o cookie junto, e o atacante cola o cookie no próprio navegador: vê a agenda com nomes e procedimentos dos pacientes, dado de saúde protegido pela LGPD.
+
+      **E o JavaScript da página.** Sem `HttpOnly`, qualquer script que rode na página (um XSS, uma biblioteca de terceiros comprometida) lê o cookie com `document.cookie`. Com `HttpOnly`, o cookie continua indo em cada pedido, mas fica invisível para o script.
+    concept: As flags do cookie decidem por onde ele viaja e quem o lê
+    validatorRef: cookie-transporte/answer/flags-sau-v1
+    hints:
+      - level: 1
+        text: 'A linha tem o formato `Set-Cookie: session=...; Path=/`.'
+      - level: 2
+        text: Procure as palavras `Secure`, `HttpOnly` e `SameSite` na linha.
+      - level: 3
+        text: A resposta é `0`.
+    points: 15
+  - id: conceito
+    order: 3
+    title: Pedir ao navegador que use sempre HTTPS
+    explanation: |
+      `Secure` protege o cookie, mas não impede o primeiro acesso por HTTP: quem digita o endereço sem `https://`, num Wi-Fi público, pode ser interceptado antes do redirecionamento do balanceador. O cabeçalho **HSTS** resolve isso: depois de recebê-lo por HTTPS uma vez, o navegador passa a usar HTTPS sozinho para aquele site, pelo tempo de `max-age`.
+    task: |
+      No **Terminal**, veja os cabeçalhos de segurança que a aplicação envia hoje:
+
+      ```bash
+      curl -s -I --noproxy '*' http://127.0.0.1:8080/login
+      ```
+
+      O HSTS não está lá. Informe abaixo o nome completo do cabeçalho HSTS.
+    explore: |
+      **Por que o HSTS não atrapalha o laboratório.** Os navegadores só levam em conta o HSTS recebido por HTTPS. Aqui o lab roda em `http://localhost`, então o cabeçalho é enviado mas não muda nada na aba **Aplicação**; em produção, atrás do balanceador com HTTPS, ele passa a valer.
+    concept: HSTS faz o navegador usar sempre HTTPS
+    validatorRef: cookie-transporte/answer/hsts-sau-v1
+    hints:
+      - level: 1
+        text: HSTS é a sigla de HTTP Strict Transport Security.
+      - level: 2
+        text: O cabeçalho tem três palavras ligadas por hífen.
+      - level: 3
+        text: A resposta é `Strict-Transport-Security`.
+    points: 15
+  - id: onde
+    order: 4
+    title: Encontrar onde a sessão é configurada
+    explanation: |
+      No Flask, as flags do cookie de sessão não ficam no login: são opções da aplicação, `SESSION_COOKIE_SECURE`, `SESSION_COOKIE_HTTPONLY` e `SESSION_COOKIE_SAMESITE`. Neste sistema, as três estão desligadas por herança da época em que o portal rodava só na rede interna, e `CABECALHOS_SEGURANCA` não tem o HSTS.
+    task: |
+      Informe abaixo o nome do arquivo que define as opções do cookie de sessão e os cabeçalhos de segurança.
+    concept: As flags do cookie são configuração da aplicação
+    validatorRef: cookie-transporte/answer/arquivo-sau-v1
+    hints:
+      - level: 1
+        text: É o arquivo que você abriu na etapa 1.
+      - level: 2
+        text: Fica na raiz do workspace, ao lado de `app.py`.
+      - level: 3
+        text: A resposta é `config.py`.
+    points: 15
+  - id: corrigir
+    order: 5
+    title: Proteger o cookie e enviar o HSTS
+    explanation: |
+      **Por que a falha existe.** As três flags estão desligadas e o HSTS não está na lista de cabeçalhos.
+
+      **A correção.** Ligar `Secure` e `HttpOnly`, usar `SameSite=Lax` (o cookie continua indo quando o cliente chega por um link, mas não em formulários e pedidos vindos de outro site) e acrescentar o HSTS com um ano de validade.
+    task: |
+      Abra `config.py` e troque tudo a partir da linha `# Cookie de sessão.` até o fim do arquivo por este trecho:
+
+      ```python
+          # Cookie de sessão: só por HTTPS, fora do alcance do JavaScript e não enviado por outros sites.
+          SESSION_COOKIE_NAME = "session"
+          SESSION_COOKIE_SECURE = True
+          SESSION_COOKIE_HTTPONLY = True
+          SESSION_COOKIE_SAMESITE = "Lax"
+
+          # Cabeçalhos de segurança que a aplicação envia em toda resposta (veja app.py).
+          CABECALHOS_SEGURANCA = {
+              "X-Content-Type-Options": "nosniff",
+              "Referrer-Policy": "same-origin",
+              "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+          }
+      ```
+
+      Salve com **Ctrl+S**. A aplicação reinicia. Então:
+
+      1. repita o `curl` da etapa 2 e veja `Secure`, `HttpOnly` e `SameSite=Lax` na linha do cookie;
+      2. repita o `curl -I` da etapa 3 e veja o `Strict-Transport-Security`;
+      3. na aba **Aplicação**, clique em **Sair** e entre de novo com as credenciais da etapa 1, para ver que o login continua funcionando;
+      4. clique em **Validar**.
+    explore: |
+      **Se o login parar de funcionar na aba Aplicação.** Os navegadores aceitam cookie `Secure` em `http://localhost`, que tratam como seguro. Se você abriu a plataforma por outro endereço (um IP da rede, por exemplo), o navegador descarta o cookie `Secure` vindo por HTTP: é a proteção funcionando. A validação não depende disso.
+
+      **Se a aplicação não subir depois de salvar.** No **Terminal**:
+
+      ```bash
+      grep -iE "error|traceback" /tmp/app.log | tail -n 15
+      ```
+
+      As linhas `SESSION_COOKIE_*` e `CABECALHOS_SEGURANCA` ficam com 4 espaços; as linhas dentro das chaves, com 8.
+    concept: Cookie com Secure, HttpOnly e SameSite, e HSTS em toda resposta
+    validatorRef: cookie-transporte/python-flask/cookie-hsts-sau-v1
+    hints:
+      - level: 1
+        text: 'A mudança é só em `config.py`, nas opções `SESSION_COOKIE_*` e em `CABECALHOS_SEGURANCA`.'
+      - level: 2
+        text: As três flags precisam estar ligadas ao mesmo tempo, e o HSTS precisa estar na lista de cabeçalhos.
+      - level: 3
+        text: Copie o trecho da tarefa sem mudar o recuo. As linhas da classe ficam com 4 espaços.
+    points: 45
+policy:
+  sequentialUnlock: true
+  allowStepRetry: true
+  persistProgressAcrossReset: true
+  allowSolutionReveal: false
+  finalPassingScore: 100

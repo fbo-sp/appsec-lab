@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block conteudo %}
+<h1>Meu perfil</h1>
+<dl class="dados cartao">
+  <dt>Nome</dt><dd>{{ dados.nome }}</dd>
+  <dt>Usuário</dt><dd>{{ dados.login }}</dd>
+  <dt>Perfil de acesso</dt><dd><span class="selo">{{ dados.perfil }}</span></dd>
+  <dt>Categoria do fornecedor</dt><dd><span class="selo">{{ dados.categoria }}</span> {{ descricao }}</dd>
+  <dt>E-mail</dt><dd>{{ dados.email }}</dd>
+  <dt>Telefone</dt><dd>{{ dados.telefone }}</dd>
+</dl>
+
+<h2>Atualizar contato</h2>
+<form id="contato" class="cartao">
+  <label>E-mail <input name="email" type="email" value="{{ dados.email }}" required></label>
+  <label>Telefone <input name="telefone" value="{{ dados.telefone }}" required></label>
+  <button type="submit">Salvar</button>
+  <p id="aviso" class="ajuda"></p>
+</form>
+<script>
+  // A tela envia só e-mail e telefone, em JSON, para a mesma API que o app de celular usa.
+  document.getElementById("contato").addEventListener("submit", async (evento) => {
+    evento.preventDefault();
+    const form = evento.target;
+    const resposta = await fetch("{{ url_for('perfil.atualizar') }}", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: form.email.value, telefone: form.telefone.value }),
+    });
+    const corpo = await resposta.json();
+    document.getElementById("aviso").textContent = resposta.ok ? "Contato atualizado." : corpo.erro;
+    if (resposta.ok) setTimeout(() => location.reload(), 600);
+  });
+</script>
+{% endblock %}

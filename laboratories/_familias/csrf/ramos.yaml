@@ -1,0 +1,173 @@
+# Família A2 CSRF (ADR-021): o que muda por ramo de atividade. O modelo comum está em ./modelo.
+# Depois de editar, rode:  uv run python scripts/gerar-familia.py csrf
+# Logins, valores e respostas estão espelhados em apps/backend/app/validation/suites_familias.py
+# (registro protegido); os testes Docker conferem os dois.
+ramos:
+  - destino: LAB-011-csrf-seguros
+    vars:
+      atacante_estado: Carregando sua oferta…
+      lab_id: LAB-011
+      versao: 1.0.0
+      codigo: A2-FIN
+      ramo: fin
+      setor: financeiro
+      imagem: lab-011-csrf
+      titulo: a chave PIX trocada pelo e-mail de campanha
+      empresa: Vínculo Seguros
+      marca: "◆ Vínculo Seguros"
+      app_nome: Portal do Segurado
+      cor: "#1e3a8a"
+      papel: Desenvolvedor(a) da squad do Portal do Segurado da Vínculo Seguros
+      aplicacao: Portal do Segurado, tela "Conta para indenização"
+      contexto: Segurados com sinistro aprovado relatam que a indenização foi paga numa chave PIX que eles não cadastraram. O histórico mostra trocas de chave feitas pela sessão do próprio segurado, logo depois de ele abrir um e-mail de campanha.
+      missao: Reproduzir a troca de chave, achar a evidência e corrigir o formulário
+      banco: vinculo
+      modulo: indenizacao
+      Modulo: Indenizacao
+      rota: conta-indenizacao
+      tela_titulo: Conta para indenização
+      tela_desc: Chave PIX em que a Vínculo deposita as indenizações de sinistros aprovados.
+      campo: chave_pix
+      campo_label: Chave PIX
+      campo_label_minusculo: chave PIX de indenização
+      campo_desc: chave PIX que recebe as indenizações
+      o_campo: a chave PIX
+      placeholder: E-mail, CPF ou celular cadastrado no seu banco
+      formato_desc: "Chave PIX: e-mail, CPF (11 dígitos) ou celular com +55."
+      formato_regex: '[^\s@]+@[^\s@]+\.[a-z]{2,}|\d{11}|\+55\d{10,11}'
+      erro_formato: "Informe uma chave PIX válida: e-mail, CPF (11 dígitos) ou celular com +55."
+      msg_sucesso: Chave PIX de indenização atualizada.
+      valor_legitimo: "21987654321"
+      valor_ataque: recebimentos@seguro-agil.example
+      cliente_login: carolina.reis
+      cliente_senha: Carolina@2026
+      cliente_desc: Segurada Carolina Reis Fontana
+      dominio_app: segurado.vinculoseguros.example
+      dominio_irmao: campanhas.vinculoseguros.example
+      dominio_site: vinculoseguros.example
+      historia_abertura: Você está na squad do Portal do Segurado. Na semana passada, três segurados com sinistro de automóvel aprovado ligaram dizendo que a indenização não caiu. Nos três casos, o histórico mostra uma troca de chave PIX minutos depois de eles abrirem um e-mail da campanha "Renove com 15% de desconto". O time de fraude abriu um chamado para você.
+      historia_ataque: O site de campanhas da Vínculo foi invadido. O e-mail de renovação levava a uma página do próprio domínio da empresa, o que deixou os segurados tranquilos. Aqui você vai reproduzir o que aconteceu com eles.
+      reforco_critico: Trocar a conta que recebe indenização deveria pedir uma confirmação fora do navegador, como um código no aplicativo ou por SMS, e avisar o segurado por e-mail. Isso também barra CSRF.
+      atacante_titulo: Renove com 15% de desconto | Vínculo Seguros
+      atacante_cor: "#c2410c"
+      atacante_marca: Vínculo Seguros · Campanhas
+      atacante_chamada: Renove seu seguro auto com 15% de desconto
+      atacante_texto: "Segurado Vínculo: estamos preparando sua oferta personalizada de renovação. Não feche esta página."
+      seed_usuarios:
+        - [1, carolina.reis, Carolina Reis Fontana, carolina.reis@email.example, Carolina@2026]
+        - [2, andre.matos, André Matos Quintela, andre.matos@email.example, Andre@2026]
+      seed_historico:
+        - [1, "02/11/2026 09:14", carolina.fontana@email.example, carolina.reis@email.example]
+        - [2, "30/10/2026 16:40", "11987650002", andre.matos@email.example]
+  - destino: LAB-012-csrf-hospital
+    vars:
+      atacante_estado: Consultando os horários disponíveis…
+      lab_id: LAB-012
+      versao: 1.0.0
+      codigo: A2-SAU
+      ramo: sau
+      setor: saude
+      imagem: lab-012-csrf
+      titulo: o laudo que foi para o e-mail errado
+      empresa: Vitalis Hospitais
+      marca: "✚ Vitalis Hospitais"
+      app_nome: Portal do Paciente
+      cor: "#0e7490"
+      papel: Desenvolvedor(a) do time de canais digitais da Vitalis Hospitais
+      aplicacao: Portal do Paciente, tela "Envio de laudos"
+      contexto: O laudo da biópsia de uma paciente foi enviado para um e-mail que ela não conhece. O histórico mostra que o e-mail de laudos foi trocado pela sessão dela, minutos depois de ela abrir a página da campanha de vacinação.
+      missao: Reproduzir a troca de e-mail, achar a evidência e corrigir o formulário
+      banco: vitalis
+      modulo: laudos
+      Modulo: Laudos
+      rota: laudos/envio
+      tela_titulo: Envio de laudos
+      tela_desc: E-mail que recebe os laudos dos seus exames assim que ficam prontos.
+      campo: email_laudos
+      campo_label: E-mail para laudos
+      campo_label_minusculo: e-mail para envio de laudos
+      campo_desc: e-mail que recebe os laudos
+      o_campo: o e-mail de laudos
+      placeholder: seu.email@provedor.com.br
+      formato_desc: E-mail no formato nome@provedor.dominio.
+      formato_regex: '[^\s@]+@[^\s@]+\.[a-z]{2,}'
+      erro_formato: Informe um e-mail válido, como nome@provedor.com.br.
+      msg_sucesso: E-mail para envio de laudos atualizado.
+      valor_legitimo: beatriz.lima.saude@email.example
+      valor_ataque: arquivo.laudos@caixa-segura.example
+      cliente_login: beatriz.lima
+      cliente_senha: Beatriz@2026
+      cliente_desc: Paciente Beatriz Lima Duarte
+      dominio_app: paciente.vitalis.example
+      dominio_irmao: vacinacao.vitalis.example
+      dominio_site: vitalis.example
+      historia_abertura: Você é do time de canais digitais da Vitalis Hospitais. Uma paciente reclamou na ouvidoria que o laudo da biópsia chegou a um e-mail desconhecido antes de chegar a ela. A equipe de privacidade (DPO) já tratou o caso como incidente com dado sensível pela LGPD e pediu a causa.
+      historia_ataque: Dias antes, a paciente tinha aberto a página da campanha de vacinação contra a gripe, no próprio domínio da Vitalis, que estava comprometida. Aqui você vai reproduzir o que aconteceu com ela.
+      reforco_critico: Trocar o destino dos laudos deveria pedir a senha de novo ou um código enviado ao e-mail antigo, que também recebe o aviso da troca. Isso também barra CSRF.
+      atacante_titulo: Campanha de vacinação contra a gripe | Vitalis
+      atacante_cor: "#0f766e"
+      atacante_marca: Vitalis · Campanha de Vacinação 2026
+      atacante_chamada: Agende sua vacina da gripe
+      atacante_texto: "Paciente Vitalis: estamos conferindo sua elegibilidade e os horários livres na unidade mais próxima. Não feche esta página."
+      seed_usuarios:
+        - [1, beatriz.lima, Beatriz Lima Duarte, beatriz.lima@email.example, Beatriz@2026]
+        - [2, joao.pedro, João Pedro Antunes, joao.antunes@email.example, JoaoP@2026]
+      seed_historico:
+        - [1, "28/10/2026 18:02", beatriz.duarte@email.example, beatriz.lima@email.example]
+        - [2, "25/10/2026 08:15", jp.antunes@email.example, joao.antunes@email.example]
+  - destino: LAB-013-csrf-energia
+    vars:
+      atacante_estado: Abrindo a planilha da cotação…
+      lab_id: LAB-013
+      versao: 1.0.0
+      codigo: A2-IND
+      ramo: ind
+      setor: industria-energia
+      imagem: lab-013-csrf
+      titulo: o alarme da comporta que foi para outro celular
+      empresa: Correnteza Geração
+      marca: "⚡ Correnteza Geração"
+      app_nome: Supervisório PCH Rio Claro
+      cor: "#365314"
+      papel: Desenvolvedor(a) do time de automação da Correnteza Geração
+      aplicacao: Supervisório web da PCH Rio Claro, tela "Plantão de alarmes"
+      contexto: No sábado, a comporta 2 da PCH Rio Claro travou durante a cheia e o SMS de alarme crítico foi para um número desconhecido. O histórico mostra que o celular do plantão foi trocado pela sessão do supervisor de turno.
+      missao: Reproduzir a troca do plantão, achar a evidência e corrigir o formulário
+      banco: correnteza
+      modulo: alarmes
+      Modulo: Alarmes
+      rota: alarmes/plantao
+      tela_titulo: Plantão de alarmes
+      tela_desc: Celular do plantonista que recebe por SMS os alarmes críticos da PCH Rio Claro (nível do reservatório, trip do gerador, falha de comporta).
+      campo: celular_plantao
+      campo_label: Celular do plantão
+      campo_label_minusculo: celular do plantão
+      campo_desc: celular que recebe os alarmes críticos por SMS
+      o_campo: o celular do plantão
+      placeholder: "+55, DDD e número, só dígitos"
+      formato_desc: Celular com +55 e DDD, só dígitos.
+      formato_regex: '\+55\d{10,11}'
+      erro_formato: "Informe o celular com +55 e DDD, só dígitos. Exemplo: +5551999991234."
+      msg_sucesso: Celular do plantão atualizado.
+      valor_legitimo: "+5551988887777"
+      valor_ataque: "+5511900006666"
+      cliente_login: leandro.vieira
+      cliente_senha: Leandro@2026
+      cliente_desc: Supervisor de turno Leandro Vieira Kunz
+      dominio_app: scada.correnteza.example
+      dominio_irmao: fornecedores.correnteza.example
+      dominio_site: correnteza.example
+      historia_abertura: Você é do time de automação da Correnteza Geração. No sábado, a comporta 2 da PCH Rio Claro travou durante a cheia e o alarme crítico não chegou a ninguém do plantão. O SMS foi para um número desconhecido, cadastrado pela sessão do supervisor de turno, que estava logado no supervisório web.
+      historia_ataque: Pouco antes, o supervisor tinha aberto o link de uma "nova cotação" no portal de fornecedores da própria Correnteza, invadido dias antes. Aqui você vai reproduzir o que aconteceu com ele.
+      reforco_critico: Trocar quem recebe alarme crítico deveria exigir a confirmação de um segundo operador e um SMS de teste para o número novo. Isso também barra CSRF.
+      atacante_titulo: Portal de Fornecedores | Nova cotação
+      atacante_cor: "#4d7c0f"
+      atacante_marca: Correnteza · Portal de Fornecedores
+      atacante_chamada: "Cotação 2026-114: rolamentos da turbina 2"
+      atacante_texto: "Supervisor Correnteza: carregando a planilha da cotação enviada pelo fornecedor. Não feche esta página."
+      seed_usuarios:
+        - [1, leandro.vieira, Leandro Vieira Kunz, "+5551999991234", Leandro@2026]
+        - [2, silvana.couto, Silvana Couto Ritter, "+5551977775555", Silvana@2026]
+      seed_historico:
+        - [1, "01/11/2026 07:00", "+5551988881111", "+5551999991234"]
+        - [2, "01/11/2026 19:00", "+5551966664444", "+5551977775555"]

@@ -1,0 +1,241 @@
+# Família L10 mob-webview-html (ADR-021, ADR-025): o que muda por ramo. O modelo comum está em ./modelo.
+# Depois de editar, rode:  uv run python scripts/gerar-familia.py mob-webview-html
+# Usa o app mobile comum (mesmas marcas, logins e dados de mob-modo-teste). Logins e o trecho de mensagem
+# estão espelhados em apps/backend/app/validation/suites_familias.py (WEBVIEW_RAMOS); os testes Docker conferem.
+# A falha (CWE-79, Mobile 2016 M7): templates/webview_mensagens.html mostra o texto da mensagem com |safe,
+# sem codificação de saída e sem CSP. A carga de demonstração só desenha um quadro (inofensiva).
+ramos:
+- destino: LAB-092-mob-webview-html-fintech
+  vars:
+    lab_id: LAB-092
+    versao: 1.0.0
+    codigo: L10-FIN
+    imagem: lab-092-mobile
+    ramo: fin
+    setor: financeiro
+    banco: pagomais_mobile
+    empresa: Pagomais
+    marca: Pagomais
+    app_nome: App Pagomais
+    cor: '#1d4ed8'
+    lista_titulo: Extrato
+    acao_titulo: Transferir R$ 500,00 por PIX
+    login_a: ana.ribeiro
+    senha_a: Ana#Pagomais26
+    nome_a: Ana Ribeiro Teixeira
+    chave_app: PGM-APP-KEY-7F3A91C2
+    doc_rotulo: CPF
+    extra_rotulo: renda mensal
+    seed_contas:
+    - - 1
+      - ana.ribeiro
+      - Ana Ribeiro Teixeira
+      - Ana#Pagomais26
+      - Saldo R$ 4.820,15
+      - 111.444.777-35
+      - Renda mensal R$ 9.800
+    - - 2
+      - carlos.moura
+      - Carlos Moura Pinto
+      - Carlos#Pagomais26
+      - Saldo R$ 12.310,00
+      - 222.555.888-46
+      - Renda mensal R$ 15.200
+    seed_itens:
+    - - 1
+      - 1
+      - PIX recebido
+      - Vale Insumos
+      - + R$ 1.250,00
+    - - 2
+      - 1
+      - Cartão final 4410
+      - Mercado Norte
+      - '- R$ 212,90'
+    - - 3
+      - 2
+      - PIX enviado
+      - Norte Transportes
+      - '- R$ 2.300,00'
+    missao: Mostrar que uma mensagem escrita por outro usuário vira HTML dentro do app e corrigir a página da central com codificação de saída e política de conteúdo
+    titulo: a mensagem do Pix que desenhou um botão no app
+    papel: Pessoa desenvolvedora do time de apps do banco digital Pagomais
+    aplicacao: App Pagomais, o app em que o cliente vê o extrato e as mensagens que chegam junto com cada Pix
+    contexto: Clientes da Pagomais receberam Pix de R$ 0,01 com mensagens que, na central de mensagens do app, apareciam como um botão "Atualize seus dados" com a cara do banco. A central é uma página mostrada
+      num WebView.
+    historia_abertura: Você está no time de apps do banco digital Pagomais. No Pix, quem paga pode escrever uma mensagem, e o app mostra essas mensagens na central de mensagens. Esta semana, vários clientes
+      receberam Pix de R$ 0,01 de desconhecidos e, na central, em vez de um texto, apareceu um botão com a cara do banco pedindo para "atualizar os dados". A central é uma página do servidor mostrada num
+      WebView, e alguém conseguiu desenhar nela.
+    mensagens_titulo: Mensagens do Pix
+    envio_nome: Mensagem do Pix
+    login_b: carlos.moura
+    senha_b: Carlos#Pagomais26
+    nome_b: Carlos Moura Pinto
+    trecho_mensagem: Acompanhe a entrega
+    seed_mensagens:
+    - - 1
+      - Pagomais Atendimento
+      - Seu cartão final 4410 foi enviado. Acompanhe a entrega pelo app.
+      - 15/11 10:02
+    - - 1
+      - Carlos Moura Pinto
+      - 'Pix de R$ 35,00: valeu pelo almoço!'
+      - 16/11 13:40
+    impacto: 'Um botão falso com a cara do banco, dentro do app oficial, é o golpe perfeito: o cliente confia no app e toca. E, como o WebView do app executa JavaScript, o mesmo caminho que desenha um quadro
+      pode rodar código na tela do cliente.'
+- destino: LAB-093-mob-webview-html-saude
+  vars:
+    lab_id: LAB-093
+    versao: 1.0.0
+    codigo: L10-SAU
+    imagem: lab-093-mobile
+    ramo: sau
+    setor: saude
+    banco: lumen_mobile
+    empresa: Clínica Lumen
+    marca: Lumen
+    app_nome: App Lumen Saúde
+    cor: '#0e7490'
+    lista_titulo: Meus exames
+    acao_titulo: Compartilhar laudo com o Dr. Paulo Reis
+    login_a: marcos.tavares
+    senha_a: Marcos#Lumen26
+    nome_a: Marcos Tavares Lima
+    chave_app: LUM-APP-KEY-3B71E0C9
+    doc_rotulo: CPF
+    extra_rotulo: diagnóstico (CID)
+    seed_contas:
+    - - 1
+      - marcos.tavares
+      - Marcos Tavares Lima
+      - Marcos#Lumen26
+      - Próxima consulta 20/11 às 14h30
+      - 333.666.999-57
+      - CID J45 asma
+    - - 2
+      - renata.borges
+      - Renata Borges Nunes
+      - Renata#Lumen26
+      - Próxima consulta 02/12 às 9h
+      - 444.777.000-68
+      - CID E11 diabetes
+    seed_itens:
+    - - 1
+      - 1
+      - Hemograma completo
+      - Resultado disponível
+      - 12/11
+    - - 2
+      - 1
+      - Consulta cardiologia
+      - Agendada
+      - 20/11
+    - - 3
+      - 2
+      - Ressonância de joelho
+      - Laudo em análise
+      - 08/11
+    missao: Mostrar que uma mensagem escrita por outro usuário vira HTML dentro do app e corrigir a página da central com codificação de saída e política de conteúdo
+    titulo: o convite que desenhou um quadro no app do paciente
+    papel: Pessoa desenvolvedora do time de apps da Clínica Lumen
+    aplicacao: App Lumen Saúde, o app em que o paciente vê os exames e os convites e recados da central
+    contexto: No programa Lumen Bem-Estar, um paciente pode convidar outro com um recado. Pacientes relataram convites que, na central do app, apareciam como um formulário "confirme seu CPF para liberar
+      o laudo". A central é uma página mostrada num WebView.
+    historia_abertura: Você está no time de apps da Clínica Lumen. No programa Lumen Bem-Estar, um paciente convida outro com um recado, que aparece na central de convites e recados do app. Esta semana,
+      a ouvidoria recebeu relatos de pacientes que viram, na central, um formulário com a marca da clínica pedindo o CPF "para liberar o laudo". A central é uma página do servidor mostrada num WebView,
+      e alguém conseguiu desenhar nela.
+    mensagens_titulo: Convites e recados
+    envio_nome: Convite com recado
+    login_b: renata.borges
+    senha_b: Renata#Lumen26
+    nome_b: Renata Borges Nunes
+    trecho_mensagem: Hemograma completo
+    seed_mensagens:
+    - - 1
+      - Clínica Lumen
+      - Seu exame Hemograma completo já está disponível.
+      - 15/11 08:10
+    - - 1
+      - Renata Borges Nunes
+      - 'Convite: indiquei você para o programa Lumen Bem-Estar.'
+      - 16/11 19:22
+    impacto: Um formulário falso com a marca da clínica, dentro do app oficial, convence o paciente a entregar CPF e dados de saúde. E, como o WebView do app executa JavaScript, o mesmo caminho que desenha
+      um quadro pode rodar código na tela do paciente.
+- destino: LAB-094-mob-webview-html-industria
+  vars:
+    lab_id: LAB-094
+    versao: 1.0.0
+    codigo: L10-IND
+    imagem: lab-094-mobile
+    ramo: ind
+    setor: industria-energia
+    banco: aurora_mobile
+    empresa: Aurora Energia
+    marca: Aurora
+    app_nome: App Aurora Campo
+    cor: '#b45309'
+    lista_titulo: Ordens de serviço
+    acao_titulo: Liberar manobra no disjuntor 7
+    login_a: diego.campos
+    senha_a: Diego#Aurora26
+    nome_a: Diego Campos Ferraz
+    chave_app: AUR-APP-KEY-C40D92B1
+    doc_rotulo: matrícula
+    extra_rotulo: endereço residencial
+    seed_contas:
+    - - 1
+      - diego.campos
+      - Diego Campos Ferraz
+      - Diego#Aurora26
+      - 3 ordens em aberto hoje
+      - MAT-40213
+      - Rua das Turbinas 120
+    - - 2
+      - sonia.barros
+      - Sonia Barros Teles
+      - Sonia#Aurora26
+      - 1 ordem em aberto hoje
+      - MAT-40877
+      - Avenida da Usina 45
+    seed_itens:
+    - - 1
+      - 1
+      - OS 4821
+      - Manutenção da bomba 4
+      - Hoje
+    - - 2
+      - 1
+      - OS 4822
+      - Inspeção da subestação 2
+      - Amanhã
+    - - 3
+      - 2
+      - OS 4825
+      - Parada da turbina 2
+      - 19/11
+    missao: Mostrar que uma mensagem escrita por outro usuário vira HTML dentro do app e corrigir a página da central com codificação de saída e política de conteúdo
+    titulo: o aviso de turno que desenhou um quadro no app de campo
+    papel: Pessoa desenvolvedora do time de apps da Aurora Energia
+    aplicacao: App Aurora Campo, o app em que o técnico vê as ordens de serviço e os avisos de turno da equipe
+    contexto: Os técnicos deixam avisos de turno uns para os outros no app. Um técnico viu, no quadro de avisos, uma faixa vermelha "MANOBRA LIBERADA PELO COS" que ninguém do centro de operação tinha escrito.
+      O quadro é uma página mostrada num WebView.
+    historia_abertura: 'Você está no time de apps da Aurora Energia. Os técnicos deixam avisos de turno uns para os outros no app, e o quadro de avisos é uma página do servidor mostrada num WebView. Na
+      troca de turno de segunda-feira, um técnico viu no quadro uma faixa vermelha, com a formatação dos comunicados oficiais, dizendo "MANOBRA LIBERADA PELO COS". Ninguém do centro de operação tinha escrito
+      aquilo: alguém conseguiu desenhar no quadro.'
+    mensagens_titulo: Avisos de turno
+    envio_nome: Aviso de turno
+    login_b: sonia.barros
+    senha_b: Sonia#Aurora26
+    nome_b: Sonia Barros Teles
+    trecho_mensagem: bomba 4
+    seed_mensagens:
+    - - 1
+      - Centro de Operação
+      - 'Turno da noite: atenção à manutenção da bomba 4.'
+      - 15/11 18:00
+    - - 1
+      - Sonia Barros Teles
+      - 'Aviso de turno: ferramenta de aterramento devolvida ao almoxarifado.'
+      - 16/11 06:45
+    impacto: Um comunicado falso com a cara dos avisos oficiais, dentro do app de campo, pode levar um técnico a uma manobra perigosa. E, como o WebView do app executa JavaScript, o mesmo caminho que desenha
+      um quadro pode rodar código na tela do técnico.

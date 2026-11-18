@@ -1,0 +1,96 @@
+# Família A12 path-traversal (ADR-021): o que muda por ramo. O modelo comum está em ./modelo.
+# Depois de editar, rode:  uv run python scripts/gerar-familia.py path-traversal
+# Logins e senhas estão espelhados em apps/backend/app/validation/suites_familias.py (registro
+# protegido); os testes Docker conferem os dois. A falha é de path traversal: services/
+# documento_service.py monta o caminho sem conferir se ele fica dentro da pasta de documentos.
+ramos:
+  - destino: LAB-032-path-corretora
+    vars:
+      lab_id: LAB-032
+      versao: 1.0.0
+      codigo: A12-FIN
+      ramo: fin
+      setor: financeiro
+      imagem: lab-032-path
+      titulo: o documento que foge da pasta
+      empresa: Corretora Montara
+      marca: "▲ Montara"
+      app_nome: Central de Documentos
+      cor: "#1d4ed8"
+      papel: Pessoa desenvolvedora do time de plataforma da Corretora Montara
+      aplicacao: Central de Documentos, onde o investidor baixa os próprios documentos pelo nome
+      contexto: O investidor baixa documentos (extrato, comprovante) pelo nome, na Central de Documentos. Um teste de invasão alertou que o download monta o caminho sem conferir a pasta — dá para pedir um nome com ../ e baixar arquivos de fora da pasta de documentos.
+      missao: Confirmar que o download sai da pasta de documentos e corrigir garantindo o caminho dentro da pasta
+      painel_titulo: Central de Documentos
+      painel_desc: Baixe os seus documentos na Corretora Montara.
+      login_desc: Entre com as credenciais do investidor para acessar os documentos.
+      banco: montara_docs
+      login_a: lucas.andrade
+      senha_a: "Lucas#Montara26"
+      nome_a: Lucas Andrade Figueira
+      segredo: montara-kms-7f3a91
+      historia_abertura: 'Você está no time de plataforma da Corretora Montara. O investidor baixa documentos pelo nome na Central de Documentos. O time de segurança abriu um chamado: o download monta o caminho juntando a pasta de documentos com o nome recebido, sem conferir, e um teste de invasão mostrou que dá para pedir ../segredo_interno.txt e baixar um arquivo de fora da pasta.'
+      seed_contas:
+        - [1, lucas.andrade, Lucas Andrade Figueira, "Lucas#Montara26", 0.0]
+        - [2, bianca.rocha, Bianca Rocha Amaral, "Bianca#Montara26", 0.0]
+        - [3, thiago.neves, Thiago Neves Cardoso, "Thiago#Montara26", 0.0]
+  - destino: LAB-033-path-saude
+    vars:
+      lab_id: LAB-033
+      versao: 1.0.0
+      codigo: A12-SAU
+      ramo: sau
+      setor: saude
+      imagem: lab-033-path
+      titulo: o documento que foge da pasta
+      empresa: Operadora Vitalis
+      marca: "✚ Vitalis"
+      app_nome: Central de Documentos
+      cor: "#0e7490"
+      papel: Pessoa desenvolvedora do time de produtos digitais da operadora Vitalis
+      aplicacao: Central de Documentos, onde o beneficiário baixa os próprios documentos pelo nome
+      contexto: O beneficiário baixa documentos pelo nome, na Central de Documentos. Numa auditoria, a equipe apontou que o download monta o caminho sem conferir a pasta — dá para pedir um nome com ../ e baixar arquivos de fora da pasta de documentos.
+      missao: Confirmar que o download sai da pasta de documentos e corrigir garantindo o caminho dentro da pasta
+      painel_titulo: Central de Documentos
+      painel_desc: Baixe os seus documentos na Operadora Vitalis.
+      login_desc: Entre com as credenciais do beneficiário para acessar os documentos.
+      banco: vitalis_docs
+      login_a: fernanda.lopes
+      senha_a: "Fernanda#Vitalis26"
+      nome_a: Fernanda Lopes Carvalho
+      segredo: vitalis-kms-24c7be
+      historia_abertura: 'Você é do time de produtos digitais da operadora Vitalis. O beneficiário baixa documentos pelo nome na Central de Documentos. Numa auditoria, a equipe apontou que o download monta o caminho juntando a pasta de documentos com o nome recebido, sem conferir, e que dá para pedir ../segredo_interno.txt e baixar um arquivo de fora da pasta.'
+      seed_contas:
+        - [1, fernanda.lopes, Fernanda Lopes Carvalho, "Fernanda#Vitalis26", 0.0]
+        - [2, rodrigo.matos, Rodrigo Matos Simões, "Rodrigo#Vitalis26", 0.0]
+        - [3, aline.castro, Aline Castro Ramos, "Aline#Vitalis26", 0.0]
+  - destino: LAB-034-path-energia
+    vars:
+      lab_id: LAB-034
+      versao: 1.0.0
+      codigo: A12-IND
+      ramo: ind
+      setor: industria-energia
+      imagem: lab-034-path
+      titulo: o documento que foge da pasta
+      empresa: Corrente Energia
+      marca: "⚡ Corrente"
+      app_nome: Central de Documentos
+      cor: "#9a3412"
+      papel: Pessoa desenvolvedora do time digital da Corrente Energia
+      aplicacao: Central de Documentos, onde o cliente baixa os próprios documentos pelo nome
+      contexto: O cliente baixa documentos (fatura, comprovante) pelo nome, na Central de Documentos. Antes de uma auditoria, a equipe apontou que o download monta o caminho sem conferir a pasta — dá para pedir um nome com ../ e baixar arquivos de fora da pasta de documentos.
+      missao: Confirmar que o download sai da pasta de documentos e corrigir garantindo o caminho dentro da pasta
+      painel_titulo: Central de Documentos
+      painel_desc: Baixe os seus documentos na Corrente Energia.
+      login_desc: Entre com as credenciais do cliente para acessar os documentos.
+      banco: corrente_docs
+      login_a: marcelo.dantas
+      senha_a: "Marcelo#Corrente26"
+      nome_a: Marcelo Dantas Vieira
+      segredo: corrente-kms-9b1d05
+      historia_abertura: 'Você é do time digital da Corrente Energia. O cliente baixa documentos pelo nome na Central de Documentos. A equipe apontou que o download monta o caminho juntando a pasta de documentos com o nome recebido, sem conferir, e que dá para pedir ../segredo_interno.txt e baixar um arquivo de fora da pasta.'
+      seed_contas:
+        - [1, marcelo.dantas, Marcelo Dantas Vieira, "Marcelo#Corrente26", 0.0]
+        - [2, patricia.gomes, Patrícia Gomes Souza, "Patricia#Corrente26", 0.0]
+        - [3, eduardo.lima, Eduardo Lima Barros, "Eduardo#Corrente26", 0.0]

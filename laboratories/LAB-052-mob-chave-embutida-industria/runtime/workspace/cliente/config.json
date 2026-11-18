@@ -1,0 +1,5 @@
+{
+  "_comentario": "Configuração empacotada no app (vai dentro do APK/IPA que qualquer pessoa baixa).",
+  "api_base": "http://127.0.0.1:8080",
+  "api_key": "AUR-APP-KEY-C40D92B1"
+}

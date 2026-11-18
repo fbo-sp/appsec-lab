@@ -24,13 +24,14 @@ Invoke-RestMethod -Uri "$Api/healthz" | ConvertTo-Json -Compress
 
 Write-Host "== 1. Registrar LAB-000 (benigno, sem vulnerabilidade)"
 $manifest = [System.IO.File]::ReadAllText((Join-Path $Root "laboratories\LAB-000-hello-benign\manifest.yaml"))
+$lab000Version = ([regex]::Match($manifest, '(?m)^\s{2}version:\s*"?([^"\r\n\s]+)"?')).Groups[1].Value
 $rel = Invoke-WebRequest -UseBasicParsing -Method Post -Uri "$Api/api/v1/admin/lab-releases" -Headers $Admin `
     -ContentType "application/yaml; charset=utf-8" -Body ([System.Text.Encoding]::UTF8.GetBytes($manifest))
 Write-Host "HTTP $($rel.StatusCode) (201 = publicado, 200 = ja existia)"
 
 Write-Host "== 2. Criar sessao com Idempotency-Key"
 $key = "demo-" + [guid]::NewGuid().ToString("N")
-$body = '{"labId":"LAB-000","version":"0.2.1","variantId":"python-http"}'
+$body = "{`"labId`":`"LAB-000`",`"version`":`"$lab000Version`",`"variantId`":`"python-http`"}"
 $h = $Aluno.Clone(); $h["Idempotency-Key"] = $key
 $s1 = Invoke-RestMethod -Method Post -Uri "$Api/api/v1/sessions" -Headers $h -ContentType "application/json" -Body $body
 Write-Host "sessionId=$($s1.sessionId) status=$($s1.status)"

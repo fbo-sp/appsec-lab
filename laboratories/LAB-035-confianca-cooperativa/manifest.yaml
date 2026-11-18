@@ -1,0 +1,244 @@
+# LAB-035 (A10-FIN): confiança em dado do cliente (CWE-602) no Clube de Pontos da Cooperativa Credimova (Flask + SQLite).
+# CONTÉM VULNERABILIDADE INTENCIONAL. Uso exclusivo no runtime Docker LOCAL (ADR-008), em rede
+# interna da sessão. Dados 100% fictícios. Família A10 confianca-cliente (ADR-021): gerado por
+# scripts/gerar-familia.py a partir de laboratories/_familias/confianca-cliente; não edite este arquivo à mão.
+#
+# ATENÇÃO: o digest abaixo é uma FIXTURE (sha256 de um texto fixo), não uma imagem publicada.
+# scripts/lab-local.sh e .ps1 trocam pela imagem construída localmente antes de registrar.
+apiVersion: labs.cecyber.io/v1alpha1
+kind: AppSecLab
+metadata:
+  id: LAB-035
+  version: 1.0.0
+  title: "A10-FIN · Confiança no cliente: a loja que confia no preço do cliente"
+  primaryCwe: CWE-602
+  secondaryCwes: [CWE-472]
+  family: confianca-cliente
+  sectors: [financeiro]
+  courseModules: [trained]
+  classifications:
+    - framework: OWASP Top 10
+      edition: "2025"
+      entries:
+        - "A06 Insecure Design"
+    - framework: OWASP Top 10
+      edition: "2021"
+      entries:
+        - "A04 Insecure Design"
+    - framework: OWASP API Security Top 10
+      edition: "2023"
+      entries:
+        - "API6 Unrestricted Access to Sensitive Business Flows"
+    - framework: SANS CWE Top 25
+      edition: "2025"
+      entries:
+        - "Não se enquadra; use o CWE"
+    - framework: SANS CWE Top 25
+      edition: "2024"
+      entries:
+        - "Não se enquadra; use o CWE"
+learning:
+  singleVulnerability: true
+  estimatedMinutes: 35
+  difficulty: intermediate
+  objectives:
+    - Entender por que não se deve confiar em dados que o cliente controla
+    - Explorar a falha resgatando um produto caro com um custo adulterado no pedido
+    - Reconhecer que o custo do produto é um dado do servidor, não do formulário
+    - Corrigir usando o custo real do produto (do banco) e ignorando o do formulário
+  story:
+    role: Pessoa desenvolvedora da squad de engajamento da Cooperativa Credimova
+    application: Clube de Pontos, onde o cooperado resgata produtos gastando pontos do programa de fidelidade
+    context: >-
+      O cooperado resgata produtos no Clube de Pontos gastando pontos. Um teste de invasão alertou que o resgate confia no custo que vem do formulário — dá para resgatar um produto caro informando um custo de 1 ponto.
+    mission: Confirmar que a loja aceita um custo adulterado e corrigir usando o custo real do produto
+  wrapUp:
+    text: |
+      Agora o resgate cobra o custo real do produto, lido do banco, e ignora o valor que vem do formulário. Em um sistema real, vale reforçar:
+
+      - **Nunca confie em dado que o cliente controla e que você mesmo pode determinar.** Preço, custo, desconto, papel do usuário, id do dono: tudo isso o cliente consegue alterar no pedido. O servidor tem a fonte da verdade (o banco) e deve usá-la.
+      - **Campo escondido não é campo seguro.** Um `input type="hidden"` aparece no HTML e é editável por qualquer um (DevTools, `curl`). Esconder não é proteger.
+      - **Receba do cliente só o que ele realmente escolhe.** No resgate, o cliente escolhe *qual* produto (o id); o *custo* é consequência disso, e quem resolve é o servidor. Reduza a superfície de dados confiáveis ao mínimo.
+      - **Valide também as regras de negócio.** Depois de pegar o custo real, confira se o usuário tem saldo. Juntar "fonte da verdade no servidor" com "regras no servidor" fecha a brecha.
+    references:
+      - title: "OWASP Top 10:2025: A06 Insecure Design"
+        url: https://top10.owasp.org/2025/A06_2025-Insecure_Design/
+      - title: "OWASP Top 10:2021: A04 Insecure Design"
+        url: https://owasp.org/Top10/A04_2021-Insecure_Design/
+      - title: "CWE-602: Client-Side Enforcement of Server-Side Security"
+        url: https://cwe.mitre.org/data/definitions/602.html
+      - title: "CWE-472: External Control of Assumed-Immutable Web Parameter"
+        url: https://cwe.mitre.org/data/definitions/472.html
+variants:
+  - id: python-flask
+    language: python
+    framework: flask
+    image: registry.local/labs/lab-035-confianca@sha256:246c7a492efddfaaaa16cb61ed9fcd0cd0cf265dac25ec7baa4905e0636fb822
+    runtimeProfile: web-basic
+    workspacePath: /workspace
+    startup:
+      command: ["sh", "-c", "python -u -m flask --app app run --host 0.0.0.0 --port 8080 --reload --no-debugger 2>&1 | tee -a /tmp/app.log"]
+      port: 8080
+    resources:
+      cpuMillicores: 500
+      memoryMiB: 512
+      storageMiB: 256
+      pidsMax: 64
+    session:
+      ttlMinutes: 45
+      maxRenewals: 2
+    interfaces: [editor, terminal, web]
+steps:
+  - id: conhecer
+    order: 1
+    title: Conhecer a loja e achar o resgate
+    explanation: |
+      Você está na squad de engajamento da Cooperativa Credimova. O cooperado resgata produtos no Clube de Pontos gastando pontos. O time de segurança abriu um chamado: o resgate confia no custo que chega do formulário, e um teste de invasão mostrou que dá para resgatar um produto de 300 pontos informando um custo de 1 ponto.
+
+      A falha aqui é de **confiança em dado do cliente**: o servidor usa, para decidir quanto cobrar, um valor que veio do formulário — um dado que quem faz o pedido controla. O custo do produto, porém, é um dado da **loja**: ele está no banco.
+
+      ```ilustracao
+      confianca-cliente
+      ```
+
+      Siga o resgate pelas camadas:
+
+      1. **Controller** (`controllers/painel_controller.py`): recebe o `produto_id` e o `custo` do formulário e chama o serviço.
+      2. **Serviço** (`services/loja_service.py`): debita os pontos. **É aqui que se decide de onde vem o custo.**
+
+      As credenciais de acesso, neste laboratório, são:
+
+      - Usuário `marina.gomes`, senha `Marina#Cred26` (saldo inicial de 500 pontos).
+    task: |
+      1. Na aba **Aplicação**, entre com `marina.gomes` e a senha `Marina#Cred26`. Você vê o catálogo e o seu saldo.
+      2. Resgate um produto normalmente e veja o saldo cair pelo custo real.
+      3. Na aba **Código**, abra `services/loja_service.py`.
+
+      Informe abaixo o nome do método que resgata o produto (o que o controller chama).
+    concept: Confiança em dado do cliente — o servidor confia num valor que o cliente controla
+    validatorRef: confianca-cliente/answer/metodo-fin-v1
+    hints:
+      - level: 1
+        text: 'Em `services/loja_service.py`, a classe `LojaService` tem um único método público.'
+      - level: 2
+        text: É o método que o controller chama para efetivar o resgate.
+      - level: 3
+        text: O valor é `resgatar`.
+    points: 10
+  - id: explorar
+    order: 2
+    title: Resgatar um produto caro pagando 1 ponto
+    explanation: |
+      O formulário manda o `custo` junto com o `produto_id`, e o serviço **debita esse custo**, sem conferir com o custo real do produto. O campo de custo é um `input type="hidden"` — dá para editá-lo no navegador ou mandar o pedido direto por `curl`.
+    task: |
+      Na aba **Terminal**, resgate o produto 1 (que custa 300 pontos) pagando só 1 ponto:
+
+      ```bash
+      curl -s -X POST http://127.0.0.1:8080/resgatar -d "produto_id=1&custo=1" --cookie-jar /tmp/c --cookie /tmp/c
+      ```
+
+      Se precisar, faça login pela aba **Aplicação** primeiro. Veja que o resgate é aceito e o saldo cai só 1 ponto. Informe abaixo quem deveria definir o custo do produto: o **cliente** ou a **loja**.
+    explore: |
+      **Pela tela também dá.** Na aba **Aplicação**, abra as ferramentas de desenvolvedor, ache o campo escondido `custo` do produto caro e troque o valor para `1` antes de clicar em Resgatar. O resultado é o mesmo: campo escondido não é campo seguro.
+    concept: O servidor confia no custo do formulário, que o cliente adultera
+    validatorRef: confianca-cliente/answer/quem-define-fin-v1
+    hints:
+      - level: 1
+        text: O custo é uma informação da loja, não uma escolha de quem compra.
+      - level: 2
+        text: Quem vende é que define o preço; o comprador só escolhe o produto.
+      - level: 3
+        text: A resposta é `loja` (ou servidor).
+    points: 15
+  - id: fonte
+    order: 3
+    title: Dizer de onde o custo deve vir
+    explanation: |
+      O cliente escolhe **qual** produto (o `produto_id`). O **custo** é consequência disso, e quem resolve é o servidor, olhando o produto no banco. O valor de custo que chega no formulário não deveria nem ser usado.
+    task: |
+      De onde o servidor deve ler o custo real do produto, em vez de confiar no formulário?
+
+      Responda com uma palavra (onde a loja guarda o custo de cada produto).
+    concept: O custo real vem do produto no banco, no servidor
+    validatorRef: confianca-cliente/answer/vem-de-onde-fin-v1
+    hints:
+      - level: 1
+        text: É a fonte da verdade da loja, no servidor.
+      - level: 2
+        text: O custo de cada produto está guardado lá, junto com o nome.
+      - level: 3
+        text: A resposta é `banco` (o produto no banco).
+    points: 15
+  - id: confiar
+    order: 4
+    title: Decidir se o servidor pode confiar no formulário
+    explanation: |
+      A regra geral: o servidor **não confia** em dado que o cliente controla e que ele mesmo pode determinar. Esconder o campo (`type="hidden"`) não muda nada — ele aparece no HTML e é editável. A decisão de custo tem que ser do servidor.
+    task: |
+      O servidor deve confiar no custo que veio do formulário?
+
+      Responda com uma palavra (sim ou não).
+    concept: O servidor não confia em dado que o cliente controla
+    validatorRef: confianca-cliente/answer/confiar-fin-v1
+    hints:
+      - level: 1
+        text: O cliente consegue mandar qualquer custo que quiser.
+      - level: 2
+        text: O servidor tem o custo real; não precisa do valor do formulário.
+      - level: 3
+        text: A resposta é `não`.
+    points: 15
+  - id: corrigir
+    order: 5
+    title: Usar o custo real do produto no serviço
+    explanation: |
+      **Por que a falha existe.** `resgatar` debita o `custo_informado` que veio do formulário, sem olhar o custo real do produto. Quem faz o pedido escolhe o custo.
+
+      **A correção.** Ler o custo do próprio produto (já buscado no banco) e debitar esse valor, ignorando o do formulário. De quebra, conferir se o saldo cobre o custo.
+    task: |
+      Abra `services/loja_service.py` e troque o método `resgatar` inteiro por este:
+
+      ```python
+          def resgatar(self, conta_id: int, produto_id: int, custo_informado: int) -> float:
+              """Resgata o produto para a conta e devolve o novo saldo de pontos."""
+              conta = self._contas.buscar(conta_id)
+              if conta is None:
+                  raise ValueError("Conta não encontrada.")
+              produto = self._produtos.buscar(produto_id)
+              if produto is None:
+                  raise ValueError("Produto não encontrado.")
+              # O custo é o do produto no banco; o valor do formulário é ignorado.
+              if produto.custo > conta.saldo:
+                  raise ValueError("Saldo de pontos insuficiente.")
+              self._contas.debitar(conta_id, produto.custo)
+              return conta.saldo - produto.custo
+      ```
+
+      Salve com **Ctrl+S**. A aplicação reinicia e o banco volta ao estado inicial (500 pontos). Então:
+
+      1. na aba **Terminal**, repita o `curl` com `custo=1` no produto 1 e veja que agora o saldo cai **300** (o custo real), não 1;
+      2. clique em **Validar**.
+    explore: |
+      **Se algo não funcionar depois de salvar.** Um recuo errado derruba a aplicação. No **Terminal**:
+
+      ```bash
+      grep -iE "error|traceback" /tmp/app.log | tail -n 15
+      ```
+
+      **O que procurar.** `IndentationError` aponta a linha com recuo diferente: o `def resgatar` fica com 4 espaços; o corpo, com 8. O `self._contas.debitar(...)` passa a usar `produto.custo`, não `custo_informado`.
+    concept: Correção usando o custo real do produto no servidor
+    validatorRef: confianca-cliente/python-flask/loja-servidor-fin-v1
+    hints:
+      - level: 1
+        text: 'A mudança é só em `services/loja_service.py`, no método `resgatar`.'
+      - level: 2
+        text: "Debite produto.custo (do banco), não custo_informado (do formulário)."
+      - level: 3
+        text: Copie o método da tarefa sem mudar o recuo. O `def resgatar` fica com 4 espaços antes de `def`.
+    points: 45
+policy:
+  sequentialUnlock: true
+  allowStepRetry: true
+  persistProgressAcrossReset: true
+  allowSolutionReveal: false
+  finalPassingScore: 100

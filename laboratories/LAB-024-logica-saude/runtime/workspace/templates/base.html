@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block titulo %}Sereno Saúde{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='estilo.css') }}">
+</head>
+<body>
+  <header class="topo">
+    <span class="marca">✚ Sereno</span>
+    <span class="sub">Portal do Beneficiário</span>
+    {% if session.get('usuario_nome') %}
+    <nav><a href="{{ url_for('painel.ver') }}">Portal do Beneficiário</a></nav>
+    <span class="usuario">{{ session['usuario_nome'] }} · <a href="{{ url_for('auth.sair') }}">Sair</a></span>
+    {% endif %}
+  </header>
+  <main>{% block conteudo %}{% endblock %}</main>
+  <footer>Ambiente de treinamento CECyber · dados fictícios</footer>
+</body>
+</html>

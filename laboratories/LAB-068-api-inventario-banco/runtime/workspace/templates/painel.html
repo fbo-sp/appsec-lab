@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block conteudo %}
+<h1>Meus comprovantes</h1>
+<p class="ajuda">Comprovantes de Pix enviados e recebidos na sua conta.</p>
+
+<dl class="dados">
+  <dt>Titular</dt><dd>{{ conta.nome }}</dd>
+</dl>
+
+<h2>Comprovantes de Pix</h2>
+<table class="lista">
+  <tr><th>Nº</th><th>Data</th><th>Comprovante</th><th>API (o que o app chama)</th></tr>
+  {% for d in documentos %}
+  <tr>
+    <td>{{ d.id }}</td><td>{{ d.data }}</td><td>{{ d.titulo }}</td>
+    <td><a href="/api/v2/comprovantes/{{ d.id }}"><code>/api/v2/comprovantes/{{ d.id }}</code></a></td>
+  </tr>
+  {% endfor %}
+</table>
+
+<p class="ajuda">Integrações e times de app: veja a <a href="{{ url_for('painel.documentacao') }}">documentação da API</a>.</p>
+<p class="banner reforcado">Você está autenticado. Use <a href="{{ url_for('auth.sair') }}">Sair</a> para encerrar a sessão.</p>
+{% endblock %}

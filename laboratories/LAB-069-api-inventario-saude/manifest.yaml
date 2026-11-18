@@ -1,0 +1,261 @@
+# LAB-069 (L5-SAU): versão antiga da API esquecida no ar (OWASP API9, CWE-1059) no Íris Resultados da Laboratórios Íris (Flask + SQLite).
+# CONTÉM VULNERABILIDADE INTENCIONAL. Uso exclusivo no runtime Docker LOCAL (ADR-008), em rede
+# interna da sessão. Dados 100% fictícios. Família L5 api-inventario (ADR-021): gerado por
+# scripts/gerar-familia.py a partir de laboratories/_familias/api-inventario; não edite este arquivo à mão.
+#
+# ATENÇÃO: o digest abaixo é uma FIXTURE (sha256 de um texto fixo), não uma imagem publicada.
+# scripts/lab-local.sh e .ps1 trocam pela imagem construída localmente antes de registrar.
+apiVersion: labs.cecyber.io/v1alpha1
+kind: AppSecLab
+metadata:
+  id: LAB-069
+  version: 1.0.0
+  title: "L5-SAU · Inventário de API: a v1 da API de exames que ninguém desligou"
+  primaryCwe: CWE-1059
+  secondaryCwes: [CWE-862, CWE-639]
+  family: api-inventario
+  sectors: [saude]
+  courseModules: [trained]
+  classifications:
+    - framework: OWASP Top 10
+      edition: "2025"
+      entries:
+        - "A01 Broken Access Control"
+    - framework: OWASP Top 10
+      edition: "2021"
+      entries:
+        - "A01 Broken Access Control"
+    - framework: OWASP API Security Top 10
+      edition: "2023"
+      entries:
+        - "API9 Improper Inventory Management"
+    - framework: OWASP API Security Top 10
+      edition: "2019"
+      entries:
+        - "API9 Improper Assets Management"
+    - framework: SANS CWE Top 25
+      edition: "2025"
+      entries:
+        - "#4 CWE-862 Missing Authorization"
+    - framework: SANS CWE Top 25
+      edition: "2024"
+      entries:
+        - "#9 CWE-862 Missing Authorization"
+learning:
+  singleVulnerability: true
+  estimatedMinutes: 35
+  difficulty: intermediate
+  objectives:
+    - Entender por que toda versão publicada de uma API precisa estar no inventário
+    - Descobrir uma versão antiga da API que saiu da documentação mas continua no ar
+    - Explorar a versão antiga para ler dados de outro cliente
+    - Corrigir aposentando a versão antiga no servidor
+  story:
+    role: Pessoa desenvolvedora do time de integrações dos Laboratórios Íris
+    application: Íris Resultados, onde o paciente consulta os laudos dos exames pelo navegador e pelo app
+    context: >-
+      A API de resultados de exames ganhou uma v2, que confere se o laudo é do paciente logado. O app novo já usa a v2. Um hospital parceiro avisou que um integrador antigo ainda chama /api/v1/exames, e a área de privacidade quer saber se a v1 continua entregando laudos.
+    mission: Descobrir a versão antiga que continua respondendo, mostrar que ela entrega laudos de outros pacientes e aposentá-la no servidor
+  wrapUp:
+    text: |
+      Agora a v1 responde "versão desativada" e só a v2, que confere o dono, entrega os exames. Em um sistema real, vale reforçar:
+
+      - **Inventário é controle de segurança.** Mantenha uma lista viva de todas as APIs, versões, ambientes e rotas publicadas, com dono e data de desativação. O que não está no inventário não recebe correção nem monitoramento.
+      - **Sair da documentação não é desligar.** Apagar a versão da documentação só esconde a rota de quem é honesto. Quem ataca procura `v1`, `beta`, `old`, `internal` e acha.
+      - **Aposente com prazo.** Ao lançar uma versão nova, defina quando a antiga deixa de responder (HTTP 410 Gone) e avise os clientes, como o app antigo.
+      - **Correção em um lugar só.** Se as duas versões precisam conviver, faça as duas passarem pelo mesmo serviço com a regra de acesso, em vez de repetir a consulta em cada controller.
+    references:
+      - title: "OWASP API Security Top 10 2023: API9 Improper Inventory Management"
+        url: https://owasp.org/API-Security/editions/2023/en/0xa9-improper-inventory-management/
+      - title: "OWASP API Security Top 10 2019: API9 Improper Assets Management"
+        url: https://owasp.org/API-Security/editions/2019/en/0xa9-improper-assets-management/
+      - title: "OWASP Top 10:2025: A01 Broken Access Control"
+        url: https://top10.owasp.org/2025/A01_2025-Broken_Access_Control/
+      - title: "CWE-1059: Insufficient Technical Documentation"
+        url: https://cwe.mitre.org/data/definitions/1059.html
+      - title: "CWE-862: Missing Authorization"
+        url: https://cwe.mitre.org/data/definitions/862.html
+variants:
+  - id: python-flask
+    language: python
+    framework: flask
+    image: registry.local/labs/lab-069-api-inventario@sha256:54fc0c113151c9ace2609b39700f3b736a7de313f2aca191a0de1846c94d4104
+    runtimeProfile: web-basic
+    workspacePath: /workspace
+    startup:
+      command: ["sh", "-c", "python -u -m flask --app app run --host 0.0.0.0 --port 8080 --reload --no-debugger 2>&1 | tee -a /tmp/app.log"]
+      port: 8080
+    resources:
+      cpuMillicores: 500
+      memoryMiB: 512
+      storageMiB: 256
+      pidsMax: 64
+    session:
+      ttlMinutes: 45
+      maxRenewals: 2
+    interfaces: [editor, terminal, web]
+steps:
+  - id: conhecer
+    order: 1
+    title: Conhecer a API e a documentação publicada
+    explanation: |
+      Você é do time de integrações dos Laboratórios Íris. Em 2025 a API de resultados ganhou uma v2, que confere se o laudo é do paciente logado, e a v1 saiu da documentação. Ontem, um hospital parceiro avisou que um integrador antigo ainda chama /api/v1/exames e recebe resposta. A área de privacidade abriu um chamado para saber se a v1 continua entregando laudos.
+
+      Uma API costuma ganhar versões: `/api/v1/...`, depois `/api/v2/...`. A versão nova corrige problemas da antiga, mas os clientes antigos (como o app Íris 2.x que ainda não foi atualizado) continuam chamando a anterior. Por isso as versões convivem por um tempo. O risco aparece quando ninguém sabe mais quais versões estão no ar: a **gestão de inventário de API** (OWASP API9) é justamente manter essa lista viva.
+
+      ```ilustracao
+      inventario-api
+      ```
+
+      Siga o pedido pelas camadas:
+
+      1. **Controller da v2** (`controllers/api_v2_controller.py`): recebe `/api/v2/exames/<id>`.
+      2. **Serviço** (`services/documento_service.py`): devolve o documento só se ele for da conta logada.
+      3. **Repositório** (`repositories/documento_repository.py`): busca no banco pelo id.
+
+      As credenciais, neste laboratório, são:
+
+      - Cliente: `beatriz.moura`, senha `Beatriz#Iris26` (Beatriz Moura Campos).
+    task: |
+      1. Na aba **Aplicação**, entre como `beatriz.moura` / `Beatriz#Iris26`. No painel, clique no link da coluna "API" do exame nº `101`: o navegador mostra o JSON que o app recebe.
+      2. Volte ao painel e abra a **documentação da API** (link no fim da página, ou o endereço `/api/docs`).
+
+      Informe abaixo qual versão da API a documentação publica.
+    concept: Versões de API convivem; o inventário diz quais estão no ar
+    validatorRef: api-inventario/answer/versao-sau-v1
+    hints:
+      - level: 1
+        text: A documentação diz "Versão publicada" logo no topo.
+      - level: 2
+        text: É a mesma versão que aparece nos links do painel.
+      - level: 3
+        text: A resposta é `v2`.
+    points: 10
+  - id: descobrir
+    order: 2
+    title: Encontrar a versão que ficou fora da documentação
+    explanation: |
+      A documentação só lista a v2. Mas o que vale é o que o servidor registra. Em Flask, cada grupo de rotas é um **blueprint**, e o `app.py` diz quais estão ligados. Quem ataca faz o mesmo raciocínio de fora: se existe `v2`, tenta `v1`.
+    task: |
+      Na aba **Código**, abra `app.py` e veja os `register_blueprint`. Um deles registra uma versão que **não** aparece na documentação.
+
+      Informe abaixo o nome do arquivo do controller dessa versão (por exemplo, `algum_controller.py`).
+    explore: |
+      **Por que olhar o código e não só a documentação.** Documentação é uma promessa; o código registrado é o que de fato responde. Em empresas grandes, é comum achar versões antigas, rotas de teste e ambientes de homologação expostos que ninguém lembra de ter publicado.
+
+      **Como achar de fora.** Ferramentas de varredura testam prefixos comuns (`v1`, `v3`, `beta`, `old`, `internal`, `mobile`). Pelo **Terminal**, você confirma que a rota existe:
+
+      ```bash
+      grep -n "api/v" controllers/*.py
+      ```
+    concept: O servidor registra mais versões do que a documentação mostra
+    validatorRef: api-inventario/answer/arquivo-sau-v1
+    hints:
+      - level: 1
+        text: Procure, em `app.py`, o blueprint com o comentário sobre o app antigo.
+      - level: 2
+        text: O blueprint é `api_v1_bp`; veja de qual arquivo ele é importado.
+      - level: 3
+        text: A resposta é `api_v1_controller.py`.
+    points: 15
+  - id: explorar
+    order: 3
+    title: Ler o documento de outro cliente pela v1
+    explanation: |
+      Abra `controllers/api_v1_controller.py` e compare com a v2. A v1 chama o repositório direto, pelo id, e **não passa pelo serviço que confere o dono**. A v2 corrigiu esse problema, mas a v1 continuou no ar.
+    task: |
+      Ainda logado como `beatriz.moura`, digite na barra de endereço da aba **Aplicação** a rota da v2 com o nº de um exame que **não** é seu:
+
+      ```
+      /api/v2/exames/201
+      ```
+
+      A v2 responde "não encontrado". Agora troque só a versão:
+
+      ```
+      /api/v1/exames/201
+      ```
+
+      Informe abaixo o nome completo do titular que aparece na resposta da v1.
+    explore: |
+      **Por que isso é grave.** Um laudo é dado pessoal sensível de saúde (LGPD, art. 11). Um resultado de sorologia ou de exame genético vazado expõe o paciente a discriminação e gera notificação obrigatória à ANPD e ao paciente.
+
+      **O que mais a v1 entrega.** Os números são sequenciais: trocando o id, dá para percorrer todos os exames da base. É a mesma falha de IDOR que a v2 já tinha corrigido, reaberta por uma versão esquecida.
+    concept: Uma versão antiga no ar reabre uma falha que a nova já tinha corrigido
+    validatorRef: api-inventario/answer/titular-sau-v1
+    hints:
+      - level: 1
+        text: Use exatamente a rota da tarefa, trocando `v2` por `v1`.
+      - level: 2
+        text: O campo `titular` do JSON traz o nome.
+      - level: 3
+        text: A resposta é `Otávio Ramos Bezerra`.
+    points: 15
+  - id: conceito
+    order: 4
+    title: Nomear o controle que faltou
+    explanation: |
+      Ninguém escreveu um código novo vulnerável: a falha nasceu de **processo**. A v1 saiu da documentação, mas não havia uma lista das versões no ar, com dono e data de desligamento. Esse controle tem nome na OWASP: gestão de inventário (API9:2023; na edição 2019, "gestão de ativos").
+    task: |
+      Qual é a palavra para a lista viva de todas as APIs, versões e rotas que uma empresa tem publicadas?
+
+      Responda com uma palavra.
+    concept: Gestão de inventário de APIs (OWASP API9)
+    validatorRef: api-inventario/answer/conceito-sau-v1
+    hints:
+      - level: 1
+        text: É a mesma palavra usada para a lista de bens de uma empresa.
+      - level: 2
+        text: Está no nome do item API9 da OWASP 2023.
+      - level: 3
+        text: A resposta é `inventário`.
+    points: 15
+  - id: corrigir
+    order: 5
+    title: Aposentar a versão 1 no servidor
+    explanation: |
+      **Por que a falha existe.** A rota `/api/v1/exames/<id>` continua registrada e devolve o documento de qualquer conta.
+
+      **A correção.** Aposentar a v1: ela passa a responder **HTTP 410 Gone** ("versão desativada"), que diz aos clientes antigos que a rota acabou de propósito, não que deu erro. O app antigo é avisado para usar a v2. Apagar a rota da documentação não basta: é preciso mudar o que o servidor responde.
+    task: |
+      Abra `controllers/api_v1_controller.py` e troque a função `buscar_v1` inteira (com as duas linhas de `@` acima dela) por esta:
+
+      ```python
+      @api_v1_bp.get("/api/v1/exames/<int:doc_id>")
+      @login_obrigatorio
+      def buscar_v1(doc_id: int):
+          """Versão 1 (legada): desativada. Os apps devem usar a v2."""
+          return jsonify({"erro": "versão desativada; use /api/v2"}), 410
+      ```
+
+      Salve com **Ctrl+S**. A aplicação reinicia. Então:
+
+      1. abra `/api/v1/exames/201` e veja a resposta "versão desativada";
+      2. abra `/api/v2/exames/101` e veja que o seu exame **continua** vindo;
+      3. clique em **Validar**.
+    explore: |
+      **Outra correção aceita.** Se o app antigo ainda precisa da v1 por algumas semanas, a v1 pode chamar o mesmo `DocumentoService.buscar_do_dono` da v2 e devolver 404 para documento de outra conta. A validação aceita as duas, desde que a v1 nunca devolva dado de outro cliente.
+
+      **Se algo não funcionar depois de salvar.** No **Terminal**:
+
+      ```bash
+      grep -iE "error|traceback" /tmp/app.log | tail -n 15
+      ```
+
+      O `@api_v1_bp.get` e o `def` ficam sem recuo; o corpo da função, com 4 espaços.
+    concept: Aposentar no servidor a versão que ficou fora do inventário
+    validatorRef: api-inventario/python-flask/versao-antiga-sau-v1
+    hints:
+      - level: 1
+        text: 'A mudança é só em `controllers/api_v1_controller.py`, na função `buscar_v1`.'
+      - level: 2
+        text: A função passa a devolver o JSON de erro com o código 410, sem consultar o banco.
+      - level: 3
+        text: Copie a função da tarefa sem mudar o recuo e mantenha as duas linhas de `@`.
+    points: 45
+policy:
+  sequentialUnlock: true
+  allowStepRetry: true
+  persistProgressAcrossReset: true
+  allowSolutionReveal: false
+  finalPassingScore: 100

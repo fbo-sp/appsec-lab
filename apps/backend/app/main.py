@@ -16,6 +16,7 @@ from app.catalog.router import router as catalog_router
 from app.config import AuthMode, Settings
 from app.db.engine import make_engine, make_session_factory
 from app.identity.principal import dev_principal
+from app.identity.router import router as preferences_router
 from app.sessions.router import router as sessions_router
 from app.shared.clock import Clock, SystemClock
 from app.shared.errors import install_error_handlers
@@ -50,6 +51,7 @@ def create_app(
     app.include_router(catalog_router)
     app.include_router(sessions_router)
     app.include_router(admin_router)
+    app.include_router(preferences_router)
 
     @app.get("/healthz", tags=["ops"])
     def healthz() -> dict[str, Any]:

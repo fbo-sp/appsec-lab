@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block conteudo %}
+<h1>Mesa de compras</h1>
+<p class="ajuda">Tela interna em que os compradores aprovam pedidos e veem os contatos de todos os fornecedores cadastrados.</p>
+<p>Código de aprovação de pedidos do turno: <span class="chave">{{ chave }}</span></p>
+<table class="lista">
+  <tr><th>Nome</th><th>Usuário</th><th>E-mail</th><th>Telefone</th><th>Perfil</th><th>Categoria do fornecedor</th></tr>
+  {% for u in usuarios %}
+  <tr><td>{{ u.nome }}</td><td>{{ u.login }}</td><td>{{ u.email }}</td><td>{{ u.telefone }}</td><td>{{ u.perfil }}</td><td>{{ u.categoria }}</td></tr>
+  {% endfor %}
+</table>
+{% endblock %}

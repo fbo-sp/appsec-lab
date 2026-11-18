@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block conteudo %}
+<h1>Parâmetros de linha em vigor</h1>
+<p class="ajuda">Limites de operação enviados aos CLPs da laminação a quente.</p>
+
+{% if mensagem %}<p class="banner reforcado">{{ mensagem }}</p>{% endif %}
+{% if erro %}<p class="banner antigo">{{ erro }}</p>{% endif %}
+
+<dl class="dados">
+  <dt>Pacote em vigor</dt><dd><code>{{ pacote[0] }}</code> · {{ pacote[1] }}</dd>
+  <dt>Responsável</dt><dd>{{ conta.nome }}</dd>
+</dl>
+
+<table class="lista">
+  <tr><th>Parâmetro</th><th>Descrição</th><th>Valor</th><th>Unidade</th></tr>
+  {% for nome, descricao, valor, unidade in parametros %}
+  <tr><td><code>{{ nome }}</code></td><td>{{ descricao }}</td><td><strong>{{ valor }}</strong></td><td>{{ unidade }}</td></tr>
+  {% endfor %}
+</table>
+
+<h2>Importar pacote do Integradora Vértice Automação</h2>
+<form method="post" action="{{ url_for('painel.importar') }}" enctype="multipart/form-data">
+  <input type="file" name="arquivo" accept=".json,application/json">
+  <button type="submit">Importar e aplicar</button>
+</form>
+<p class="ajuda">Os pacotes recebidos ficam em <code>pacotes_recebidos/</code>.</p>
+{% endblock %}

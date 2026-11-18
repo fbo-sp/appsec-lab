@@ -1,0 +1,273 @@
+# [[lab_id]] ([[codigo]]): deep link que executa a operação sem confirmação (CWE-939) no [[app_nome]] da [[empresa]] (app mobile simulado, Flask + SQLite).
+# CONTÉM VULNERABILIDADE INTENCIONAL. Uso exclusivo no runtime Docker LOCAL (ADR-008), em rede
+# interna da sessão. Dados 100% fictícios. Família L8 mob-deep-link (ADR-021, ADR-025): gerado por
+# scripts/gerar-familia.py a partir de laboratories/_familias/mob-deep-link; não edite este arquivo à mão.
+#
+# ATENÇÃO: o digest abaixo é uma FIXTURE (sha256 de um texto fixo), não uma imagem publicada.
+# scripts/lab-local.sh e .ps1 trocam pela imagem construída localmente antes de registrar.
+apiVersion: labs.cecyber.io/v1alpha1
+kind: AppSecLab
+metadata:
+  id: [[lab_id]]
+  version: [[versao]]
+  title: "[[codigo]] · Uso indevido da plataforma: [[titulo]]"
+  primaryCwe: CWE-939
+  secondaryCwes: [CWE-940]
+  family: mob-deep-link
+  sectors: [[[setor]]]
+  courseModules: [trained]
+  classifications:
+    - framework: OWASP Top 10
+      edition: "2025"
+      entries:
+        - "A06 Insecure Design"
+    - framework: OWASP Top 10
+      edition: "2021"
+      entries:
+        - "A04 Insecure Design"
+    - framework: OWASP API Security Top 10
+      edition: "2023"
+      entries:
+        - "API6 Unrestricted Access to Sensitive Business Flows"
+    - framework: SANS CWE Top 25
+      edition: "2025"
+      entries:
+        - "Não se enquadra; use o CWE"
+    - framework: SANS CWE Top 25
+      edition: "2024"
+      entries:
+        - "Não se enquadra; use o CWE"
+    - framework: OWASP Mobile Top 10
+      edition: "2024"
+      entries:
+        - "M8 Security Misconfiguration"
+    - framework: OWASP Mobile Top 10
+      edition: "2016"
+      entries:
+        - "M1 Improper Platform Usage"
+    - framework: OWASP MASVS
+      edition: "2023"
+      entries:
+        - "MASVS-PLATFORM-1"
+learning:
+  singleVulnerability: true
+  estimatedMinutes: 35
+  difficulty: intermediate
+  objectives:
+    - Entender o que é um deep link e por que ele é entrada externa, como um formulário
+    - Mostrar que um link aberto no celular executa a operação sem o usuário confirmar
+    - Saber por que a confirmação precisa ser exigida pelo servidor, e não só pela tela do app
+    - Corrigir o caminho do link para criar a operação pendente com código de confirmação de uso único
+  story:
+    role: >-
+      [[papel]]
+    application: >-
+      [[aplicacao]]
+    context: >-
+      [[contexto]]
+    mission: >-
+      [[missao]]
+  wrapUp:
+    text: |
+      Agora um link só leva o usuário até a tela de confirmação: a [[operacao_nome]] só acontece quando ele toca em **Confirmar**, e o código de confirmação vale uma vez. Em um app real, vale reforçar:
+
+      - **Link é entrada externa.** Qualquer app, página, SMS ou QR Code pode abrir `[[esquema]]://...` com os dados que quiser. Trate os parâmetros como um formulário vindo da internet: valide e nunca execute ação sensível direto.
+      - **Prefira links verificados.** Android App Links e iOS Universal Links ligam o link a um domínio seu, o que reduz o sequestro do esquema por outro app. Mesmo assim, o link só navega; a ação continua pedindo confirmação.
+      - **A confirmação é do servidor.** Um app adulterado ou uma chamada direta à API pulam qualquer tela. É o servidor que exige o código de uso único (e, para valores altos, biometria ou senha transacional).
+      - **Desconfie de atalhos de marketing.** "Um toque" é ótimo para navegar, nunca para mover dinheiro, compartilhar dados ou liberar equipamento.
+    references:
+      - title: "OWASP Mobile Top 10 2016: M1 Improper Platform Usage"
+        url: https://owasp.org/www-project-mobile-top-10/2016-risks/m1-improper-platform-usage
+      - title: "OWASP Mobile Top 10 2024: M8 Security Misconfiguration"
+        url: https://owasp.org/www-project-mobile-top-10/2023-risks/m8-security-misconfiguration
+      - title: "OWASP MASVS: MASVS-PLATFORM"
+        url: https://mas.owasp.org/MASVS/09-MASVS-PLATFORM/
+      - title: "CWE-939: Improper Authorization in Handler for Custom URL Scheme"
+        url: https://cwe.mitre.org/data/definitions/939.html
+      - title: "OWASP API Security Top 10 2023: API6 Unrestricted Access to Sensitive Business Flows"
+        url: https://owasp.org/API-Security/editions/2023/en/0xa6-unrestricted-access-to-sensitive-business-flows/
+variants:
+  - id: python-flask
+    language: python
+    framework: flask
+    image: registry.local/labs/[[imagem]]@sha256:[[digest_fixture]]
+    runtimeProfile: web-basic
+    workspacePath: /workspace
+    startup:
+      command: ["sh", "-c", "python -u -m flask --app app run --host 0.0.0.0 --port 8080 --reload --no-debugger 2>&1 | tee -a /tmp/app.log"]
+      port: 8080
+    resources:
+      cpuMillicores: 500
+      memoryMiB: 512
+      storageMiB: 256
+      pidsMax: 64
+    session:
+      ttlMinutes: 45
+      maxRenewals: 2
+    interfaces: [editor, terminal, web]
+    platform: mobile
+steps:
+  - id: conhecer
+    order: 1
+    title: Conhecer o app e a confirmação da operação
+    explanation: |
+      [[historia_abertura]]
+
+      **Um laboratório mobile.** Na aba **Aplicação**, o app aparece numa moldura de celular. Ele é um app **simulado** (não há emulador), mas fala com a API do servidor do mesmo jeito que um app Android ou iOS. Toda falha de app mobile termina numa decisão de segurança: quem a toma, o aparelho ou o servidor?
+
+      Um **deep link** é um endereço do tipo `[[esquema]]://[[rota_link]]?...` que o sistema do celular entrega ao app: o app abre direto numa tela, já com os dados do link. É ótimo para navegar. O problema começa quando o link também **executa** uma ação.
+
+      ```ilustracao
+      deep-link-confirmacao
+      ```
+
+      Siga a [[operacao_nome]] pelas camadas:
+
+      1. **App** (`static/app.js`): o botão chama `POST /api/operacoes`; um link chama `POST /api/operacoes/rapida`.
+      2. **Controller** (`controllers/api_controller.py`): identifica o usuário e chama o serviço.
+      3. **Serviço** (`services/operacao_service.py`): decide se a operação fica pendente ou é executada. **É aqui que está a falha.**
+
+      As credenciais de teste deste laboratório são:
+
+      - Usuário `[[login_a]]`, senha `[[senha_a]]` ([[nome_a]]).
+    task: |
+      1. Na aba **Aplicação**, entre com `[[login_a]]` e a senha `[[senha_a]]`. (Ignore por enquanto a notificação no topo da tela de login.)
+      2. Toque no botão **[[acao_titulo]]**. O app mostra a tela **Confirmar [[operacao_nome]]**. Toque em **Confirmar** e veja a operação em **Operações recentes**.
+      3. Na aba **Código**, abra `services/operacao_service.py`.
+
+      Informe abaixo o nome do método do serviço que executa a operação depois que o usuário toca em **Confirmar**.
+    explore: |
+      **Veja as duas etapas na API.** O botão não executa nada: `iniciar` grava a operação como `pendente` e devolve um código de confirmação aleatório. Só `confirmar`, com esse código, executa, e o código é apagado em seguida (uso único).
+
+      **Por que vale olhar.** É esse desenho que impede que alguém dispare a [[operacao_nome]] sem o usuário ver e aceitar. O passo seguinte é ver um caminho que não segue o desenho.
+    concept: Operação sensível em duas etapas, com confirmação de uso único
+    validatorRef: mob-deep-link/answer/metodo-confirma-[[ramo]]-v1
+    hints:
+      - level: 1
+        text: A classe `OperacaoService` tem três métodos públicos.
+      - level: 2
+        text: É o método que recebe o código de confirmação.
+      - level: 3
+        text: A resposta é `confirmar`.
+    points: 10
+  - id: explorar
+    order: 2
+    title: Tocar no link que chegou ao celular
+    explanation: |
+      Faça o que os usuários fizeram: toque no link que chegou por **[[notif_app]]**. Repare no que o app mostra (ou não mostra) antes de a operação acontecer.
+    task: |
+      1. No app, toque em **Sair**. Na tela de login aparece a notificação de **[[notif_app]]** com o link `[[link_campanha]]`.
+      2. Toque na notificação. O app pede o login: entre de novo com `[[login_a]]` / `[[senha_a]]` (da etapa 1).
+      3. Veja a mensagem no topo e a lista **Operações recentes**.
+
+      Informe abaixo o status que aparece ao lado de **[[link_alvo]]** em **Operações recentes**.
+    explore: |
+      **A tela não decide nada: é o servidor.** Faça pelo **Terminal** o mesmo pedido que o app fez ao abrir o link:
+
+      ```bash
+      TOKEN=$(curl -s -X POST http://127.0.0.1:8080/api/login -H "Content-Type: application/json" -d '{"login":"[[login_a]]","senha":"[[senha_a]]"}' | python -c "import json,sys; print(json.load(sys.stdin)['token'])")
+      curl -s -X POST http://127.0.0.1:8080/api/operacoes/rapida -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" -d '{"alvo":"[[link_alvo]]","detalhe":"[[link_detalhe]]"}'
+      ```
+
+      **O que esperar.** A resposta já vem com `"status": "concluida"`, sem código de confirmação. [[impacto]]
+    concept: O caminho do link executa sem confirmação
+    validatorRef: mob-deep-link/answer/status-[[ramo]]-v1
+    hints:
+      - level: 1
+        text: É a última coluna da linha de **[[link_alvo]]**.
+      - level: 2
+        text: Não é `pendente`.
+      - level: 3
+        text: A resposta é `concluida`.
+    points: 15
+  - id: conceito
+    order: 3
+    title: Saber quem pode criar o link
+    explanation: |
+      O esquema `[[esquema]]://` não é uma senha nem uma assinatura: é só um nome que o app registrou no celular. Um link desses pode estar num SMS, num e-mail, numa página, num QR Code ou ser aberto por outro app instalado. Os dados do link (`alvo`, `detalhe`) são escritos por quem criou o link.
+    task: |
+      Quem pode criar e enviar um link `[[esquema]]://[[rota_link]]?...` com os dados que quiser?
+
+      Responda em poucas palavras.
+    explore: |
+      **No Android e no iOS.** No Android, o link chega ao app por um *intent filter* no `AndroidManifest.xml`; no iOS, pelo `CFBundleURLTypes` do `Info.plist`. Qualquer app pode registrar o mesmo esquema, e o sistema pode entregar o link ao app errado. **App Links** (Android) e **Universal Links** (iOS) ligam o link a um domínio verificado, mas continuam sendo entrada externa: o app abre, e a ação ainda precisa de confirmação.
+    concept: Deep link é entrada externa, escrita por qualquer um
+    validatorRef: mob-deep-link/answer/quem-[[ramo]]-v1
+    hints:
+      - level: 1
+        text: Pense em quem consegue mandar um SMS ou um e-mail com um link.
+      - level: 2
+        text: Não é só a [[empresa]].
+      - level: 3
+        text: A resposta é `qualquer pessoa`.
+    points: 15
+  - id: onde
+    order: 4
+    title: Encontrar o caminho que pula a confirmação
+    explanation: |
+      Volte a `services/operacao_service.py`. O botão usa `iniciar`, que cria a operação **pendente**. O link usa outro método, que grava a operação direto como `concluida`, sem gerar código de confirmação.
+    task: |
+      Informe abaixo o nome do método que executa a operação vinda do link sem confirmação.
+    concept: O atalho do link está no serviço, não na tela
+    validatorRef: mob-deep-link/answer/metodo-[[ramo]]-v1
+    hints:
+      - level: 1
+        text: É o método chamado pela rota `/api/operacoes/rapida`.
+      - level: 2
+        text: O nome termina em `_por_link`.
+      - level: 3
+        text: A resposta é `iniciar_por_link`.
+    points: 15
+  - id: corrigir
+    order: 5
+    title: Exigir a confirmação também no link
+    explanation: |
+      **Por que a falha existe.** `iniciar_por_link` grava a operação como `concluida` na hora.
+
+      **A correção.** O link pode continuar abrindo o app com os dados preenchidos, mas só cria a operação **pendente**, exatamente como o botão. O app já sabe mostrar a tela **Confirmar [[operacao_nome]]** quando a resposta vem pendente, e a operação só acontece com o código de uso único. Corrigir no app (uma janela de "tem certeza?") não basta: a chamada direta à API, como a do **Explorar mais** da etapa 2, pula qualquer tela.
+    task: |
+      Abra `services/operacao_service.py` e troque o método `iniciar_por_link` inteiro por este:
+
+      ```python
+          def iniciar_por_link(self, conta_id: int, alvo: str, detalhe: str) -> dict:
+              """Operação vinda de um link (deep link): nunca executa direto, só cria a pendente para o usuário confirmar."""
+              return self.iniciar(conta_id, alvo, detalhe)
+      ```
+
+      Salve com **Ctrl+S**. A aplicação reinicia (e as operações voltam ao início). Então:
+
+      1. no app, toque em **Sair**, toque na notificação e entre de novo com as credenciais da etapa 1: agora aparece a tela **Confirmar [[operacao_nome]]** com os dados do link;
+      2. toque em **Cancelar** e veja que nada entrou em **Operações recentes** como `concluida`;
+      3. clique em **Validar**.
+    explore: |
+      **Repita o curl da etapa 2.** A resposta agora vem com `"pendente": true` e um `confirmacao`. Tente confirmar duas vezes com o mesmo código:
+
+      ```bash
+      curl -s -X POST http://127.0.0.1:8080/api/operacoes/confirmar -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" -d '{"confirmacao":"COLE-O-CODIGO-AQUI"}'
+      ```
+
+      A primeira executa; a segunda é recusada, porque o código é apagado ao confirmar.
+
+      **Se algo não funcionar depois de salvar.** No **Terminal**:
+
+      ```bash
+      grep -iE "error|traceback" /tmp/app.log | tail -n 15
+      ```
+
+      O `def iniciar_por_link` fica com 4 espaços; o corpo, com 8.
+    concept: A ação vinda de link exige confirmação de uso único no servidor
+    validatorRef: mob-deep-link/python-flask/link-confirmado-[[ramo]]-v1
+    hints:
+      - level: 1
+        text: 'A mudança é só em `services/operacao_service.py`, no método `iniciar_por_link`.'
+      - level: 2
+        text: O link deve seguir o mesmo caminho do botão, que já cria a operação pendente.
+      - level: 3
+        text: Copie o método da tarefa sem mudar o recuo. O `def` fica com 4 espaços.
+    points: 45
+policy:
+  sequentialUnlock: true
+  allowStepRetry: true
+  persistProgressAcrossReset: true
+  allowSolutionReveal: false
+  finalPassingScore: 100

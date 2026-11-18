@@ -1,0 +1,138 @@
+# Família A3 upload (ADR-021): o que muda por ramo de atividade. O modelo comum está em ./modelo.
+# Depois de editar, rode:  uv run python scripts/gerar-familia.py upload
+# Logins e respostas estão espelhados em apps/backend/app/validation/suites_familias.py (registro
+# protegido); os testes Docker conferem os dois. A demonstração de ataque é INOFENSIVA (opção aprovada
+# pelo PO em 2026-11-16): o arquivo forjado só prova execução, não lê nem envia dado.
+ramos:
+  - destino: LAB-014-upload-cooperativa
+    vars:
+      lab_id: LAB-014
+      versao: 1.0.0
+      codigo: A3-FIN
+      ramo: fin
+      setor: financeiro
+      imagem: lab-014-upload
+      titulo: o comprovante de renda que virou página
+      empresa: Cooperativa Credimova
+      marca: "◆ Credimova"
+      app_nome: Mesa de Crédito
+      cor: "#1d4ed8"
+      papel: Pessoa desenvolvedora da squad de crédito da Cooperativa Credimova
+      aplicacao: portal Mesa de Crédito, onde o cooperado anexa comprovantes para análise
+      contexto: No portal de crédito, o cooperado anexa o comprovante de renda e os analistas abrem cada documento para liberar o limite. A equipe de segurança alertou que o portal aceita qualquer arquivo pelo tipo informado no envio, sem olhar o conteúdo.
+      missao: Enviar um arquivo HTML disfarçado de imagem, ver a aplicação servi-lo como página e corrigir a validação
+      banco: credimova
+      rota: comprovantes
+      documento_plural: comprovantes de renda
+      um_documento: um comprovante de renda
+      documento_titulo: Comprovante de renda
+      msg_recebido: Comprovante recebido para análise.
+      envio_titulo: Enviar comprovante de renda
+      envio_desc: Anexe o comprovante de renda (PDF, PNG ou JPEG) para a análise de crédito.
+      placeholder_descricao: "Ex.: holerite de março"
+      enviados_titulo: Comprovantes enviados
+      mesa_titulo: Mesa de Crédito
+      mesa_desc: Comprovantes enviados pelos cooperados, para a análise de crédito.
+      staff_cargo: analistas de crédito
+      login_a: marcos.nunes
+      senha_a: "Marcos#Cred26"
+      nome_a: Marcos Nunes Valério
+      cliente_desc: Cooperado Marcos Nunes Valério
+      login_staff: regina.alves
+      senha_staff: "Regina#Cred26"
+      nome_staff: Regina Alves Moura
+      staff_desc: Analista Regina Alves Moura
+      historia_abertura: Você está na squad de crédito da Credimova. A mesa de análise recebe por dia dezenas de comprovantes de renda que os cooperados anexam no portal, e cada analista abre os arquivos para conferir. Um teste de invasão avisou que o portal decide se aceita um arquivo só pelo tipo que o navegador informa, sem olhar o conteúdo.
+      seed_usuarios:
+        - [1, marcos.nunes, Marcos Nunes Valério, comum, "Marcos#Cred26"]
+        - [2, regina.alves, Regina Alves Moura, equipe, "Regina#Cred26"]
+      seed_anexos:
+        - [1, Holerite de março, comprovante-exemplo.pdf, "12/11/2026 09:20"]
+  - destino: LAB-015-upload-clinica
+    vars:
+      lab_id: LAB-015
+      versao: 1.0.0
+      codigo: A3-SAU
+      ramo: sau
+      setor: saude
+      imagem: lab-015-upload
+      titulo: o pedido médico que virou página
+      empresa: Clínica Sampaio
+      marca: "✚ Clínica Sampaio"
+      app_nome: Portal de Agendamento
+      cor: "#0e7490"
+      papel: Pessoa desenvolvedora do time de sistemas da Clínica Sampaio
+      aplicacao: Portal de Agendamento, onde o paciente anexa o pedido médico do exame
+      contexto: Para agendar um exame, o paciente anexa a foto do pedido médico, e a recepção abre cada arquivo para conferir. A equipe de segurança alertou que o portal aceita qualquer arquivo pelo tipo informado no envio, sem olhar o conteúdo.
+      missao: Enviar um arquivo HTML disfarçado de imagem, ver a aplicação servi-lo como página e corrigir a validação
+      banco: sampaio
+      rota: pedidos
+      documento_plural: pedidos médicos
+      um_documento: um pedido médico
+      documento_titulo: Pedido médico
+      msg_recebido: Pedido médico recebido para agendamento.
+      envio_titulo: Enviar pedido médico
+      envio_desc: Anexe a foto ou o PDF do pedido médico (PDF, PNG ou JPEG) para agendar o exame.
+      placeholder_descricao: "Ex.: pedido de hemograma"
+      enviados_titulo: Pedidos enviados
+      mesa_titulo: Recepção de pedidos
+      mesa_desc: Pedidos médicos enviados pelos pacientes, para a recepção agendar.
+      staff_cargo: atendentes da recepção
+      login_a: carla.ribeiro
+      senha_a: "Carla#Sampaio26"
+      nome_a: Carla Ribeiro Nogueira
+      cliente_desc: Paciente Carla Ribeiro Nogueira
+      login_staff: paula.freitas
+      senha_staff: "Paula#Sampaio26"
+      nome_staff: Paula Freitas Lima
+      staff_desc: Atendente Paula Freitas Lima
+      historia_abertura: Você é do time de sistemas da Clínica Sampaio. Pelo portal, os pacientes anexam a foto do pedido médico para agendar o exame, e a recepção abre cada arquivo para conferir. Um teste de invasão avisou que o portal decide se aceita um arquivo só pelo tipo que o navegador informa, sem olhar o conteúdo.
+      seed_usuarios:
+        - [1, carla.ribeiro, Carla Ribeiro Nogueira, comum, "Carla#Sampaio26"]
+        - [2, paula.freitas, Paula Freitas Lima, equipe, "Paula#Sampaio26"]
+      seed_anexos:
+        - [1, Pedido de hemograma, pedido-exemplo.pdf, "11/11/2026 14:05"]
+  - destino: LAB-016-upload-fornecedores
+    vars:
+      lab_id: LAB-016
+      versao: 1.0.0
+      codigo: A3-IND
+      ramo: ind
+      setor: industria-energia
+      imagem: lab-016-upload
+      titulo: a nota fiscal do fornecedor que virou página
+      empresa: Siderúrgica Pindorama
+      marca: "⬢ Pindorama"
+      app_nome: Portal de Fornecedores
+      cor: "#9a3412"
+      papel: Pessoa desenvolvedora do time de compras da Siderúrgica Pindorama
+      aplicacao: Portal de Fornecedores, onde o fornecedor anexa a nota fiscal do pedido
+      contexto: No portal de compras, o fornecedor anexa a nota fiscal de cada entrega, e os compradores abrem os arquivos para dar baixa. A equipe de segurança alertou que o portal aceita qualquer arquivo pelo tipo informado no envio, sem olhar o conteúdo.
+      missao: Enviar um arquivo HTML disfarçado de imagem, ver a aplicação servi-lo como página e corrigir a validação
+      banco: pindorama
+      rota: notas
+      documento_plural: notas fiscais
+      um_documento: uma nota fiscal
+      documento_titulo: Nota fiscal
+      msg_recebido: Nota fiscal recebida para conferência.
+      envio_titulo: Enviar nota fiscal
+      envio_desc: Anexe a nota fiscal (PDF, PNG ou JPEG) da entrega para a conferência.
+      placeholder_descricao: "Ex.: NF-e 004512"
+      enviados_titulo: Notas enviadas
+      mesa_titulo: Conferência de compras
+      mesa_desc: Notas fiscais enviadas pelos fornecedores, para os compradores conferirem.
+      staff_cargo: compradores
+      login_a: fornecedor.aco
+      senha_a: "Fornec#Pind26"
+      nome_a: Aço Vale Fornecimentos Ltda
+      cliente_desc: Fornecedor Aço Vale Fornecimentos (login da empresa)
+      login_staff: bruno.teixeira
+      senha_staff: "Bruno#Pind26"
+      nome_staff: Bruno Teixeira Antunes
+      staff_desc: Comprador Bruno Teixeira Antunes
+      historia_abertura: Você é do time de compras da Siderúrgica Pindorama. Os fornecedores anexam a nota fiscal de cada entrega no portal, e os compradores abrem os arquivos para dar baixa no pedido. Um teste de invasão avisou que o portal decide se aceita um arquivo só pelo tipo que o navegador informa, sem olhar o conteúdo.
+      seed_usuarios:
+        - [1, fornecedor.aco, Aço Vale Fornecimentos Ltda, comum, "Fornec#Pind26"]
+        - [2, bruno.teixeira, Bruno Teixeira Antunes, equipe, "Bruno#Pind26"]
+      seed_anexos:
+        - [1, NF-e 004512, nota-exemplo.pdf, "10/11/2026 16:40"]

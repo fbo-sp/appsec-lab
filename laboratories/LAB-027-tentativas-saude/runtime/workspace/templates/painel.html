@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block conteudo %}
+<h1>Portal do Paciente</h1>
+<p class="ajuda">Seu acesso à Clínica Lumen.</p>
+
+<dl class="dados">
+  <dt>Titular</dt><dd>{{ conta.nome }}</dd>
+  <dt>Usuário</dt><dd>{{ conta.login }}</dd>
+</dl>
+
+<p class="banner reforcado">Você está autenticado. Use <a href="{{ url_for('auth.sair') }}">Sair</a> para encerrar a sessão.</p>
+{% endblock %}

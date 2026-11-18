@@ -19,6 +19,8 @@ class EvaluationRequest:
     memory_mib: int
     pids_max: int
     timeout_seconds: int
+    logins: list[dict[str, Any]] = field(default_factory=list)  # ADR-015
+    inspections: list[dict[str, Any]] = field(default_factory=list)  # ADR-023
 
 
 @dataclass(frozen=True, slots=True)
@@ -55,5 +57,5 @@ class FakeEvaluator:
         if self.not_started_log is not None:
             digest = "sha256:" + "0" * 64
             return EvaluationOutcome(digest, {}, app_started=False, app_log_tail=self.not_started_log)
-        res = {c["id"]: self.results.get(c["id"], True) for c in request.checks}
+        res = {c["id"]: self.results.get(c["id"], True) for c in [*request.checks, *request.inspections]}
         return EvaluationOutcome("sha256:" + "0" * 64, res)

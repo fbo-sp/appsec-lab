@@ -1,0 +1,238 @@
+# [[lab_id]] ([[codigo]]): injeção de LDAP na busca do diretório (CWE-90) no [[app_nome]] da [[empresa]] (Flask + SQLite).
+# CONTÉM VULNERABILIDADE INTENCIONAL. Uso exclusivo no runtime Docker LOCAL (ADR-008), em rede
+# interna da sessão. Dados 100% fictícios. Família A18 ldap-injection (ADR-021): gerado por
+# scripts/gerar-familia.py a partir de laboratories/_familias/ldap-injection; não edite este arquivo à mão.
+#
+# ATENÇÃO: o digest abaixo é uma FIXTURE (sha256 de um texto fixo), não uma imagem publicada.
+# scripts/lab-local.sh e .ps1 trocam pela imagem construída localmente antes de registrar.
+apiVersion: labs.cecyber.io/v1alpha1
+kind: AppSecLab
+metadata:
+  id: [[lab_id]]
+  version: [[versao]]
+  title: "[[codigo]] · Injeção de LDAP: [[titulo]]"
+  primaryCwe: CWE-90
+  secondaryCwes: [CWE-74]
+  family: ldap-injection
+  sectors: [[[setor]]]
+  courseModules: [trained]
+  classifications:
+    - framework: OWASP Top 10
+      edition: "2025"
+      entries:
+        - "A05 Injection"
+    - framework: OWASP Top 10
+      edition: "2021"
+      entries:
+        - "A03 Injection"
+    - framework: SANS CWE Top 25
+      edition: "2025"
+      entries:
+        - "Não se enquadra; use o CWE"
+    - framework: SANS CWE Top 25
+      edition: "2024"
+      entries:
+        - "Não se enquadra; use o CWE"
+learning:
+  singleVulnerability: true
+  estimatedMinutes: 35
+  difficulty: intermediate
+  objectives:
+    - Entender por que juntar a entrada do usuário crua em um filtro LDAP permite injeção
+    - Explorar a falha buscando por um curinga e vendo o diretório inteiro vazar
+    - Reconhecer que a defesa é escapar os caracteres especiais do filtro antes de montá-lo
+    - Corrigir a busca escapando a entrada na camada de serviço
+  story:
+    role: [[papel]]
+    application: [[aplicacao]]
+    context: >-
+      [[contexto]]
+    mission: [[missao]]
+  wrapUp:
+    text: |
+      Agora a busca escapa os caracteres especiais do filtro, então o que o usuário digita é tratado como texto e não como sintaxe de filtro. Buscar por `*` não lista mais o diretório inteiro. Em um sistema real, vale reforçar:
+
+      - **Injeção não é só SQL.** Qualquer lugar onde você monta uma consulta juntando texto do usuário — LDAP, comandos do sistema, XPath, NoSQL, cabeçalhos — tem o mesmo risco. A causa é sempre a mesma: dado do usuário virando sintaxe. Em LDAP, o `*` é curinga; `(`, `)`, `\` e o nulo também têm significado no filtro.
+      - **Escape a entrada com a função da sua biblioteca.** Não monte a string de filtro na mão. Bibliotecas de LDAP trazem um escape de filtro pronto (por exemplo, `ldap3.utils.conv.escape_filter_chars` em Python, ou `javax.naming` no Java). Ele cobre os caracteres certos; a lista escrita à mão esquece algum.
+      - **Prefira consultas parametrizadas quando houver.** Assim como `?` no SQL, algumas APIs de diretório permitem montar o filtro com os valores separados da estrutura, o que elimina a injeção na origem.
+      - **Valide e limite também.** Aceite só o que faz sentido para um nome, limite o tamanho e devolva no máximo uma página de resultados. Isso reduz o estrago mesmo que um escape falhe.
+    references:
+      - title: "OWASP Top 10:2025: A05 Injection"
+        url: https://top10.owasp.org/2025/A05_2025-Injection/
+      - title: "OWASP Top 10:2021: A03 Injection"
+        url: https://owasp.org/Top10/A03_2021-Injection/
+      - title: "CWE-90: Improper Neutralization of Special Elements used in an LDAP Query"
+        url: https://cwe.mitre.org/data/definitions/90.html
+      - title: "OWASP: LDAP Injection"
+        url: https://owasp.org/www-community/attacks/LDAP_Injection
+      - title: "OWASP Cheat Sheet: LDAP Injection Prevention"
+        url: https://cheatsheetseries.owasp.org/cheatsheets/LDAP_Injection_Prevention_Cheat_Sheet.html
+variants:
+  - id: python-flask
+    language: python
+    framework: flask
+    image: registry.local/labs/[[imagem]]@sha256:[[digest_fixture]]
+    runtimeProfile: web-basic
+    workspacePath: /workspace
+    startup:
+      command: ["sh", "-c", "python -u -m flask --app app run --host 0.0.0.0 --port 8080 --reload --no-debugger 2>&1 | tee -a /tmp/app.log"]
+      port: 8080
+    resources:
+      cpuMillicores: 500
+      memoryMiB: 512
+      storageMiB: 256
+      pidsMax: 64
+    session:
+      ttlMinutes: 45
+      maxRenewals: 2
+    interfaces: [editor, terminal, web]
+steps:
+  - id: conhecer
+    order: 1
+    title: Conhecer a busca e achar o serviço que monta o filtro
+    explanation: |
+      [[historia_abertura]]
+
+      A busca monta um **filtro no estilo LDAP** a partir do nome digitado e consulta o diretório. Num diretório LDAP, o filtro `(cn=NOME)` procura pessoas cujo *common name* casa com `NOME`, e o `*` é **curinga**: `(cn=*)` casa com qualquer um.
+
+      ```ilustracao
+      ldap-injection
+      ```
+
+      Siga a busca pelas camadas:
+
+      1. **Controller** (`controllers/painel_controller.py`): recebe o nome digitado e chama o serviço.
+      2. **Serviço** (`services/busca_service.py`): monta o filtro e consulta o diretório. **É aqui que está a falha.**
+
+      As credenciais válidas de um funcionário, neste laboratório, são:
+
+      - Usuário `[[login_a]]`, senha `[[senha_a]]`.
+    task: |
+      1. Na aba **Aplicação**, entre com `[[login_a]]` e a senha `[[senha_a]]`. Você chega ao **[[painel_titulo]]**.
+      2. Busque por um nome que existe, por exemplo `[[nome_a]]`, e veja a pessoa aparecer.
+      3. Na aba **Código**, abra `services/busca_service.py`.
+
+      Informe abaixo o nome do método que monta o filtro e faz a busca (o que o controller chama).
+    concept: Injeção de LDAP — entrada do usuário juntada crua no filtro
+    validatorRef: ldap-injection/answer/metodo-[[ramo]]-v1
+    hints:
+      - level: 1
+        text: 'Em `services/busca_service.py`, a classe `BuscaService` tem um único método público.'
+      - level: 2
+        text: É o método que o controller chama para buscar pessoas pelo nome.
+      - level: 3
+        text: O valor é `por_nome`.
+    points: 10
+  - id: explorar
+    order: 2
+    title: Buscar por um curinga e ver o diretório inteiro vazar
+    explanation: |
+      O método monta o filtro assim: `filtro = f"(cn={nome})"`. O nome digitado entra **cru**. Se você digita um texto normal, vira `(cn=João)` e tudo bem. Mas se você digita só um asterisco, vira `(cn=*)` — e o `*` é o curinga do LDAP, que casa com **todo mundo**.
+    task: |
+      Na aba **Aplicação**, no campo de busca do **[[painel_titulo]]**, digite apenas:
+
+      ```
+      *
+      ```
+
+      e clique em **Buscar**. Veja que a tela devolve **todas** as pessoas do diretório de uma vez, não só uma. Informe abaixo o que a busca por `*` devolve: **uma pessoa** ou **o diretório inteiro**.
+    explore: |
+      **Por que isso é grave.** O nome digitado deixou de ser um dado e virou parte da **sintaxe** do filtro. Com `*` já dá para listar o diretório todo (vazamento de dados). Com outros caracteres de filtro (`(`, `)`, operadores `&` e `|`) dá para montar condições e, em alguns sistemas, contornar controles de acesso. É a mesma família da injeção de SQL, só que no diretório.
+    concept: Sem escape, o * vira curinga e lista todo o diretório
+    validatorRef: ldap-injection/answer/comportamento-[[ramo]]-v1
+    hints:
+      - level: 1
+        text: Compare a busca por um nome real com a busca por `*`.
+      - level: 2
+        text: O `*` é curinga; `(cn=*)` casa com qualquer pessoa.
+      - level: 3
+        text: A resposta é `o diretório inteiro`.
+    points: 15
+  - id: medida
+    order: 3
+    title: Nomear a defesa que falta
+    explanation: |
+      A falha é que o nome digitado entra cru no filtro e vira sintaxe. A defesa é **escapar** os caracteres especiais do filtro (`*`, `(`, `)`, `\` e o nulo) antes de montá-lo. Escapado, um `*` digitado vira `\2a`, que o diretório trata como o caractere `*` **literal** — texto, não curinga.
+    task: |
+      Complete a frase: para o nome digitado ser tratado como texto, e não como sintaxe do filtro, a busca precisa ___ os caracteres especiais antes de montar o filtro.
+
+      Responda com um verbo (o que se faz com os caracteres especiais da entrada).
+    concept: A defesa é escapar os caracteres especiais do filtro LDAP
+    validatorRef: ldap-injection/answer/defesa-[[ramo]]-v1
+    hints:
+      - level: 1
+        text: É o mesmo que se faz com aspas e caracteres especiais para que virem texto.
+      - level: 2
+        text: Transformar `*` em `\2a`, `(` em `\28`, e assim por diante.
+      - level: 3
+        text: A resposta é `escapar`.
+    points: 15
+  - id: onde
+    order: 4
+    title: Decidir como a entrada passa a ser tratada
+    explanation: |
+      Depois de escapar, o que o usuário digita nunca muda a **estrutura** do filtro: continua sendo só um valor a procurar. Buscar por `*` passa a procurar o texto `*` (que ninguém tem como nome), em vez de virar curinga.
+
+      O ponto central da correção é esse: a entrada do usuário tem que ser tratada como **dado/texto**, nunca como parte da sintaxe do filtro.
+    task: |
+      Depois da correção, o asterisco que o usuário digita passa a ser tratado como o quê dentro do filtro: como **curinga** (sintaxe) ou como **texto** (um dado comum)?
+
+      Responda com uma palavra.
+    concept: A entrada corrigida é tratada como texto, não como sintaxe
+    validatorRef: ldap-injection/answer/onde-[[ramo]]-v1
+    hints:
+      - level: 1
+        text: O objetivo do escape é justamente tirar o poder de sintaxe do caractere.
+      - level: 2
+        text: Escapado, `*` deixa de ser curinga e vira um caractere comum.
+      - level: 3
+        text: A resposta é `texto`.
+    points: 15
+  - id: corrigir
+    order: 5
+    title: Escapar a entrada no serviço de busca
+    explanation: |
+      **Por que a falha existe.** `por_nome` monta `f"(cn={nome})"` com o nome cru. Qualquer caractere de filtro que o usuário digite entra como sintaxe.
+
+      **A correção.** Antes de montar o filtro, trocar cada caractere especial da entrada pela sua forma escapada (RFC 4515): `\` → `\5c`, `*` → `\2a`, `(` → `\28`, `)` → `\29`. A ordem importa: a barra invertida tem que ser trocada **primeiro**, senão você escaparia as barras que acabou de inserir. Em um projeto real você usaria a função pronta da biblioteca de LDAP (por exemplo `ldap3.utils.conv.escape_filter_chars`); aqui o escape é escrito à mão para ficar explícito.
+    task: |
+      Abra `services/busca_service.py` e troque o corpo do método `por_nome` (as três linhas a partir do comentário) por este:
+
+      ```python
+              # Escapa os caracteres especiais do filtro LDAP: a entrada vira texto, não sintaxe.
+              nome_seguro = nome
+              for especial, escapado in (("\\", r"\5c"), ("*", r"\2a"), ("(", r"\28"), (")", r"\29")):
+                  nome_seguro = nome_seguro.replace(especial, escapado)
+              filtro = f"(cn={nome_seguro})"
+              return buscar(filtro)
+      ```
+
+      Salve com **Ctrl+S**. A aplicação reinicia. Então, na aba **Aplicação**:
+
+      1. busque por `*` e veja que agora aparece **"Nenhuma pessoa encontrada"** — o curinga virou texto;
+      2. busque por `[[nome_a]]` e veja que a busca normal continua funcionando;
+      3. clique em **Validar**.
+    explore: |
+      **Se algo não funcionar depois de salvar.** Um recuo errado derruba a aplicação. No **Terminal**:
+
+      ```bash
+      grep -iE "error|traceback" /tmp/app.log | tail -n 15
+      ```
+
+      **O que procurar.** `IndentationError` aponta a linha com recuo diferente: o corpo do método fica com 8 espaços, e a linha de dentro do `for` com 12. Copie o bloco da tarefa sem mudar o recuo.
+    concept: Correção da injeção de LDAP escapando a entrada na camada de serviço
+    validatorRef: ldap-injection/python-flask/busca-protegida-[[ramo]]-v1
+    hints:
+      - level: 1
+        text: 'A mudança é só em `services/busca_service.py`, na classe `BuscaService`.'
+      - level: 2
+        text: "Escape cada caractere especial do filtro antes de montar a string `(cn=...)`."
+      - level: 3
+        text: Copie o bloco da tarefa sem mudar o recuo. O corpo do método fica com 8 espaços; troque a barra invertida antes do resto.
+    points: 45
+policy:
+  sequentialUnlock: true
+  allowStepRetry: true
+  persistProgressAcrossReset: true
+  allowSolutionReveal: false
+  finalPassingScore: 100

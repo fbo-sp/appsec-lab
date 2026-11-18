@@ -1,0 +1,179 @@
+# Família MOB-08 mob-dados-demais (ADR-021, ADR-025): o que muda por ramo. O modelo comum está em ./modelo.
+# Depois de editar, rode:  uv run python scripts/gerar-familia.py mob-dados-demais
+# Logins, senhas e trechos dos dados fictícios estão espelhados em
+# apps/backend/app/validation/suites_familias.py (MOB_RAMOS); os testes Docker conferem os dois lados.
+ramos:
+- destino: LAB-062-mob-dados-demais-fintech
+  vars:
+    lab_id: LAB-062
+    versao: 1.0.0
+    codigo: MOB-08-FIN
+    ramo: fin
+    setor: financeiro
+    imagem: lab-062-mobile
+    banco: pagomais_mobile
+    titulo: a tela mostra pouco, a API entrega tudo
+    empresa: Pagomais
+    marca: Pagomais
+    app_nome: App Pagomais
+    cor: '#1d4ed8'
+    lista_titulo: Extrato
+    acao_titulo: Transferir R$ 500,00 por PIX
+    papel: Pessoa desenvolvedora do time de apps do banco digital Pagomais
+    aplicacao: App Pagomais, o app em que o cliente consulta o extrato e o próprio perfil
+    contexto: A tela Perfil do app de contas da Pagomais mostra nome e resumo, mas a API devolve o registro inteiro da conta, com dados pessoais.
+    missao: Comparar a tela com a resposta da API e corrigir a API para devolver só o que a tela usa
+    historia_abertura: Você está no time de apps do banco digital Pagomais. A tela Perfil do app de contas da Pagomais mostra só o nome e um resumo. Numa revisão de privacidade, o time de segurança interceptou o tráfego do app e viu que a API entrega bem mais do que isso ao aparelho.
+    login_a: ana.ribeiro
+    senha_a: Ana#Pagomais26
+    nome_a: Ana Ribeiro Teixeira
+    chave_app: PGM-APP-KEY-7F3A91C2
+    doc_rotulo: CPF
+    extra_rotulo: renda mensal
+    seed_contas:
+    - - 1
+      - ana.ribeiro
+      - Ana Ribeiro Teixeira
+      - Ana#Pagomais26
+      - Saldo R$ 4.820,15
+      - 111.444.777-35
+      - Renda mensal R$ 9.800
+    - - 2
+      - carlos.moura
+      - Carlos Moura Pinto
+      - Carlos#Pagomais26
+      - Saldo R$ 12.310,00
+      - 222.555.888-46
+      - Renda mensal R$ 15.200
+    seed_itens:
+    - - 1
+      - 1
+      - PIX recebido
+      - Vale Insumos
+      - + R$ 1.250,00
+    - - 2
+      - 1
+      - Cartão final 4410
+      - Mercado Norte
+      - '- R$ 212,90'
+    - - 3
+      - 2
+      - PIX enviado
+      - Norte Transportes
+      - '- R$ 2.300,00'
+- destino: LAB-063-mob-dados-demais-saude
+  vars:
+    lab_id: LAB-063
+    versao: 1.0.0
+    codigo: MOB-08-SAU
+    ramo: sau
+    setor: saude
+    imagem: lab-063-mobile
+    banco: lumen_mobile
+    titulo: a tela mostra pouco, a API entrega tudo
+    empresa: Clínica Lumen
+    marca: Lumen
+    app_nome: App Lumen Saúde
+    cor: '#0e7490'
+    lista_titulo: Meus exames
+    acao_titulo: Compartilhar laudo com o Dr. Paulo Reis
+    papel: Pessoa desenvolvedora do time de apps da Clínica Lumen
+    aplicacao: App Lumen Saúde, o app em que o paciente consulta os exames e o próprio perfil
+    contexto: A tela Perfil do app do paciente da Clínica Lumen mostra nome e resumo, mas a API devolve o registro inteiro da conta, com dados pessoais.
+    missao: Comparar a tela com a resposta da API e corrigir a API para devolver só o que a tela usa
+    historia_abertura: Você está no time de apps da Clínica Lumen. A tela Perfil do app do paciente da Clínica Lumen mostra só o nome e um resumo. Numa revisão de privacidade, o time de segurança interceptou o tráfego do app e viu que a API entrega bem mais do que isso ao aparelho.
+    login_a: marcos.tavares
+    senha_a: Marcos#Lumen26
+    nome_a: Marcos Tavares Lima
+    chave_app: LUM-APP-KEY-3B71E0C9
+    doc_rotulo: CPF
+    extra_rotulo: diagnóstico (CID)
+    seed_contas:
+    - - 1
+      - marcos.tavares
+      - Marcos Tavares Lima
+      - Marcos#Lumen26
+      - Próxima consulta 20/11 às 14h30
+      - 333.666.999-57
+      - CID J45 asma
+    - - 2
+      - renata.borges
+      - Renata Borges Nunes
+      - Renata#Lumen26
+      - Próxima consulta 02/12 às 9h
+      - 444.777.000-68
+      - CID E11 diabetes
+    seed_itens:
+    - - 1
+      - 1
+      - Hemograma completo
+      - Resultado disponível
+      - 12/11
+    - - 2
+      - 1
+      - Consulta cardiologia
+      - Agendada
+      - 20/11
+    - - 3
+      - 2
+      - Ressonância de joelho
+      - Laudo em análise
+      - 08/11
+- destino: LAB-064-mob-dados-demais-industria
+  vars:
+    lab_id: LAB-064
+    versao: 1.0.0
+    codigo: MOB-08-IND
+    ramo: ind
+    setor: industria-energia
+    imagem: lab-064-mobile
+    banco: aurora_mobile
+    titulo: a tela mostra pouco, a API entrega tudo
+    empresa: Aurora Energia
+    marca: Aurora
+    app_nome: App Aurora Campo
+    cor: '#b45309'
+    lista_titulo: Ordens de serviço
+    acao_titulo: Liberar manobra no disjuntor 7
+    papel: Pessoa desenvolvedora do time de apps da Aurora Energia
+    aplicacao: App Aurora Campo, o app em que o técnico de campo consulta as ordens de serviço e o próprio perfil
+    contexto: A tela Perfil do app de campo da Aurora Energia mostra nome e resumo, mas a API devolve o registro inteiro da conta, com dados pessoais.
+    missao: Comparar a tela com a resposta da API e corrigir a API para devolver só o que a tela usa
+    historia_abertura: Você está no time de apps da Aurora Energia. A tela Perfil do app de campo da Aurora Energia mostra só o nome e um resumo. Numa revisão de privacidade, o time de segurança interceptou o tráfego do app e viu que a API entrega bem mais do que isso ao aparelho.
+    login_a: diego.campos
+    senha_a: Diego#Aurora26
+    nome_a: Diego Campos Ferraz
+    chave_app: AUR-APP-KEY-C40D92B1
+    doc_rotulo: matrícula
+    extra_rotulo: endereço residencial
+    seed_contas:
+    - - 1
+      - diego.campos
+      - Diego Campos Ferraz
+      - Diego#Aurora26
+      - 3 ordens em aberto hoje
+      - MAT-40213
+      - Rua das Turbinas 120
+    - - 2
+      - sonia.barros
+      - Sonia Barros Teles
+      - Sonia#Aurora26
+      - 1 ordem em aberto hoje
+      - MAT-40877
+      - Avenida da Usina 45
+    seed_itens:
+    - - 1
+      - 1
+      - OS 4821
+      - Manutenção da bomba 4
+      - Hoje
+    - - 2
+      - 1
+      - OS 4822
+      - Inspeção da subestação 2
+      - Amanhã
+    - - 3
+      - 2
+      - OS 4825
+      - Parada da turbina 2
+      - 19/11

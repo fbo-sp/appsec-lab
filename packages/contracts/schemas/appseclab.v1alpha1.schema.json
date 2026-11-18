@@ -28,6 +28,52 @@
       "title": "Build",
       "type": "object"
     },
+    "Classification": {
+      "additionalProperties": false,
+      "description": "Enquadramento do lab numa lista de referência (ADR-017), ex.: OWASP Top 10 2025 -> A05 Injection.\n\n``entries`` em ordem de relevância; com mais de um item, o texto indica o principal. Quando o lab\nnão se enquadra na edição, a entrada diz isso (o CWE orienta a escolha da aula).",
+      "properties": {
+        "edition": {
+          "pattern": "^[0-9]{4}$",
+          "title": "Edition",
+          "type": "string"
+        },
+        "entries": {
+          "items": {
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string"
+          },
+          "maxItems": 4,
+          "minItems": 1,
+          "title": "Entries",
+          "type": "array"
+        },
+        "framework": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Framework",
+          "type": "string"
+        }
+      },
+      "required": [
+        "framework",
+        "edition",
+        "entries"
+      ],
+      "title": "Classification",
+      "type": "object"
+    },
+    "CourseModule": {
+      "description": "Módulo do curso Security Engineer coberto pelo lab (ADR-021).",
+      "enum": [
+        "foundation",
+        "trained",
+        "expert",
+        "master"
+      ],
+      "title": "CourseModule",
+      "type": "string"
+    },
     "Difficulty": {
       "enum": [
         "beginner",
@@ -64,14 +110,15 @@
       "enum": [
         "editor",
         "terminal",
-        "web"
+        "web",
+        "attacker"
       ],
       "title": "Interface",
       "type": "string"
     },
     "LabStep": {
       "additionalProperties": false,
-      "description": "Etapa. ``explanation``, ``task``, ``concept`` e textos de dica aceitam Markdown restrito (ADR-012).",
+      "description": "Etapa. ``explanation``, ``task``, ``explore``, ``concept`` e textos de dica aceitam Markdown restrito\n(ADR-012). ``task`` traz só o necessário para concluir a etapa; ``explore`` é o estudo complementar\nopcional, aberto por um botão na tela (ADR-019).",
       "properties": {
         "concept": {
           "anyOf": [
@@ -106,6 +153,20 @@
           "minLength": 1,
           "title": "Explanation",
           "type": "string"
+        },
+        "explore": {
+          "anyOf": [
+            {
+              "maxLength": 4000,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Explore"
         },
         "hints": {
           "default": [],
@@ -222,7 +283,7 @@
           "items": {
             "$ref": "#/$defs/Interface"
           },
-          "maxItems": 3,
+          "maxItems": 4,
           "minItems": 1,
           "title": "Interfaces",
           "type": "array"
@@ -238,6 +299,10 @@
           "default": {
             "egressProfile": "deny-all"
           }
+        },
+        "platform": {
+          "$ref": "#/$defs/Platform",
+          "default": "web"
         },
         "resources": {
           "$ref": "#/$defs/Resources"
@@ -331,6 +396,53 @@
     "Metadata": {
       "additionalProperties": false,
       "properties": {
+        "classifications": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/Classification"
+              },
+              "maxItems": 12,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Classifications"
+        },
+        "courseModules": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/CourseModule"
+              },
+              "maxItems": 4,
+              "minItems": 1,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Coursemodules"
+        },
+        "family": {
+          "anyOf": [
+            {
+              "maxLength": 63,
+              "pattern": "^[a-z][a-z0-9]*(-[a-z0-9]+)*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Family"
+        },
         "id": {
           "pattern": "^LAB-[0-9]{3}$",
           "title": "Id",
@@ -350,6 +462,23 @@
           "maxItems": 5,
           "title": "Secondarycwes",
           "type": "array"
+        },
+        "sectors": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/Sector"
+              },
+              "maxItems": 3,
+              "minItems": 1,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Sectors"
         },
         "title": {
           "maxLength": 200,
@@ -384,6 +513,15 @@
       },
       "title": "Network",
       "type": "object"
+    },
+    "Platform": {
+      "description": "Plataforma da aplicação (ADR-025). ``mobile`` só muda a aba Aplicação: moldura de celular.",
+      "enum": [
+        "web",
+        "mobile"
+      ],
+      "title": "Platform",
+      "type": "string"
     },
     "Policy": {
       "additionalProperties": false,
@@ -477,6 +615,16 @@
       ],
       "title": "Resources",
       "type": "object"
+    },
+    "Sector": {
+      "description": "Ramo de atividade do cenário (ADR-021), usado para o aluno escolher labs do seu setor.",
+      "enum": [
+        "financeiro",
+        "saude",
+        "industria-energia"
+      ],
+      "title": "Sector",
+      "type": "string"
     },
     "SessionPolicy": {
       "additionalProperties": false,

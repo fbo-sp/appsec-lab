@@ -1,0 +1,10 @@
+{
+  "fornecedor": "Integradora Vértice Automação",
+  "versao": "2026.11.1",
+  "parametros": {
+    "pressao_max_hidraulica": 210,
+    "temperatura_max_forno": 1250,
+    "velocidade_max_laminador": 11.5
+  },
+  "assinatura": "638ccd5d97dfa69622e9e391e3d8a446c80dbbc82c565c7630fd1c690b8f5993"
+}

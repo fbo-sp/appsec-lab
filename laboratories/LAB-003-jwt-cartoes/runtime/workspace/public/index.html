@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Portal Orbe · Cartões</title>
+  <link rel="stylesheet" href="/estilo.css">
+</head>
+<body>
+  <header class="topo">
+    <span class="marca">◎ Orbe Cartões</span>
+    <span class="sub">Portal do cliente</span>
+    <span class="usuario" id="usuario" hidden></span>
+  </header>
+  <main>
+    <section id="tela-login" class="cartao login">
+      <h1>Entrar</h1>
+      <form id="form-login">
+        <label>E-mail <input name="email" type="email" autocomplete="username" required></label>
+        <label>Senha <input name="senha" type="password" autocomplete="current-password" required></label>
+        <p class="erro" id="erro-login" hidden></p>
+        <button type="submit">Entrar</button>
+      </form>
+    </section>
+
+    <section id="tela-cartao" hidden>
+      <h1>Meu cartão</h1>
+      <div class="plastico">
+        <span id="bandeira"></span>
+        <span class="numero">•••• •••• •••• <b id="final"></b></span>
+        <span id="titular"></span>
+      </div>
+      <dl class="cartao">
+        <dt>Limite total</dt><dd id="limite"></dd>
+        <dt>Disponível</dt><dd id="disponivel"></dd>
+      </dl>
+      <p class="muted">Precisa de mais limite? Fale com seu gerente de crédito.</p>
+    </section>
+
+    <section id="tela-gerente" hidden>
+      <h1>Painel do gerente de crédito</h1>
+      <p class="muted">Código de auditoria: <b id="auditoria"></b></p>
+      <table>
+        <thead><tr><th>Titular</th><th>Cartão</th><th class="valor">Limite</th></tr></thead>
+        <tbody id="lista-cartoes"></tbody>
+      </table>
+    </section>
+  </main>
+  <footer>Ambiente de treinamento CECyber · dados fictícios</footer>
+  <script src="/app.js"></script>
+</body>
+</html>

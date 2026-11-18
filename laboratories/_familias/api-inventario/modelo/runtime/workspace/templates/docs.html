@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block conteudo %}
+<h1>Documentação da API · [[app_nome]]</h1>
+<p class="ajuda">Versão publicada: <strong>v2</strong> (desde [[ano_v2]]). Autenticação pela sessão do usuário.</p>
+
+<table class="lista">
+  <tr><th>Método</th><th>Rota</th><th>O que faz</th></tr>
+  <tr><td>GET</td><td><code>/api/v2/[[recurso]]/{id}</code></td><td>Devolve um [[recurso_singular]] da conta logada. Documento de outra conta: 404.</td></tr>
+</table>
+
+<p class="ajuda">Esta é a única versão documentada. Dúvidas: time de [[time_api]].</p>
+{% endblock %}

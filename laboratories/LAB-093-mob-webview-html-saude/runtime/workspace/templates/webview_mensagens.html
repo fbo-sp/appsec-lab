@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  {# Página da central de mensagens, aberta pelo app num WebView (componente que mostra HTML dentro do app). #}
+  <style>
+    body { margin: 0; font: 14px/1.45 system-ui, sans-serif; color: #151a24; background: #f3f5f9; }
+    .msg { background: #fff; border-radius: 12px; padding: 11px 13px; margin: 0 0 8px; box-shadow: 0 1px 2px rgba(20, 30, 50, .08); }
+    .msg small { color: #5d6678; display: block; margin-bottom: 4px; }
+  </style>
+</head>
+<body>
+  {% for m in mensagens %}
+  <div class="msg">
+    <small>{{ m.autor }} · {{ m.enviada_em }}</small>
+    {# O atendimento usa negrito nas mensagens, por isso o texto é mostrado "como veio". #}
+    <div class="texto">{{ m.texto|safe }}</div>
+  </div>
+  {% else %}
+  <p>Nenhuma mensagem.</p>
+  {% endfor %}
+</body>
+</html>

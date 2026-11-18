@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block conteudo %}
+<h1>Pedidos de reembolso</h1>
+<p class="ajuda">Pedidos aguardando consulta à tabela da rede credenciada.</p>
+
+{% if mensagem %}<p class="banner reforcado">{{ mensagem }}</p>{% endif %}
+{% if erro %}<p class="banner antigo">{{ erro }}</p>{% endif %}
+
+<h2>Pedidos pendentes</h2>
+<table class="lista">
+  <tr><th>Referência</th><th>Descrição</th><th></th></tr>
+  {% for ref, descricao in pendencias %}
+  <tr>
+    <td><code>{{ ref }}</code></td><td>{{ descricao }}</td>
+    <td>
+      <form method="post" action="{{ url_for('painel.consultar') }}">
+        <input type="hidden" name="referencia" value="{{ ref }}">
+        <button type="submit">Consultar Rede Atlas</button>
+      </form>
+    </td>
+  </tr>
+  {% endfor %}
+</table>
+
+<h2>Consultas gravadas</h2>
+<table class="lista">
+  <tr><th>Referência</th><th>Valor de reembolso</th><th>Status</th></tr>
+  {% for c in consultas %}
+  <tr><td><code>{{ c.referencia }}</code></td><td>{{ c.valor_formatado }}</td><td>{{ c.status }}</td></tr>
+  {% else %}
+  <tr><td colspan="3">Nenhuma consulta ainda.</td></tr>
+  {% endfor %}
+</table>
+{% endblock %}

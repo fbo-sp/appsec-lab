@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block titulo %}Banco Vértice Digital{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='estilo.css') }}">
+</head>
+<body>
+  <header class="topo">
+    <span class="marca">◆ Vértice Digital</span>
+    <span class="sub">Internet Banking</span>
+    {% if session.get('cliente_nome') %}
+    <span class="usuario">{{ session['cliente_nome'] }} · <a href="{{ url_for('auth.sair') }}">Sair</a></span>
+    {% endif %}
+  </header>
+  <main>{% block conteudo %}{% endblock %}</main>
+  <footer>Ambiente de treinamento CECyber · dados fictícios</footer>
+</body>
+</html>

@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block conteudo %}
+<h1>Entrar</h1>
+<form method="post" action="{{ url_for('auth.entrar') }}" class="cartao login">
+  <label>E-mail <input name="email" type="email" autocomplete="username" required></label>
+  <label>Senha <input name="senha" type="password" autocomplete="current-password" required></label>
+  {% if erro %}<p class="erro">{{ erro }}</p>{% endif %}
+  <button type="submit">Entrar</button>
+</form>
+{% endblock %}

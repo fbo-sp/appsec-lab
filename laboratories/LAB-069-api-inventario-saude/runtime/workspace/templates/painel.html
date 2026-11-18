@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block conteudo %}
+<h1>Meus exames</h1>
+<p class="ajuda">Laudos liberados dos seus exames.</p>
+
+<dl class="dados">
+  <dt>Titular</dt><dd>{{ conta.nome }}</dd>
+</dl>
+
+<h2>Laudos liberados</h2>
+<table class="lista">
+  <tr><th>Nº</th><th>Data</th><th>Exame</th><th>API (o que o app chama)</th></tr>
+  {% for d in documentos %}
+  <tr>
+    <td>{{ d.id }}</td><td>{{ d.data }}</td><td>{{ d.titulo }}</td>
+    <td><a href="/api/v2/exames/{{ d.id }}"><code>/api/v2/exames/{{ d.id }}</code></a></td>
+  </tr>
+  {% endfor %}
+</table>
+
+<p class="ajuda">Integrações e times de app: veja a <a href="{{ url_for('painel.documentacao') }}">documentação da API</a>.</p>
+<p class="banner reforcado">Você está autenticado. Use <a href="{{ url_for('auth.sair') }}">Sair</a> para encerrar a sessão.</p>
+{% endblock %}

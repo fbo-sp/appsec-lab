@@ -2,7 +2,7 @@
 // O backend decide desbloqueio, aprovação e pontos; a interface só exibe e solicita.
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api, ApiError, type Evaluation, type Hints, type Progress, type Step } from "./api";
-import { Markdown, References } from "./Markdown";
+import { Markdown, References, type TermHelp } from "./Markdown";
 
 const PENDING = new Set(["QUEUED", "RUNNING"]);
 const STATUS_LABEL: Record<Evaluation["status"], string> = {
@@ -23,12 +23,15 @@ export function StepPanel({
   onProgress,
   onShowLog,
   sessionMinutes,
+  terms,
 }: {
   sessionId: string;
   onExit: () => void;
   onProgress?: () => void;
   onShowLog?: () => void;
   sessionMinutes?: number;
+  /** Ajudas contextuais nos termos em negrito das etapas (ex.: "barra de endereço"). */
+  terms?: TermHelp;
 }) {
   const onProgressRef = useRef(onProgress);
   onProgressRef.current = onProgress;
@@ -159,7 +162,7 @@ export function StepPanel({
       )}
       {error && <div className="error">{error}</div>}
       {step && step.status !== "LOCKED" && (
-        <StepDetail key={step.id} sessionId={sessionId} step={step} onChanged={reload} onShowLog={onShowLog} />
+        <StepDetail key={step.id} sessionId={sessionId} step={step} onChanged={reload} onShowLog={onShowLog} terms={terms} />
       )}
       {summaryOpen && attempt.status === "COMPLETED" && (
         <Summary progress={progress} onClose={() => setSummaryOpen(false)} onExit={onExit} />
@@ -173,13 +176,16 @@ function StepDetail({
   step,
   onChanged,
   onShowLog,
+  terms,
 }: {
   sessionId: string;
   step: Step;
   onChanged: (selectNext?: boolean) => Promise<void>;
   onShowLog?: () => void;
+  terms?: TermHelp;
 }) {
   const [hintsOpen, setHintsOpen] = useState(false);
+  const [exploreOpen, setExploreOpen] = useState(false);
   const [answer, setAnswer] = useState("");
   const [evaluation, setEvaluation] = useState<Evaluation | null>(step.lastSubmission ?? null);
   const [busy, setBusy] = useState(false);
@@ -247,9 +253,18 @@ function StepDetail({
 
   return (
     <div className="step-detail">
-      {step.explanation && <Markdown text={step.explanation} />}
+      {step.explanation && <Markdown text={step.explanation} terms={terms} />}
       <h4>Tarefa</h4>
-      {step.task && <Markdown text={step.task} />}
+      {step.task && <Markdown text={step.task} terms={terms} />}
+      {step.explore && (
+        <button type="button" className="explore-button" onClick={() => setExploreOpen(true)}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <circle cx="11" cy="11" r="7" />
+            <path d="m20 20-3.5-3.5" />
+          </svg>
+          Explorar mais <span className="muted">(opcional, não vale pontos)</span>
+        </button>
+      )}
       {step.concept && (
         <>
           <h4>Conceito</h4>
@@ -324,6 +339,9 @@ function StepDetail({
       {step.submissions > 0 && <p className="muted small">Tentativas nesta etapa: {step.submissions} (sem limite)</p>}
       {error && <div className="error">{error}</div>}
 
+      {exploreOpen && step.explore && (
+        <ExploreModal stepTitle={step.title} text={step.explore} terms={terms} onClose={() => setExploreOpen(false)} />
+      )}
       {hintsOpen && (
         <HintsModal
           stepTitle={step.title}
@@ -334,6 +352,49 @@ function StepDetail({
           onClose={() => setHintsOpen(false)}
         />
       )}
+    </div>
+  );
+}
+
+/** Estudo complementar da etapa (ADR-019): fora do texto da tarefa para não desviar o aluno do que conclui a
+ * etapa. O conteúdo explica por que vale explorar e que tipo de achado pode aparecer. */
+function ExploreModal({
+  stepTitle,
+  text,
+  terms,
+  onClose,
+}: {
+  stepTitle: string;
+  text: string;
+  terms?: TermHelp;
+  onClose: () => void;
+}) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+  return (
+    <div className="overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
+      <div className="card hints-modal explore-modal" role="dialog" aria-modal="true" aria-labelledby="explore-title">
+        <div className="hints-head">
+          <div>
+            <h2 id="explore-title">Explorar mais · {stepTitle}</h2>
+            <p className="muted small">
+              Estudo opcional. Não é preciso para concluir a etapa e não muda a pontuação.
+            </p>
+          </div>
+          <button className="icon-close" aria-label="Fechar" onClick={onClose}>
+            ×
+          </button>
+        </div>
+        <Markdown text={text} terms={terms} />
+        <div className="summary-actions">
+          <button onClick={onClose} autoFocus>
+            Voltar ao laboratório
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

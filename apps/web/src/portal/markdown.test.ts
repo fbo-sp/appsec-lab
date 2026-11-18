@@ -73,3 +73,10 @@ describe("isSafeHref", () => {
     expect(isSafeHref("javascript:alert(1)")).toBe(false);
   });
 });
+
+describe("ilustrações (ADR-018)", () => {
+  it("bloco ilustracao chega ao renderizador como bloco de código com a linguagem e o nome", () => {
+    const blocks = parseMarkdown("Texto\n\n```ilustracao\ntela\n```");
+    expect(blocks[1]).toEqual({ t: "pre", lang: "ilustracao", v: "tela" });
+  });
+});

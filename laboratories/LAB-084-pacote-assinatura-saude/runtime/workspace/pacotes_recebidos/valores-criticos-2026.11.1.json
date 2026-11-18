@@ -1,0 +1,10 @@
+{
+  "fornecedor": "Laboratório de Apoio Analítica",
+  "versao": "2026.11.1",
+  "parametros": {
+    "glicemia_critica_min": 50,
+    "hemoglobina_critica_min": 7.0,
+    "potassio_critico_max": 6.0
+  },
+  "assinatura": "0024598efef7994d1a2e038ce21dbe00e8a68d3b76fe969f2945a075ebe96686"
+}

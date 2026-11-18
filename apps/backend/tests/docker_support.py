@@ -65,3 +65,26 @@ def docker_lab_image() -> str:
     except Exception as exc:  # pragma: no cover - depende do ambiente
         pytest.skip(f"Docker indisponível: {exc}")
     return _build()
+
+
+@cache
+def _build_lab(runtime_dir: str, tag: str, base: str) -> str:
+    import docker
+
+    client = docker.from_env()
+    _build()  # garante a base Python
+    if base == "node" and os.environ.get("SKIP_BASE_BUILD") != "1":
+        client.images.build(path=str(LABS / "_base" / "node"), tag="cecyber-labs/base-node:local", rm=True)
+    # SKIP_LAB_BUILD=1 usa a imagem já construída (ex.: build com CA de proxy, fora do repositório).
+    if os.environ.get("SKIP_LAB_BUILD") == "1":
+        image = client.images.get(tag)
+    else:
+        image, _ = client.images.build(path=runtime_dir, tag=tag, rm=True)
+    name = tag.split("/", 1)[1].split(":", 1)[0]
+    return f"local/labs/{name}@{image.id}"
+
+
+def lab_image(lab_dir: str, tag: str, base: str = "python") -> str:
+    """Imagem de um laboratório (vulnerabilidade INTENCIONAL; só em rede interna da sessão)."""
+    docker_lab_image()  # mesmas condições de opt-in e disponibilidade
+    return _build_lab(str(LABS / lab_dir / "runtime"), tag, base)

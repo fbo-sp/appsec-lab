@@ -93,12 +93,15 @@ def test_public_view_hides_protected_data(client: TestClient, registered: dict[s
     assert client.get("/api/v1/labs/LAB-000/releases/9.9.9", headers=ALICE).status_code == 404
 
 
-def test_new_version_coexists(client: TestClient, registered: dict[str, object]) -> None:
-    v2 = copy.deepcopy(benign_manifest())
-    v2["metadata"]["version"] = "0.3.0"
-    assert client.post("/api/v1/admin/lab-releases", json=v2, headers=ADMIN).status_code == 201
-    versions = sorted(i["version"] for i in client.get("/api/v1/labs", headers=ALICE).json()["items"])
-    assert versions == ["0.2.1", "0.3.0"]
+def test_catalog_lists_only_latest_version(client: TestClient, registered: dict[str, object]) -> None:
+    for version in ("0.10.0", "0.3.0"):  # registrada fora de ordem; 0.10.0 > 0.3.0 por SemVer
+        m = copy.deepcopy(benign_manifest())
+        m["metadata"]["version"] = version
+        assert client.post("/api/v1/admin/lab-releases", json=m, headers=ADMIN).status_code == 201
+    versions = [i["version"] for i in client.get("/api/v1/labs", headers=ALICE).json()["items"]]
+    assert versions == ["0.10.0"]
+    # As anteriores continuam publicadas e acessíveis pelo endereço da release (tentativas em andamento).
+    assert client.get("/api/v1/labs/LAB-000/releases/0.2.1", headers=ALICE).status_code == 200
 
 
 def test_unknown_validator_is_rejected(client: TestClient) -> None:
@@ -107,3 +110,16 @@ def test_unknown_validator_is_rejected(client: TestClient) -> None:
     r = client.post("/api/v1/admin/lab-releases", json=m, headers=ADMIN)
     assert r.status_code == 400
     assert r.json()["error"]["details"]["issues"][0]["code"] == "UNKNOWN_VALIDATOR"
+
+
+def test_public_view_exposes_classifications(client: TestClient, registered: dict[str, object]) -> None:
+    m = copy.deepcopy(benign_manifest())
+    m["metadata"]["version"] = "0.4.0"
+    m["metadata"]["classifications"] = [
+        {"framework": "OWASP Top 10", "edition": "2025", "entries": ["A05 Injection"]}
+    ]
+    assert client.post("/api/v1/admin/lab-releases", json=m, headers=ADMIN).status_code == 201
+    view = client.get("/api/v1/labs/LAB-000/releases/0.4.0", headers=ALICE).json()
+    assert view["classifications"] == m["metadata"]["classifications"]
+    old = client.get("/api/v1/labs/LAB-000/releases/0.2.1", headers=ALICE).json()
+    assert old["classifications"] == []  # releases antigas, sem o campo

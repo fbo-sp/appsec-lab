@@ -60,6 +60,48 @@ class Interface(StrEnum):
     EDITOR = "editor"
     TERMINAL = "terminal"
     WEB = "web"
+    # Site do atacante (ADR-022): página fictícia servida pelo gateway em origem própria, a partir da
+    # porta 8090 do contêiner do lab. Só para labs cujo ataque parte de outra página (ex.: CSRF).
+    ATTACKER = "attacker"
+
+
+class Platform(StrEnum):
+    """Plataforma da aplicação (ADR-025). ``mobile`` só muda a aba Aplicação: moldura de celular."""
+
+    WEB = "web"
+    MOBILE = "mobile"
+
+
+class Sector(StrEnum):
+    """Ramo de atividade do cenário (ADR-021), usado para o aluno escolher labs do seu setor."""
+
+    FINANCEIRO = "financeiro"
+    SAUDE = "saude"
+    INDUSTRIA_ENERGIA = "industria-energia"
+
+
+class CourseModule(StrEnum):
+    """Módulo do curso Security Engineer coberto pelo lab (ADR-021)."""
+
+    FOUNDATION = "foundation"
+    TRAINED = "trained"
+    EXPERT = "expert"
+    MASTER = "master"
+
+
+Edition = Annotated[str, StringConstraints(pattern=r"^[0-9]{4}$")]
+
+
+class Classification(_Strict):
+    """Enquadramento do lab numa lista de referência (ADR-017), ex.: OWASP Top 10 2025 -> A05 Injection.
+
+    ``entries`` em ordem de relevância; com mais de um item, o texto indica o principal. Quando o lab
+    não se enquadra na edição, a entrada diz isso (o CWE orienta a escolha da aula).
+    """
+
+    framework: ShortText
+    edition: Edition
+    entries: tuple[ShortText, ...] = Field(min_length=1, max_length=4)
 
 
 class Metadata(_Strict):
@@ -68,6 +110,15 @@ class Metadata(_Strict):
     title: ShortText
     primary_cwe: Cwe = Field(alias="primaryCwe")
     secondary_cwes: tuple[Cwe, ...] = Field(default=(), alias="secondaryCwes", max_length=5)
+    # Opcional e sem valor padrão serializado, para não alterar o digest de manifestos existentes.
+    classifications: tuple[Classification, ...] | None = Field(default=None, max_length=12)
+    # ADR-021: família (mesma mecânica e validador em vários ramos), ramos e módulos do curso. Opcionais
+    # e sem valor padrão serializado, para não alterar o digest de manifestos existentes.
+    family: Slug | None = None
+    sectors: tuple[Sector, ...] | None = Field(default=None, min_length=1, max_length=3)
+    course_modules: tuple[CourseModule, ...] | None = Field(
+        default=None, alias="courseModules", min_length=1, max_length=4
+    )
 
 
 class Story(_Strict):
@@ -142,7 +193,8 @@ class LabVariant(_Strict):
     resources: Resources
     session: SessionPolicy
     network: Network = Network()
-    interfaces: tuple[Interface, ...] = Field(min_length=1, max_length=3)
+    interfaces: tuple[Interface, ...] = Field(min_length=1, max_length=4)
+    platform: Platform = Platform.WEB
 
 
 class Hint(_Strict):
@@ -151,13 +203,16 @@ class Hint(_Strict):
 
 
 class LabStep(_Strict):
-    """Etapa. ``explanation``, ``task``, ``concept`` e textos de dica aceitam Markdown restrito (ADR-012)."""
+    """Etapa. ``explanation``, ``task``, ``explore``, ``concept`` e textos de dica aceitam Markdown restrito
+    (ADR-012). ``task`` traz só o necessário para concluir a etapa; ``explore`` é o estudo complementar
+    opcional, aberto por um botão na tela (ADR-019)."""
 
     id: Slug
     order: int = Field(ge=1, le=50)
     title: ShortText
     explanation: NonEmptyText
     task: NonEmptyText
+    explore: NonEmptyText | None = None
     concept: NonEmptyText | None = None
     expected_outcome: NonEmptyText | None = Field(default=None, alias="expectedOutcome")
     validator_ref: ValidatorRef = Field(alias="validatorRef")

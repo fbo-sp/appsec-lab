@@ -1,0 +1,97 @@
+# Família L2 log-auditoria (ADR-021): o que muda por ramo. O modelo comum está em ./modelo.
+# Depois de editar, rode:  uv run python scripts/gerar-familia.py log-auditoria
+# Logins, senhas e o nome do banco estão espelhados em apps/backend/app/validation/suites_familias.py
+# (AUDITORIA_RAMOS); os testes Docker conferem os dois.
+# A falha é de registro (OWASP A09, CWE-778): services/auth_service.py só registra o login certo;
+# as tentativas erradas não deixam rastro na tabela auditoria.
+ramos:
+  - destino: LAB-077-log-auditoria-banco
+    vars:
+      lab_id: LAB-077
+      versao: 1.0.0
+      codigo: L2-FIN
+      ramo: fin
+      setor: financeiro
+      imagem: lab-077-log-auditoria
+      titulo: as senhas erradas que ninguém viu
+      empresa: Seguradora Maré Alta
+      marca: "≈ Maré Alta"
+      app_nome: Portal do Corretor Maré Alta
+      cor: "#155e75"
+      papel: Pessoa desenvolvedora do time de canais digitais da Seguradora Maré Alta
+      aplicacao: Portal do Corretor Maré Alta, onde os corretores emitem cotações, propostas e endossos de seguro auto e residencial
+      contexto: Um corretor ligou dizendo que alguém emitiu um endosso na carteira dele de madrugada. O time de prevenção a fraudes pediu a trilha de tentativas de acesso à conta dele nos últimos dias, e a trilha só mostra logins que deram certo.
+      missao: Mostrar que as tentativas erradas de login não deixam rastro e corrigir o serviço de autenticação para registrar sucesso e falha, sem nunca gravar a senha
+      painel_titulo: Painel do corretor
+      painel_desc: Dados da sua conta e a atividade de segurança registrada para ela.
+      login_desc: Entre com seu usuário de corretor e senha.
+      banco: portal_corretor
+      papel_usuario: Corretora
+      login_a: patricia.moura
+      senha_a: "Patricia#MareAlta26"
+      nome_a: Patrícia Moura Lins
+      impacto: 'Sem esses registros, o time de prevenção a fraudes não consegue dizer se a conta do corretor foi atacada por adivinhação de senha, de onde vieram as tentativas, nem desde quando. Um endosso fraudulento pode desviar indenizações e a investigação começa no escuro.'
+      historia_abertura: 'Você é do time de canais digitais da Seguradora Maré Alta. Na segunda-feira, o corretor Edson Paiva ligou para a central: alguém entrou na conta dele de madrugada e emitiu um endosso trocando o beneficiário de uma apólice. O time de prevenção a fraudes pediu a lista de tentativas de acesso à conta nos últimos sete dias, para saber se a senha foi adivinhada. A resposta da TI foi constrangedora: a trilha só mostra os logins que deram certo.'
+      seed_contas:
+        - [1, patricia.moura, Patrícia Moura Lins, "Patricia#MareAlta26", corretora]
+        - [2, edson.paiva, Edson Paiva Rocha, "Edson#MareAlta26", corretor]
+  - destino: LAB-078-log-auditoria-saude
+    vars:
+      lab_id: LAB-078
+      versao: 1.0.0
+      codigo: L2-SAU
+      ramo: sau
+      setor: saude
+      imagem: lab-078-log-auditoria
+      titulo: as senhas erradas que ninguém viu no portal do médico
+      empresa: Operadora Sanare
+      marca: "✚ Sanare"
+      app_nome: Sanare Prestador
+      cor: "#0f766e"
+      papel: Pessoa desenvolvedora do time de sistemas de rede credenciada da Operadora Sanare
+      aplicacao: Sanare Prestador, onde médicos e clínicas credenciados pedem autorização de exames e consultam a elegibilidade dos beneficiários
+      contexto: O time de privacidade recebeu um alerta de que credenciais de prestadores estão sendo vendidas em um fórum. Pediu a lista de contas com muitas tentativas de login erradas para bloqueá-las antes que alguém consulte dados de beneficiários, e a trilha só mostra logins que deram certo.
+      missao: Mostrar que as tentativas erradas de login não deixam rastro e corrigir o serviço de autenticação para registrar sucesso e falha, sem nunca gravar a senha
+      painel_titulo: Painel do prestador
+      painel_desc: Dados da sua conta e a atividade de segurança registrada para ela.
+      login_desc: Entre com seu usuário de prestador e senha.
+      banco: sanare_prestador
+      papel_usuario: Médica credenciada
+      login_a: dra.helena.castro
+      senha_a: "Helena#Sanare26"
+      nome_a: Dra. Helena Castro Pires
+      impacto: 'Sem esses registros, a área de privacidade não consegue saber quais contas de prestadores estão sob ataque nem de onde vêm as tentativas. Uma conta invadida dá acesso a dados de saúde de beneficiários, dado pessoal sensível pela LGPD, e o incidente pode precisar ser comunicado à ANPD sem que se saiba o alcance.'
+      historia_abertura: 'Você é do time de sistemas de rede credenciada da Operadora Sanare. Na terça-feira, a área de privacidade recebeu um aviso do time de inteligência de ameaças: um fórum anuncia "acessos de prestadores de planos de saúde". O encarregado de dados pediu, com urgência, a lista de contas do Sanare Prestador com muitas tentativas de login erradas nas últimas 48 horas, para bloqueá-las. A resposta da TI: a trilha só mostra os logins que deram certo.'
+      seed_contas:
+        - [1, dra.helena.castro, Dra. Helena Castro Pires, "Helena#Sanare26", medica]
+        - [2, clinica.bemviver, Clínica Bem Viver, "BemViver#Sanare26", clinica]
+  - destino: LAB-079-log-auditoria-industria
+    vars:
+      lab_id: LAB-079
+      versao: 1.0.0
+      codigo: L2-IND
+      ramo: ind
+      setor: industria-energia
+      imagem: lab-079-log-auditoria
+      titulo: as senhas erradas que ninguém viu no portal de manobras
+      empresa: Distribuidora Luz do Vale
+      marca: "⚡ Luz do Vale"
+      app_nome: Luz do Vale Operação
+      cor: "#a16207"
+      papel: Pessoa desenvolvedora do time de sistemas de operação da Distribuidora Luz do Vale
+      aplicacao: Luz do Vale Operação, onde os técnicos de campo e o centro de operação registram ordens de manobra na rede de distribuição
+      contexto: O centro de operação estranhou uma ordem de manobra criada fora do turno por uma conta de técnico. A segurança da informação pediu as tentativas de acesso àquela conta para saber se a senha foi adivinhada, e a trilha só mostra logins que deram certo.
+      missao: Mostrar que as tentativas erradas de login não deixam rastro e corrigir o serviço de autenticação para registrar sucesso e falha, sem nunca gravar a senha
+      painel_titulo: Painel do técnico
+      painel_desc: Dados da sua conta e a atividade de segurança registrada para ela.
+      login_desc: Entre com sua matrícula de técnico e senha.
+      banco: luz_do_vale_operacao
+      papel_usuario: Técnico de campo
+      login_a: marcos.teixeira
+      senha_a: "Marcos#LuzDoVale26"
+      nome_a: Marcos Teixeira Brandão
+      impacto: 'Sem esses registros, a segurança da informação não consegue dizer se a conta do técnico foi atacada, de onde vieram as tentativas, nem se outras contas estão na mira. Uma ordem de manobra indevida pode desligar alimentadores e deixar bairros inteiros sem energia, e a investigação começa no escuro.'
+      historia_abertura: 'Você é do time de sistemas de operação da Distribuidora Luz do Vale. Na quarta-feira, às 3h12, uma ordem de manobra para abrir uma chave de alimentador foi criada pela conta do técnico Jair Monteiro, que estava de folga. O supervisor do centro de operação barrou a ordem a tempo. A segurança da informação pediu as tentativas de acesso à conta do Jair nos últimos dias, para saber se a senha foi adivinhada. A resposta da TI: a trilha só mostra os logins que deram certo.'
+      seed_contas:
+        - [1, marcos.teixeira, Marcos Teixeira Brandão, "Marcos#LuzDoVale26", tecnico]
+        - [2, jair.monteiro, Jair Monteiro Dias, "Jair#LuzDoVale26", tecnico]

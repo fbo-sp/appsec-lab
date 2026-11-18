@@ -44,6 +44,15 @@
 | ADR/ADR-012-rich-step-content.md | Aprovado (2026-11-13); implementado |
 | ADR/ADR-013-hint-penalty.md | Aprovado (2026-11-13); implementado |
 | ADR/ADR-014-session-usage-idle-and-resolution-time.md | Aprovado (2026-11-13); implementado (local/test) |
+| ADR/ADR-015-labs-002-004-authenticated-checks.md | Proposto (2026-11-13); implementado para teste (local/test) |
+| ADR/ADR-016-catalog-latest-version-only.md | Aceito pelo PO (2026-11-14): painel mostra só a última versão de cada lab |
+| ADR/ADR-017-lab-classification-and-catalog.md | Aceito pelo PO (2026-11-15): classificação OWASP/SANS nos labs e catálogo com histórico de versões |
+| ADR/ADR-018-lab000-platform-tutorial.md | Aceito pelo PO (2026-11-15): LAB-000 vira o tutorial da plataforma |
+| ADR/ADR-019-step-task-and-explore.md | Aceito pelo PO (2026-11-15): tarefa enxuta e estudo complementar opcional ("Explorar mais") |
+| ADR/ADR-021-lab-family-sector-module.md | Aceito pelo PO (2026-11-16): família, ramo de atividade e módulo do curso; um lab por ramo; filtro no painel |
+| ADR/ADR-022-preview-isolation-and-attacker-site.md | Aceito pelo PO (2026-11-16): isolamento do preview para JavaScript de ataque e site do atacante em origem própria (:8003) |
+| ADR/ADR-023-probe-headers-capture-upload-inspection.md | Aceito pelo PO (2026-11-16): validador com cabeçalhos, captura de token, upload e inspeção do banco da cópia isolada |
+| catalogo/CATALOGO_DE_LABORATORIOS.md | Catálogo de laboratórios para professores e área comercial (gerado; ADR-017) |
 
 ## Ordem recomendada para trabalho com agentes
 

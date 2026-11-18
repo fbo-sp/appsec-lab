@@ -1,0 +1,9 @@
+{
+  "name": "lab-003-jwt-cartoes",
+  "private": true,
+  "description": "Dependências do LAB-003, instaladas na imagem fora do workspace (/opt/lab/node_modules).",
+  "dependencies": {
+    "express": "4.21.2",
+    "jsonwebtoken": "9.0.2"
+  }
+}

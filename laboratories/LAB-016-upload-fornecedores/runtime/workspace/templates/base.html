@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block titulo %}Siderúrgica Pindorama{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='estilo.css') }}">
+</head>
+<body>
+  <header class="topo">
+    <span class="marca">⬢ Pindorama</span>
+    <span class="sub">Portal de Fornecedores</span>
+    {% if session.get('usuario_nome') %}
+    <nav>
+      {% if session.get('perfil') == 'equipe' %}
+      <a href="{{ url_for('mesa.listar') }}">Conferência de compras</a>
+      {% else %}
+      <a href="{{ url_for('anexo.enviar') }}">Enviar nota fiscal</a>
+      {% endif %}
+    </nav>
+    <span class="usuario">{{ session['usuario_nome'] }} · <a href="{{ url_for('auth.sair') }}">Sair</a></span>
+    {% endif %}
+  </header>
+  <main>
+    {% for mensagem in get_flashed_messages() %}<p class="aviso">{{ mensagem }}</p>{% endfor %}
+    {% block conteudo %}{% endblock %}
+  </main>
+  <footer>Ambiente de treinamento CECyber · dados fictícios</footer>
+</body>
+</html>

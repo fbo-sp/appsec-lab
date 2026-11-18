@@ -1,0 +1,265 @@
+# [[lab_id]] ([[codigo]]): pacote aceito sem assinatura (OWASP A06:2021 / A03:2025, CWE-1395) no [[app_nome]] da [[empresa]] (Flask + SQLite).
+# CONTÉM VULNERABILIDADE INTENCIONAL. Uso exclusivo no runtime Docker LOCAL (ADR-008), em rede
+# interna da sessão. Dados 100% fictícios. Família L4 pacote-assinatura (ADR-021): gerado por
+# scripts/gerar-familia.py a partir de laboratories/_familias/pacote-assinatura; não edite este arquivo à mão.
+#
+# ATENÇÃO: o digest abaixo é uma FIXTURE (sha256 de um texto fixo), não uma imagem publicada.
+# scripts/lab-local.sh e .ps1 trocam pela imagem construída localmente antes de registrar.
+apiVersion: labs.cecyber.io/v1alpha1
+kind: AppSecLab
+metadata:
+  id: [[lab_id]]
+  version: [[versao]]
+  title: "[[codigo]] · Integridade de dados: [[titulo]]"
+  primaryCwe: CWE-345
+  secondaryCwes: [CWE-347, CWE-494]
+  family: pacote-assinatura
+  sectors: [[[setor]]]
+  courseModules: [trained]
+  classifications:
+    - framework: OWASP Top 10
+      edition: "2025"
+      entries:
+        - "A08 Software or Data Integrity Failures"
+    - framework: OWASP Top 10
+      edition: "2021"
+      entries:
+        - "A08 Software and Data Integrity Failures"
+    - framework: SANS CWE Top 25
+      edition: "2025"
+      entries:
+        - "Não se enquadra; use o CWE"
+    - framework: SANS CWE Top 25
+      edition: "2024"
+      entries:
+        - "Não se enquadra; use o CWE"
+learning:
+  singleVulnerability: true
+  estimatedMinutes: 35
+  difficulty: intermediate
+  objectives:
+    - Entender o que uma assinatura HMAC prova sobre um pacote recebido de terceiros
+    - Mostrar que um pacote alterado depois de assinado, ou sem assinatura, é aplicado
+    - Saber o que conferir antes de aplicar dados que chegam de fora
+    - Corrigir recalculando o HMAC e comparando em tempo constante antes de aplicar
+  story:
+    role: [[papel]]
+    application: [[aplicacao]]
+    context: >-
+      [[contexto]]
+    mission: [[missao]]
+  wrapUp:
+    text: |
+      Agora só um pacote assinado pelo fornecedor, e não alterado depois, chega aos parâmetros em vigor. Em um sistema real, vale reforçar:
+
+      - **Confira antes de usar.** Pacote de configuração, atualização de software, regra ou tabela vinda de fora só é aplicado depois de conferir a assinatura. Conferir que o campo existe não confere nada.
+      - **Compare em tempo constante.** `hmac.compare_digest` não para no primeiro caractere diferente, então o tempo da comparação não entrega pistas sobre a assinatura certa.
+      - **Prefira assinatura assimétrica.** Com HMAC, as duas empresas guardam a mesma chave e qualquer uma pode assinar. Com uma chave privada do fornecedor (Ed25519, RSA, ou ferramentas como Sigstore e cosign), você só guarda a chave pública e ninguém do seu lado consegue forjar um pacote.
+      - **Proteja contra o pacote antigo.** Uma assinatura válida de uma versão antiga continua válida. Recuse versões menores que a em vigor e registre cada importação, aceita ou recusada.
+    references:
+      - title: "OWASP Top 10:2021: A08 Software and Data Integrity Failures"
+        url: https://owasp.org/Top10/A08_2021-Software_and_Data_Integrity_Failures/
+      - title: "OWASP Top 10:2025: A08 Software or Data Integrity Failures"
+        url: https://top10.owasp.org/2025/A08_2025-Software_or_Data_Integrity_Failures/
+      - title: "CWE-345: Insufficient Verification of Data Authenticity"
+        url: https://cwe.mitre.org/data/definitions/345.html
+      - title: "Python: hmac (compare_digest)"
+        url: https://docs.python.org/3/library/hmac.html
+      - title: "Sigstore: assinatura de artefatos de software"
+        url: https://www.sigstore.dev/
+variants:
+  - id: python-flask
+    language: python
+    framework: flask
+    image: registry.local/labs/[[imagem]]@sha256:[[digest_fixture]]
+    runtimeProfile: web-basic
+    workspacePath: /workspace
+    startup:
+      command: ["sh", "-c", "python -u -m flask --app app run --host 0.0.0.0 --port 8080 --reload --no-debugger 2>&1 | tee -a /tmp/app.log"]
+      port: 8080
+    resources:
+      cpuMillicores: 500
+      memoryMiB: 512
+      storageMiB: 256
+      pidsMax: 64
+    session:
+      ttlMinutes: 45
+      maxRenewals: 2
+    interfaces: [editor, terminal, web]
+steps:
+  - id: conhecer
+    order: 1
+    title: Conhecer o pacote e a assinatura
+    explanation: |
+      [[historia_abertura]]
+
+      Uma **assinatura HMAC** é um código calculado sobre o conteúdo do pacote com uma chave secreta que só o fornecedor e você conhecem. Quem recebe recalcula o código com a mesma chave: se bater, o pacote veio de quem tem a chave e não mudou nem um caractere. Se ninguém recalcula, a assinatura é só um texto a mais no arquivo, e qualquer alteração passa: é a falha de **integridade de dados** (OWASP A08).
+
+      ```ilustracao
+      pacote-assinado
+      ```
+
+      Siga a importação pelas camadas:
+
+      1. **Controller** (`controllers/painel_controller.py`): recebe o arquivo enviado em `POST /pacotes`.
+      2. **Serviço** (`services/pacote_service.py`): lê o JSON e aplica os parâmetros. **É aqui que falta conferir.**
+      3. **Repositório** (`repositories/parametro_repository.py`): grava os valores em vigor.
+
+      As credenciais, neste laboratório, são:
+
+      - [[papel_usuario]]: `[[login_a]]`, senha `[[senha_a]]` ([[nome_a]]).
+    task: |
+      1. Na aba **Aplicação**, entre como `[[login_a]]` / `[[senha_a]]` e veja os [[pacote_tipo]] em vigor.
+      2. Na aba **Código**, abra `pacotes_recebidos/[[pacote_arquivo]]`, o pacote que o [[fornecedor]] enviou.
+
+      Informe abaixo o nome do campo do pacote que leva a assinatura do fornecedor.
+    explore: |
+      **Veja exatamente o que é assinado.** Em `services/pacote_service.py`, a função `conteudo_canonico` monta os bytes que o fornecedor assina: o pacote **sem** o campo `assinatura`, em JSON com as chaves em ordem e sem espaços.
+
+      **Por que vale olhar.** Os dois lados precisam assinar e conferir exatamente os mesmos bytes. Se um lado formata o JSON de outro jeito, a assinatura de um pacote legítimo não bate, e o time acaba desligando a verificação "para funcionar".
+    concept: A assinatura prova origem e integridade, se alguém conferir
+    validatorRef: pacote-assinatura/answer/campo-[[ramo]]-v1
+    hints:
+      - level: 1
+        text: O pacote tem quatro campos no primeiro nível.
+      - level: 2
+        text: É o campo com um texto longo em hexadecimal.
+      - level: 3
+        text: A resposta é `assinatura`.
+    points: 10
+  - id: explorar
+    order: 2
+    title: Alterar o pacote depois de assinado
+    explanation: |
+      O pacote passa por um servidor de troca de arquivos antes de chegar ao [[app_nome]]. Quem tiver acesso a esse caminho consegue mudar um número no arquivo. Se o sistema confere a assinatura, a alteração é descoberta; se não confere, o número alterado vira regra. Você vai mudar [[param_desc]] de [[valor_ok]] para [[valor_mal]], **sem mexer na assinatura**, e enviar.
+    task: |
+      Na aba **Terminal**, copie o pacote, altere o valor e envie:
+
+      ```bash
+      cp pacotes_recebidos/[[pacote_arquivo]] /tmp/pacote.json
+      sed -i 's/"[[param]]": [[valor_ok]]/"[[param]]": [[valor_mal]]/' /tmp/pacote.json
+      grep [[param]] /tmp/pacote.json
+      curl -s --noproxy '*' -c /tmp/ck -d "login=[[login_a]]&senha=[[senha_a]]" http://127.0.0.1:8080/login -o /dev/null
+      curl -s --noproxy '*' -b /tmp/ck -F "arquivo=@/tmp/pacote.json" http://127.0.0.1:8080/pacotes | grep -o "Pacote [^<]*"
+      ```
+
+      Depois, recarregue a aba **Aplicação** e veja a tabela. Informe abaixo o valor de `[[param]]` que está em vigor agora.
+    explore: |
+      **Sem assinatura nenhuma.** Apague o campo `assinatura` e envie de novo:
+
+      ```bash
+      python -c "import json; p=json.load(open('/tmp/pacote.json')); p.pop('assinatura'); json.dump(p, open('/tmp/sem.json','w'))"
+      curl -s --noproxy '*' -b /tmp/ck -F "arquivo=@/tmp/sem.json" http://127.0.0.1:8080/pacotes | grep -o "Pacote [^<]*"
+      ```
+
+      **O que esperar.** Também é aplicado. [[impacto]]
+    concept: Sem conferir, um pacote alterado no caminho vira regra
+    validatorRef: pacote-assinatura/answer/valor-[[ramo]]-v1
+    hints:
+      - level: 1
+        text: Olhe a linha de `[[param]]` na tabela do painel, depois de recarregar.
+      - level: 2
+        text: É o valor que o `sed` colocou no arquivo.
+      - level: 3
+        text: A resposta é `[[valor_mal]]`.
+    points: 15
+  - id: conceito
+    order: 3
+    title: Saber o que a assinatura garante
+    explanation: |
+      Uma assinatura conferida garante duas coisas. **Integridade**: o conteúdo não mudou desde que foi assinado; mudar um caractere muda o HMAC inteiro. E a outra: que o pacote foi assinado por quem tem a chave, o fornecedor. Conferir só que o campo `assinatura` existe não garante nenhuma das duas, porque o atacante deixa a assinatura antiga no lugar.
+    task: |
+      Além da integridade, o que a assinatura conferida garante sobre o pacote?
+
+      Responda com uma palavra (de quem ele veio).
+    concept: Integridade e origem
+    validatorRef: pacote-assinatura/answer/garantia-[[ramo]]-v1
+    hints:
+      - level: 1
+        text: É sobre quem enviou o pacote.
+      - level: 2
+        text: Uma palavra que quer dizer "de onde veio" ou "de quem veio".
+      - level: 3
+        text: A resposta é `origem` (também vale `autenticidade`).
+    points: 15
+  - id: onde
+    order: 4
+    title: Encontrar onde a assinatura deveria ser conferida
+    explanation: |
+      Abra `services/pacote_service.py`. O serviço já importa `hmac` e `hashlib` e já tem a função `conteudo_canonico`, mas o método que aplica o pacote lê o JSON, confere os campos obrigatórios (sem a assinatura) e grava direto no repositório.
+    task: |
+      Informe abaixo o nome do método que aplica o pacote sem conferir a assinatura.
+    concept: A conferência pertence ao serviço, antes de gravar
+    validatorRef: pacote-assinatura/answer/metodo-[[ramo]]-v1
+    hints:
+      - level: 1
+        text: A classe `PacoteService` tem um único método público.
+      - level: 2
+        text: É o método que o controller chama ao receber o arquivo.
+      - level: 3
+        text: A resposta é `importar`.
+    points: 15
+  - id: corrigir
+    order: 5
+    title: Conferir a assinatura antes de aplicar
+    explanation: |
+      **Por que a falha existe.** `importar` aplica os parâmetros sem recalcular o HMAC.
+
+      **A correção.** Recalcular o HMAC-SHA256 do conteúdo canônico com a chave do fornecedor e comparar com o campo `assinatura` usando `hmac.compare_digest`, que compara em tempo constante. Se não bater, ou se a assinatura não vier, o pacote é recusado e nada é gravado.
+    task: |
+      Abra `services/pacote_service.py` e troque o método `importar` inteiro por este:
+
+      ```python
+          def importar(self, texto: str) -> dict:
+              """Lê o pacote recebido, confere a assinatura do fornecedor e só então aplica os parâmetros."""
+              pacote = self._ler(texto)
+              esperada = hmac.new(self._chave, conteudo_canonico(pacote), hashlib.sha256).hexdigest()
+              if not hmac.compare_digest(esperada, str(pacote.get("assinatura", ""))):
+                  raise PacoteInvalido("assinatura do fornecedor não confere.")
+              self._repositorio.substituir(str(pacote["versao"]), str(pacote["fornecedor"]), pacote["parametros"])
+              return pacote
+      ```
+
+      Salve com **Ctrl+S**. A aplicação reinicia (e os parâmetros voltam ao início). Então:
+
+      1. na aba **Aplicação**, clique em **Sair** e entre de novo como `[[login_a]]` / `[[senha_a]]` (da etapa 1);
+      2. no **Terminal**, repita os dois `curl` da etapa 2 (login e envio): agora a resposta é "Pacote recusado";
+      3. envie o pacote original, sem alteração, e veja que ele é aplicado:
+
+         ```bash
+         curl -s --noproxy '*' -b /tmp/ck -F "arquivo=@pacotes_recebidos/[[pacote_arquivo]]" http://127.0.0.1:8080/pacotes | grep -o "Pacote [^<]*"
+         ```
+
+      4. clique em **Validar**.
+    explore: |
+      **Veja as recusas no log.** No **Terminal**:
+
+      ```bash
+      grep "Pacote recusado" /tmp/app.log
+      ```
+
+      O `app.log` também registra os acessos (linhas `POST /pacotes`); o `grep` mostra só as recusas. Num sistema real, cada recusa de assinatura é um alerta: alguém mexeu no caminho, ou a chave do fornecedor mudou sem aviso.
+
+      **Se algo não funcionar depois de salvar.** No **Terminal**:
+
+      ```bash
+      grep -iE "error|traceback" /tmp/app.log | tail -n 15
+      ```
+
+      O `def importar` fica com 4 espaços; o corpo, com 8; a linha dentro do `if`, com 12.
+    concept: Recalcular o HMAC e comparar em tempo constante antes de aplicar
+    validatorRef: pacote-assinatura/python-flask/assinatura-conferida-[[ramo]]-v1
+    hints:
+      - level: 1
+        text: 'A mudança é só em `services/pacote_service.py`, no método `importar`.'
+      - level: 2
+        text: Antes de chamar o repositório, recalcule o HMAC com `conteudo_canonico(pacote)` e compare com `hmac.compare_digest`.
+      - level: 3
+        text: Copie o método da tarefa sem mudar o recuo. O `def` fica com 4 espaços.
+    points: 45
+policy:
+  sequentialUnlock: true
+  allowStepRetry: true
+  persistProgressAcrossReset: true
+  allowSolutionReveal: false
+  finalPassingScore: 100

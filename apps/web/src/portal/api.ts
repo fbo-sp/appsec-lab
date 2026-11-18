@@ -6,13 +6,19 @@ export type Lab = {
   version: string;
   title: string;
   primaryCwe: string;
+  secondaryCwes: string[];
+  classifications?: { framework: string; edition: string; entries: string[] }[];
+  // ADR-021: família, ramos de atividade e módulos do curso (vazios em labs anteriores).
+  family?: string | null;
+  sectors?: string[];
+  courseModules?: string[];
   learning: {
     difficulty: string;
     estimatedMinutes: number;
     objectives: string[];
     story: { role: string; application: string; context: string; mission: string };
   };
-  variants: { id: string; language: string; framework: string; ttlMinutes: number }[];
+  variants: { id: string; language: string; framework: string; ttlMinutes: number; interfaces?: string[]; platform?: string }[];
   steps: { id: string; order: number; title: string; points: number }[];
 };
 
@@ -22,6 +28,8 @@ export type LabSession = {
   labId: string;
   version: string;
   variantId: string;
+  platform?: string; // "mobile" = moldura de celular na aba Aplicação (ADR-025)
+  interfaces?: string[]; // "attacker" = laboratório com site do atacante (ADR-022)
   expiresAt: string;
   lastErrorCode: string | null;
   ttlMinutes: number;
@@ -55,6 +63,8 @@ export type Step = {
   submissions: number;
   explanation?: string;
   task?: string;
+  /** Estudo complementar opcional, aberto pelo botão "Explorar mais" (ADR-019). */
+  explore?: string | null;
   concept?: string | null;
   references?: Reference[];
   validation?: { type: "answer" | "http" | "unavailable"; answerPrompt: string | null };
@@ -164,7 +174,10 @@ export const api = {
   activity: (id: string) => call<LabSession>(`/api/v1/sessions/${id}/activity`, { method: "POST" }),
   renew: (id: string) => call<LabSession>(`/api/v1/sessions/${id}/renewals`, { method: "POST" }),
   terminate: (id: string) => call<LabSession>(`/api/v1/sessions/${id}`, { method: "DELETE" }),
-  ticket: (id: string, purpose: "workspace" | "preview") =>
+  preferences: () => call<{ theme: string }>("/api/v1/me/preferences"),
+  setPreferences: (theme: string) =>
+    call<{ theme: string }>("/api/v1/me/preferences", { method: "PUT", body: JSON.stringify({ theme }) }),
+  ticket: (id: string, purpose: "workspace" | "preview" | "attacker") =>
     call<{ url: string }>(`/api/v1/sessions/${id}/gateway-ticket`, {
       method: "POST",
       body: JSON.stringify({ purpose }),

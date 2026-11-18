@@ -39,7 +39,9 @@ ignore = ["S101", "RUF012"]
 
 [tool.ruff.lint.per-file-ignores]
 "**/tests/**" = ["S", "B017"]
+"apps/backend/tests/test_*_family_validation.py" = ["E501"]  # trechos de código embutidos como string (correções a aplicar)
 "apps/backend/migrations/**" = ["E501"]
+"apps/backend/app/validation/suites_familias.py" = ["E501"]  # textos didáticos de feedback
 
 [tool.mypy]
 python_version = "3.12"

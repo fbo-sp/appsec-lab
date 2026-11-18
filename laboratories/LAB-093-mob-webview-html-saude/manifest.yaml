@@ -1,0 +1,277 @@
+# LAB-093 (L10-SAU): mensagem de outro usuário exibida como HTML no WebView (CWE-79) no App Lumen Saúde da Clínica Lumen (app mobile simulado, Flask + SQLite).
+# CONTÉM VULNERABILIDADE INTENCIONAL. Uso exclusivo no runtime Docker LOCAL (ADR-008), em rede
+# interna da sessão. Dados 100% fictícios. Família L10 mob-webview-html (ADR-021, ADR-025): gerado por
+# scripts/gerar-familia.py a partir de laboratories/_familias/mob-webview-html; não edite este arquivo à mão.
+#
+# ATENÇÃO: o digest abaixo é uma FIXTURE (sha256 de um texto fixo), não uma imagem publicada.
+# scripts/lab-local.sh e .ps1 trocam pela imagem construída localmente antes de registrar.
+apiVersion: labs.cecyber.io/v1alpha1
+kind: AppSecLab
+metadata:
+  id: LAB-093
+  version: 1.0.0
+  title: "L10-SAU · Qualidade do código do cliente: o convite que desenhou um quadro no app do paciente"
+  primaryCwe: CWE-79
+  secondaryCwes: [CWE-116]
+  family: mob-webview-html
+  sectors: [saude]
+  courseModules: [trained]
+  classifications:
+    - framework: OWASP Top 10
+      edition: "2025"
+      entries:
+        - "A05 Injection"
+    - framework: OWASP Top 10
+      edition: "2021"
+      entries:
+        - "A03 Injection"
+    - framework: SANS CWE Top 25
+      edition: "2025"
+      entries:
+        - "#1 CWE-79 Cross-site Scripting"
+    - framework: SANS CWE Top 25
+      edition: "2024"
+      entries:
+        - "#1 CWE-79 Cross-site Scripting"
+    - framework: OWASP Mobile Top 10
+      edition: "2024"
+      entries:
+        - "M4 Insufficient Input/Output Validation"
+    - framework: OWASP Mobile Top 10
+      edition: "2016"
+      entries:
+        - "M7 Client Code Quality"
+    - framework: OWASP MASVS
+      edition: "2023"
+      entries:
+        - "MASVS-PLATFORM-2"
+learning:
+  singleVulnerability: true
+  estimatedMinutes: 35
+  difficulty: intermediate
+  objectives:
+    - Entender o que é um WebView e por que o HTML dele é código do app
+    - Mostrar que uma mensagem escrita por outro usuário vira HTML dentro do app
+    - Saber o que a codificação de saída e a política de conteúdo (CSP) protegem
+    - Corrigir a página da central sem o filtro safe e com CSP
+  story:
+    role: >-
+      Pessoa desenvolvedora do time de apps da Clínica Lumen
+    application: >-
+      App Lumen Saúde, o app em que o paciente vê os exames e os convites e recados da central
+    context: >-
+      No programa Lumen Bem-Estar, um paciente pode convidar outro com um recado. Pacientes relataram convites que, na central do app, apareciam como um formulário "confirme seu CPF para liberar o laudo". A central é uma página mostrada num WebView.
+    mission: >-
+      Mostrar que uma mensagem escrita por outro usuário vira HTML dentro do app e corrigir a página da central com codificação de saída e política de conteúdo
+  wrapUp:
+    text: |
+      Agora a mensagem aparece como texto, do jeito que foi escrita, e a página da central diz ao WebView que não carregue nem execute nada além do próprio estilo. Em um app real, vale reforçar:
+
+      - **WebView é código do app.** Tudo que a página do WebView mostra roda dentro do app oficial, com a confiança que o usuário tem nele. Trate cada campo vindo de outro usuário como entrada não confiável.
+      - **Codifique na saída, sempre.** Deixe o template codificar (`{{ texto }}`); `|safe` e `innerHTML` com dado de usuário são bugs. Se precisar de formatação, use um formato limitado (como Markdown) e um sanitizador com lista de permissões.
+      - **Desligue o que não usa.** Num WebView nativo, deixe JavaScript desligado quando a página não precisa (`setJavaScriptEnabled(false)` no Android), não exponha pontes (`addJavascriptInterface`) e não carregue arquivos locais.
+      - **CSP é a segunda camada.** Ela não substitui a codificação, mas limita o estrago se algo escapar.
+    references:
+      - title: "OWASP Mobile Top 10 2016: M7 Client Code Quality"
+        url: https://owasp.org/www-project-mobile-top-10/2016-risks/m7-client-code-quality
+      - title: "OWASP Mobile Top 10 2024: M4 Insufficient Input/Output Validation"
+        url: https://owasp.org/www-project-mobile-top-10/2023-risks/m4-insufficient-input-output-validation
+      - title: "OWASP MASTG: WebViews"
+        url: https://mas.owasp.org/MASTG/knowledge/android/MASVS-PLATFORM/MASTG-KNOW-0018/
+      - title: "OWASP Cheat Sheet: Cross Site Scripting Prevention"
+        url: https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html
+      - title: "OWASP Cheat Sheet: Content Security Policy"
+        url: https://cheatsheetseries.owasp.org/cheatsheets/Content_Security_Policy_Cheat_Sheet.html
+variants:
+  - id: python-flask
+    language: python
+    framework: flask
+    image: registry.local/labs/lab-093-mobile@sha256:0862cad9c86a7b218b2c7f38025d1bbe6a36a330945bc900902edb9a1da82266
+    runtimeProfile: web-basic
+    workspacePath: /workspace
+    startup:
+      command: ["sh", "-c", "python -u -m flask --app app run --host 0.0.0.0 --port 8080 --reload --no-debugger 2>&1 | tee -a /tmp/app.log"]
+      port: 8080
+    resources:
+      cpuMillicores: 500
+      memoryMiB: 512
+      storageMiB: 256
+      pidsMax: 64
+    session:
+      ttlMinutes: 45
+      maxRenewals: 2
+    interfaces: [editor, terminal, web]
+    platform: mobile
+steps:
+  - id: conhecer
+    order: 1
+    title: Conhecer a central de mensagens e o WebView
+    explanation: |
+      Você está no time de apps da Clínica Lumen. No programa Lumen Bem-Estar, um paciente convida outro com um recado, que aparece na central de convites e recados do app. Esta semana, a ouvidoria recebeu relatos de pacientes que viram, na central, um formulário com a marca da clínica pedindo o CPF "para liberar o laudo". A central é uma página do servidor mostrada num WebView, e alguém conseguiu desenhar nela.
+
+      **Um laboratório mobile.** Na aba **Aplicação**, o app aparece numa moldura de celular. Ele é um app **simulado** (não há emulador), mas fala com a API do servidor do mesmo jeito que um app Android ou iOS.
+
+      Um **WebView** é um componente que mostra uma página HTML dentro do app, sem abrir o navegador. Muitos apps montam telas assim: o servidor entrega a página pronta e o app só a exibe. Para o usuário, é o app oficial. Se a página mostra como HTML um texto escrito por outra pessoa, essa pessoa passa a desenhar na tela do app: é **código do cliente de baixa qualidade** (Mobile M7) e, na prática, um XSS (CWE-79).
+
+      ```ilustracao
+      webview-mensagens
+      ```
+
+      Siga a mensagem pelas camadas:
+
+      1. **App** (`static/app.js`): a aba **Mensagens** busca `GET /api/mensagens/pagina` e a mostra num WebView.
+      2. **Controller e serviço** (`controllers/api_controller.py`, `services/mensagem_service.py`): gravam e listam as mensagens como vieram.
+      3. **Página da central** (`templates/webview_mensagens.html`): decide como o texto aparece. **É aqui que está a falha.**
+
+      As credenciais de teste deste laboratório são:
+
+      - Usuário `marcos.tavares`, senha `Marcos#Lumen26` (Marcos Tavares Lima), quem recebe as mensagens.
+      - Usuário `renata.borges`, senha `Renata#Lumen26` (Renata Borges Nunes), outro usuário do app.
+    task: |
+      1. Na aba **Aplicação**, entre com `marcos.tavares` e a senha `Marcos#Lumen26` e toque na aba **Mensagens**.
+      2. Na aba **Código**, abra a pasta `templates/`.
+
+      Informe abaixo o nome do arquivo da página que o app mostra no WebView da central.
+    concept: O HTML do WebView é código do app
+    validatorRef: mob-webview-html/answer/pagina-sau-v1
+    hints:
+      - level: 1
+        text: O nome do arquivo começa com `webview_`.
+      - level: 2
+        text: É o template que `pagina_mensagens` renderiza em `controllers/api_controller.py`.
+      - level: 3
+        text: A resposta é `webview_mensagens.html`.
+    points: 10
+  - id: explorar
+    order: 2
+    title: Escrever uma mensagem que vira HTML
+    explanation: |
+      Faça o que o atacante fez: como outro usuário do app (Renata Borges Nunes), escreva para Marcos Tavares Lima uma mensagem com marcação HTML.
+
+      **Sobre a demonstração.** Por restrições de segurança do ambiente, a carga deste laboratório é inofensiva: ela só desenha um quadro tracejado com um aviso. A falha e a correção são exatamente as de um ataque real.
+    task: |
+      No **Terminal**, entre como `renata.borges` e envie a mensagem (Convite com recado):
+
+      ```bash
+      TOKEN_B=$(curl -s -X POST http://127.0.0.1:8080/api/login -H "Content-Type: application/json" -d '{"login":"renata.borges","senha":"Renata#Lumen26"}' | python -c "import json,sys; print(json.load(sys.stdin)['token'])")
+      curl -s -X POST http://127.0.0.1:8080/api/mensagens -H "Authorization: Bearer $TOKEN_B" -H "Content-Type: application/json" -d '{"para":"marcos.tavares","texto":"<div class=\"cecyber-demo\" style=\"border:2px dashed #b42318;padding:8px;color:#b42318\">[Demonstracao] Este quadro foi desenhado pelo texto da mensagem</div>"}'
+      ```
+
+      Depois, no app (logado como `marcos.tavares`), toque em **Início** e de novo em **Mensagens**. A mensagem nova apareceu como texto (com os sinais `<` e `>`) ou como um **quadro** desenhado na tela? Responda **texto** ou **quadro**.
+    explore: |
+      **Por que isso é grave.** Um formulário falso com a marca da clínica, dentro do app oficial, convence o paciente a entregar CPF e dados de saúde. E, como o WebView do app executa JavaScript, o mesmo caminho que desenha um quadro pode rodar código na tela do paciente.
+
+      **Veja o que o servidor entregou.** A página que o WebView recebe traz a marcação crua:
+
+      ```bash
+      TOKEN_A=$(curl -s -X POST http://127.0.0.1:8080/api/login -H "Content-Type: application/json" -d '{"login":"marcos.tavares","senha":"Marcos#Lumen26"}' | python -c "import json,sys; print(json.load(sys.stdin)['token'])")
+      curl -s http://127.0.0.1:8080/api/mensagens/pagina -H "Authorization: Bearer $TOKEN_A" | grep cecyber-demo
+      ```
+    concept: O texto de outro usuário vira HTML no app
+    validatorRef: mob-webview-html/answer/aparencia-sau-v1
+    hints:
+      - level: 1
+        text: Olhe a mensagem mais nova, no topo da central.
+      - level: 2
+        text: Se você viu uma borda tracejada vermelha, o texto virou HTML.
+      - level: 3
+        text: A resposta é `quadro`.
+    points: 15
+  - id: conceito
+    order: 3
+    title: Achar o que desliga a proteção do template
+    explanation: |
+      O Jinja, o motor de templates do Flask, **codifica a saída** por padrão: `{{ texto }}` troca `<` por `&lt;` e `>` por `&gt;`, então a marcação aparece como texto e não é interpretada. A página da central desliga essa proteção com um filtro, porque o atendimento queria usar negrito nas mensagens.
+    task: |
+      Abra `templates/webview_mensagens.html` e procure a linha que mostra o texto da mensagem.
+
+      Informe abaixo o nome do filtro do Jinja que faz o texto aparecer sem codificação.
+    concept: Codificação de saída e o filtro que a desliga
+    validatorRef: mob-webview-html/answer/filtro-sau-v1
+    hints:
+      - level: 1
+        text: 'Os filtros do Jinja vêm depois de uma barra vertical: `{{ valor|filtro }}`.'
+      - level: 2
+        text: O nome do filtro diz que o texto é "seguro".
+      - level: 3
+        text: A resposta é `safe`.
+    points: 15
+  - id: onde
+    order: 4
+    title: Saber qual é a segunda camada
+    explanation: |
+      Codificar a saída resolve a causa. Uma segunda camada limita o estrago se algum dia algo escapar: uma **política de conteúdo** que diz ao WebView de onde a página pode carregar estilos, imagens e scripts. Numa página que só mostra texto, a política pode proibir tudo, menos o próprio estilo.
+    task: |
+      Qual é o nome do cabeçalho (ou da `meta` `http-equiv`) que define essa política de conteúdo? Responda com o nome completo ou com a sigla.
+    concept: CSP limita o que a página pode carregar e executar
+    validatorRef: mob-webview-html/answer/csp-sau-v1
+    hints:
+      - level: 1
+        text: A sigla tem três letras.
+      - level: 2
+        text: Em inglês, "política de segurança de conteúdo".
+      - level: 3
+        text: A resposta é `Content-Security-Policy` (ou `CSP`).
+    points: 15
+  - id: corrigir
+    order: 5
+    title: Codificar a saída e declarar a política
+    explanation: |
+      **Por que a falha existe.** O template mostra `m.texto` com `|safe`: o que o outro usuário escreveu vira HTML no WebView.
+
+      **A correção.** Tirar o `|safe`, para o Jinja codificar a saída, e declarar uma política de conteúdo restrita na página. Filtrar a palavra `script` não resolve: a carga desta etapa nem usa script, e há dezenas de formas de escrever HTML perigoso.
+    task: |
+      Abra `templates/webview_mensagens.html` e troque o conteúdo **inteiro** do arquivo por este:
+
+      ```html
+      <!doctype html>
+      <html lang="pt-BR">
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        {# A página só mostra texto: nada de scripts, imagens ou conteúdo de fora. #}
+        <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'">
+        <style>
+          body { margin: 0; font: 14px/1.45 system-ui, sans-serif; color: #151a24; background: #f3f5f9; }
+          .msg { background: #fff; border-radius: 12px; padding: 11px 13px; margin: 0 0 8px; box-shadow: 0 1px 2px rgba(20, 30, 50, .08); }
+          .msg small { color: #5d6678; display: block; margin-bottom: 4px; }
+        </style>
+      </head>
+      <body>
+        {% for m in mensagens %}
+        <div class="msg">
+          <small>{{ m.autor }} · {{ m.enviada_em }}</small>
+          {# O Jinja codifica a saída: o texto aparece como foi escrito, nunca como HTML. #}
+          <div class="texto">{{ m.texto }}</div>
+        </div>
+        {% else %}
+        <p>Nenhuma mensagem.</p>
+        {% endfor %}
+      </body>
+      </html>
+      ```
+
+      Salve com **Ctrl+S** (templates são recarregados na hora; as mensagens enviadas continuam lá). Então:
+
+      1. no app, toque em **Início** e de novo em **Mensagens**: a mensagem aparece como texto, com os sinais `<` e `>`;
+      2. clique em **Validar**.
+    explore: |
+      **Confira a página entregue.** Repita o último `curl` do **Explorar mais** da etapa 2: agora aparece `&lt;div class=&#34;cecyber-demo&#34;...`, a marcação codificada.
+
+      **E num app nativo.** No Android, além de codificar a saída, deixe o JavaScript do WebView desligado quando a página não precisa (`settings.setJavaScriptEnabled(false)`) e não use `addJavascriptInterface` com conteúdo de terceiros. No iOS, prefira `WKWebView` com `javaScriptEnabled` desligado nas páginas só de texto.
+    concept: Codificação de saída e CSP na página do WebView
+    validatorRef: mob-webview-html/python-flask/mensagem-codificada-sau-v1
+    hints:
+      - level: 1
+        text: 'A mudança é só em `templates/webview_mensagens.html`.'
+      - level: 2
+        text: Tire o `|safe` da linha do texto e acrescente a `meta` do `Content-Security-Policy` no `head`.
+      - level: 3
+        text: Copie o arquivo inteiro da tarefa, sem mudar nada.
+    points: 45
+policy:
+  sequentialUnlock: true
+  allowStepRetry: true
+  persistProgressAcrossReset: true
+  allowSolutionReveal: false
+  finalPassingScore: 100

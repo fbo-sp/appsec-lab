@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block conteudo %}
+<h1>[[painel_titulo]]</h1>
+<p class="ajuda">[[painel_desc]]</p>
+
+<dl class="dados">
+  <dt>Titular</dt><dd>{{ conta.nome }}</dd>
+  <dt>Saldo</dt><dd>{{ conta.saldo | int }} pontos</dd>
+</dl>
+
+<h2>Catálogo</h2>
+<ul class="dados">
+  {% for p in produtos %}
+  <li>
+    <strong>{{ p.nome }}</strong> — {{ p.custo }} pontos
+    <form method="post" action="{{ url_for('painel.resgatar') }}" style="display:inline">
+      <input type="hidden" name="produto_id" value="{{ p.id }}">
+      <input type="hidden" name="custo" value="{{ p.custo }}">
+      <button type="submit">Resgatar</button>
+    </form>
+  </li>
+  {% endfor %}
+</ul>
+
+{% if resultado %}<p class="banner reforcado">{{ resultado }}</p>{% endif %}
+{% if erro %}<p class="banner antigo">{{ erro }}</p>{% endif %}
+{% endblock %}

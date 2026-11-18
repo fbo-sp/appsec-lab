@@ -32,7 +32,7 @@ Por padrão o worker usa o runtime *fake* (nada é executado). Para abrir os lab
 ```powershell
 # na raiz do repositório (PowerShell)
 docker compose -f infrastructure/local/docker-compose.yml -f infrastructure/local/docker-compose.docker-runtime.yml up --build -d
-.\scripts\lab-local.ps1     # constrói as imagens do LAB-000 e do LAB-001 e registra as releases
+.\scripts\lab-local.ps1     # constrói as imagens do LAB-000 ao LAB-004 e registra as releases
 ```
 
 Releases são imutáveis: se uma versão já foi publicada no banco local com outro conteúdo, o script avisa
@@ -47,21 +47,22 @@ derruba o terminal. Edite `index.html`, salve com Ctrl+S e clique em **recarrega
 As dicas abrem em uma janela pelo botão **Dicas** ao lado de **Validar**. Arraste a divisa entre as
 etapas e as abas para alargar o painel de explicação (duplo clique volta ao tamanho padrão).
 
-Roteiro das etapas do LAB-000 0.2.1 (ADR-010):
+Roteiro do **LAB-000 1.0.0, tutorial da plataforma** (ADR-018, cerca de 10 min, sem vulnerabilidade):
 
-1. **Explorar o ambiente**: descubra no terminal com qual usuário os comandos rodam (`whoami`), digite a
-   resposta e clique em **Validar**. Respostas erradas mostram o critério que falhou. As tentativas são
-   livres. A 1ª dica de cada etapa é grátis, a 2ª custa 1 ponto e a 3ª custa 2, com desconto total de
-   no máximo 10% (ADR-013).
-2. **Alterar a aplicação**: edite `index.html` para exibir "Olá, CECyber", salve e clique em **Validar**.
-   O worker copia o workspace, sobe uma cópia isolada da aplicação e a testa de fora; leva alguns segundos.
-   Ao concluir, a pontuação chega a 100/100 e aparece "Laboratório concluído".
+1. **Conhecer a tela**: na aba **Aplicação**, leia o código da etapa 1 (`AZUL-17`) e valide.
+2. **Usar a barra de endereço**: abra `/tutorial/endereco.html` e informe o código da etapa 2 (`VERDE-58`).
+3. **Usar o terminal**: rode `whoami` e informe o usuário (`lab`).
+4. **Pedir uma dica**: a resposta (`LARANJA-23`) está na dica 1, que é gratuita. A 2ª custa 1 ponto e a
+   3ª custa 2, com desconto total de no máximo 10 pontos (ADR-013).
+5. **Editar o código e validar**: acrescente `<p>Olá, CECyber</p>` ao `index.html`, salve e clique em
+   **Validar**. O worker copia o workspace, sobe uma cópia isolada da aplicação e a testa de fora; leva
+   alguns segundos. Ao concluir, a pontuação chega a 100/100 e aparece o resumo.
 
 Roteiro do **LAB-001 SQL Injection** (Clínica VidaPlena, dados fictícios, cerca de 40 min). As etapas
 explicam cada passo; as respostas abaixo servem só para conferência:
 
 1. **Conhecer a aplicação**: siga a busca do controller até o repositório. Resposta: `buscar_por_nome`.
-2. **Provocar um erro**: busque por `'` e leia `tail -n 20 /tmp/app.log` no terminal. Resposta:
+2. **Provocar um erro**: busque por `'` e rode `grep sqlite3 /tmp/app.log | tail -n 1` no terminal. Resposta:
    `OperationalError`.
 3. **Medir a consulta**: `' ORDER BY 5 --` dá erro e `' ORDER BY 4 --` funciona. Resposta: `4`.
 4. **Extrair dados sensíveis**: `' UNION SELECT 1, chave, valor, '' FROM configuracoes --`. Resposta:
@@ -70,13 +71,29 @@ explicam cada passo; as respostas abaixo servem só para conferência:
    tupla, salve (a aplicação recarrega sozinha) e clique em **Validar**. O worker testa uma cópia isolada
    com buscas legítimas e ataques.
 
-O LAB-001 contém vulnerabilidade **intencional**: ele roda só na rede interna da sessão, acessível pelo
-gateway em 127.0.0.1. Não exponha em rede compartilhada.
+Roteiro do **LAB-002 IDOR** (Banco Vértice Digital, cerca de 40 min). Login: `marina.ribeiro@clientes.vertice.example`
+/ `Marina@2026`. A **barra de endereço** da aba Aplicação (ao lado de "recarregar") abre caminhos como
+`/comprovantes/10457` ou `/api/comprovantes/10458`. Respostas para conferência: `buscar_por_id`, `10458`,
+`Rodrigo Tavares Lima`, `34` (laço com `curl` no terminal). Correção: em `services/comprovante_service.py`,
+`obter` devolve `None` quando `comprovante.cliente_id != cliente_id`.
+
+Roteiro do **LAB-003 JWT** (Orbe Cartões, Node.js, cerca de 45 min). Login: `larissa.mendes@clientes.orbe.example`
+/ `Larissa@2026`. Respostas: `lerToken`, `cliente`, `ORB-AUD-5583-QX`, `ORB-LIM-4821-50000`. Correção: em
+`services/token.service.js`, trocar `jwt.decode` por `jwt.verify(token, config.SEGREDO_JWT, { algorithms:
+['HS256'] })` dentro de `try`/`catch`. A primeira construção da imagem baixa o Node.js e as dependências npm.
+
+Roteiro do **LAB-004 Command Injection** (Ferrara Metais, CLPs simulados, cerca de 40 min). Respostas:
+`diag-clp`, `lab`, `scada.conf`, `SCADA-OPR-4471-KX`. Correção: em `services/diagnostico_service.py`, validar
+com `ipaddress.IPv4Address` e executar `["diag-clp", endereco]` com `usar_shell=False`.
+
+Os LAB-001 a LAB-004 contêm vulnerabilidades **intencionais**: rodam só na rede interna da sessão, acessível
+pelo gateway em 127.0.0.1. Não exponha em rede compartilhada. No LAB-004 os comandos injetados rodam dentro do
+contêiner da sessão, com o mesmo alcance do terminal do aluno (ADR-015).
 
 O progresso fica na tentativa do usuário: encerrar e iniciar de novo retoma as etapas já concluídas. Para
 recomeçar do zero, use outro usuário de teste.
 
-Portas (todas só em 127.0.0.1): 8000 portal + API, 8001 workspace (editor/terminal), 8002 aplicação do lab.
+Portas (todas só em 127.0.0.1): 8000 portal + API, 8001 workspace (editor/terminal), 8002 aplicação do lab, 8003 site fictício do atacante (só labs com a interface `attacker`, ADR-022).
 
 - O socket Docker é montado **somente no worker**; laboratórios rodam em rede interna própria, sem
   portas no host, como usuário não-root e com raiz somente leitura. O gateway é o único outro participante

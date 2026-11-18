@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block conteudo %}
+<h1>Enviar nota fiscal</h1>
+<p class="ajuda">Anexe a nota fiscal (PDF, PNG ou JPEG) da entrega para a conferência.</p>
+<form method="post" enctype="multipart/form-data" class="cartao">
+  <label>Descrição <input name="descricao" placeholder="Ex.: NF-e 004512" required></label>
+  <label>Arquivo (PDF, PNG ou JPEG, até 2 MB) <input name="arquivo" type="file" accept=".pdf,.png,.jpg,.jpeg" required></label>
+  {% if erro %}<p class="erro">{{ erro }}</p>{% endif %}
+  <button type="submit">Enviar</button>
+</form>
+
+<h2>Notas enviadas</h2>
+<table class="lista">
+  <tr><th>Descrição</th><th>Arquivo</th><th>Enviado em</th></tr>
+  {% for a in anexos %}
+  <tr><td>{{ a.descricao }}</td><td><a href="{{ url_for('anexo.baixar', nome=a.nome_arquivo) }}" target="_blank">{{ a.nome_arquivo }}</a></td><td>{{ a.enviado_em }}</td></tr>
+  {% else %}
+  <tr><td colspan="3" class="vazio">Nenhum arquivo enviado ainda.</td></tr>
+  {% endfor %}
+</table>
+{% endblock %}

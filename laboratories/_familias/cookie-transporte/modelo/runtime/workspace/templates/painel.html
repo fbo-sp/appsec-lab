@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block conteudo %}
+<h1>[[painel_titulo]]</h1>
+<p class="ajuda">[[painel_desc]]</p>
+
+<dl class="dados">
+  <dt>[[rotulo_titular]]</dt><dd>{{ conta.nome }}</dd>
+</dl>
+
+<h2>[[itens_titulo]]</h2>
+<table class="lista">
+  <tr><th>Data</th><th>Descrição</th><th>[[rotulo_valor]]</th></tr>
+  {% for data, descricao, valor in itens %}
+  <tr><td>{{ data }}</td><td>{{ descricao }}</td><td>{{ valor }}</td></tr>
+  {% endfor %}
+</table>
+
+<p class="banner reforcado">Use <a href="{{ url_for('auth.sair') }}">Sair</a> para encerrar a sessão.</p>
+{% endblock %}
